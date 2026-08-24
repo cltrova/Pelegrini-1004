@@ -38,6 +38,7 @@ import AgentesPage from "./pages/whatsapp/AgentesPage";
 import ConfiguracoesPage from "./pages/ConfiguracoesPage";
 import UsuariosPage from "./pages/configuracoes/UsuariosPage";
 import EmpresasPage from "./pages/configuracoes/EmpresasPage";
+import HomePage from "./pages/HomePage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
@@ -129,7 +130,7 @@ const App = () => (
               <PasswordGate>
               <Routes>
 
-              <Route path="/" element={<Navigate to="/comercial/dashboard" replace />} />
+              <Route path="/" element={<HomePage />} />
 
               <Route path="/mobile" element={<Navigate to="/comercial/dashboard" replace />} />
 

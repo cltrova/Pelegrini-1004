@@ -29,6 +29,7 @@ import { Button } from '@/components/ui/button';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useEmpresaConfig } from '@/hooks/useEmpresaConfig';
 import { useUserModulePermissions, type UserModuleKey } from '@/hooks/useUserModulePermissions';
+import { pelegriniBrand, pelegriniModules, type PelegriniHomeModule } from '@/config/pelegriniHome';
 import HomeMobilePage from './HomeMobilePage';
 
 interface ModuleCardProps {
@@ -50,53 +51,38 @@ interface ModuleCardProps {
   onInterceptClick?: (path: string, moduloKey?: UserModuleKey) => boolean;
 }
 
-// 4 módulos principais (sem Configurações)
-const modules: Omit<ModuleCardProps, 'index' | 'noAccess' | 'onMasterClick' | 'isMaster' | 'onShowDetails' | 'locked'>[] = [
-  {
-    title: 'WhatsApp',
-    description: 'Atendimento inteligente com IA e análise de sentimentos.',
+const modulePresentation: Record<
+  PelegriniHomeModule['accent'],
+  Pick<ModuleCardProps, 'icon' | 'gradient' | 'glowColor'>
+> = {
+  emerald: {
     icon: MessageSquare,
-    path: '/whatsapp',
     gradient: 'from-emerald-400 via-green-500 to-teal-500',
     glowColor: 'group-hover:shadow-emerald-500/25',
-    features: ['Chat IA', 'Sentimentos', 'Automações'],
-    disabled: false,
-    moduloKey: 'whatsapp',
   },
-  {
-    title: 'Comercial',
-    description: 'Gestão de vendas, metas e performance de equipe.',
+  purple: {
     icon: ShoppingCart,
-    path: '/comercial/dashboard',
     gradient: 'from-violet-400 via-purple-500 to-fuchsia-500',
     glowColor: 'group-hover:shadow-purple-500/25',
-    features: ['Metas', 'Ranking', 'Clientes'],
-    disabled: false,
-    moduloKey: 'comercial',
   },
-  {
-    title: 'Operacional',
-    description: 'Gestão de estoque, giro e análise de compras.',
+  orange: {
     icon: Truck,
-    path: '/operacional/estoque',
     gradient: 'from-amber-400 via-orange-500 to-red-500',
     glowColor: 'group-hover:shadow-orange-500/25',
-    features: ['Estoque', 'Giro', 'IA'],
-    disabled: false,
-    moduloKey: 'operacional',
   },
-  {
-    title: 'Financeiro',
-    description: 'DRE interativa, variações e assistente de IA.',
+  blue: {
     icon: TrendingUp,
-    path: '/financeiro',
     gradient: 'from-cyan-400 via-blue-500 to-indigo-500',
     glowColor: 'group-hover:shadow-blue-500/25',
-    features: ['DRE', 'Variações', 'IA'],
-    disabled: false,
-    moduloKey: 'financeiro',
   },
-];
+};
+
+const modules: Omit<ModuleCardProps, 'index' | 'noAccess' | 'onMasterClick' | 'isMaster' | 'onShowDetails' | 'locked'>[] =
+  pelegriniModules.map((module) => ({
+    ...module,
+    ...modulePresentation[module.accent],
+    disabled: false,
+  }));
 
 function ModuleCard({ 
   title, 
@@ -412,8 +398,8 @@ export default function HomePage() {
                 <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-primary to-accent blur-xl opacity-30 dark:opacity-50 hidden dark:block" />
               </div>
               <div>
-                <h1 className="text-xl font-bold text-foreground">BI Reports</h1>
-                <p className="text-xs text-muted-foreground">Sistema Modular de Relatórios</p>
+                <h1 className="text-xl font-bold text-foreground">{pelegriniBrand.name}</h1>
+                <p className="text-xs text-muted-foreground">{pelegriniBrand.subtitle}</p>
               </div>
             </div>
             
@@ -465,16 +451,15 @@ export default function HomePage() {
         <div className="text-center mb-5 animate-fade-in">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-medium mb-3">
             <Zap className="h-3.5 w-3.5" />
-            Plataforma de Business Intelligence
+            {pelegriniBrand.eyebrow}
           </div>
 
           <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-foreground mb-2 leading-tight">
-            Transforme dados em
-            <span className="gradient-text"> decisões estratégicas</span>
+            {pelegriniBrand.headline}
           </h2>
 
           <p className="text-sm text-muted-foreground max-w-2xl mx-auto">
-            Selecione um módulo para acessar relatórios interativos e análises em tempo real.
+            Selecione um modulo para acessar as areas principais do painel.
           </p>
         </div>
 
@@ -576,10 +561,10 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-6 py-3">
           <div className="flex flex-col md:flex-row items-center justify-between gap-2">
             <p className="text-xs text-muted-foreground">
-              © 2024 BI Reports · Sistema Modular de Relatórios Operacionais
+              © 2026 {pelegriniBrand.footer}
             </p>
             <div className="flex items-center gap-6">
-              <span className="text-xs text-muted-foreground">v1.0.0</span>
+              <span className="text-xs text-muted-foreground">{pelegriniBrand.version}</span>
               <div className="h-4 w-px bg-border" />
               <span className="text-xs text-muted-foreground">Powered by React</span>
             </div>
