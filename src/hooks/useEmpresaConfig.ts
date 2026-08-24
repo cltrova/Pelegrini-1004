@@ -5,6 +5,7 @@ import {
   CLIENTE_CODIGOS_EMPRESA_BI,
   resolveCliente1004,
 } from '@/config/cliente1004';
+import { createLocalPreviewEmpresa, isLocalPreviewEnabled } from '@/config/localPreview';
 
 export interface Empresa {
   id: string;
@@ -71,6 +72,7 @@ export type EmpresaModuloKey = 'dre' | 'variacao' | 'comercial' | 'assistente_ia
 
 export function useEmpresaConfig(codEmpresaBi?: string) {
   const { isMaster, user } = useAuth();
+  const localPreview = isLocalPreviewEnabled();
   
   const empresaCode = resolveCliente1004(codEmpresaBi);
 
@@ -86,53 +88,59 @@ export function useEmpresaConfig(codEmpresaBi?: string) {
       if (error) throw error;
       return data as Empresa | null;
     },
-    enabled: !!user,
+    enabled: !localPreview && !!user,
     staleTime: 1000 * 60 * 5, // 5 minutos
   });
 
+  const effectiveEmpresa = localPreview ? createLocalPreviewEmpresa() : empresa;
+  const effectiveIsMaster = localPreview || isMaster;
+
   const hasModulo = (modulo: EmpresaModuloKey): boolean => {
     // Master sempre tem acesso a todos os módulos
-    if (isMaster) return true;
+    if (effectiveIsMaster) return true;
     
-    if (!empresa) return false;
+    if (!effectiveEmpresa) return false;
     
     switch (modulo) {
       case 'dre':
-        return empresa.modulo_dre;
+        return effectiveEmpresa.modulo_dre;
       case 'variacao':
-        return empresa.modulo_variacao;
+        return effectiveEmpresa.modulo_variacao;
       case 'comercial':
-        return empresa.modulo_comercial;
+        return effectiveEmpresa.modulo_comercial;
       case 'assistente_ia':
-        return empresa.modulo_assistente_ia;
+        return effectiveEmpresa.modulo_assistente_ia;
       case 'whatsapp':
-        return empresa.modulo_whatsapp;
+        return effectiveEmpresa.modulo_whatsapp;
       case 'operacional':
-        return empresa.modulo_operacional ?? false;
+        return effectiveEmpresa.modulo_operacional ?? false;
       case 'resumo':
-        return empresa.modulo_resumo ?? false;
+        return effectiveEmpresa.modulo_resumo ?? false;
       case 'financeiro':
-        return empresa.modulo_dre || empresa.modulo_variacao || (empresa.modulo_resumo ?? false) || empresa.modulo_assistente_ia;
+        return effectiveEmpresa.modulo_dre || effectiveEmpresa.modulo_variacao || (effectiveEmpresa.modulo_resumo ?? false) || effectiveEmpresa.modulo_assistente_ia;
       default:
         return false;
     }
   };
 
   return {
-    empresa,
+    empresa: effectiveEmpresa,
     hasModulo,
-    isLoading,
+    isLoading: localPreview ? false : isLoading,
     error,
-    isMaster,
+    isMaster: effectiveIsMaster,
   };
 }
 
 export function useEmpresas() {
   const { user } = useAuth();
+  const localPreview = isLocalPreviewEnabled();
   
   return useQuery({
     queryKey: ['empresas', user?.id],
     queryFn: async () => {
+      if (localPreview) return [createLocalPreviewEmpresa()];
+
       const { data, error } = await supabase
         .from('empresas')
         .select('*')
@@ -142,7 +150,7 @@ export function useEmpresas() {
       if (error) throw error;
       return data as Empresa[];
     },
-    enabled: !!user,
+    enabled: localPreview || !!user,
     staleTime: 1000 * 60 * 5,
   });
 }

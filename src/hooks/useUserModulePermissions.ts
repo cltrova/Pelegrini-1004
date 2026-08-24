@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { createLocalPreviewPermissions, isLocalPreviewEnabled } from '@/config/localPreview';
 
 export type UserModuleKey = 'whatsapp' | 'comercial' | 'operacional' | 'resumo' | 'dre' | 'variacao' | 'assistente_ia' | 'financeiro';
 
@@ -16,10 +17,13 @@ export interface UserModulePermissions {
 
 export function useUserModulePermissions() {
   const { user, isMaster } = useAuth();
+  const localPreview = isLocalPreviewEnabled();
 
   const { data: permissions, isLoading, error } = useQuery({
     queryKey: ['user-module-permissions', user?.id],
     queryFn: async () => {
+      if (localPreview) return createLocalPreviewPermissions();
+
       if (!user?.id) return null;
       
       const { data, error } = await supabase
@@ -31,56 +35,59 @@ export function useUserModulePermissions() {
       if (error) throw error;
       return data as UserModulePermissions | null;
     },
-    enabled: !!user?.id,
+    enabled: localPreview || !!user?.id,
     staleTime: 1000 * 60 * 5, // 5 minutos
   });
 
+  const effectivePermissions = localPreview ? createLocalPreviewPermissions() : permissions;
+  const effectiveIsMaster = localPreview || isMaster;
+
   const hasModuleAccess = (modulo: keyof UserModulePermissions): boolean => {
     // Master tem acesso a tudo
-    if (isMaster) return true;
+    if (effectiveIsMaster) return true;
     
     // Se não tem permissões definidas, não tem acesso
-    if (!permissions) return false;
+    if (!effectivePermissions) return false;
     
-    return permissions[modulo] ?? false;
+    return effectivePermissions[modulo] ?? false;
   };
 
   const hasAnyFinancialAccess =
-    isMaster ||
-    !!permissions?.modulo_resumo ||
-    !!permissions?.modulo_dre ||
-    !!permissions?.modulo_variacao;
+    effectiveIsMaster ||
+    !!effectivePermissions?.modulo_resumo ||
+    !!effectivePermissions?.modulo_dre ||
+    !!effectivePermissions?.modulo_variacao;
 
   const hasUserModuleAccess = (modulo: UserModuleKey): boolean => {
-    if (isMaster) return true;
+    if (effectiveIsMaster) return true;
 
     switch (modulo) {
-      case 'whatsapp': return permissions?.modulo_whatsapp ?? false;
-      case 'comercial': return permissions?.modulo_comercial ?? false;
-      case 'operacional': return permissions?.modulo_operacional ?? false;
-      case 'resumo': return permissions?.modulo_resumo ?? false;
-      case 'dre': return permissions?.modulo_dre ?? false;
-      case 'variacao': return permissions?.modulo_variacao ?? false;
-      case 'assistente_ia': return permissions?.modulo_assistente_ia ?? false;
+      case 'whatsapp': return effectivePermissions?.modulo_whatsapp ?? false;
+      case 'comercial': return effectivePermissions?.modulo_comercial ?? false;
+      case 'operacional': return effectivePermissions?.modulo_operacional ?? false;
+      case 'resumo': return effectivePermissions?.modulo_resumo ?? false;
+      case 'dre': return effectivePermissions?.modulo_dre ?? false;
+      case 'variacao': return effectivePermissions?.modulo_variacao ?? false;
+      case 'assistente_ia': return effectivePermissions?.modulo_assistente_ia ?? false;
       case 'financeiro': return hasAnyFinancialAccess;
       default: return false;
     }
   };
 
   return {
-    permissions,
+    permissions: effectivePermissions,
     hasModuleAccess,
     hasUserModuleAccess,
-    isLoading,
+    isLoading: localPreview ? false : isLoading,
     error,
     // Helpers específicos
-    canAccessWhatsApp: isMaster || (permissions?.modulo_whatsapp ?? false),
-    canAccessComercial: isMaster || (permissions?.modulo_comercial ?? false),
-    canAccessDRE: isMaster || (permissions?.modulo_dre ?? false),
-    canAccessVariacao: isMaster || (permissions?.modulo_variacao ?? false),
-    canAccessAssistenteIA: isMaster || (permissions?.modulo_assistente_ia ?? false),
-    canAccessOperacional: isMaster || (permissions?.modulo_operacional ?? false),
-    canAccessResumo: isMaster || (permissions?.modulo_resumo ?? false),
+    canAccessWhatsApp: effectiveIsMaster || (effectivePermissions?.modulo_whatsapp ?? false),
+    canAccessComercial: effectiveIsMaster || (effectivePermissions?.modulo_comercial ?? false),
+    canAccessDRE: effectiveIsMaster || (effectivePermissions?.modulo_dre ?? false),
+    canAccessVariacao: effectiveIsMaster || (effectivePermissions?.modulo_variacao ?? false),
+    canAccessAssistenteIA: effectiveIsMaster || (effectivePermissions?.modulo_assistente_ia ?? false),
+    canAccessOperacional: effectiveIsMaster || (effectivePermissions?.modulo_operacional ?? false),
+    canAccessResumo: effectiveIsMaster || (effectivePermissions?.modulo_resumo ?? false),
     canAccessFinanceiro: hasAnyFinancialAccess,
   };
 }

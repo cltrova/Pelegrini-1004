@@ -3,6 +3,12 @@ import { User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import type { Profile, AppRole, RolePermissions } from '@/types/auth';
 import { ROLE_PERMISSIONS } from '@/types/auth';
+import {
+  createLocalPreviewProfile,
+  createLocalPreviewUser,
+  isLocalPreviewEnabled,
+  localPreviewRoles,
+} from '@/config/localPreview';
 
 interface AuthContextType {
   user: User | null;
@@ -50,10 +56,11 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [roles, setRoles] = useState<AppRole[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const localPreview = isLocalPreviewEnabled();
+  const [user, setUser] = useState<User | null>(() => localPreview ? createLocalPreviewUser() : null);
+  const [profile, setProfile] = useState<Profile | null>(() => localPreview ? createLocalPreviewProfile() : null);
+  const [roles, setRoles] = useState<AppRole[]>(() => localPreview ? localPreviewRoles : []);
+  const [isLoading, setIsLoading] = useState(!localPreview);
 
   // Role helpers
   const isMaster = roles.includes('master');
@@ -108,6 +115,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Configurar listener de auth state ANTES de getSession
   useEffect(() => {
+    if (localPreview) {
+      setUser(createLocalPreviewUser());
+      setProfile(createLocalPreviewProfile());
+      setRoles(localPreviewRoles);
+      setIsLoading(false);
+      return;
+    }
+
     let mounted = true;
     
     // Primeiro verificar sessão existente
@@ -154,7 +169,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       mounted = false;
       subscription.unsubscribe();
     };
-  }, []);
+  }, [localPreview]);
 
   const login = async (email: string, password: string) => {
     try {
