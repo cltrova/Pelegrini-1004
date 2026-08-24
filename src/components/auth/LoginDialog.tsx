@@ -14,6 +14,21 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { pelegriniBrand } from '@/config/pelegriniHome';
+
+const SUPABASE_CONNECTION_ERROR =
+  'Nao foi possivel conectar ao Supabase. Configure VITE_SUPABASE_URL e VITE_SUPABASE_PUBLISHABLE_KEY reais no .env.local para testar cadastro e login.';
+
+export function formatAuthDialogError(error?: string) {
+  if (!error) return 'Nao foi possivel concluir a autenticacao.';
+
+  const normalized = error.toLowerCase();
+  if (normalized.includes('failed to fetch') || normalized.includes('fetch failed')) {
+    return SUPABASE_CONNECTION_ERROR;
+  }
+
+  return error;
+}
 
 interface LoginDialogProps {
   trigger?: React.ReactNode;
@@ -53,14 +68,14 @@ export function LoginDialog({ trigger, open: controlledOpen, onOpenChange }: Log
       if (result.success) {
         toast({
           title: 'Login realizado!',
-          description: 'Bem-vindo ao BI Reports.',
+          description: `Bem-vindo ao ${pelegriniBrand.name}.`,
         });
         setOpen(false);
         resetForm();
       } else {
         toast({
           title: 'Erro no login',
-          description: result.error || 'Email ou senha incorretos.',
+          description: formatAuthDialogError(result.error || 'Email ou senha incorretos.'),
           variant: 'destructive',
         });
       }
@@ -105,7 +120,7 @@ export function LoginDialog({ trigger, open: controlledOpen, onOpenChange }: Log
       } else {
         toast({
           title: 'Erro ao criar conta',
-          description: result.error || 'Não foi possível criar a conta.',
+          description: formatAuthDialogError(result.error || 'Nao foi possivel criar a conta.'),
           variant: 'destructive',
         });
       }
@@ -126,7 +141,7 @@ export function LoginDialog({ trigger, open: controlledOpen, onOpenChange }: Log
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>BI Reports</DialogTitle>
+          <DialogTitle>{pelegriniBrand.name}</DialogTitle>
           <DialogDescription>
             Acesse ou crie sua conta para utilizar o sistema.
           </DialogDescription>
