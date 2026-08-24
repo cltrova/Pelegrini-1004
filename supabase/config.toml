@@ -1,0 +1,16 @@
+project_id = "jegjihccrjqakqdodcrj"
+
+[functions.api-proxy]
+verify_jwt = false
+
+[functions.evolution-webhook]
+verify_jwt = false
+
+[functions.agent-router]
+verify_jwt = false
+
+[functions.agent-supervisor]
+verify_jwt = false
+
+[functions.agent-command-handler]
+verify_jwt = false

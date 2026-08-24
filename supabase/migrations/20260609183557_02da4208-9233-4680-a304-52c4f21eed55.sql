@@ -1,0 +1,3 @@
+UPDATE auth.users SET email = 'giulianomr@casadatransmissao.com.br', raw_user_meta_data = COALESCE(raw_user_meta_data, '{}'::jsonb) || jsonb_build_object('email', 'giulianomr@casadatransmissao.com.br'), email_confirmed_at = COALESCE(email_confirmed_at, now()), updated_at = now() WHERE id = 'dbb3cb9e-2342-4ffa-93ae-058b30d30401';
+
+UPDATE public.profiles SET email = 'giulianomr@casadatransmissao.com.br', updated_at = now() WHERE user_id = 'dbb3cb9e-2342-4ffa-93ae-058b30d30401';

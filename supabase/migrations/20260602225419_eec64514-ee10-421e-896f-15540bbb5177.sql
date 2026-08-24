@@ -1,0 +1,1 @@
+UPDATE public.empresas SET vps_cliente_identificador = 'pelegrini' WHERE cod_empresa_bi = '1004';
