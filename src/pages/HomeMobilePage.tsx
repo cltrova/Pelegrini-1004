@@ -26,6 +26,7 @@ import { useEmpresaConfig } from '@/hooks/useEmpresaConfig';
 import { useUserModulePermissions, type UserModuleKey } from '@/hooks/useUserModulePermissions';
 import { Button } from '@/components/ui/button';
 import { MobileBottomNav } from '@/components/layout/MobileBottomNav';
+import { pelegriniBrand, pelegriniModules } from '@/config/pelegriniHome';
 
 interface ModuleItem {
   title: string;
@@ -42,46 +43,46 @@ interface ModuleItem {
 // 4 módulos principais (sem Configurações)
 const modules: ModuleItem[] = [
   {
-    title: 'WhatsApp',
-    description: 'Atendimento com IA e análise',
+    title: pelegriniModules[0].title,
+    description: pelegriniModules[0].description,
     icon: MessageSquare,
-    path: '/whatsapp',
+    path: pelegriniModules[0].path,
     color: 'text-green-500',
     bgColor: 'bg-green-500/10',
     disabled: false,
-    features: ['Chat', 'Análise IA', 'Automações'],
+    features: pelegriniModules[0].features,
     moduloKey: 'whatsapp',
   },
   {
-    title: 'Comercial',
-    description: 'Vendas e análise de clientes',
+    title: pelegriniModules[1].title,
+    description: pelegriniModules[1].description,
     icon: ShoppingCart,
-    path: '/comercial/dashboard',
+    path: pelegriniModules[1].path,
     color: 'text-emerald-500',
     bgColor: 'bg-emerald-500/10',
     disabled: false,
-    features: ['Dashboard', 'Vendedores', 'Clientes'],
+    features: pelegriniModules[1].features,
     moduloKey: 'comercial',
   },
   {
-    title: 'Operacional',
-    description: 'Produção e logística',
+    title: pelegriniModules[2].title,
+    description: pelegriniModules[2].description,
     icon: Truck,
-    path: '/operacional',
+    path: pelegriniModules[2].path,
     color: 'text-orange-500',
     bgColor: 'bg-orange-500/10',
     disabled: true,
-    features: ['Produção', 'Logística', 'Estoque'],
+    features: pelegriniModules[2].features,
   },
   {
-    title: 'Financeiro',
-    description: 'DRE, indicadores e assistente IA',
+    title: pelegriniModules[3].title,
+    description: pelegriniModules[3].description,
     icon: TrendingUp,
-    path: '/financeiro/dre',
+    path: pelegriniModules[3].path,
     color: 'text-blue-500',
     bgColor: 'bg-blue-500/10',
     disabled: false,
-    features: ['DRE Interativa', 'Análise de Variações', 'Assistente IA'],
+    features: pelegriniModules[3].features,
     moduloKey: 'financeiro',
   },
 ];
@@ -256,8 +257,8 @@ export default function HomeMobilePage() {
               <BarChart3 className="h-5 w-5 text-white" />
             </div>
             <div>
-              <h1 className="text-lg font-bold text-foreground">BI Reports</h1>
-              <p className="text-[11px] text-muted-foreground">Sistema de Relatórios</p>
+              <h1 className="text-lg font-bold text-foreground">{pelegriniBrand.name}</h1>
+              <p className="text-[11px] text-muted-foreground">{pelegriniBrand.subtitle}</p>
             </div>
           </div>
           
@@ -328,7 +329,7 @@ export default function HomeMobilePage() {
             <span className="text-xs text-muted-foreground">{stats.comingSoonCount} em breve</span>
           </div>
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-muted shrink-0">
-            <span className="text-xs text-muted-foreground">v1.0</span>
+            <span className="text-xs text-muted-foreground">{pelegriniBrand.version}</span>
           </div>
         </div>
 
