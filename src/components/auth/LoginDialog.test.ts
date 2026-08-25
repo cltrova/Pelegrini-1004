@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatAuthDialogError } from './LoginDialog';
+import { formatAuthDialogError, getAuthDialogDescription } from './LoginDialog';
 
 describe('LoginDialog auth messages', () => {
   it('explica falha de conexao quando o Supabase local esta em modo preview', () => {
@@ -10,5 +10,11 @@ describe('LoginDialog auth messages', () => {
 
   it('mantem mensagens de autenticacao vindas do backend quando nao sao falha de conexao', () => {
     expect(formatAuthDialogError('Invalid login credentials')).toBe('Invalid login credentials');
+  });
+
+  it('explica que cadastro nao e necessario no modo preview local', () => {
+    expect(getAuthDialogDescription(true)).toBe(
+      'Modo local ativo. Use a tela de Configuracoes para ajustar endpoint, VPS e modulos sem criar conta.'
+    );
   });
 });

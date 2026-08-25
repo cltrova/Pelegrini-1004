@@ -15,6 +15,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { pelegriniBrand } from '@/config/pelegriniHome';
+import { isLocalPreviewEnabled } from '@/config/localPreview';
 
 const SUPABASE_CONNECTION_ERROR =
   'Nao foi possivel conectar ao Supabase. Configure VITE_SUPABASE_URL e VITE_SUPABASE_PUBLISHABLE_KEY reais no .env.local para testar cadastro e login.';
@@ -28,6 +29,14 @@ export function formatAuthDialogError(error?: string) {
   }
 
   return error;
+}
+
+export function getAuthDialogDescription(localPreview: boolean) {
+  if (localPreview) {
+    return 'Modo local ativo. Use a tela de Configuracoes para ajustar endpoint, VPS e modulos sem criar conta.';
+  }
+
+  return 'Acesse ou crie sua conta para utilizar o sistema.';
 }
 
 interface LoginDialogProps {
@@ -47,6 +56,7 @@ export function LoginDialog({ trigger, open: controlledOpen, onOpenChange }: Log
   const [loading, setLoading] = useState(false);
   const { login, signup } = useAuth();
   const { toast } = useToast();
+  const localPreview = isLocalPreviewEnabled();
 
   const open = controlledOpen ?? internalOpen;
   const setOpen = onOpenChange ?? setInternalOpen;
@@ -143,9 +153,32 @@ export function LoginDialog({ trigger, open: controlledOpen, onOpenChange }: Log
         <DialogHeader>
           <DialogTitle>{pelegriniBrand.name}</DialogTitle>
           <DialogDescription>
-            Acesse ou crie sua conta para utilizar o sistema.
+            {getAuthDialogDescription(localPreview)}
           </DialogDescription>
         </DialogHeader>
+
+        {localPreview ? (
+          <div className="mt-4 space-y-3">
+            <Button
+              type="button"
+              className="w-full gap-2"
+              onClick={() => {
+                window.location.href = '/configuracoes';
+              }}
+            >
+              <LogIn className="h-4 w-4" />
+              Abrir Configuracoes
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full"
+              onClick={() => setOpen(false)}
+            >
+              Continuar no painel
+            </Button>
+          </div>
+        ) : (
         
         <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'login' | 'signup')} className="mt-4">
           <TabsList className="grid w-full grid-cols-2">
@@ -290,6 +323,7 @@ export function LoginDialog({ trigger, open: controlledOpen, onOpenChange }: Log
             </form>
           </TabsContent>
         </Tabs>
+        )}
       </DialogContent>
     </Dialog>
   );
