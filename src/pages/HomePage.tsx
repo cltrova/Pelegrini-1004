@@ -29,7 +29,7 @@ import { Button } from '@/components/ui/button';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useEmpresaConfig } from '@/hooks/useEmpresaConfig';
 import { useUserModulePermissions, type UserModuleKey } from '@/hooks/useUserModulePermissions';
-import { pelegriniBrand, pelegriniModules, type PelegriniHomeModule } from '@/config/pelegriniHome';
+import { pelegriniAdminEntry, pelegriniBrand, pelegriniModules, type PelegriniHomeModule } from '@/config/pelegriniHome';
 import HomeMobilePage from './HomeMobilePage';
 
 interface ModuleCardProps {
@@ -527,6 +527,54 @@ export default function HomePage() {
             );
           })}
         </div>
+
+        {canAccessSettings && (
+          <div className="mt-5 animate-fade-in">
+            <button
+              type="button"
+              onClick={() => navigate(pelegriniAdminEntry.path)}
+              className={cn(
+                'group w-full rounded-2xl border border-border/60 bg-card/40 p-5 text-left',
+                'transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-xl hover:shadow-primary/10'
+              )}
+            >
+              <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                <div className="flex items-start gap-4">
+                  <div className="h-12 w-12 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
+                    <Settings className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <div className="text-xs font-semibold uppercase tracking-[0.15em] text-muted-foreground">
+                      Administracao
+                    </div>
+                    <h3 className="mt-1 text-lg font-semibold text-foreground">
+                      {pelegriniAdminEntry.title}
+                    </h3>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      {pelegriniAdminEntry.description}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="hidden sm:flex flex-wrap gap-1.5">
+                    {pelegriniAdminEntry.features.map((feature) => (
+                      <span
+                        key={feature}
+                        className="rounded-md border border-border/50 bg-background/40 px-2 py-1 text-[10px] font-medium uppercase tracking-wider text-muted-foreground"
+                      >
+                        {feature}
+                      </span>
+                    ))}
+                  </div>
+                  <div className="flex items-center gap-2 text-sm font-semibold text-primary transition-all group-hover:gap-3">
+                    Configurar
+                    <ArrowRight className="h-4 w-4" />
+                  </div>
+                </div>
+              </div>
+            </button>
+          </div>
+        )}
 
         {/* Dialog de detalhes do módulo */}
         <ModuleDetailsDialog

@@ -26,7 +26,7 @@ import { useEmpresaConfig } from '@/hooks/useEmpresaConfig';
 import { useUserModulePermissions, type UserModuleKey } from '@/hooks/useUserModulePermissions';
 import { Button } from '@/components/ui/button';
 import { MobileBottomNav } from '@/components/layout/MobileBottomNav';
-import { pelegriniBrand, pelegriniModules } from '@/config/pelegriniHome';
+import { pelegriniAdminEntry, pelegriniBrand, pelegriniModules } from '@/config/pelegriniHome';
 
 interface ModuleItem {
   title: string;
@@ -378,6 +378,27 @@ export default function HomeMobilePage() {
         </div>
 
         {/* Removed Quick access section */}
+        {canAccessSettings && (
+          <div className="space-y-3 animate-slide-up" style={{ animationDelay: '0.35s' }}>
+            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide px-1">
+              Administracao
+            </h2>
+            <button
+              type="button"
+              onClick={() => navigate(pelegriniAdminEntry.path)}
+              className="w-full flex items-center gap-4 p-4 rounded-2xl bg-card border border-border/50 transition-all duration-200 active:scale-[0.98]"
+            >
+              <div className="h-12 w-12 rounded-xl flex items-center justify-center shrink-0 bg-primary/10">
+                <Settings className="h-6 w-6 text-primary" />
+              </div>
+              <div className="flex-1 text-left min-w-0">
+                <h3 className="font-semibold text-foreground">{pelegriniAdminEntry.title}</h3>
+                <p className="text-sm text-muted-foreground truncate">{pelegriniAdminEntry.description}</p>
+              </div>
+              <ChevronRight className="h-5 w-5 text-muted-foreground shrink-0" />
+            </button>
+          </div>
+        )}
       </main>
 
       {/* Dialog de detalhes do módulo */}

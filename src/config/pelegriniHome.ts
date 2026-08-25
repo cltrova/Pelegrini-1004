@@ -52,3 +52,10 @@ export const pelegriniModules: PelegriniHomeModule[] = [
     accent: 'blue',
   },
 ];
+
+export const pelegriniAdminEntry = {
+  title: 'Configuracoes',
+  description: 'Empresas, modulos, endpoints e parametros locais do painel.',
+  path: '/configuracoes',
+  features: ['Endpoints', 'Empresas', 'Modulos'],
+} as const;

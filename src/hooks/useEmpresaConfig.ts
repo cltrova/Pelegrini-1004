@@ -5,7 +5,11 @@ import {
   CLIENTE_CODIGOS_EMPRESA_BI,
   resolveCliente1004,
 } from '@/config/cliente1004';
-import { createLocalPreviewEmpresa, isLocalPreviewEnabled } from '@/config/localPreview';
+import {
+  isLocalPreviewEnabled,
+  readLocalPreviewEmpresa,
+  saveLocalPreviewEmpresa,
+} from '@/config/localPreview';
 
 export interface Empresa {
   id: string;
@@ -92,7 +96,7 @@ export function useEmpresaConfig(codEmpresaBi?: string) {
     staleTime: 1000 * 60 * 5, // 5 minutos
   });
 
-  const effectiveEmpresa = localPreview ? createLocalPreviewEmpresa() : empresa;
+  const effectiveEmpresa = localPreview ? readLocalPreviewEmpresa() : empresa;
   const effectiveIsMaster = localPreview || isMaster;
 
   const hasModulo = (modulo: EmpresaModuloKey): boolean => {
@@ -139,7 +143,7 @@ export function useEmpresas() {
   return useQuery({
     queryKey: ['empresas', user?.id],
     queryFn: async () => {
-      if (localPreview) return [createLocalPreviewEmpresa()];
+      if (localPreview) return [readLocalPreviewEmpresa()];
 
       const { data, error } = await supabase
         .from('empresas')
@@ -157,6 +161,13 @@ export function useEmpresas() {
 
 export function useEmpresaMutations() {
   const createEmpresa = async (empresa: Omit<Empresa, 'id' | 'created_at' | 'updated_at'>) => {
+    if (isLocalPreviewEnabled()) {
+      return saveLocalPreviewEmpresa({
+        ...readLocalPreviewEmpresa(),
+        ...empresa,
+      } as Empresa);
+    }
+
     const { data, error } = await supabase
       .from('empresas')
       .insert(empresa)
@@ -168,6 +179,14 @@ export function useEmpresaMutations() {
   };
 
   const updateEmpresa = async (id: string, empresa: Partial<Omit<Empresa, 'id' | 'created_at' | 'updated_at'>>) => {
+    if (isLocalPreviewEnabled()) {
+      return saveLocalPreviewEmpresa({
+        ...readLocalPreviewEmpresa(),
+        ...empresa,
+        id,
+      } as Empresa);
+    }
+
     const { data, error } = await supabase
       .from('empresas')
       .update(empresa)
@@ -180,6 +199,8 @@ export function useEmpresaMutations() {
   };
 
   const deleteEmpresa = async (id: string) => {
+    if (isLocalPreviewEnabled()) return;
+
     const { error } = await supabase
       .from('empresas')
       .delete()

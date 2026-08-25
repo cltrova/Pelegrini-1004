@@ -20,6 +20,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { RequireRole } from '@/components/auth/RequireRole';
 import { useEmpresas } from '@/hooks/useEmpresaConfig';
 import { supabase } from '@/integrations/supabase/client';
+import { isLocalPreviewEnabled } from '@/config/localPreview';
 import { cn } from '@/lib/utils';
 
 // ===== Hooks de métricas =====
@@ -27,6 +28,13 @@ function useAdminStats() {
   return useQuery({
     queryKey: ['admin', 'stats'],
     queryFn: async () => {
+      if (isLocalPreviewEnabled()) {
+        return {
+          usuarios: 1,
+          masters: 1,
+        };
+      }
+
       const [usersRes, mastersRes] = await Promise.all([
         supabase.from('profiles').select('id', { count: 'exact', head: true }),
         supabase.from('user_roles').select('user_id', { count: 'exact', head: true }).eq('role', 'master'),

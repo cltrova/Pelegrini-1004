@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { pelegriniBrand, pelegriniModules } from './pelegriniHome';
+import { pelegriniAdminEntry, pelegriniBrand, pelegriniModules } from './pelegriniHome';
 
 describe('pelegriniHome config', () => {
   it('uses Pelegrini as the visible product brand', () => {
@@ -26,5 +26,13 @@ describe('pelegriniHome config', () => {
         expect.objectContaining({ title: 'Financeiro', path: '/financeiro', moduloKey: 'financeiro' }),
       ]),
     );
+  });
+
+  it('defines a configuration entry for endpoint setup', () => {
+    expect(pelegriniAdminEntry).toMatchObject({
+      title: 'Configuracoes',
+      path: '/configuracoes',
+    });
+    expect(pelegriniAdminEntry.features).toContain('Endpoints');
   });
 });

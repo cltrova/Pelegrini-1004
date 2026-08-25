@@ -3,6 +3,8 @@ import {
   createLocalPreviewEmpresa,
   createLocalPreviewPermissions,
   isLocalPreviewEnabled,
+  readLocalPreviewEmpresa,
+  saveLocalPreviewEmpresa,
 } from './localPreview';
 
 describe('local preview mode', () => {
@@ -34,6 +36,33 @@ describe('local preview mode', () => {
       modulo_dre: true,
       modulo_variacao: true,
       modulo_assistente_ia: true,
+    });
+  });
+
+  it('persiste configuracao local da empresa Pelegrini', () => {
+    const storage = new Map<string, string>();
+    const localStorageLike = {
+      getItem: (key: string) => storage.get(key) ?? null,
+      setItem: (key: string, value: string) => storage.set(key, value),
+    };
+
+    saveLocalPreviewEmpresa(
+      {
+        ...createLocalPreviewEmpresa(),
+        endpoint_url: 'https://api.pelegrini.test',
+        endpoint_path_comercial_pedidos: '/vendas/pedidos',
+        usar_vps_intermediaria: true,
+        vps_cliente_identificador: 'pelegrini',
+      },
+      localStorageLike
+    );
+
+    expect(readLocalPreviewEmpresa(localStorageLike)).toMatchObject({
+      cod_empresa_bi: '1004',
+      endpoint_url: 'https://api.pelegrini.test',
+      endpoint_path_comercial_pedidos: '/vendas/pedidos',
+      usar_vps_intermediaria: true,
+      vps_cliente_identificador: 'pelegrini',
     });
   });
 });
