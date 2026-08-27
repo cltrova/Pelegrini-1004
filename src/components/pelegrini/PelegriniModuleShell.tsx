@@ -2,7 +2,6 @@ import type { CSSProperties, ReactNode } from 'react';
 import { resolvePelegriniTheme } from '@/config/pelegriniTheme';
 import { useFilialSelecionada } from '@/contexts/FilialSelecionadaContext';
 import { cn } from '@/lib/utils';
-import { PelegriniMotionBackdrop } from './PelegriniMotionBackdrop';
 
 interface PelegriniModuleShellProps {
   children: ReactNode;
@@ -24,7 +23,7 @@ export function PelegriniModuleShell({
   return (
     <div
       className={cn(
-        'min-h-screen flex w-full bg-background relative overflow-hidden',
+        'min-h-screen flex w-full bg-background',
         usesHeader && 'flex-col',
         className,
       )}
@@ -35,9 +34,8 @@ export function PelegriniModuleShell({
         '--pelegrini-accent': theme.accent,
       } as CSSProperties}
     >
-      <PelegriniMotionBackdrop theme={theme} intensity="soft" className="opacity-40" />
-      <div className="relative z-20">{sidebar}</div>
-      <main className={cn('relative z-10 flex-1 overflow-x-hidden', !usesHeader && 'md:ml-64')}>
+      <div>{sidebar}</div>
+      <main className={cn('flex-1 overflow-x-hidden', !usesHeader && 'md:ml-64')}>
         {children}
       </main>
     </div>

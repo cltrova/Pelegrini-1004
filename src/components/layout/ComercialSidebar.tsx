@@ -14,6 +14,7 @@ import {
 import { cn } from '@/lib/utils';
 import { useEmpresaAtiva } from '@/hooks/useEmpresaAtiva';
 import { resolvePelegriniTheme } from '@/config/pelegriniTheme';
+import { getPelegriniIdentity } from '@/config/pelegriniIdentity';
 import { useFilialSelecionada } from '@/contexts/FilialSelecionadaContext';
 import { PelegriniBrandMark } from '@/components/pelegrini';
 
@@ -58,6 +59,7 @@ export function ComercialSidebar() {
   const { codEmpresaAtiva } = useEmpresaAtiva();
   const { filialAtiva } = useFilialSelecionada();
   const theme = resolvePelegriniTheme(filialAtiva);
+  const identity = getPelegriniIdentity(theme.key);
   const comercialMenuItems = getComercialMenuItems(codEmpresaAtiva || '');
   const showFutureItems = !hasCotacoesComerciais(codEmpresaAtiva || '');
 
@@ -123,8 +125,7 @@ export function ComercialSidebar() {
           </button>
         </div>
 
-        {/* Gradient separator */}
-        <div className="mx-4 mt-4 h-px bg-gradient-to-r from-transparent via-sidebar-border to-transparent" />
+        <div className="mx-4 mt-4 h-px bg-sidebar-border" />
 
         {/* Navigation */}
         <nav className="flex-1 overflow-y-auto scrollbar-thin p-4 space-y-1">
@@ -138,15 +139,15 @@ export function ComercialSidebar() {
                 to={item.path}
                 onClick={() => setIsMobileOpen(false)}
                 className={cn(
-                  'sidebar-item transition-all duration-200 relative',
+                  'sidebar-item',
                   active
-                    ? 'sidebar-item-active sidebar-active-glow'
-                    : 'hover:bg-sidebar-accent/50 hover:translate-x-0.5'
+                    ? 'sidebar-item-active'
+                    : 'hover:bg-sidebar-accent/50'
                 )}
               >
                 <Icon className={cn(
-                  'h-5 w-5 transition-all duration-200',
-                  active && 'text-sidebar-primary drop-shadow-[0_0_6px_hsl(var(--sidebar-primary)/0.5)]'
+                  'h-5 w-5',
+                  active && 'text-sidebar-primary'
                 )} />
                 <span className={cn(active && 'font-semibold')}>{item.label}</span>
               </NavLink>
@@ -155,8 +156,7 @@ export function ComercialSidebar() {
 
           {showFutureItems && (
             <>
-              {/* Gradient separator */}
-              <div className="my-3 h-px bg-gradient-to-r from-transparent via-sidebar-border to-transparent" />
+              <div className="my-3 h-px bg-sidebar-border" />
 
               <div>
                 <p className="sidebar-section">Em breve</p>
@@ -169,7 +169,7 @@ export function ComercialSidebar() {
                     >
                       <Icon className="h-5 w-5" />
                       <span>{item.label}</span>
-                      <span className="ml-auto text-[10px] px-1.5 py-0.5 rounded bg-sidebar-accent text-sidebar-muted badge-pulse">
+                      <span className="ml-auto text-[10px] px-1.5 py-0.5 rounded bg-sidebar-accent text-sidebar-muted">
                         BREVE
                       </span>
                     </div>
@@ -183,8 +183,8 @@ export function ComercialSidebar() {
         {/* Footer */}
         <div className="p-4 border-t border-sidebar-border">
           <div className="text-xs text-sidebar-muted">
-            <p>BI Reports v1.0.0</p>
-            <p className="mt-1">Módulo Comercial</p>
+            <p className="font-medium text-sidebar-foreground">Pelegrini</p>
+            <p className="mt-1">{identity.footerLine}</p>
           </div>
         </div>
       </aside>

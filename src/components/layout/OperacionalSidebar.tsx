@@ -12,6 +12,7 @@ import { cn } from '@/lib/utils';
 import { useEmpresaAtiva } from '@/hooks/useEmpresaAtiva';
 import { Badge } from '@/components/ui/badge';
 import { resolvePelegriniTheme } from '@/config/pelegriniTheme';
+import { getPelegriniIdentity } from '@/config/pelegriniIdentity';
 import { useFilialSelecionada } from '@/contexts/FilialSelecionadaContext';
 import { PelegriniBrandMark } from '@/components/pelegrini';
 
@@ -26,6 +27,7 @@ export function OperacionalSidebar() {
   const { empresa, isMaster, codEmpresaAtiva } = useEmpresaAtiva();
   const { filialAtiva } = useFilialSelecionada();
   const theme = resolvePelegriniTheme(filialAtiva);
+  const identity = getPelegriniIdentity(theme.key);
 
   const isActive = (path: string) => location.pathname === path;
 
@@ -131,8 +133,8 @@ export function OperacionalSidebar() {
 
         <div className="p-4 border-t border-sidebar-border">
           <div className="text-xs text-sidebar-muted">
-            <p>BI Reports v1.0.0</p>
-            <p className="mt-1">Módulo Operacional</p>
+            <p className="font-medium text-sidebar-foreground">Pelegrini</p>
+            <p className="mt-1">{identity.footerLine}</p>
           </div>
         </div>
       </aside>
