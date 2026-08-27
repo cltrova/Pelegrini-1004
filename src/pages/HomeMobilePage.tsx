@@ -11,7 +11,7 @@ import {
   LogOut,
   User,
   Info,
-  MessageSquare
+  MessageSquare,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ThemeToggle } from '@/components/common/ThemeToggle';
@@ -26,7 +26,9 @@ import { useEmpresaConfig } from '@/hooks/useEmpresaConfig';
 import { useUserModulePermissions, type UserModuleKey } from '@/hooks/useUserModulePermissions';
 import { Button } from '@/components/ui/button';
 import { MobileBottomNav } from '@/components/layout/MobileBottomNav';
+import { PelegriniBrandMark, PelegriniBranchBadge, PelegriniMotionBackdrop } from '@/components/pelegrini';
 import { pelegriniAdminEntry, pelegriniBrand, pelegriniModules } from '@/config/pelegriniHome';
+import { PELEGRINI_THEMES, resolvePelegriniTheme } from '@/config/pelegriniTheme';
 
 interface ModuleItem {
   title: string;
@@ -166,6 +168,8 @@ function MobileModuleCard({
 
 export default function HomeMobilePage() {
   const navigate = useNavigate();
+  const homeTheme = resolvePelegriniTheme(null);
+  const branchThemes = [PELEGRINI_THEMES.transmissao, PELEGRINI_THEMES.chevrolet];
   const { isAuthenticated, user, logout, canAccessSettings, codEmpresa: codEmpresaUsuario } = useAuth();
   const { isMaster, hasModulo } = useEmpresaConfig();
   const { 
@@ -251,44 +255,45 @@ export default function HomeMobilePage() {
     <div className="min-h-screen bg-background pb-20">
       {/* Header */}
       <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-lg safe-area-top">
-        <div className="flex items-center justify-between px-4 py-3">
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-              <BarChart3 className="h-5 w-5 text-white" />
-            </div>
-            <div>
-              <h1 className="text-lg font-bold text-foreground">{pelegriniBrand.name}</h1>
-              <p className="text-[11px] text-muted-foreground">{pelegriniBrand.subtitle}</p>
-            </div>
-          </div>
-          
-          <div className="flex items-center gap-2">
-            <ThemeToggle />
-            {isAuthenticated ? (
-              <div className="flex items-center gap-1">
-                {/* Botão Configurações para quem tem acesso */}
-                {canAccessSettings && (
-                  <Button 
-                    variant="ghost" 
-                    size="icon"
-                    onClick={() => navigate('/configuracoes')}
-                    className="h-9 w-9"
-                  >
-                    <Settings className="h-4 w-4" />
-                  </Button>
+        <div className="relative overflow-hidden border-b border-border/60 bg-card/80 px-4 py-4 backdrop-blur-xl">
+          <PelegriniMotionBackdrop theme={homeTheme} intensity="soft" />
+          <div className="relative z-10">
+            <div className="flex items-center justify-between gap-3">
+              <PelegriniBrandMark theme={homeTheme} />
+              <div className="flex shrink-0 items-center gap-2">
+                <ThemeToggle />
+                {isAuthenticated ? (
+                  <div className="flex items-center gap-1">
+                    {/* Botão Configurações para quem tem acesso */}
+                    {canAccessSettings && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => navigate('/configuracoes')}
+                        className="h-9 w-9"
+                      >
+                        <Settings className="h-4 w-4" />
+                      </Button>
+                    )}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={logout}
+                      className="h-9 w-9"
+                    >
+                      <LogOut className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ) : (
+                  <LoginDialog />
                 )}
-                <Button 
-                  variant="ghost" 
-                  size="icon"
-                  onClick={logout}
-                  className="h-9 w-9"
-                >
-                  <LogOut className="h-4 w-4" />
-                </Button>
               </div>
-            ) : (
-              <LoginDialog />
-            )}
+            </div>
+            <div className="mt-3 flex gap-2 overflow-x-auto pb-1 scrollbar-none">
+              {branchThemes.map((theme) => (
+                <PelegriniBranchBadge key={theme.key} theme={theme} />
+              ))}
+            </div>
           </div>
         </div>
       </header>
