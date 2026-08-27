@@ -95,18 +95,24 @@ export function FilialSelectorDialog({
                 }}
                 disabled={blocked}
                 className={cn(
-                  'w-full p-4 rounded-lg border text-left transition-all flex items-center gap-3',
-                  !blocked && 'hover:border-primary/50 hover:bg-accent/50',
-                  active ? 'border-primary bg-primary/5 ring-1 ring-primary' : 'border-border bg-card',
+                  'group relative w-full p-4 rounded-lg border text-left transition-all duration-200 flex items-center gap-4 overflow-hidden',
+                  !blocked && 'hover:-translate-y-0.5 hover:border-primary/50 hover:bg-accent/40 hover:shadow-lg hover:shadow-primary/10',
+                  active ? 'border-primary bg-primary/5 ring-1 ring-primary shadow-md shadow-primary/15' : 'border-border bg-card',
                   blocked && 'opacity-65 cursor-not-allowed bg-muted/30 border-dashed',
                 )}
               >
-                <div className={cn('h-12 w-12 rounded-lg border flex items-center justify-center overflow-hidden', active ? 'border-primary/30 bg-primary/10' : 'border-border bg-background')}>
+                <div
+                  className={cn(
+                    'absolute inset-y-0 left-0 w-1 transition-colors',
+                    active ? 'bg-primary' : 'bg-transparent group-hover:bg-primary/50',
+                  )}
+                />
+                <div className={cn('h-14 w-20 rounded-lg border flex items-center justify-center overflow-hidden transition-all duration-200', active ? 'border-primary/30 bg-primary/10' : 'border-border bg-background group-hover:border-primary/30')}>
                   {f.logoSrc ? (
                     <img
                       src={f.logoSrc}
                       alt={f.logoAlt}
-                      className="max-h-10 max-w-10 object-contain"
+                      className="max-h-11 max-w-[4.25rem] object-contain transition-transform duration-200 group-hover:scale-110"
                     />
                   ) : (
                     <Icon className={cn('h-6 w-6', active ? 'text-primary' : 'text-muted-foreground')} />
@@ -115,6 +121,11 @@ export function FilialSelectorDialog({
                 <div className="flex-1">
                   <h4 className="font-medium flex items-center gap-2">
                     {f.nome}
+                    {active && (
+                      <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-[10px] uppercase tracking-wide text-primary">
+                        Ativa
+                      </span>
+                    )}
                     {blocked && (
                       <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-wide text-amber-500">
                         <Lock className="h-3 w-3" />

@@ -4,10 +4,11 @@ import { join } from 'node:path';
 import { getFiliaisDaEmpresa } from './filiaisEmpresa';
 
 describe('brand assets', () => {
-  it('uses the CT mark as the app favicon', () => {
+  it('uses a Pelegrini mark as the app favicon instead of a branch logo', () => {
     const html = readFileSync(join(process.cwd(), 'index.html'), 'utf8');
 
-    expect(html).toContain('href="/brand/casa-transmissao.png"');
+    expect(html).toContain('href="/brand/pelegrini-icon.svg"');
+    expect(html).not.toContain('rel="icon" type="image/png" href="/brand/casa-transmissao.png"');
   });
 
   it('maps each Pelegrini branch to its own visual identity', () => {
