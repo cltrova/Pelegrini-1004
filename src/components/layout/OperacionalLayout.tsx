@@ -1,13 +1,11 @@
 import { Outlet } from 'react-router-dom';
 import { OperacionalSidebar } from './OperacionalSidebar';
+import { PelegriniModuleShell } from '@/components/pelegrini';
 
 export function OperacionalLayout() {
   return (
-    <div className="min-h-screen flex w-full bg-background">
-      <OperacionalSidebar />
-      <main className="flex-1 md:ml-64 overflow-x-hidden">
-        <Outlet />
-      </main>
-    </div>
+    <PelegriniModuleShell sidebar={<OperacionalSidebar />}>
+      <Outlet />
+    </PelegriniModuleShell>
   );
 }

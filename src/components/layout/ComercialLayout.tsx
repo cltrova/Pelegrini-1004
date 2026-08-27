@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Loader2, Building2, Lock } from 'lucide-react';
 import { getFilialAccessState } from '@/utils/filialAccess';
 import { useAuth } from '@/contexts/AuthContext';
+import { PelegriniModuleShell } from '@/components/pelegrini';
 
 export function ComercialLayout() {
   const isMobile = useIsMobile();
@@ -91,12 +92,9 @@ export function ComercialLayout() {
 
   // Desktop: layout com sidebar
   return (
-    <div className="min-h-screen flex w-full bg-background">
-      <ComercialSidebar />
-      <main className="flex-1 md:ml-64 overflow-x-hidden">
-        {bloquearConteudo ? placeholder : <Outlet />}
-      </main>
-    </div>
+    <PelegriniModuleShell sidebar={<ComercialSidebar />}>
+      {bloquearConteudo ? placeholder : <Outlet />}
+    </PelegriniModuleShell>
   );
 }
 

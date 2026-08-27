@@ -1,13 +1,11 @@
 import { Outlet } from 'react-router-dom';
 import { WhatsappHeader } from './WhatsappHeader';
+import { PelegriniModuleShell } from '@/components/pelegrini';
 
 export function WhatsappLayout() {
   return (
-    <div className="min-h-screen flex flex-col w-full bg-background">
-      <WhatsappHeader />
-      <main className="flex-1 overflow-x-hidden">
-        <Outlet />
-      </main>
-    </div>
+    <PelegriniModuleShell sidebar={<WhatsappHeader />} variant="header">
+      <Outlet />
+    </PelegriniModuleShell>
   );
 }
