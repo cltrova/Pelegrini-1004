@@ -25,7 +25,6 @@ export function PelegriniOperationalCard({
   return (
     <button
       type="button"
-      aria-label={title}
       className={cn(
         'pelegrini-operational-card group relative w-full overflow-hidden rounded-xl border text-left',
         'bg-card p-5 shadow-sm transition-[border-color,transform,box-shadow] duration-200',
@@ -35,8 +34,8 @@ export function PelegriniOperationalCard({
       data-accent={accent}
       onClick={onClick}
     >
-      <span className="absolute inset-x-0 top-0 h-1 bg-primary" aria-hidden="true" />
-      <span className="mb-5 block h-px w-12 bg-border transition-colors group-hover:bg-primary/60" aria-hidden="true" />
+      <span className="pelegrini-operational-card-accent absolute inset-x-0 top-0 h-1" aria-hidden="true" />
+      <span className="pelegrini-operational-card-signal mb-5 block h-px w-12 transition-colors" aria-hidden="true" />
       <span className="block text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">{title}</span>
       <span className="mt-2 block text-lg font-semibold text-foreground">{label}</span>
       <span className="mt-2 block text-sm leading-6 text-muted-foreground">{description}</span>

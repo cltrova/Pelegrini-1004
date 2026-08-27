@@ -1003,6 +1003,43 @@
     opacity: 0.9;
   }
 
+  .pelegrini-operational-card {
+    --pelegrini-operational-accent: hsl(var(--primary));
+    border-color: color-mix(in srgb, var(--pelegrini-operational-accent) 18%, hsl(var(--border)));
+  }
+
+  .pelegrini-operational-card[data-accent='whatsapp'] {
+    --pelegrini-operational-accent: hsl(var(--success));
+  }
+
+  .pelegrini-operational-card[data-accent='comercial'] {
+    --pelegrini-operational-accent: hsl(var(--primary));
+  }
+
+  .pelegrini-operational-card[data-accent='operacional'] {
+    --pelegrini-operational-accent: hsl(var(--warning));
+  }
+
+  .pelegrini-operational-card[data-accent='financeiro'] {
+    --pelegrini-operational-accent: hsl(var(--accent));
+  }
+
+  .pelegrini-operational-card:hover {
+    border-color: color-mix(in srgb, var(--pelegrini-operational-accent) 52%, hsl(var(--border)));
+  }
+
+  .pelegrini-operational-card-accent {
+    background: var(--pelegrini-operational-accent);
+  }
+
+  .pelegrini-operational-card-signal {
+    background: color-mix(in srgb, var(--pelegrini-operational-accent) 35%, hsl(var(--border)));
+  }
+
+  .pelegrini-operational-card:hover .pelegrini-operational-card-signal {
+    background: var(--pelegrini-operational-accent);
+  }
+
   .pelegrini-motion-track {
     position: absolute;
     height: 1px;

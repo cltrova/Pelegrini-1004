@@ -38,7 +38,12 @@ describe('Pelegrini visual components', () => {
 
     expect(screen.getByText('Casa da Transmissão')).toBeInTheDocument();
     expect(screen.getByText('Cambio')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Casa da Transmissão/i })).toHaveClass('pelegrini-branch-panel');
+    const panel = screen.getByRole('button', {
+      name: /Casa da Transmissão.*Painel com foco em pecas tecnicas.*Cambio.*Diferencial.*ZF/i,
+    });
+
+    expect(panel).toHaveClass('pelegrini-branch-panel');
+    expect(panel).toHaveAccessibleName(/Casa da Transmissão.*Painel com foco em pecas tecnicas.*Cambio.*Diferencial.*ZF/i);
   });
 
   it('renders an operational card without template effects', () => {
@@ -54,6 +59,12 @@ describe('Pelegrini visual components', () => {
     );
 
     expect(screen.getByText('Pedidos e carteira')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Comercial/i })).toHaveClass('pelegrini-operational-card');
+    const card = screen.getByRole('button', {
+      name: /Comercial.*Pedidos e carteira.*Clientes, produtos, cotacoes e vendas.*Clientes.*Produtos/i,
+    });
+
+    expect(card).toHaveClass('pelegrini-operational-card');
+    expect(card).toHaveAttribute('data-accent', 'comercial');
+    expect(card).toHaveAccessibleName(/Comercial.*Pedidos e carteira.*Clientes, produtos, cotacoes e vendas.*Clientes.*Produtos/i);
   });
 });

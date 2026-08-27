@@ -1,4 +1,4 @@
-import type { CSSProperties, MouseEventHandler } from 'react';
+import type { MouseEventHandler } from 'react';
 import type { PelegriniTheme } from '@/config/pelegriniTheme';
 import { cn } from '@/lib/utils';
 
@@ -22,14 +22,12 @@ export function PelegriniBranchPanel({
   return (
     <button
       type="button"
-      aria-label={theme.name}
       aria-pressed={active}
       className={cn(
         'pelegrini-branch-panel group relative w-full overflow-hidden rounded-xl border p-4 text-left',
         active ? 'border-primary bg-primary/5 shadow-sm' : 'border-border bg-card hover:border-primary/40',
         className,
       )}
-      style={{ '--pelegrini-panel-accent': theme.accent } as CSSProperties}
       onClick={onSelect}
     >
       <span className="absolute inset-y-0 left-0 w-1" style={{ backgroundColor: theme.accent }} aria-hidden="true" />
