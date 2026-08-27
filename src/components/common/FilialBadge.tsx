@@ -4,11 +4,13 @@ import { Button } from '@/components/ui/button';
 import { useFilialSelecionada } from '@/contexts/FilialSelecionadaContext';
 import { FilialSelectorDialog } from '@/components/common/FilialSelectorDialog';
 import { getFilialPorId } from '@/config/filiaisEmpresa';
+import { resolvePelegriniTheme } from '@/config/pelegriniTheme';
 
 export function FilialBadge() {
   const { empresaPossuiFiliaisAtiva, filialNome, codEmpresaContexto, filialAtiva } = useFilialSelecionada();
   const [open, setOpen] = useState(false);
   const filialConfig = getFilialPorId(codEmpresaContexto, filialAtiva);
+  const theme = resolvePelegriniTheme(filialAtiva);
 
   if (!empresaPossuiFiliaisAtiva) return null;
 
@@ -18,7 +20,10 @@ export function FilialBadge() {
         variant="outline"
         size="sm"
         onClick={() => setOpen(true)}
-        className="gap-2 h-8 text-xs"
+        style={{
+          '--pelegrini-accent': theme.accent,
+        } as React.CSSProperties}
+        className="gap-2 h-8 text-xs border-primary/20 bg-card/70 hover:border-primary/40 hover:shadow-md"
       >
         {filialConfig?.logoSrc ? (
           <img

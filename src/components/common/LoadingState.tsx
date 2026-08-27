@@ -21,7 +21,7 @@ export function LoadingState({
   return (
     <div
       className={cn(
-        'flex flex-col items-center justify-center py-12 text-muted-foreground',
+        'flex flex-col items-center justify-center py-12 text-muted-foreground border border-border/60 bg-card/75 shadow-sm backdrop-blur-xl',
         className
       )}
     >

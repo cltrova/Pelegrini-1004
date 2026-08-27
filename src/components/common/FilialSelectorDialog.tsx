@@ -12,6 +12,7 @@ import { cn } from '@/lib/utils';
 import { getFilialAccessState } from '@/utils/filialAccess';
 import { useFilialSelecionada } from '@/contexts/FilialSelecionadaContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { resolvePelegriniTheme } from '@/config/pelegriniTheme';
 
 interface FilialSelectorDialogProps {
   open: boolean;
@@ -78,13 +79,14 @@ export function FilialSelectorDialog({
             Selecionar Filial
           </DialogTitle>
           <DialogDescription>
-            Esta empresa possui filiais com dados separados. Escolha qual deseja visualizar.
+            Escolha a filial para ajustar visual, filtros e indicadores do painel.
           </DialogDescription>
         </DialogHeader>
 
         <div className="grid gap-3 py-2">
           {filiais.map((f) => {
             const Icon = ICON_BY_ID[f.id] ?? Building2;
+            const branchTheme = resolvePelegriniTheme(f.id);
             const active = selectedId === f.id;
             const blocked = f.blocked;
             return (
@@ -138,6 +140,13 @@ export function FilialSelectorDialog({
                       ? 'Acesso pendente de liberação pelo master em Configurações.'
                       : 'Dados exclusivos desta filial'}
                   </p>
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {branchTheme.trustSignals.slice(0, 3).map((signal) => (
+                      <span key={signal} className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
+                        {signal}
+                      </span>
+                    ))}
+                  </div>
                 </div>
                 {blocked && (
                   <div className="h-6 w-6 rounded-full bg-amber-500/10 flex items-center justify-center">
