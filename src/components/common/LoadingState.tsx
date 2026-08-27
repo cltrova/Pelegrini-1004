@@ -25,7 +25,7 @@ export function LoadingState({
         className
       )}
     >
-      <Loader2 className={cn('animate-spin text-primary', sizes[size])} />
+      <Loader2 className={cn('animate-spin motion-reduce:animate-none text-primary', sizes[size])} />
       {message && <p className="mt-3 text-sm">{message}</p>}
     </div>
   );

@@ -6,6 +6,7 @@ import { PelegriniBranchBadge } from './PelegriniBranchBadge';
 import { PelegriniBranchPanel } from './PelegriniBranchPanel';
 import { PelegriniModuleHeader } from './PelegriniModuleHeader';
 import { PelegriniOperationalCard } from './PelegriniOperationalCard';
+import { LoadingState } from '@/components/common/LoadingState';
 
 vi.mock('@/contexts/FilialSelecionadaContext', () => ({
   useFilialSelecionada: () => ({ filialAtiva: 'transmissao' }),
@@ -78,5 +79,11 @@ describe('Pelegrini visual components', () => {
 
     expect(screen.getByText('Produtos')).toBeInTheDocument();
     expect(screen.getByText(/Pedidos e carteira/i)).toBeInTheDocument();
+  });
+
+  it('stops the loading spinner when reduced motion is requested', () => {
+    const { container } = render(<LoadingState />);
+
+    expect(container.querySelector('svg')).toHaveClass('motion-reduce:animate-none');
   });
 });
