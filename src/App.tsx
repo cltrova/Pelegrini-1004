@@ -27,8 +27,9 @@ import SaldoAVencerPage from "./pages/financeiro/SaldoAVencerPage";
 import MetasVendedoresPage from "./pages/comercial/MetasVendedoresPage";
 import ClientesAnalysePage from "./pages/comercial/ClientesAnalysePage";
 import ProdutosPage from "./pages/comercial/ProdutosPage";
-import MarcasPage from "./pages/comercial/MarcasPage";
 import ComissaoPage from "./pages/comercial/ComissaoPage";
+import CotacoesAbertasPage from "./pages/comercial/CotacoesAbertasPage";
+import VendasPerdidasPage from "./pages/comercial/VendasPerdidasPage";
 import EstoquePage from "./pages/operacional/EstoquePage";
 import EstoqueRetroativoPage from "./pages/operacional/EstoqueRetroativoPage";
 import ChatPage from "./pages/whatsapp/ChatPage";
@@ -73,6 +74,27 @@ function RequirePelegrini({ children, redirectTo }: { children: React.ReactNode;
   if (codEmpresaAtiva !== '1004' && codEmpresaAtiva !== '10041') return <Navigate to={redirectTo} replace />;
   return <>{children}</>;
 }
+
+export function RequireCotacoesPelegrini({ children, redirectTo }: { children: React.ReactNode; redirectTo: string }) {
+  const { codEmpresaAtiva, pending } = useGuardContext();
+  if (pending) return <GuardSpinner />;
+  if (codEmpresaAtiva !== '1004' && codEmpresaAtiva !== '10041') return <Navigate to={redirectTo} replace />;
+  return <>{children}</>;
+}
+
+function VendasPerdidasRoute() {
+  return (
+    <RequireCotacoesPelegrini redirectTo="/comercial/dashboard">
+      <VendasPerdidasPage />
+    </RequireCotacoesPelegrini>
+  );
+}
+
+export const VENDAS_PERDIDAS_ROUTE = {
+  path: 'perdidas',
+  Component: VendasPerdidasRoute,
+} as const;
+
 function ComercialDashboardByEmpresa() {
   // Layout validado do módulo Comercial Pelegrini.
   return (
@@ -176,13 +198,19 @@ const App = () => (
               }>
                 <Route index element={<Navigate to="/comercial/dashboard" replace />} />
                 <Route path="dashboard" element={<ComercialDashboardByEmpresa />} />
+                <Route path="cotacoes" element={
+                  <RequireCotacoesPelegrini redirectTo="/comercial/dashboard">
+                    <CotacoesAbertasPage />
+                  </RequireCotacoesPelegrini>
+                } />
+                <Route {...VENDAS_PERDIDAS_ROUTE} />
                 <Route path="progresso-vendedor" element={
                   <Navigate to="/comercial/dashboard" replace />
                 } />
                 <Route path="metas-diarias" element={<Navigate to="/comercial/dashboard" replace />} />
                 <Route path="clientes" element={<ClientesAnalysePage />} />
                 <Route path="produtos" element={<ProdutosPage />} />
-                <Route path="marcas" element={<MarcasPage />} />
+                <Route path="marcas" element={<Navigate to="/comercial/produtos" replace />} />
                 <Route path="queda-clientes" element={<Navigate to="/comercial/clientes" replace />} />
                 <Route path="comissao" element={
                   <RequirePelegrini redirectTo="/comercial/dashboard">

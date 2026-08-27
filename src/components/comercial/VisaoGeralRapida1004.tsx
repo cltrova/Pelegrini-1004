@@ -478,9 +478,9 @@ export function VisaoGeralRapida1004({
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={isEmpresaPelegrini ? 0.42 : 0.3} />
-                <XAxis dataKey="label" tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} />
+                <XAxis dataKey="label" tick={{ fontSize: 13, fill: 'hsl(var(--muted-foreground))' }} />
                 <YAxis
-                  tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
+                  tick={{ fontSize: 13, fill: 'hsl(var(--muted-foreground))' }}
                   tickFormatter={(v) => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v)}
                 />
                 <Tooltip
@@ -489,7 +489,7 @@ export function VisaoGeralRapida1004({
                     border: '1px solid hsl(var(--border))',
                     borderRadius: 8,
                     color: 'hsl(var(--popover-foreground))',
-                    fontSize: 12,
+                    fontSize: 14,
                   }}
                   formatter={(v: any, name: any) => [v != null ? formatCurrency(v) : '—', name]}
                   labelFormatter={(l) => `Dia ${l}`}
@@ -507,10 +507,10 @@ export function VisaoGeralRapida1004({
                     x={String(diaHoje).padStart(2, '0')}
                     stroke="hsl(var(--destructive))"
                     strokeDasharray="3 3"
-                    label={{ value: 'Hoje', position: 'top', fill: 'hsl(var(--destructive))', fontSize: 11 }}
+                    label={{ value: 'Hoje', position: 'top', fill: 'hsl(var(--destructive))', fontSize: 13 }}
                   />
                 )}
-                <Legend wrapperStyle={{ fontSize: 11 }} />
+                <Legend wrapperStyle={{ fontSize: 13 }} />
               </ComposedChart>
             </ResponsiveContainer>
           </div>

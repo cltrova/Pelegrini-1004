@@ -43,10 +43,14 @@ export function resolveApiEndpoint(
 export function buildApiProxyUrl(
   empresa: Parameters<typeof resolveApiEndpoint>[0],
   path: string,
-  proxyBase?: string
+  proxyBase?: string,
+  env: Record<string, string | boolean | undefined> = import.meta.env,
 ): string {
   const base =
-    proxyBase || `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/api-proxy`;
+    proxyBase ||
+    (env.VITE_LOCAL_PREVIEW === 'true' || env.VITE_LOCAL_PREVIEW === true
+      ? '/api-proxy'
+      : `${env.VITE_SUPABASE_URL}/functions/v1/api-proxy`);
   const { endpoint, path: finalPath } = resolveApiEndpoint(empresa, path);
   return `${base}?endpoint=${encodeURIComponent(endpoint)}&path=${encodeURIComponent(finalPath)}`;
 }

@@ -45,6 +45,8 @@ export interface Empresa {
   endpoint_path_comercial_pedidos_ch?: string | null;
   endpoint_path_comercial_devolucoes_ch?: string | null;
   endpoint_path_comercial_produtos_ch?: string | null;
+  endpoint_path_comercial_cotacoes_abertas_ch?: string | null;
+  endpoint_path_comercial_vendas_perdidas_ch?: string | null;
   json_path_comercial_ch?: string | null;
   json_path_comercial_produtos_ch?: string | null;
   // Segundo JSON do módulo Comercial (itens dos pedidos)

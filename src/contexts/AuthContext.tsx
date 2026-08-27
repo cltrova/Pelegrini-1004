@@ -4,10 +4,8 @@ import { supabase } from '@/integrations/supabase/client';
 import type { Profile, AppRole, RolePermissions } from '@/types/auth';
 import { ROLE_PERMISSIONS } from '@/types/auth';
 import {
-  createLocalPreviewProfile,
-  createLocalPreviewUser,
+  getActiveLocalPreviewUserAccount,
   isLocalPreviewEnabled,
-  localPreviewRoles,
 } from '@/config/localPreview';
 
 interface AuthContextType {
@@ -57,9 +55,9 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const localPreview = isLocalPreviewEnabled();
-  const [user, setUser] = useState<User | null>(() => localPreview ? createLocalPreviewUser() : null);
-  const [profile, setProfile] = useState<Profile | null>(() => localPreview ? createLocalPreviewProfile() : null);
-  const [roles, setRoles] = useState<AppRole[]>(() => localPreview ? localPreviewRoles : []);
+  const [user, setUser] = useState<User | null>(() => localPreview ? getActiveLocalPreviewUserAccount().user : null);
+  const [profile, setProfile] = useState<Profile | null>(() => localPreview ? getActiveLocalPreviewUserAccount().profile : null);
+  const [roles, setRoles] = useState<AppRole[]>(() => localPreview ? getActiveLocalPreviewUserAccount().roles : []);
   const [isLoading, setIsLoading] = useState(!localPreview);
 
   // Role helpers
@@ -116,9 +114,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Configurar listener de auth state ANTES de getSession
   useEffect(() => {
     if (localPreview) {
-      setUser(createLocalPreviewUser());
-      setProfile(createLocalPreviewProfile());
-      setRoles(localPreviewRoles);
+      const activeAccount = getActiveLocalPreviewUserAccount();
+      setUser(activeAccount.user);
+      setProfile(activeAccount.profile);
+      setRoles(activeAccount.roles);
       setIsLoading(false);
       return;
     }

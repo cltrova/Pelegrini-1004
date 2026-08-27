@@ -27,6 +27,12 @@ import type { AppRole } from '@/types/auth';
 import { ROLE_PERMISSIONS } from '@/types/auth';
 import { useEmpresas } from '@/hooks/useEmpresaConfig';
 import { getFiliaisDaEmpresa } from '@/config/filiaisEmpresa';
+import {
+  createLocalPreviewUserAccount,
+  isLocalPreviewEnabled,
+  readLocalPreviewUserAccounts,
+  saveLocalPreviewUserAccount,
+} from '@/config/localPreview';
 
 interface UserFormDialogProps {
   open: boolean;
@@ -213,6 +219,7 @@ export function UserFormDialog({
   const { toast } = useToast();
   const { isMaster, isGerencial, codEmpresa } = useAuth();
   const { data: empresas = [], isLoading: loadingEmpresas } = useEmpresas();
+  const localPreview = isLocalPreviewEnabled();
 
   const isEditing = !!userId;
 
@@ -287,6 +294,36 @@ export function UserFormDialog({
 
     try {
       setLoadingUser(true);
+
+      if (localPreview) {
+        const account = readLocalPreviewUserAccounts().find((item) => item.user.id === userId);
+        if (!account) throw new Error('Usuário local não encontrado.');
+
+        setEmail(account.profile.email);
+        setNome(account.profile.nome || '');
+        setCodEmpresaBi(account.profile.cod_empresa_bi || '');
+        setFilialId(account.profile.filial_id || '');
+        setFiliaisPermitidas(account.profile.filiais_permitidas || []);
+
+        const role = account.roles.includes('master')
+          ? 'master'
+          : account.roles.includes('gerencial')
+            ? 'gerencial'
+            : 'vendedor';
+        setSelectedRole(role);
+        setModulePermissions({
+          modulo_dre: account.permissions.modulo_dre ?? false,
+          modulo_variacao: account.permissions.modulo_variacao ?? false,
+          modulo_comercial: account.permissions.modulo_comercial ?? false,
+          modulo_assistente_ia: account.permissions.modulo_assistente_ia ?? false,
+          modulo_whatsapp: account.permissions.modulo_whatsapp ?? false,
+          modulo_operacional: account.permissions.modulo_operacional ?? false,
+          modulo_resumo: account.permissions.modulo_resumo ?? false,
+        });
+        const paginas = (account.permissions as any).permissoes_paginas;
+        setPagePermissions(paginas && typeof paginas === 'object' ? paginas as PagePermissions : {});
+        return;
+      }
 
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
@@ -424,6 +461,31 @@ export function UserFormDialog({
           ? filiaisPermitidas
           : [];
       const filialPadraoParaSalvar = filiaisParaSalvar.length === 1 ? filiaisParaSalvar[0] : null;
+
+      if (localPreview) {
+        const permissionsWithPages = {
+          ...modulePermissions,
+          permissoes_paginas: pagePermissions,
+        } as ModulePermissions;
+        const account = createLocalPreviewUserAccount({
+          email,
+          nome,
+          role: selectedRole,
+          codEmpresaBi: selectedRole === 'master' ? null : codEmpresaBi,
+          permissions: permissionsWithPages,
+          userId: userId || undefined,
+          filialId: filialPadraoParaSalvar,
+          filiaisPermitidas: filiaisParaSalvar,
+        });
+
+        saveLocalPreviewUserAccount(account);
+        toast({
+          title: isEditing ? 'Usuário atualizado' : 'Usuário criado',
+          description: 'Usuário salvo no modo local para visualização dos módulos.',
+        });
+        onSuccess();
+        return;
+      }
 
       if (isEditing) {
         const profilePayload = {

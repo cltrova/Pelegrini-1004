@@ -10,10 +10,10 @@ import {
   Clock,
   XCircle,
   Package,
-  Award,
   BadgeDollarSign,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useEmpresaAtiva } from '@/hooks/useEmpresaAtiva';
 
 interface MenuItem {
   label: string;
@@ -22,13 +22,26 @@ interface MenuItem {
   disabled?: boolean;
 }
 
-const comercialMenuItems: MenuItem[] = [
-  { label: 'Dashboard', icon: LayoutDashboard, path: '/comercial/dashboard' },
-  { label: 'Clientes', icon: Users, path: '/comercial/clientes' },
-  { label: 'Produtos', icon: Package, path: '/comercial/produtos' },
-  { label: 'Marcas', icon: Award, path: '/comercial/marcas' },
-  { label: 'Comissão', icon: BadgeDollarSign, path: '/comercial/comissao' },
-];
+function hasCotacoesComerciais(codEmpresa: string) {
+  return codEmpresa === '1004' || codEmpresa === '10041';
+}
+
+// eslint-disable-next-line react-refresh/only-export-components
+export function getComercialMenuItems(codEmpresa: string): MenuItem[] {
+  const items: MenuItem[] = [
+    { label: 'Dashboard', icon: LayoutDashboard, path: '/comercial/dashboard' },
+    { label: 'Produtos', icon: Package, path: '/comercial/produtos' },
+    { label: 'Clientes', icon: Users, path: '/comercial/clientes' },
+    { label: 'Comissão', icon: BadgeDollarSign, path: '/comercial/comissao' },
+  ];
+
+  if (hasCotacoesComerciais(codEmpresa)) {
+    items.push({ label: 'Cotações Abertas', icon: Clock, path: '/comercial/cotacoes' });
+    items.push({ label: 'Vendas Perdidas', icon: XCircle, path: '/comercial/perdidas' });
+  }
+
+  return items;
+}
 
 
 const futureMenuItems: MenuItem[] = [
@@ -40,6 +53,9 @@ export function ComercialSidebar() {
   const location = useLocation();
   const navigate = useNavigate();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const { codEmpresaAtiva } = useEmpresaAtiva();
+  const comercialMenuItems = getComercialMenuItems(codEmpresaAtiva || '');
+  const showFutureItems = !hasCotacoesComerciais(codEmpresaAtiva || '');
 
   const isActive = (path: string) => location.pathname === path;
 
@@ -130,27 +146,31 @@ export function ComercialSidebar() {
             );
           })}
 
-          {/* Gradient separator */}
-          <div className="my-3 h-px bg-gradient-to-r from-transparent via-sidebar-border to-transparent" />
+          {showFutureItems && (
+            <>
+              {/* Gradient separator */}
+              <div className="my-3 h-px bg-gradient-to-r from-transparent via-sidebar-border to-transparent" />
 
-          <div>
-            <p className="sidebar-section">Em breve</p>
-            {futureMenuItems.map((item) => {
-              const Icon = item.icon;
-              return (
-                <div
-                  key={item.label}
-                  className="sidebar-item opacity-40 cursor-not-allowed"
-                >
-                  <Icon className="h-5 w-5" />
-                  <span>{item.label}</span>
-                  <span className="ml-auto text-[10px] px-1.5 py-0.5 rounded bg-sidebar-accent text-sidebar-muted badge-pulse">
-                    BREVE
-                  </span>
-                </div>
-              );
-            })}
-          </div>
+              <div>
+                <p className="sidebar-section">Em breve</p>
+                {futureMenuItems.map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <div
+                      key={item.label}
+                      className="sidebar-item opacity-40 cursor-not-allowed"
+                    >
+                      <Icon className="h-5 w-5" />
+                      <span>{item.label}</span>
+                      <span className="ml-auto text-[10px] px-1.5 py-0.5 rounded bg-sidebar-accent text-sidebar-muted badge-pulse">
+                        BREVE
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          )}
         </nav>
 
         {/* Footer */}

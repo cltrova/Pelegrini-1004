@@ -557,6 +557,7 @@ export type Database = {
           created_at: string | null
           endpoint_path_comercial_agrupado: string | null
           endpoint_path_comercial_clientes_analise: string | null
+          endpoint_path_comercial_cotacoes_abertas_ch: string | null
           endpoint_path_comercial_devolucoes: string | null
           endpoint_path_comercial_devolucoes_ch: string | null
           endpoint_path_comercial_devolucoes_total: string | null
@@ -567,6 +568,7 @@ export type Database = {
           endpoint_path_comercial_produtos_ch: string | null
           endpoint_path_comercial_produtos_total: string | null
           endpoint_path_comercial_totais: string | null
+          endpoint_path_comercial_vendas_perdidas_ch: string | null
           endpoint_path_dre: string | null
           endpoint_path_duplicatas: string | null
           endpoint_path_estoque_consolidado: string | null
@@ -612,6 +614,7 @@ export type Database = {
           created_at?: string | null
           endpoint_path_comercial_agrupado?: string | null
           endpoint_path_comercial_clientes_analise?: string | null
+          endpoint_path_comercial_cotacoes_abertas_ch?: string | null
           endpoint_path_comercial_devolucoes?: string | null
           endpoint_path_comercial_devolucoes_ch?: string | null
           endpoint_path_comercial_devolucoes_total?: string | null
@@ -622,6 +625,7 @@ export type Database = {
           endpoint_path_comercial_produtos_ch?: string | null
           endpoint_path_comercial_produtos_total?: string | null
           endpoint_path_comercial_totais?: string | null
+          endpoint_path_comercial_vendas_perdidas_ch?: string | null
           endpoint_path_dre?: string | null
           endpoint_path_duplicatas?: string | null
           endpoint_path_estoque_consolidado?: string | null
@@ -667,6 +671,7 @@ export type Database = {
           created_at?: string | null
           endpoint_path_comercial_agrupado?: string | null
           endpoint_path_comercial_clientes_analise?: string | null
+          endpoint_path_comercial_cotacoes_abertas_ch?: string | null
           endpoint_path_comercial_devolucoes?: string | null
           endpoint_path_comercial_devolucoes_ch?: string | null
           endpoint_path_comercial_devolucoes_total?: string | null
@@ -677,6 +682,7 @@ export type Database = {
           endpoint_path_comercial_produtos_ch?: string | null
           endpoint_path_comercial_produtos_total?: string | null
           endpoint_path_comercial_totais?: string | null
+          endpoint_path_comercial_vendas_perdidas_ch?: string | null
           endpoint_path_dre?: string | null
           endpoint_path_duplicatas?: string | null
           endpoint_path_estoque_consolidado?: string | null
@@ -715,6 +721,39 @@ export type Database = {
           usar_vps_intermediaria?: boolean
           vps_base_url?: string | null
           vps_cliente_identificador?: string | null
+        }
+        Relationships: []
+      }
+      comercial_motivos_perda: {
+        Row: {
+          cod_empresa_bi: string
+          created_at: string
+          created_by: string
+          id: string
+          id_cotacao: string
+          motivo: string
+          observacao: string | null
+          updated_at: string
+        }
+        Insert: {
+          cod_empresa_bi: string
+          created_at?: string
+          created_by: string
+          id?: string
+          id_cotacao: string
+          motivo: string
+          observacao?: string | null
+          updated_at?: string
+        }
+        Update: {
+          cod_empresa_bi?: string
+          created_at?: string
+          created_by?: string
+          id?: string
+          id_cotacao?: string
+          motivo?: string
+          observacao?: string | null
+          updated_at?: string
         }
         Relationships: []
       }

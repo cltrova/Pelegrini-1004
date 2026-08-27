@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { createLocalPreviewPermissions, isLocalPreviewEnabled } from '@/config/localPreview';
+import { getActiveLocalPreviewUserAccount, isLocalPreviewEnabled } from '@/config/localPreview';
 
 export type UserModuleKey = 'whatsapp' | 'comercial' | 'operacional' | 'resumo' | 'dre' | 'variacao' | 'assistente_ia' | 'financeiro';
 
@@ -22,7 +22,7 @@ export function useUserModulePermissions() {
   const { data: permissions, isLoading, error } = useQuery({
     queryKey: ['user-module-permissions', user?.id],
     queryFn: async () => {
-      if (localPreview) return createLocalPreviewPermissions();
+      if (localPreview) return getActiveLocalPreviewUserAccount().permissions;
 
       if (!user?.id) return null;
       
@@ -39,8 +39,9 @@ export function useUserModulePermissions() {
     staleTime: 1000 * 60 * 5, // 5 minutos
   });
 
-  const effectivePermissions = localPreview ? createLocalPreviewPermissions() : permissions;
-  const effectiveIsMaster = localPreview || isMaster;
+  const activeLocalPreviewUser = localPreview ? getActiveLocalPreviewUserAccount() : null;
+  const effectivePermissions = activeLocalPreviewUser ? activeLocalPreviewUser.permissions : permissions;
+  const effectiveIsMaster = activeLocalPreviewUser ? activeLocalPreviewUser.roles.includes('master') : isMaster;
 
   const hasModuleAccess = (modulo: keyof UserModulePermissions): boolean => {
     // Master tem acesso a tudo

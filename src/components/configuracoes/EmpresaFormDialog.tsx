@@ -11,6 +11,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useEmpresaMutations, Empresa } from '@/hooks/useEmpresaConfig';
 import { supabase } from '@/integrations/supabase/client';
 import { isLocalPreviewEnabled } from '@/config/localPreview';
+import { buildApiProxyUrl } from '@/utils/apiEndpointResolver';
 import {
   FileJson, Upload, X, Loader2, Wifi, WifiOff, ChevronDown, Check, AlertTriangle,
 } from 'lucide-react';
@@ -372,19 +373,15 @@ export function EmpresaFormDialog({ open, onOpenChange, empresa }: EmpresaFormDi
     const targetPath = useVps ? `/${vpsIdent}` : '/';
     const displayUrl = useVps ? `${vpsBase}/${vpsIdent}` : formData.endpoint_url;
 
-    if (isLocalPreviewEnabled()) {
-      setConnectionResult('success');
-      toast({
-        title: 'Endpoint configurado localmente',
-        description: `${displayUrl} sera usado pelos modulos no modo preview.`,
-      });
-      return;
-    }
-
     setTestingConnection(true);
     setConnectionResult(null);
     try {
-      const proxyUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/api-proxy?endpoint=${encodeURIComponent(targetEndpoint)}&path=${encodeURIComponent(targetPath)}&test=1`;
+      const proxyUrl = isLocalPreviewEnabled()
+        ? buildApiProxyUrl({
+          endpoint_url: targetEndpoint,
+          usar_vps_intermediaria: false,
+        } as any, targetPath)
+        : `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/api-proxy?endpoint=${encodeURIComponent(targetEndpoint)}&path=${encodeURIComponent(targetPath)}&test=1`;
       const response = await fetch(proxyUrl, {
         method: 'GET',
         headers: { Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` },

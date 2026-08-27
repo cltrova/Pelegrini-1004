@@ -14,6 +14,8 @@ import {
   type PeriodoFiltroRanking,
   resolveMetaReferenciaRankingVendedor,
 } from '@/utils/rankingVendedoresMeta';
+import { getRankingVendedoresChartLayout } from './rankingVendedoresChartLayout';
+import { RankingVendedoresLabels } from './RankingVendedoresLabels';
 
 interface VendedorRow {
   codigo: any;
@@ -83,6 +85,11 @@ export function RankingVendedoresChart({ data, periodo, onClick, variant = 'defa
       .sort((a, b) => modo === 'faturamento' ? b.mes - a.mes : b.pctMeta - a.pctMeta)
       .map((v, i) => ({ ...v, rank: i + 1 }));
   }, [data, modo, periodo]);
+
+  const chartLayout = useMemo(
+    () => getRankingVendedoresChartLayout(enriched.length),
+    [enriched.length],
+  );
 
   const maxVal = useMemo(() => {
     if (!enriched.length) return 1;
@@ -178,13 +185,15 @@ export function RankingVendedoresChart({ data, periodo, onClick, variant = 'defa
             Sem dados no período selecionado
           </div>
         ) : (
-          <div className="w-full h-[380px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart
-                data={enriched}
-                  margin={{ top: 24, right: 16, left: 8, bottom: 78 }}
-                onMouseLeave={() => setHoverKey(null)}
-              >
+          <div className="w-full overflow-x-auto pb-2">
+            <div style={{ minWidth: chartLayout.chartMinWidth }}>
+              <div className="h-[340px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={enriched}
+                    margin={{ top: 24, right: 16, left: 8, bottom: 12 }}
+                    onMouseLeave={() => setHoverKey(null)}
+                  >
                 <defs>
                   <linearGradient id="grad-acima" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0%" stopColor={isBlue ? '#2563eb' : 'hsl(160 84% 55%)'} stopOpacity={1} />
@@ -207,14 +216,14 @@ export function RankingVendedoresChart({ data, periodo, onClick, variant = 'defa
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} opacity={isBlue ? 0.42 : 0.4} />
                 <XAxis
                   dataKey="nome"
-                  tick={(props) => <VendedorTick {...props} data={enriched} modo={modo} variant={variant} />}
+                  tick={false}
                   interval={0}
-                  height={64}
+                  height={12}
                   stroke="hsl(var(--border))"
                 />
                 <YAxis
                   stroke="hsl(var(--muted-foreground))"
-                  tick={{ fontSize: 11, fill: isBlue ? 'hsl(var(--muted-foreground))' : 'currentColor' }}
+                  tick={{ fontSize: 15, fill: isBlue ? 'hsl(var(--muted-foreground))' : 'currentColor' }}
                   tickFormatter={(v) => modo === 'faturamento' ? compactCurrency(v) : `${v}%`}
                 />
                 <RTooltip
@@ -228,7 +237,7 @@ export function RankingVendedoresChart({ data, periodo, onClick, variant = 'defa
                     stroke="hsl(var(--foreground))"
                     strokeDasharray="4 4"
                     strokeOpacity={0.5}
-                    label={{ value: 'Meta 100%', position: 'right', fill: 'hsl(var(--muted-foreground))', fontSize: 10 }}
+                    label={{ value: 'Meta 100%', position: 'right', fill: 'hsl(var(--muted-foreground))', fontSize: 14 }}
                   />
                 )}
                 {modo === 'faturamento' && media > 0 && (
@@ -237,7 +246,7 @@ export function RankingVendedoresChart({ data, periodo, onClick, variant = 'defa
                     stroke={isBlue ? '#2563eb' : 'hsl(var(--primary))'}
                     strokeDasharray="4 4"
                     strokeOpacity={0.55}
-                    label={{ value: `Média ${compactCurrency(media)}`, position: 'right', fill: 'hsl(var(--primary))', fontSize: 10 }}
+                    label={{ value: `Média ${compactCurrency(media)}`, position: 'right', fill: 'hsl(var(--primary))', fontSize: 14 }}
                   />
                 )}
 
@@ -264,8 +273,11 @@ export function RankingVendedoresChart({ data, periodo, onClick, variant = 'defa
                     );
                   })}
                 </Bar>
-              </BarChart>
-            </ResponsiveContainer>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+              <RankingVendedoresLabels data={enriched} modo={modo} variant={variant} />
+            </div>
           </div>
         )}
       </CardContent>

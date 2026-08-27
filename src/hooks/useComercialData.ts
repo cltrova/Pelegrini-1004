@@ -967,7 +967,6 @@ async function fetchComercialData(empresa?: Empresa | null, codEmpresa?: string,
       console.log(`[Comercial] URL final upstream (pedidos): ${debugBase}${pedidosPathBase}?${keyIni}=${dataInicio}&data_fim=${dataFimApi}&page_size=5000${debugCodBi}`);
       console.log(`[Comercial] URL final upstream (devoluções): ${debugBase}${devolucoesPathBase}?${keyIni}=${dataInicio}&data_fim=${dataFimApi}&page_size=5000${debugCodBi}`);
 
-      const proxyBase = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/api-proxy`;
       const headers = {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
@@ -1052,7 +1051,7 @@ async function fetchComercialData(empresa?: Empresa | null, codEmpresa?: string,
             params.set('page_size', String(pageSize));
             if (codBiParam) params.set('cod_empresa_bi', codBiParam);
             const path = buildPathWithParams(basePath, params);
-            const url = buildApiProxyUrl(empresa, path, proxyBase);
+            const url = buildApiProxyUrl(empresa, path);
             // Retry para erros transitórios do edge (BOOT_ERROR 503) e do upstream
             let res: Response | null = null;
             let lastStatus = 0;

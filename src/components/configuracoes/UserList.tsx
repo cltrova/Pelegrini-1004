@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Loader2, Crown, Shield, User, Building2, Pencil, Trash2, UserX, KeyRound } from 'lucide-react';
+import { Loader2, Crown, Shield, User, Building2, Pencil, Trash2, UserX, KeyRound, LogIn } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -25,6 +25,14 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import type { Profile, AppRole } from '@/types/auth';
+import {
+  deleteLocalPreviewUserAccount,
+  getActiveLocalPreviewUserAccount,
+  getDefaultLocalPreviewUserAccount,
+  isLocalPreviewEnabled,
+  readLocalPreviewUserAccounts,
+  setActiveLocalPreviewUserAccount,
+} from '@/config/localPreview';
 
 interface UserWithRoles extends Profile {
   roles: AppRole[];
@@ -45,10 +53,23 @@ export function UserList({ onEdit, filterByCompany }: UserListProps) {
   const [copied, setCopied] = useState(false);
   const { toast } = useToast();
   const { isMaster, codEmpresa } = useAuth();
+  const localPreview = isLocalPreviewEnabled();
 
   const loadUsers = async () => {
     try {
       setLoading(true);
+
+      if (localPreview) {
+        const localUsers = readLocalPreviewUserAccounts()
+          .map((account) => ({
+            ...account.profile,
+            roles: account.roles,
+          }))
+          .filter((user) => !filterByCompany || !user.cod_empresa_bi || user.cod_empresa_bi === filterByCompany);
+
+        setUsers(localUsers);
+        return;
+      }
 
       // Carregar perfis
       let query = supabase
@@ -106,6 +127,16 @@ export function UserList({ onEdit, filterByCompany }: UserListProps) {
     if (!deleteUserId) return;
 
     try {
+      if (localPreview) {
+        deleteLocalPreviewUserAccount(deleteUserId);
+        toast({
+          title: 'Usuário removido',
+          description: 'O usuário local foi removido do preview.',
+        });
+        loadUsers();
+        return;
+      }
+
       // Use edge function to delete user completely (including auth.users)
       const { data: { session } } = await supabase.auth.getSession();
       
@@ -141,6 +172,16 @@ export function UserList({ onEdit, filterByCompany }: UserListProps) {
     } finally {
       setDeleteUserId(null);
     }
+  };
+
+  const handlePreviewAsUser = (userId: string) => {
+    const target = users.find((user) => user.user_id === userId);
+    setActiveLocalPreviewUserAccount(userId);
+    toast({
+      title: 'Usuário ativo',
+      description: `Visualizando o painel como ${target?.nome || target?.email || 'usuário local'}.`,
+    });
+    window.location.href = '/';
   };
 
   const getRoleBadge = (roles: AppRole[]) => {
@@ -236,6 +277,16 @@ export function UserList({ onEdit, filterByCompany }: UserListProps) {
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-2">
+                      {localPreview && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          title={getActiveLocalPreviewUserAccount().user.id === user.user_id ? 'Usuário ativo' : 'Visualizar como este usuário'}
+                          onClick={() => handlePreviewAsUser(user.user_id)}
+                        >
+                          <LogIn className={`h-4 w-4 ${getActiveLocalPreviewUserAccount().user.id === user.user_id ? 'text-primary' : ''}`} />
+                        </Button>
+                      )}
                       <Button
                         variant="ghost"
                         size="icon"
@@ -244,22 +295,26 @@ export function UserList({ onEdit, filterByCompany }: UserListProps) {
                       >
                         <Pencil className="h-4 w-4" />
                       </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        title="Resetar senha"
-                        onClick={() => setResetUserId(user.user_id)}
-                      >
-                        <KeyRound className="h-4 w-4 text-primary" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        title="Excluir"
-                        onClick={() => setDeleteUserId(user.user_id)}
-                      >
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
+                      {!localPreview && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          title="Resetar senha"
+                          onClick={() => setResetUserId(user.user_id)}
+                        >
+                          <KeyRound className="h-4 w-4 text-primary" />
+                        </Button>
+                      )}
+                      {(!localPreview || user.user_id !== getDefaultLocalPreviewUserAccount().user.id) && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          title="Excluir"
+                          onClick={() => setDeleteUserId(user.user_id)}
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      )}
                     </div>
                   </TableCell>
                 </TableRow>
