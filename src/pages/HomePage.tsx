@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { empresaPossuiFiliais, getFiliaisDaEmpresa } from '@/config/filiaisEmpresa';
 import { getPelegriniIdentity, getPelegriniModuleIdentity, type PelegriniModuleKey } from '@/config/pelegriniIdentity';
 import { pelegriniAdminEntry, pelegriniModules, type PelegriniHomeModule } from '@/config/pelegriniHome';
-import { PELEGRINI_THEMES, resolvePelegriniTheme, type PelegriniThemeKey } from '@/config/pelegriniTheme';
+import { PELEGRINI_THEMES, resolvePelegriniTheme } from '@/config/pelegriniTheme';
 import { PelegriniBrandMark, PelegriniBranchPanel, PelegriniMotionBackdrop, PelegriniOperationalCard } from '@/components/pelegrini';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFilialSelecionada } from '@/contexts/FilialSelecionadaContext';
@@ -43,11 +43,10 @@ export default function HomePage() {
   const isMobile = useIsMobile();
   const { hasModulo, isMaster } = useEmpresaConfig();
   const { permissions, hasUserModuleAccess } = useUserModulePermissions();
-  const { clearFilial } = useFilialSelecionada();
-  const homeTheme = resolvePelegriniTheme(null);
+  const { clearFilial, codEmpresaContexto, filialAtiva, setFilialAtivaForEmpresa } = useFilialSelecionada();
+  const homeTheme = resolvePelegriniTheme(filialAtiva);
   const homeIdentity = getPelegriniIdentity(homeTheme.key);
   const branchThemes = [PELEGRINI_THEMES.transmissao, PELEGRINI_THEMES.chevrolet];
-  const [activeBranchKey, setActiveBranchKey] = useState<PelegriniThemeKey>(homeTheme.key);
   const [empresaSelectorOpen, setEmpresaSelectorOpen] = useState(false);
   const [selectedModulePath, setSelectedModulePath] = useState('');
   const [selectedModuloKey, setSelectedModuloKey] = useState<UserModuleKey | undefined>();
@@ -94,6 +93,10 @@ export default function HomePage() {
     navigate(targetPath);
   };
 
+  const handleBranchSelect = (filialId: string) => {
+    setFilialAtivaForEmpresa(codEmpresaContexto, filialId);
+  };
+
   if (isMobile) return <HomeMobilePage />;
 
   return (
@@ -123,10 +126,22 @@ export default function HomePage() {
               <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">{homeIdentity.operatingLine}</p>
               <div className="mt-5 flex flex-wrap gap-2">{homeIdentity.microIndicators.map((indicator) => <span key={indicator} className="border border-border bg-background px-2 py-1 text-xs font-semibold text-foreground">{indicator}</span>)}</div>
             </div>
-            <div className="grid gap-3">{branchThemes.map((theme) => {
-              const identity = getPelegriniIdentity(theme.key);
-              return <PelegriniBranchPanel key={theme.key} theme={theme} active={activeBranchKey === theme.key} indicators={identity.microIndicators} description={identity.selectorDescription} onSelect={() => setActiveBranchKey(theme.key)} />;
-            })}</div>
+            <div className="grid gap-3">
+              {branchThemes.map((theme) => {
+                const identity = getPelegriniIdentity(theme.key);
+
+                return (
+                  <PelegriniBranchPanel
+                    key={theme.key}
+                    theme={theme}
+                    active={filialAtiva === theme.key}
+                    indicators={identity.microIndicators}
+                    description={identity.selectorDescription}
+                    onSelect={() => handleBranchSelect(theme.key)}
+                  />
+                );
+              })}
+            </div>
           </div>
         </section>
 
