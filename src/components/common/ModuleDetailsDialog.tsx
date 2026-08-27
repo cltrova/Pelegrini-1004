@@ -6,7 +6,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { X, Smartphone, Sparkles, TrendingUp, BarChart3, Users, Cog } from 'lucide-react';
+import { X, Smartphone, Activity, BrainCircuit, TrendingUp, BarChart3, Users, Cog, Settings } from 'lucide-react';
 
 interface ModuleDetailsDialogProps {
   open: boolean;
@@ -43,7 +43,7 @@ O sistema de macros e respostas rápidas agiliza o atendimento, enquanto relató
 
 Com acesso mobile, seus vendedores e atendentes respondem de qualquer lugar, mantendo a qualidade e o controle centralizado.`,
     highlights: [
-      { icon: Sparkles, text: 'IA para análise de sentimentos' },
+      { icon: Activity, text: 'IA para análise de sentimentos' },
       { icon: Smartphone, text: 'Atendimento de qualquer lugar' },
       { icon: Users, text: 'Gestão de equipe e relatórios' },
     ]
@@ -60,7 +60,7 @@ O diferencial? Nossa Inteligência Artificial integrada responde suas perguntas 
 
 Disponível também em versão mobile, você monitora a saúde financeira do seu negócio de qualquer lugar, a qualquer momento.`,
     highlights: [
-      { icon: Sparkles, text: 'Assistente IA com linguagem natural' },
+      { icon: BrainCircuit, text: 'Assistente IA com linguagem natural' },
       { icon: Smartphone, text: 'App mobile para gestão em qualquer lugar' },
       { icon: TrendingUp, text: 'Dashboards em tempo real' },
     ]
@@ -77,7 +77,7 @@ Com Inteligência Artificial embarcada, o sistema identifica automaticamente ten
 
 A versão mobile coloca todo esse poder na palma da sua mão, permitindo acompanhar metas e resultados em reuniões, viagens ou qualquer momento que precisar.`,
     highlights: [
-      { icon: Sparkles, text: 'IA preditiva para tendências de vendas' },
+      { icon: TrendingUp, text: 'IA preditiva para tendências de vendas' },
       { icon: Smartphone, text: 'Acompanhe metas pelo celular' },
       { icon: Users, text: 'Ranking e gestão de vendedores' },
     ]
@@ -94,7 +94,7 @@ A Inteligência Artificial trabalha continuamente analisando padrões operaciona
 
 Com acesso mobile, supervisores e gestores acompanham a operação em tempo real, recebem alertas críticos e tomam decisões rápidas mesmo fora da empresa.`,
     highlights: [
-      { icon: Sparkles, text: 'IA para manutenção preditiva' },
+      { icon: Settings, text: 'IA para manutenção preditiva' },
       { icon: Smartphone, text: 'Alertas em tempo real no celular' },
       { icon: BarChart3, text: 'KPIs de produção automatizados' },
     ]
@@ -111,7 +111,7 @@ Conecte a plataforma aos seus sistemas existentes através de APIs robustas e be
     highlights: [
       { icon: Users, text: 'Gestão avançada de usuários' },
       { icon: Cog, text: 'Integrações com sistemas externos' },
-      { icon: Sparkles, text: 'Configurações personalizadas por empresa' },
+      { icon: Settings, text: 'Configurações personalizadas por empresa' },
     ]
   },
 };

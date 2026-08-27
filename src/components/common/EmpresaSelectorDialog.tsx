@@ -9,7 +9,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Building2, Check, Globe, BarChart3, TrendingUp, ShoppingCart, MessageSquare, Sparkles } from 'lucide-react';
+import { Building2, Check, Globe, BarChart3, TrendingUp, ShoppingCart, MessageSquare, Bot } from 'lucide-react';
 import { useEmpresas, Empresa } from '@/hooks/useEmpresaConfig';
 import { useEmpresaSelecionada } from '@/contexts/EmpresaSelecionadaContext';
 import { useFilialSelecionada } from '@/contexts/FilialSelecionadaContext';
@@ -112,7 +112,7 @@ export function EmpresaSelectorDialog({
       case 'whatsapp':
         return <MessageSquare className="h-3 w-3" />;
       case 'assistente_ia':
-        return <Sparkles className="h-3 w-3" />;
+        return <Bot className="h-3 w-3" />;
       default:
         return null;
     }
