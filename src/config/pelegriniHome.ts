@@ -11,10 +11,10 @@ export interface PelegriniHomeModule {
 
 export const pelegriniBrand = {
   name: 'Pelegrini',
-  subtitle: 'Painel modular de gestao',
-  eyebrow: 'Gestao integrada',
-  headline: 'Acompanhe operacao, vendas, financeiro e atendimento em um so lugar',
-  footer: 'Pelegrini · Painel modular de gestao',
+  subtitle: 'Gestao automotiva por filial',
+  eyebrow: 'Grupo Pelegrini',
+  headline: 'Pelegrini em tempo real: vendas, estoque, financeiro e atendimento por filial',
+  footer: 'Pelegrini · Casa da Transmissao · Casa do Chevrolet',
   version: 'v1.0.0',
 } as const;
 

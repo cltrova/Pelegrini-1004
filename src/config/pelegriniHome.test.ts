@@ -4,7 +4,7 @@ import { pelegriniAdminEntry, pelegriniBrand, pelegriniModules } from './pelegri
 describe('pelegriniHome config', () => {
   it('uses Pelegrini as the visible product brand', () => {
     expect(pelegriniBrand.name).toBe('Pelegrini');
-    expect(pelegriniBrand.subtitle).toBe('Painel modular de gestao');
+    expect(pelegriniBrand.headline).toContain('Pelegrini');
     expect(pelegriniBrand.footer).toContain('Pelegrini');
   });
 
