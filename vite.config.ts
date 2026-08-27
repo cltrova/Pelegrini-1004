@@ -44,6 +44,15 @@ function sendFallback(res: ServerResponse, proxyPath: string, upstreamStatus?: n
   res.end(proxyPath.includes("/comercial/totais") ? "{}" : "[]");
 }
 
+function resolveUpstreamHostHeader(endpoint: string): string | null {
+  try {
+    const host = new URL(endpoint).hostname;
+    return host === "187.77.203.16" ? "rsys.cyft.com.br" : null;
+  } catch {
+    return null;
+  }
+}
+
 function localApiProxyPlugin() {
   return {
     name: "local-api-proxy",
@@ -63,6 +72,8 @@ function localApiProxyPlugin() {
           const headers = new Headers();
           headers.set("content-type", "application/json");
           headers.set("accept", "application/json");
+          const hostHeader = resolveUpstreamHostHeader(endpoint);
+          if (hostHeader) headers.set("host", hostHeader);
 
           const method = req.method || "GET";
           const body = method === "GET" || method === "HEAD" ? undefined : await readRequestBody(req);

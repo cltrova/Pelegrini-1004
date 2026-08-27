@@ -40,6 +40,15 @@ function fallback(proxyPath: string, upstreamStatus?: number, upstreamBody?: str
   });
 }
 
+function resolveUpstreamHostHeader(endpoint: string): string | null {
+  try {
+    const host = new URL(endpoint).hostname;
+    return host === '187.77.203.16' ? 'rsys.cyft.com.br' : null;
+  } catch {
+    return null;
+  }
+}
+
 export async function onRequest({ request }: { request: Request }) {
   const url = new URL(request.url);
   const endpoint = url.searchParams.get('endpoint') || '';
@@ -53,6 +62,8 @@ export async function onRequest({ request }: { request: Request }) {
   const headers = new Headers();
   headers.set('content-type', 'application/json');
   headers.set('accept', 'application/json');
+  const hostHeader = resolveUpstreamHostHeader(endpoint);
+  if (hostHeader) headers.set('host', hostHeader);
 
   try {
     const method = request.method || 'GET';
