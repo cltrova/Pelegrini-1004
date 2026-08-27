@@ -53,19 +53,19 @@ function shouldUseRsysSocket(endpoint: string): boolean {
 
 async function fetchRsysBySocket(proxyPath: string, method: string, body?: ArrayBuffer): Promise<Response> {
   const socket = connect({ hostname: '187.77.203.16', port: 80 });
+  await socket.opened;
   const writer = socket.writable.getWriter();
   const normalizedPath = `/${proxyPath.replace(/^\/+/, '')}`;
   const bodyBytes = body ? new Uint8Array(body) : new Uint8Array();
-  const headerText = [
-    `${method} ${normalizedPath} HTTP/1.1`,
+  const headerLines = [
+    `${method} ${normalizedPath} HTTP/1.0`,
     'Host: api-rsys.cyft.com.br',
     'Accept: application/json',
     'Content-Type: application/json',
     'Connection: close',
-    `Content-Length: ${bodyBytes.byteLength}`,
-    '',
-    '',
-  ].join('\r\n');
+  ];
+  if (bodyBytes.byteLength > 0) headerLines.push(`Content-Length: ${bodyBytes.byteLength}`);
+  const headerText = `${headerLines.join('\r\n')}\r\n\r\n`;
   const headerBytes = new TextEncoder().encode(headerText);
   const requestBytes = new Uint8Array(headerBytes.byteLength + bodyBytes.byteLength);
   requestBytes.set(headerBytes);
