@@ -50,6 +50,21 @@ describe('mapComissaoLinha', () => {
     expect(linha.devolucao).toBeCloseTo(4_268.50, 2);
   });
 
+  it('usa A FATURAR do relatorio FAT como pedidos em aberto, separado do saldo de meta', () => {
+    const linha = mapComissaoLinha({
+      'COD VENDEDOR': '00010',
+      VENDEDOR: 'XEXEU',
+      'OBJ MENSAL': '240.000,00',
+      'FAT. ATÉ HOJE': '154.879,90',
+      'A FATURAR': '4.341,00',
+      'NOVA PROJ.': '85.120,10',
+    });
+
+    expect(linha.faturadoAteHoje).toBeCloseTo(154_879.90, 2);
+    expect(linha.pedidosAberto).toBeCloseTo(4_341, 2);
+    expect(linha.novaProjecao).toBeCloseTo(85_120.10, 2);
+  });
+
   it('identifica linhas da Forca P na comissao do cliente 1004', () => {
     const dayvid = mapComissaoLinha({ cod_vendedor: '250', nome_vendedor: 'DAYVID' });
     const servico = mapComissaoLinha({ cod_vendedor: '155', nome_vendedor: 'SERVIÇO DE TERCEIRO' });

@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import {
   CLIENTE_CODIGOS_EMPRESA_BI,
+  getCliente1004EmpresaFallback,
   resolveCliente1004,
 } from '@/config/cliente1004';
 import {
@@ -97,8 +98,9 @@ export function useEmpresaConfig(codEmpresaBi?: string) {
     enabled: !localPreview && !!user,
     staleTime: 1000 * 60 * 5, // 5 minutos
   });
-
-  const effectiveEmpresa = localPreview ? readLocalPreviewEmpresa() : empresa;
+  const empresaFallback = getCliente1004EmpresaFallback(empresaCode) as Empresa | null;
+  const empresaEfetiva = empresa ?? empresaFallback;
+  const effectiveEmpresa = localPreview ? readLocalPreviewEmpresa() : empresaEfetiva;
   const effectiveIsMaster = localPreview || isMaster;
 
   const hasModulo = (modulo: EmpresaModuloKey): boolean => {
@@ -154,7 +156,17 @@ export function useEmpresas() {
         .order('nome');
       
       if (error) throw error;
-      return data as Empresa[];
+      const empresasPorCodigo = new Map<string, Empresa>();
+      CLIENTE_CODIGOS_EMPRESA_BI
+        .map((codigo) => getCliente1004EmpresaFallback(codigo) as Empresa | null)
+        .filter((empresa): empresa is Empresa => Boolean(empresa))
+        .forEach((empresa) => empresasPorCodigo.set(empresa.cod_empresa_bi, empresa));
+
+      ((data as Empresa[] | null) ?? []).forEach((empresa) => {
+        empresasPorCodigo.set(empresa.cod_empresa_bi, empresa);
+      });
+
+      return Array.from(empresasPorCodigo.values()).sort((a, b) => a.nome.localeCompare(b.nome));
     },
     enabled: localPreview || !!user,
     staleTime: 1000 * 60 * 5,
