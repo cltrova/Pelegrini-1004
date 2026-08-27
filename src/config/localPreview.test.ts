@@ -16,10 +16,10 @@ import {
 } from './localPreview';
 
 describe('local preview mode', () => {
-  it('ativa somente com VITE_LOCAL_PREVIEW=true', () => {
+  it('ativa por padrao e permite desligar com VITE_LOCAL_PREVIEW=false', () => {
     expect(isLocalPreviewEnabled({ VITE_LOCAL_PREVIEW: 'true' })).toBe(true);
     expect(isLocalPreviewEnabled({ VITE_LOCAL_PREVIEW: 'false' })).toBe(false);
-    expect(isLocalPreviewEnabled({})).toBe(false);
+    expect(isLocalPreviewEnabled({})).toBe(true);
   });
 
   it('cria a empresa Pelegrini 1004 com os quatro modulos principais liberados', () => {

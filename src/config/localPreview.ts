@@ -42,7 +42,7 @@ export interface LocalPreviewMotivoPerdaRegistro {
 }
 
 export function isLocalPreviewEnabled(env: EnvLike = import.meta.env) {
-  return env.VITE_LOCAL_PREVIEW === 'true' || env.VITE_LOCAL_PREVIEW === true;
+  return env.VITE_LOCAL_PREVIEW !== 'false' && env.VITE_LOCAL_PREVIEW !== false;
 }
 
 export function createLocalPreviewPermissions(): UserModulePermissions {
