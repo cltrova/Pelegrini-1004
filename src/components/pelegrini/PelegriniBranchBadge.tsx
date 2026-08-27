@@ -18,7 +18,7 @@ export function PelegriniBranchBadge({ theme, active = false, className }: Peleg
         className,
       )}
     >
-      <span className="h-2 w-2 rounded-full" style={{ backgroundColor: theme.accent }} />
+      <span className="h-2 w-2 rounded-full ring-1 ring-border" style={{ backgroundColor: theme.accent }} />
       <span>{theme.name}</span>
       <span className="text-muted-foreground">•</span>
       <span>{signal}</span>

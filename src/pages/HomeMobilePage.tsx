@@ -7,7 +7,6 @@ import {
   Settings, 
   Lock, 
   ChevronRight, 
-  BarChart3, 
   LogOut,
   User,
   Info,

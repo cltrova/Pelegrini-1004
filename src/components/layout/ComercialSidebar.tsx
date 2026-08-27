@@ -96,7 +96,7 @@ export function ComercialSidebar() {
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-6 border-b border-sidebar-border">
           <div className="flex items-center gap-3">
-            <PelegriniBrandMark theme={theme} />
+            <PelegriniBrandMark theme={theme} tone="sidebar" />
             <div>
               <h1 className="font-bold text-lg leading-tight">Comercial</h1>
               <span className="text-[11px] text-sidebar-muted uppercase tracking-wider">

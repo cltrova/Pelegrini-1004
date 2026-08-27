@@ -5,9 +5,17 @@ interface PelegriniBrandMarkProps {
   theme: PelegriniTheme;
   compact?: boolean;
   className?: string;
+  tone?: 'default' | 'sidebar';
 }
 
-export function PelegriniBrandMark({ theme, compact = false, className }: PelegriniBrandMarkProps) {
+export function PelegriniBrandMark({
+  theme,
+  compact = false,
+  className,
+  tone = 'default',
+}: PelegriniBrandMarkProps) {
+  const isSidebar = tone === 'sidebar';
+
   return (
     <div className={cn('flex min-w-0 items-center gap-3', className)}>
       <div
@@ -18,8 +26,12 @@ export function PelegriniBrandMark({ theme, compact = false, className }: Pelegr
       </div>
       {!compact && (
         <div className="min-w-0">
-          <p className="truncate text-sm font-semibold text-foreground">{theme.name}</p>
-          <p className="truncate text-xs text-muted-foreground">{theme.tagline}</p>
+          <p className={cn('truncate text-sm font-semibold', isSidebar ? 'text-sidebar-foreground' : 'text-foreground')}>
+            {theme.name}
+          </p>
+          <p className={cn('truncate text-xs', isSidebar ? 'text-sidebar-muted' : 'text-muted-foreground')}>
+            {theme.tagline}
+          </p>
         </div>
       )}
     </div>

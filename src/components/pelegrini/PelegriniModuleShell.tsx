@@ -36,7 +36,7 @@ export function PelegriniModuleShell({
       } as CSSProperties}
     >
       <PelegriniMotionBackdrop theme={theme} intensity="soft" className="opacity-40" />
-      <div className="relative z-10">{sidebar}</div>
+      <div className="relative z-20">{sidebar}</div>
       <main className={cn('relative z-10 flex-1 overflow-x-hidden', !usesHeader && 'md:ml-64')}>
         {children}
       </main>
