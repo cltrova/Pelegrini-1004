@@ -17,16 +17,16 @@ export function PelegriniBrandMark({
   const isSidebar = tone === 'sidebar';
 
   return (
-    <div className={cn('flex min-w-0 items-center gap-3', className)}>
+    <div className={cn('pelegrini-brand-mark flex min-w-0 items-center gap-3', className)} data-brand={theme.key}>
       <div
-        className="relative flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-white shadow-sm"
+        className="relative flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden border border-border bg-white shadow-sm"
         style={{ boxShadow: `0 14px 34px -20px ${theme.glow}` }}
       >
         <img src={theme.logoSrc} alt={theme.logoAlt} className="max-h-10 max-w-10 object-contain" />
       </div>
       {!compact && (
         <div className="min-w-0">
-          <p className={cn('truncate text-sm font-semibold', isSidebar ? 'text-sidebar-foreground' : 'text-foreground')}>
+          <p className={cn('truncate text-sm font-semibold tracking-normal', isSidebar ? 'text-sidebar-foreground' : 'text-foreground')}>
             {theme.name}
           </p>
           <p className={cn('truncate text-xs', isSidebar ? 'text-sidebar-muted' : 'text-muted-foreground')}>

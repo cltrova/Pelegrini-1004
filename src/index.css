@@ -1003,56 +1003,67 @@
     opacity: 0.9;
   }
 
-  .pelegrini-motion-line {
+  .pelegrini-motion-track {
     position: absolute;
-    height: 2px;
-    width: 38%;
-    border-radius: 999px;
-    background: linear-gradient(90deg, transparent, var(--pelegrini-accent), transparent);
-    opacity: 0.22;
+    height: 1px;
+    width: 42%;
+    background: linear-gradient(90deg, transparent, var(--pelegrini-accent) 18%, var(--pelegrini-primary) 76%, transparent);
+    opacity: 0.3;
     animation: pelegriniMotionSweep 9s linear infinite;
   }
 
-  .pelegrini-motion-line.line-one {
-    top: 18%;
+  .pelegrini-motion-track.track-primary {
+    top: 20%;
     left: -20%;
   }
 
-  .pelegrini-motion-line.line-two {
+  .pelegrini-motion-track.track-secondary {
     right: -18%;
-    bottom: 22%;
+    bottom: 24%;
     animation-delay: -4s;
   }
 
-  .pelegrini-motion-gear {
+  .pelegrini-motion-cog {
     position: absolute;
-    top: 18%;
-    right: 8%;
-    width: 160px;
-    height: 160px;
-    border: 1px solid color-mix(in srgb, var(--pelegrini-accent) 45%, transparent);
-    border-radius: 999px;
-    opacity: 0.18;
+    top: 14%;
+    right: 7%;
+    width: 152px;
+    height: 152px;
+    border: 14px dashed color-mix(in srgb, var(--pelegrini-accent) 42%, transparent);
+    border-radius: 50%;
+    opacity: 0.2;
     animation: pelegriniGearTurn 26s linear infinite;
   }
 
-  .pelegrini-motion-gear::before,
-  .pelegrini-motion-gear::after {
+  .pelegrini-motion-cog::before,
+  .pelegrini-motion-cog::after {
     content: '';
     position: absolute;
-    inset: 22%;
-    border: 1px dashed color-mix(in srgb, var(--pelegrini-accent) 60%, transparent);
-    border-radius: inherit;
+    inset: 25%;
+    border: 1px solid color-mix(in srgb, var(--pelegrini-accent) 62%, transparent);
+    border-radius: 50%;
   }
 
-  .pelegrini-motion-backdrop[data-motion='chevrolet'] .pelegrini-motion-gear {
-    border-radius: 22px;
+  .pelegrini-motion-cog::after {
+    inset: 43%;
+    background: color-mix(in srgb, var(--pelegrini-accent) 65%, transparent);
+  }
+
+  .pelegrini-motion-stamp {
+    position: absolute;
+    right: 12%;
+    bottom: 14%;
+    width: 116px;
+    height: 34px;
+    border: 1px solid color-mix(in srgb, var(--pelegrini-secondary) 55%, transparent);
+    opacity: 0.18;
     transform: rotate(8deg);
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .pelegrini-motion-line,
-    .pelegrini-motion-gear {
+    .pelegrini-motion-track,
+    .pelegrini-motion-cog,
+    .pelegrini-motion-stamp {
       animation: none;
     }
   }

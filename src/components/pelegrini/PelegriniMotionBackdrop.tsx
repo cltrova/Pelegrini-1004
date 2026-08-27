@@ -23,9 +23,10 @@ export function PelegriniMotionBackdrop({ theme, intensity = 'soft', className }
         } as CSSProperties
       }
     >
-      <span className="pelegrini-motion-line line-one" />
-      <span className="pelegrini-motion-line line-two" />
-      <span className="pelegrini-motion-gear" />
+      <span className="pelegrini-motion-track track-primary" />
+      <span className="pelegrini-motion-track track-secondary" />
+      <span className="pelegrini-motion-cog" />
+      <span className="pelegrini-motion-stamp" />
     </div>
   );
 }
