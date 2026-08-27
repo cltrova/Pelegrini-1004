@@ -15,6 +15,9 @@ import { EstoqueOverviewTab } from '@/components/operacional/EstoqueOverviewTab'
 import { EstoqueDetalhesTab } from '@/components/operacional/EstoqueDetalhesTab';
 import { GiroEstoqueTab } from '@/components/operacional/GiroEstoqueTab';
 import { EstoqueAssistantTab } from '@/components/operacional/EstoqueAssistantTab';
+import { resolvePelegriniTheme } from '@/config/pelegriniTheme';
+import { useFilialSelecionada } from '@/contexts/FilialSelecionadaContext';
+import { PelegriniBranchBadge } from '@/components/pelegrini';
 
 import { LoadingState } from '@/components/common/LoadingState';
 import { EmptyState } from '@/components/common/EmptyState';
@@ -75,6 +78,8 @@ const STATUS_CONFIG_LABELS: Record<GiroStatus, string> = {
 
 export default function EstoquePage() {
   const { consolidadoData, detalhadoData, giroData, isLoading, isError, empresa } = useEstoqueData();
+  const { filialAtiva } = useFilialSelecionada();
+  const theme = resolvePelegriniTheme(filialAtiva);
   const isEmpresa1004 = String(empresa?.cod_empresa_bi) === '1004' || String(empresa?.cod_empresa_bi) === '10041';
   const diasSemVendaOptions = useMemo(() => (
     isEmpresa1004
@@ -259,6 +264,7 @@ export default function EstoquePage() {
           </div>
           <div>
             <h1 className="text-2xl font-bold">Gestão de Estoque</h1>
+            <PelegriniBranchBadge theme={theme} active className="mt-2" />
             <p className="text-sm text-muted-foreground">Carregando dados...</p>
           </div>
         </div>
@@ -285,6 +291,7 @@ export default function EstoquePage() {
           </div>
           <div>
             <h1 className="text-2xl font-bold">Gestão de Estoque</h1>
+            <PelegriniBranchBadge theme={theme} active className="mt-2" />
             <p className="text-sm text-muted-foreground">
               {empresa?.nome || 'Pelegrini'} — {filteredEstoque.length.toLocaleString('pt-BR')} itens · {giroData.length.toLocaleString('pt-BR')} movimentações
             </p>

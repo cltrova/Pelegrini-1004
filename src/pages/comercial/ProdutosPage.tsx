@@ -24,11 +24,16 @@ import { MarcasViewLegacy } from '@/components/comercial/legacy/MarcasViewLegacy
 import { TopProdutosLegacy } from '@/components/comercial/legacy/TopProdutosLegacy';
 import { CategoriasViewLegacy } from '@/components/comercial/legacy/CategoriasViewLegacy';
 import { useEmpresaAtiva } from '@/hooks/useEmpresaAtiva';
+import { resolvePelegriniTheme } from '@/config/pelegriniTheme';
+import { useFilialSelecionada } from '@/contexts/FilialSelecionadaContext';
+import { PelegriniBranchBadge } from '@/components/pelegrini';
 
 const ANOS = ['2023', '2024', '2025', '2026'];
 
 export default function ProdutosPage() {
   const { codEmpresaAtiva } = useEmpresaAtiva();
+  const { filialAtiva } = useFilialSelecionada();
+  const theme = resolvePelegriniTheme(filialAtiva);
   const isLayoutPremium = String(codEmpresaAtiva ?? '') === '1004';
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState('marcas');
@@ -170,6 +175,7 @@ export default function ProdutosPage() {
             <Package className="h-6 w-6 text-primary" />
             <span className="gradient-text-premium">Produtos & Marcas</span>
           </h1>
+          <PelegriniBranchBadge theme={theme} active className="mt-2" />
           <p className="text-sm text-muted-foreground mt-0.5">
             Mix de produtos vendidos, performance por marca e detalhamento por nota fiscal
           </p>

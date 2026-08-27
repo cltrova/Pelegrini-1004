@@ -23,6 +23,9 @@ import { useCobrancaIntervencoes } from '@/hooks/useCobrancaIntervencoes';
 import { Badge } from '@/components/ui/badge';
 import { FinanceiroSearchPrompt } from '@/components/financeiro/FinanceiroSearchPrompt';
 import { useFinanceiroSearch } from '@/contexts/FinanceiroSearchContext';
+import { resolvePelegriniTheme } from '@/config/pelegriniTheme';
+import { useFilialSelecionada } from '@/contexts/FilialSelecionadaContext';
+import { PelegriniBranchBadge } from '@/components/pelegrini';
 
 
 const initialFilters: ResumoFilters = {
@@ -38,6 +41,8 @@ const initialFilters: ResumoFilters = {
 export default function ResumoPage() {
   const [filters, setFilters] = useState<ResumoFilters>(initialFilters);
   const [activeTab, setActiveTab] = useState('diagnostico');
+  const { filialAtiva } = useFilialSelecionada();
+  const theme = resolvePelegriniTheme(filialAtiva);
   const { hasSearched, markSearched, resetSearch } = useFinanceiroSearch();
   const { empresa } = useEmpresaAtiva();
   const { pendentes } = useCobrancaIntervencoes();
@@ -80,6 +85,7 @@ export default function ResumoPage() {
               Monitoramento de Liquidez — Contas a Receber
             </span>
           </div>
+          <PelegriniBranchBadge theme={theme} active />
         </div>
         <div className="flex items-center gap-2">
           {hasSearched && !isLoading && hasSource && !error && alertas.length > 0 && (
