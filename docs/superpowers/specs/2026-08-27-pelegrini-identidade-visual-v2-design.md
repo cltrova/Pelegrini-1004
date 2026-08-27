@@ -171,4 +171,3 @@ A suite completa ja tem falhas conhecidas em `ReceitaDetalheDialog.test.tsx`. Es
 - Build de producao deve passar.
 - Testes focados de tema, home, componentes Pelegrini e sidebar devem passar.
 - Validacao visual manual/browser deve cobrir home, seletor de filial e pelo menos uma tela de cada modulo.
-
