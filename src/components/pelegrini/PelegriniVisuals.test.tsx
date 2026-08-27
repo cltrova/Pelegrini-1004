@@ -1,10 +1,15 @@
 import { render, screen } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { resolvePelegriniTheme } from '@/config/pelegriniTheme';
 import { PelegriniBrandMark } from './PelegriniBrandMark';
 import { PelegriniBranchBadge } from './PelegriniBranchBadge';
 import { PelegriniBranchPanel } from './PelegriniBranchPanel';
+import { PelegriniModuleHeader } from './PelegriniModuleHeader';
 import { PelegriniOperationalCard } from './PelegriniOperationalCard';
+
+vi.mock('@/contexts/FilialSelecionadaContext', () => ({
+  useFilialSelecionada: () => ({ filialAtiva: 'transmissao' }),
+}));
 
 describe('Pelegrini visual components', () => {
   it('renders a branch brand mark with logo and name', () => {
@@ -66,5 +71,12 @@ describe('Pelegrini visual components', () => {
     expect(card).toHaveClass('pelegrini-operational-card');
     expect(card).toHaveAttribute('data-accent', 'comercial');
     expect(card).toHaveAccessibleName(/Comercial.*Pedidos e carteira.*Clientes, produtos, cotacoes e vendas.*Clientes.*Produtos/i);
+  });
+
+  it('renders module header with operational language', () => {
+    render(<PelegriniModuleHeader title="Produtos" subtitle="Carteira de pecas" moduleKey="comercial" />);
+
+    expect(screen.getByText('Produtos')).toBeInTheDocument();
+    expect(screen.getByText(/Pedidos e carteira/i)).toBeInTheDocument();
   });
 });

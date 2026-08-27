@@ -127,7 +127,7 @@ export function EmpresaSelectorDialog({
   return (
     <>
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[560px] p-0 max-h-[90vh] flex flex-col border-white/[0.08] bg-gradient-to-b from-slate-950/95 to-slate-900/95 backdrop-blur-xl shadow-[0_30px_80px_-20px_rgba(0,0,0,0.8)]">
+      <DialogContent className="sm:max-w-[560px] p-0 max-h-[90vh] flex flex-col border-white/[0.08] bg-gradient-to-b from-slate-950/95 to-slate-900/95 shadow-[0_30px_80px_-20px_rgba(0,0,0,0.8)]">
         <div className="relative p-6">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-3 text-base">

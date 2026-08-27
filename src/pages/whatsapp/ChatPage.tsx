@@ -10,16 +10,12 @@ import { useWhatsappConversations, useWhatsappRealtime, useMarkAsRead } from '@/
 import type { ConversationFilters } from '@/types/whatsapp';
 import { useEmpresaAtiva } from '@/hooks/useEmpresaAtiva';
 import { EmpresaSelectorDialog } from '@/components/common/EmpresaSelectorDialog';
-import { resolvePelegriniTheme } from '@/config/pelegriniTheme';
-import { useFilialSelecionada } from '@/contexts/FilialSelecionadaContext';
-import { PelegriniBranchBadge } from '@/components/pelegrini';
+import { PelegriniModuleHeader } from '@/components/pelegrini';
 
 type MobileView = 'list' | 'chat' | 'details';
 
 export default function ChatPage() {
   const isMobile = useIsMobile();
-  const { filialAtiva } = useFilialSelecionada();
-  const theme = resolvePelegriniTheme(filialAtiva);
   const { hasEmpresaSelecionada, isMaster, isLoading: isLoadingEmpresa } = useEmpresaAtiva();
   const [selectedConversationId, setSelectedConversationId] = useState<string | undefined>();
   const [isDetailsOpen, setIsDetailsOpen] = useState(true);
@@ -132,15 +128,23 @@ export default function ChatPage() {
       
       <div className="flex-1 flex overflow-hidden min-h-0">
         {/* Left column - Conversation list */}
-        <div className="w-80 border-r border-border flex-shrink-0 overflow-hidden">
-          <ConversationList
-            conversations={conversations || []}
-            selectedId={selectedConversationId}
-            onSelect={handleSelectConversation}
-            filters={filters}
-            onFiltersChange={setFilters}
-            isLoading={isLoading}
+        <div className="w-80 border-r border-border flex flex-col flex-shrink-0 overflow-hidden">
+          <PelegriniModuleHeader
+            title="Atendimento"
+            subtitle="Conversas e fila de balcao"
+            moduleKey="whatsapp"
+            compact
           />
+          <div className="min-h-0 flex-1">
+            <ConversationList
+              conversations={conversations || []}
+              selectedId={selectedConversationId}
+              onSelect={handleSelectConversation}
+              filters={filters}
+              onFiltersChange={setFilters}
+              isLoading={isLoading}
+            />
+          </div>
         </div>
         
         {/* Center column - Chat area */}
@@ -156,7 +160,6 @@ export default function ChatPage() {
                 <div className="h-16 w-16 rounded-full bg-muted/50 flex items-center justify-center mx-auto mb-4">
                   <span className="text-3xl">💬</span>
                 </div>
-                <PelegriniBranchBadge theme={theme} active className="mb-3" />
                 <h3 className="text-lg font-medium text-foreground mb-2">
                   Selecione uma conversa
                 </h3>

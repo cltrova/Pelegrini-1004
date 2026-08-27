@@ -9,7 +9,7 @@ interface EmptyStateProps {
 }
 
 export function EmptyState({
-  title = 'Nenhum dado encontrado',
+  title = 'Nenhum dado encontrado para esta filial',
   message = 'Não há dados para exibir com os filtros selecionados.',
   icon,
   className,
@@ -17,7 +17,7 @@ export function EmptyState({
   return (
     <div
       className={cn(
-        'flex flex-col items-center justify-center py-12 text-center border border-border/60 bg-card/75 shadow-sm backdrop-blur-xl',
+        'flex flex-col items-center justify-center rounded-xl border border-border bg-card p-8 text-center shadow-sm',
         className
       )}
     >
