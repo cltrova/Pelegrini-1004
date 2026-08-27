@@ -40,11 +40,10 @@ function fallback(proxyPath: string, upstreamStatus?: number, upstreamBody?: str
   });
 }
 
-function resolveRsysUpstreamUrl(endpoint: string, proxyPath: string): string | null {
+function resolveUpstreamHostHeader(endpoint: string): string | null {
   try {
     const host = new URL(endpoint).hostname;
-    if (host !== '187.77.203.16') return null;
-    return `http://rsys.cyft.com.br/${proxyPath.replace(/^\/+/, '')}`;
+    return host === '187.77.203.16' ? 'rsys.cyft.com.br' : null;
   } catch {
     return null;
   }
@@ -60,20 +59,16 @@ export async function onRequest({ request }: { request: Request }) {
   }
 
   const upstreamUrl = `${endpoint.replace(/\/+$/, '')}/${proxyPath.replace(/^\/+/, '')}`;
-  const rsysUpstreamUrl = resolveRsysUpstreamUrl(endpoint, proxyPath);
-  const fetchUrl = rsysUpstreamUrl || upstreamUrl;
   const headers = new Headers();
   headers.set('content-type', 'application/json');
   headers.set('accept', 'application/json');
+  const hostHeader = resolveUpstreamHostHeader(endpoint);
+  if (hostHeader) headers.set('host', hostHeader);
 
   try {
     const method = request.method || 'GET';
     const body = method === 'GET' || method === 'HEAD' ? undefined : await request.arrayBuffer();
-    const init: RequestInit & { cf?: { resolveOverride?: string } } = { method, headers, body };
-    if (rsysUpstreamUrl) {
-      init.cf = { resolveOverride: '187.77.203.16' };
-    }
-    const upstream = await fetch(fetchUrl, init);
+    const upstream = await fetch(upstreamUrl, { method, headers, body });
     const responseBody = await upstream.arrayBuffer();
 
     if (!upstream.ok && shouldReturnEmptyOnFailure(proxyPath)) {
@@ -85,7 +80,6 @@ export async function onRequest({ request }: { request: Request }) {
     responseHeaders.delete('transfer-encoding');
     responseHeaders.delete('connection');
     responseHeaders.set('x-local-api-proxy-url', upstreamUrl);
-    if (rsysUpstreamUrl) responseHeaders.set('x-local-api-proxy-fetch-url', fetchUrl);
 
     return new Response(responseBody, {
       status: upstream.status,
