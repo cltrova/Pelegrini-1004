@@ -13,6 +13,8 @@
 export interface FilialConfig {
   id: string;
   nome: string;
+  logoSrc: string;
+  logoAlt: string;
   /** Valores válidos para o campo Filial no JSON (case/acento-insensitive). */
   matchFilial: string[];
   /**
@@ -45,12 +47,16 @@ export const FILIAIS_POR_EMPRESA: Record<string, FilialConfig[]> = {
     {
       id: 'transmissao',
       nome: 'Casa da Transmissão',
+      logoSrc: '/brand/casa-transmissao.png',
+      logoAlt: 'Logo Casa da Transmissão',
       matchFilial: ['CT', 'CASA DA TRANSMISSAO', 'CASA DA TRANSMISSÃO', 'TRANSMISSAO', 'TRANSMISSÃO'],
       // Sem equipe padrão: "Todos" = todos os vendedores retornados pela API da CT.
     },
     {
       id: 'chevrolet',
       nome: 'Casa da Chevrolet',
+      logoSrc: '/brand/casa-chevrolet.png',
+      logoAlt: 'Logo Casa da Chevrolet',
       matchFilial: ['CH', 'CASA DA CHEVROLET', 'CHEVROLET'],
       equipePadrao: EQUIPE_CHEVROLET_PELEGRINI,
     },
@@ -59,6 +65,8 @@ export const FILIAIS_POR_EMPRESA: Record<string, FilialConfig[]> = {
     {
       id: 'chevrolet',
       nome: 'Casa da Chevrolet',
+      logoSrc: '/brand/casa-chevrolet.png',
+      logoAlt: 'Logo Casa da Chevrolet',
       matchFilial: ['CH', 'CCH', 'CASA DA CHEVROLET', 'CHEVROLET'],
       equipePadrao: EQUIPE_CHEVROLET_PELEGRINI,
     },

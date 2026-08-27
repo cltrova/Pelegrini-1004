@@ -101,8 +101,16 @@ export function FilialSelectorDialog({
                   blocked && 'opacity-65 cursor-not-allowed bg-muted/30 border-dashed',
                 )}
               >
-                <div className={cn('p-2.5 rounded-lg', active ? 'bg-primary/10' : 'bg-muted')}>
-                  <Icon className={cn('h-6 w-6', active ? 'text-primary' : 'text-muted-foreground')} />
+                <div className={cn('h-12 w-12 rounded-lg border flex items-center justify-center overflow-hidden', active ? 'border-primary/30 bg-primary/10' : 'border-border bg-background')}>
+                  {f.logoSrc ? (
+                    <img
+                      src={f.logoSrc}
+                      alt={f.logoAlt}
+                      className="max-h-10 max-w-10 object-contain"
+                    />
+                  ) : (
+                    <Icon className={cn('h-6 w-6', active ? 'text-primary' : 'text-muted-foreground')} />
+                  )}
                 </div>
                 <div className="flex-1">
                   <h4 className="font-medium flex items-center gap-2">

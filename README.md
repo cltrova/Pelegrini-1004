@@ -2,7 +2,7 @@
 
 Projeto dedicado ao cliente Pelegrini (`1004` e `10041`), mantido via Codex + GitHub.
 
-Este projeto foi extraido do sistema geral mantendo os dados, layouts e logicas da Pelegrini, sem depender do Lovable para desenvolvimento, build ou publicacao.
+Este projeto foi extraido do sistema geral mantendo os dados, layouts e logicas da Pelegrini, com desenvolvimento, build e publicacao pelo fluxo GitHub + Cloudflare.
 
 ## Desenvolvimento
 
@@ -56,20 +56,6 @@ Variaveis principais:
 
 Veja tambem `docs/cliente-1004-dados.md`.
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+## Publicacao
 
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+O projeto publica pela branch principal do GitHub conectada ao Cloudflare Pages.
