@@ -17,6 +17,16 @@ describe('pelegriniHome config', () => {
     ]);
   });
 
+  it('uses automotive module copy and removes template residue', () => {
+    const serialized = JSON.stringify({ pelegriniBrand, pelegriniModules, pelegriniAdminEntry });
+
+    expect(serialized).toContain('Pedidos');
+    expect(serialized).toContain('Estoque');
+    expect(serialized).toContain('Cobranca');
+    expect(serialized).not.toContain('Powered by React');
+    expect(serialized).not.toContain('BI Reports');
+  });
+
   it('keeps each module connected to an entry route and permission key', () => {
     expect(pelegriniModules).toEqual(
       expect.arrayContaining([
