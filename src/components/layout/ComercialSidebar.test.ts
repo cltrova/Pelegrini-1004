@@ -19,6 +19,10 @@ vi.mock('@/contexts/AuthContext', () => ({
   useAuth: vi.fn(),
 }));
 
+vi.mock('@/contexts/FilialSelecionadaContext', () => ({
+  useFilialSelecionada: vi.fn(() => ({ filialAtiva: '1004' })),
+}));
+
 vi.mock('@/hooks/useCotacoesComerciais', () => ({
   useVendasPerdidas: vi.fn(),
 }));
