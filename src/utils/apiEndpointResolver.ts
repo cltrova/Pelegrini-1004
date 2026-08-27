@@ -1,4 +1,5 @@
 import type { Empresa } from '@/hooks/useEmpresaConfig';
+import { isLocalPreviewEnabled } from '@/config/localPreview';
 
 const DEFAULT_VPS_BASE_URL = 'http://187.77.203.16';
 
@@ -48,7 +49,7 @@ export function buildApiProxyUrl(
 ): string {
   const base =
     proxyBase ||
-    (env.VITE_LOCAL_PREVIEW === 'true' || env.VITE_LOCAL_PREVIEW === true
+    (isLocalPreviewEnabled(env)
       ? '/api-proxy'
       : `${env.VITE_SUPABASE_URL}/functions/v1/api-proxy`);
   const { endpoint, path: finalPath } = resolveApiEndpoint(empresa, path);

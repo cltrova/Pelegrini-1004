@@ -27,4 +27,18 @@ describe('apiEndpointResolver', () => {
 
     expect(url).toBe('/api-proxy?endpoint=https%3A%2F%2Fapi.cliente.test&path=%2Fcomercial%2Fpedidos');
   });
+
+  it('usa proxy local por padrao quando o env de preview nao foi definido', () => {
+    const url = buildApiProxyUrl(
+      {
+        endpoint_url: 'https://api.cliente.test',
+        usar_vps_intermediaria: false,
+      } as any,
+      '/comercial/pedidos',
+      undefined,
+      {},
+    );
+
+    expect(url).toBe('/api-proxy?endpoint=https%3A%2F%2Fapi.cliente.test&path=%2Fcomercial%2Fpedidos');
+  });
 });
