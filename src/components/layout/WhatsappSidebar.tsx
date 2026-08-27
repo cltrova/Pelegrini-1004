@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type CSSProperties } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import {
   MessageSquare,
@@ -65,9 +65,14 @@ export function WhatsappSidebar() {
       {/* Sidebar */}
       <aside
         className={cn(
-          'pelegrini-sidebar relative fixed left-0 top-0 z-50 h-screen w-64 bg-sidebar text-sidebar-foreground flex flex-col transition-transform duration-300 md:translate-x-0',
+          'pelegrini-sidebar fixed left-0 top-0 z-50 h-screen w-64 bg-sidebar text-sidebar-foreground flex flex-col transition-transform duration-300 md:translate-x-0',
           isMobileOpen ? 'translate-x-0' : '-translate-x-full'
         )}
+        style={{
+          '--pelegrini-primary': theme.primary,
+          '--pelegrini-secondary': theme.secondary,
+          '--pelegrini-accent': theme.accent,
+        } as CSSProperties}
       >
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-6 border-b border-sidebar-border">
