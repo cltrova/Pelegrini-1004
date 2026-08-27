@@ -102,10 +102,10 @@ async function fetchRsysBySocket(proxyPath: string, method: string, body?: Array
 
   const rawHeaders = new TextDecoder().decode(responseBytes.slice(0, headerEnd));
   const bodyPart = responseBytes.slice(headerEnd + separator.byteLength);
-  const [statusLine, ...parsedHeaderLines] = rawHeaders.split('\r\n');
+  const [statusLine, ...headerLines] = rawHeaders.split('\r\n');
   const status = Number(statusLine.match(/HTTP\/\d(?:\.\d)?\s+(\d+)/)?.[1] || 502);
   const responseHeaders = new Headers();
-  for (const line of parsedHeaderLines) {
+  for (const line of headerLines) {
     const idx = line.indexOf(':');
     if (idx <= 0) continue;
     const key = line.slice(0, idx).trim();
