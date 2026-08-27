@@ -7,12 +7,13 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Building2, Check, Wrench, Car, Lock } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { Building2, Lock } from 'lucide-react';
 import { getFilialAccessState } from '@/utils/filialAccess';
 import { useFilialSelecionada } from '@/contexts/FilialSelecionadaContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { resolvePelegriniTheme } from '@/config/pelegriniTheme';
+import { getPelegriniIdentity } from '@/config/pelegriniIdentity';
+import { PelegriniBranchPanel } from '@/components/pelegrini';
 
 interface FilialSelectorDialogProps {
   open: boolean;
@@ -22,11 +23,6 @@ interface FilialSelectorDialogProps {
   /** Quando true, a filial é obrigatória para acessar os dados, mas o usuário ainda pode voltar/fechar. */
   required?: boolean;
 }
-
-const ICON_BY_ID: Record<string, typeof Building2> = {
-  transmissao: Wrench,
-  chevrolet: Car,
-};
 
 export function FilialSelectorDialog({
   open,
@@ -83,82 +79,33 @@ export function FilialSelectorDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="grid gap-3 py-2">
+        <div className="grid gap-3 py-2 sm:grid-cols-2">
           {filiais.map((f) => {
-            const Icon = ICON_BY_ID[f.id] ?? Building2;
             const branchTheme = resolvePelegriniTheme(f.id);
+            const branchIdentity = getPelegriniIdentity(branchTheme.key);
             const active = selectedId === f.id;
             const blocked = f.blocked;
+
             return (
-              <button
-                key={f.id}
-                onClick={() => {
-                  if (!blocked) setSelectedId(f.id);
-                }}
-                disabled={blocked}
-                className={cn(
-                  'group relative w-full p-4 rounded-lg border text-left transition-all duration-200 flex items-center gap-4 overflow-hidden',
-                  !blocked && 'hover:-translate-y-0.5 hover:border-primary/50 hover:bg-accent/40 hover:shadow-lg hover:shadow-primary/10',
-                  active ? 'border-primary bg-primary/5 ring-1 ring-primary shadow-md shadow-primary/15' : 'border-border bg-card',
-                  blocked && 'opacity-65 cursor-not-allowed bg-muted/30 border-dashed',
-                )}
-              >
-                <div
-                  className={cn(
-                    'absolute inset-y-0 left-0 w-1 transition-colors',
-                    active ? 'bg-primary' : 'bg-transparent group-hover:bg-primary/50',
-                  )}
+              <div key={f.id} className="min-w-0">
+                <PelegriniBranchPanel
+                  theme={branchTheme}
+                  active={active}
+                  indicators={branchIdentity.microIndicators}
+                  description={blocked ? 'Acesso pendente de liberação pelo master em Configurações.' : branchIdentity.selectorDescription}
+                  onSelect={() => {
+                    if (!blocked) setSelectedId(f.id);
+                  }}
+                  disabled={blocked}
+                  className={blocked ? 'border-dashed bg-muted/30' : undefined}
                 />
-                <div className={cn('h-14 w-20 rounded-lg border flex items-center justify-center overflow-hidden transition-all duration-200', active ? 'border-primary/30 bg-primary/10' : 'border-border bg-background group-hover:border-primary/30')}>
-                  {f.logoSrc ? (
-                    <img
-                      src={f.logoSrc}
-                      alt={f.logoAlt}
-                      className="max-h-11 max-w-[4.25rem] object-contain transition-transform duration-200 group-hover:scale-110"
-                    />
-                  ) : (
-                    <Icon className={cn('h-6 w-6', active ? 'text-primary' : 'text-muted-foreground')} />
-                  )}
-                </div>
-                <div className="flex-1">
-                  <h4 className="font-medium flex items-center gap-2">
-                    {f.nome}
-                    {active && (
-                      <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-[10px] uppercase tracking-wide text-primary">
-                        Ativa
-                      </span>
-                    )}
-                    {blocked && (
-                      <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-wide text-amber-500">
-                        <Lock className="h-3 w-3" />
-                        Bloqueada
-                      </span>
-                    )}
-                  </h4>
-                  <p className="text-xs text-muted-foreground">
-                    {blocked
-                      ? 'Acesso pendente de liberação pelo master em Configurações.'
-                      : 'Dados exclusivos desta filial'}
-                  </p>
-                  <div className="mt-2 flex flex-wrap gap-1.5">
-                    {branchTheme.trustSignals.slice(0, 3).map((signal) => (
-                      <span key={signal} className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
-                        {signal}
-                      </span>
-                    ))}
-                  </div>
-                </div>
                 {blocked && (
-                  <div className="h-6 w-6 rounded-full bg-amber-500/10 flex items-center justify-center">
-                    <Lock className="h-3.5 w-3.5 text-amber-500" />
-                  </div>
+                  <p className="mt-2 flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400">
+                    <Lock className="h-3.5 w-3.5 shrink-0" />
+                    Bloqueada: acesso pendente de liberação pelo master em Configurações.
+                  </p>
                 )}
-                {active && (
-                  <div className="h-6 w-6 rounded-full bg-primary flex items-center justify-center">
-                    <Check className="h-4 w-4 text-primary-foreground" />
-                  </div>
-                )}
-              </button>
+              </div>
             );
           })}
         </div>

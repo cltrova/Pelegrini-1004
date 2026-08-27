@@ -8,6 +8,7 @@ interface PelegriniBranchPanelProps {
   indicators: string[];
   description: string;
   onSelect: MouseEventHandler<HTMLButtonElement>;
+  disabled?: boolean;
   className?: string;
 }
 
@@ -17,6 +18,7 @@ export function PelegriniBranchPanel({
   indicators,
   description,
   onSelect,
+  disabled = false,
   className,
 }: PelegriniBranchPanelProps) {
   return (
@@ -26,9 +28,11 @@ export function PelegriniBranchPanel({
       className={cn(
         'pelegrini-branch-panel group relative w-full overflow-hidden rounded-xl border p-4 text-left',
         active ? 'border-primary bg-primary/5 shadow-sm' : 'border-border bg-card hover:border-primary/40',
+        disabled && 'cursor-not-allowed opacity-65',
         className,
       )}
       onClick={onSelect}
+      disabled={disabled}
     >
       <span className="absolute inset-y-0 left-0 w-1" style={{ backgroundColor: theme.accent }} aria-hidden="true" />
       <span className="flex items-start gap-3 pl-1">
