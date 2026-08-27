@@ -8,5 +8,10 @@ export async function readJsonOrFallback<T>(response: Response, fallback: T): Pr
   }
 
   if (!trimmed) return fallback;
-  return JSON.parse(text) as T;
+
+  try {
+    return JSON.parse(text) as T;
+  } catch {
+    return fallback;
+  }
 }

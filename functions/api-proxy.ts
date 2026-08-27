@@ -17,12 +17,6 @@ function shouldReturnEmptyOnFailure(proxyPath: string): boolean {
     || normalizedPath.includes('/comercial/devolucoes')
     || normalizedPath.includes('/comercial/clientes')
     || normalizedPath.includes('/comercial/agrupado')
-    || normalizedPath.includes('/financeiro/dre')
-    || normalizedPath.includes('/financeiro/variacao')
-    || normalizedPath.includes('/financeiro/duplicatas')
-    || normalizedPath.includes('/financeiro/resumo')
-    || normalizedPath.includes('/financeiro/fluxo-caixa')
-    || normalizedPath.includes('/operacional/estoque')
   );
 }
 
@@ -40,11 +34,16 @@ function fallback(proxyPath: string, upstreamStatus?: number, upstreamBody?: str
   });
 }
 
-function isJsonResponse(contentType: string | null, body: string) {
-  const normalizedType = (contentType || '').toLowerCase();
-  if (normalizedType.includes('application/json')) return true;
+function isJsonResponse(body: string) {
   const trimmed = body.trimStart();
-  return trimmed.startsWith('{') || trimmed.startsWith('[');
+  if (!trimmed) return false;
+
+  try {
+    JSON.parse(trimmed);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 export async function onRequest({ request }: { request: Request }) {
@@ -72,7 +71,7 @@ export async function onRequest({ request }: { request: Request }) {
       return fallback(proxyPath, upstream.status, responseText);
     }
 
-    if (upstream.ok && shouldReturnEmptyOnFailure(proxyPath) && !isJsonResponse(upstream.headers.get('content-type'), responseText)) {
+    if (upstream.ok && shouldReturnEmptyOnFailure(proxyPath) && !isJsonResponse(responseText)) {
       return fallback(proxyPath, upstream.status, responseText);
     }
 

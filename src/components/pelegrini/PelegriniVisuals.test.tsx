@@ -74,6 +74,26 @@ describe('Pelegrini visual components', () => {
     expect(card).toHaveAccessibleName(/Comercial.*Pedidos e carteira.*Clientes, produtos, cotacoes e vendas.*Clientes.*Produtos/i);
   });
 
+  it('renders a disabled operational card with its availability status', () => {
+    render(
+      <PelegriniOperationalCard
+        title="Operacional"
+        label="Estoque e giro"
+        description="Acompanhamento da execucao da oficina."
+        tags={['Estoque', 'Giro']}
+        accent="operacional"
+        status="Em breve"
+        disabled
+      />,
+    );
+
+    const card = screen.getByRole('button', { name: /Operacional.*Estoque e giro.*Em breve/i });
+
+    expect(card).toBeDisabled();
+    expect(card).toHaveAttribute('data-status', 'coming-soon');
+    expect(screen.getByText('Em breve')).toBeInTheDocument();
+  });
+
   it('renders module header with operational language', () => {
     render(<PelegriniModuleHeader title="Produtos" subtitle="Carteira de pecas" moduleKey="comercial" />);
 

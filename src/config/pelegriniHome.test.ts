@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { pelegriniAdminEntry, pelegriniBrand, pelegriniModules } from './pelegriniHome';
+import { getPelegriniBranchAvailability, pelegriniAdminEntry, pelegriniBrand, pelegriniModules } from './pelegriniHome';
 
 describe('pelegriniHome config', () => {
   it('uses Pelegrini as the visible product brand', () => {
@@ -44,5 +44,24 @@ describe('pelegriniHome config', () => {
       path: '/configuracoes',
     });
     expect(pelegriniAdminEntry.features).toContain('Endpoints');
+  });
+
+  it('disables unavailable branch choices while keeping the local preview branches available', () => {
+    expect(getPelegriniBranchAvailability({
+      codEmpresa: null,
+      isMaster: false,
+      filiaisPermitidas: [],
+      filialPadrao: null,
+    })).toEqual({});
+
+    expect(getPelegriniBranchAvailability({
+      codEmpresa: '1004',
+      isMaster: true,
+      filiaisPermitidas: [],
+      filialPadrao: null,
+    })).toEqual({
+      transmissao: true,
+      chevrolet: true,
+    });
   });
 });

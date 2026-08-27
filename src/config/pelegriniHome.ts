@@ -1,4 +1,5 @@
 import type { UserModuleKey } from '@/hooks/useUserModulePermissions';
+import { getFilialAccessState, type FilialAccessInput } from '@/utils/filialAccess';
 
 export interface PelegriniHomeModule {
   title: 'WhatsApp' | 'Comercial' | 'Operacional' | 'Financeiro';
@@ -59,3 +60,9 @@ export const pelegriniAdminEntry = {
   path: '/configuracoes',
   features: ['Endpoints', 'Empresas', 'Modulos'],
 } as const;
+
+export function getPelegriniBranchAvailability(input: FilialAccessInput): Record<string, boolean> {
+  return Object.fromEntries(
+    getFilialAccessState(input).items.map((filial) => [filial.id, !filial.blocked]),
+  );
+}

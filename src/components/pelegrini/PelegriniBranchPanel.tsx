@@ -7,7 +7,7 @@ interface PelegriniBranchPanelProps {
   active?: boolean;
   indicators: string[];
   description: string;
-  onSelect: MouseEventHandler<HTMLButtonElement>;
+  onSelect?: MouseEventHandler<HTMLButtonElement>;
   disabled?: boolean;
   className?: string;
 }

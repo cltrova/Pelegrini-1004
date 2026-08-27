@@ -25,13 +25,7 @@ function shouldReturnEmptyOnFailure(proxyPath: string): boolean {
     normalizedPath.includes("/comercial/pedidos") ||
     normalizedPath.includes("/comercial/devolucoes") ||
     normalizedPath.includes("/comercial/clientes") ||
-    normalizedPath.includes("/comercial/agrupado") ||
-    normalizedPath.includes("/financeiro/dre") ||
-    normalizedPath.includes("/financeiro/variacao") ||
-    normalizedPath.includes("/financeiro/duplicatas") ||
-    normalizedPath.includes("/financeiro/resumo") ||
-    normalizedPath.includes("/financeiro/fluxo-caixa") ||
-    normalizedPath.includes("/operacional/estoque")
+    normalizedPath.includes("/comercial/agrupado")
   );
 }
 
@@ -44,11 +38,16 @@ function sendFallback(res: ServerResponse, proxyPath: string, upstreamStatus?: n
   res.end(proxyPath.includes("/comercial/totais") ? "{}" : "[]");
 }
 
-function isJsonResponse(contentType: string | null, body: string) {
-  const normalizedType = (contentType || "").toLowerCase();
-  if (normalizedType.includes("application/json")) return true;
+function isJsonResponse(body: string) {
   const trimmed = body.trimStart();
-  return trimmed.startsWith("{") || trimmed.startsWith("[");
+  if (!trimmed) return false;
+
+  try {
+    JSON.parse(trimmed);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 function localApiProxyPlugin() {
@@ -82,7 +81,7 @@ function localApiProxyPlugin() {
             return;
           }
 
-          if (upstream.ok && shouldReturnEmptyOnFailure(proxyPath) && !isJsonResponse(upstream.headers.get("content-type"), responseText)) {
+          if (upstream.ok && shouldReturnEmptyOnFailure(proxyPath) && !isJsonResponse(responseText)) {
             sendFallback(res, proxyPath, upstream.status, responseText);
             return;
           }

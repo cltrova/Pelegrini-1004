@@ -9,7 +9,7 @@ import { ModuleDetailsDialog } from '@/components/common/ModuleDetailsDialog';
 import { Button } from '@/components/ui/button';
 import { empresaPossuiFiliais, getFiliaisDaEmpresa } from '@/config/filiaisEmpresa';
 import { getPelegriniIdentity, getPelegriniModuleIdentity, type PelegriniModuleKey } from '@/config/pelegriniIdentity';
-import { pelegriniAdminEntry, pelegriniModules, type PelegriniHomeModule } from '@/config/pelegriniHome';
+import { getPelegriniBranchAvailability, pelegriniAdminEntry, pelegriniModules, type PelegriniHomeModule } from '@/config/pelegriniHome';
 import { PELEGRINI_THEMES, resolvePelegriniTheme } from '@/config/pelegriniTheme';
 import { PelegriniBrandMark, PelegriniBranchPanel, PelegriniMotionBackdrop, PelegriniOperationalCard } from '@/components/pelegrini';
 import { useAuth } from '@/contexts/AuthContext';
@@ -39,7 +39,7 @@ const modules: ModuleItem[] = pelegriniModules.map((module) => ({
 
 export default function HomePage() {
   const navigate = useNavigate();
-  const { isAuthenticated, user, logout, isVendedor, canAccessSettings, codEmpresa: codEmpresaUsuario } = useAuth();
+  const { isAuthenticated, user, logout, isVendedor, canAccessSettings, codEmpresa: codEmpresaUsuario, profile } = useAuth();
   const isMobile = useIsMobile();
   const { hasModulo, isMaster } = useEmpresaConfig();
   const { permissions, hasUserModuleAccess } = useUserModulePermissions();
@@ -55,6 +55,12 @@ export default function HomePage() {
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
   const [selectedModuleForDetails, setSelectedModuleForDetails] = useState<ModuleItem | null>(null);
   const codEmpresaParaFilial = isMaster ? null : codEmpresaUsuario;
+  const branchAvailability = getPelegriniBranchAvailability({
+    codEmpresa: codEmpresaContexto,
+    isMaster,
+    filiaisPermitidas: profile?.filiais_permitidas,
+    filialPadrao: profile?.filial_id,
+  });
 
   useEffect(() => {
     if (isAuthenticated && isVendedor) navigate('/whatsapp');
@@ -129,6 +135,10 @@ export default function HomePage() {
             <div className="grid gap-3">
               {branchThemes.map((theme) => {
                 const identity = getPelegriniIdentity(theme.key);
+                const disabled = !branchAvailability[theme.key];
+                const unavailableDescription = codEmpresaContexto
+                  ? `${identity.selectorDescription} Acesso a esta filial nao esta liberado.`
+                  : `${identity.selectorDescription} Selecione uma empresa para liberar as filiais.`;
 
                 return (
                   <PelegriniBranchPanel
@@ -136,8 +146,9 @@ export default function HomePage() {
                     theme={theme}
                     active={filialAtiva === theme.key}
                     indicators={identity.microIndicators}
-                    description={identity.selectorDescription}
-                    onSelect={() => handleBranchSelect(theme.key)}
+                    description={disabled ? unavailableDescription : identity.selectorDescription}
+                    onSelect={disabled ? undefined : () => handleBranchSelect(theme.key)}
+                    disabled={disabled}
                   />
                 );
               })}
@@ -149,7 +160,7 @@ export default function HomePage() {
           <div className="mb-3 flex items-end justify-between gap-4"><div><p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Acesso operacional</p><h2 id="home-modules-title" className="mt-1 text-xl font-semibold text-foreground">Modulos da operacao</h2></div><span className="text-sm text-muted-foreground">{modules.length} modulos</span></div>
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">{modules.filter((module) => !isAuthenticated || isMaster || module.disabled || (hasModulo(module.moduloKey) && hasUserModuleAccess(module.moduloKey))).map((module) => {
             const identity = getPelegriniModuleIdentity(module.moduloKey as PelegriniModuleKey);
-            return <PelegriniOperationalCard key={module.title} title={module.title} label={identity.operationalLabel} description={identity.description} tags={identity.tags} accent={identity.key} onClick={() => handleModuleClick(module)} className={module.disabled ? 'cursor-not-allowed opacity-50' : undefined} />;
+            return <PelegriniOperationalCard key={module.title} title={module.title} label={identity.operationalLabel} description={identity.description} tags={identity.tags} accent={identity.key} onClick={module.disabled ? undefined : () => handleModuleClick(module)} disabled={module.disabled} />;
           })}</div>
         </section>
 
