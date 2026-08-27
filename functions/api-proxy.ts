@@ -40,6 +40,13 @@ function fallback(proxyPath: string, upstreamStatus?: number, upstreamBody?: str
   });
 }
 
+function isJsonResponse(contentType: string | null, body: string) {
+  const normalizedType = (contentType || '').toLowerCase();
+  if (normalizedType.includes('application/json')) return true;
+  const trimmed = body.trimStart();
+  return trimmed.startsWith('{') || trimmed.startsWith('[');
+}
+
 export async function onRequest({ request }: { request: Request }) {
   const url = new URL(request.url);
   const endpoint = url.searchParams.get('endpoint') || '';
@@ -59,9 +66,14 @@ export async function onRequest({ request }: { request: Request }) {
     const body = method === 'GET' || method === 'HEAD' ? undefined : await request.arrayBuffer();
     const upstream = await fetch(upstreamUrl, { method, headers, body });
     const responseBody = await upstream.arrayBuffer();
+    const responseText = new TextDecoder().decode(responseBody);
 
     if (!upstream.ok && shouldReturnEmptyOnFailure(proxyPath)) {
-      return fallback(proxyPath, upstream.status, new TextDecoder().decode(responseBody));
+      return fallback(proxyPath, upstream.status, responseText);
+    }
+
+    if (upstream.ok && shouldReturnEmptyOnFailure(proxyPath) && !isJsonResponse(upstream.headers.get('content-type'), responseText)) {
+      return fallback(proxyPath, upstream.status, responseText);
     }
 
     const responseHeaders = new Headers(upstream.headers);

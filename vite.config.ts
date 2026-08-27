@@ -44,6 +44,13 @@ function sendFallback(res: ServerResponse, proxyPath: string, upstreamStatus?: n
   res.end(proxyPath.includes("/comercial/totais") ? "{}" : "[]");
 }
 
+function isJsonResponse(contentType: string | null, body: string) {
+  const normalizedType = (contentType || "").toLowerCase();
+  if (normalizedType.includes("application/json")) return true;
+  const trimmed = body.trimStart();
+  return trimmed.startsWith("{") || trimmed.startsWith("[");
+}
+
 function localApiProxyPlugin() {
   return {
     name: "local-api-proxy",
@@ -68,9 +75,15 @@ function localApiProxyPlugin() {
           const body = method === "GET" || method === "HEAD" ? undefined : await readRequestBody(req);
           const upstream = await fetch(upstreamUrl, { method, headers, body });
           const responseBody = Buffer.from(await upstream.arrayBuffer());
+          const responseText = responseBody.toString("utf8");
 
           if (!upstream.ok && shouldReturnEmptyOnFailure(proxyPath)) {
-            sendFallback(res, proxyPath, upstream.status, responseBody.toString("utf8"));
+            sendFallback(res, proxyPath, upstream.status, responseText);
+            return;
+          }
+
+          if (upstream.ok && shouldReturnEmptyOnFailure(proxyPath) && !isJsonResponse(upstream.headers.get("content-type"), responseText)) {
+            sendFallback(res, proxyPath, upstream.status, responseText);
             return;
           }
 

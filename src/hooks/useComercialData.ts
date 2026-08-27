@@ -20,6 +20,7 @@ import { useEmpresaAtiva } from '@/hooks/useEmpresaAtiva';
 import { filtrarPorFilial, filtrarPorEquipePadrao } from '@/utils/filialFilter';
 import { empresaPossuiFiliais } from '@/config/filiaisEmpresa';
 import { resolveComercialEndpointPath, resolveComercialJsonPath, resolveCodEmpresaBiParam } from '@/utils/filialEndpoint';
+import { readJsonOrFallback } from '@/utils/safeJsonResponse';
 import { supabase } from '@/integrations/supabase/client';
 import type { Empresa } from '@/hooks/useEmpresaConfig';
 import {
@@ -1081,7 +1082,7 @@ async function fetchComercialData(empresa?: Empresa | null, codEmpresa?: string,
               throw new Error(`${key} ${di}..${df} página ${page}: HTTP ${lastStatus}`);
             }
 
-            const json = await res.json();
+            const json = await readJsonOrFallback(res, []);
             const arr = extractArray(json, key);
             all.push(...arr);
             console.log(`[Comercial] ${key} ${di}..${df} página ${page}: ${arr.length} registros`);
