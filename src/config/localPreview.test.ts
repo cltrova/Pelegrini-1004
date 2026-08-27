@@ -16,10 +16,10 @@ import {
 } from './localPreview';
 
 describe('local preview mode', () => {
-  it('ativa somente quando VITE_LOCAL_PREVIEW=true', () => {
+  it('ativa por padrao e permite desligar com VITE_LOCAL_PREVIEW=false', () => {
     expect(isLocalPreviewEnabled({ VITE_LOCAL_PREVIEW: 'true' })).toBe(true);
     expect(isLocalPreviewEnabled({ VITE_LOCAL_PREVIEW: 'false' })).toBe(false);
-    expect(isLocalPreviewEnabled({})).toBe(false);
+    expect(isLocalPreviewEnabled({})).toBe(true);
   });
 
   it('cria a empresa Pelegrini 1004 com os quatro modulos principais liberados', () => {
@@ -34,6 +34,9 @@ describe('local preview mode', () => {
       modulo_variacao: true,
       endpoint_path_comercial_cotacoes_abertas_ch: '/comercial/cotacoes_abertas_ch',
       endpoint_path_comercial_vendas_perdidas_ch: '/comercial/vendas_perdidas_ch',
+      usar_vps_intermediaria: true,
+      vps_base_url: 'http://187.77.203.16',
+      vps_cliente_identificador: 'pelegrini',
     });
   });
 

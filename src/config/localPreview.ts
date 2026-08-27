@@ -42,7 +42,7 @@ export interface LocalPreviewMotivoPerdaRegistro {
 }
 
 export function isLocalPreviewEnabled(env: EnvLike = import.meta.env) {
-  return env.VITE_LOCAL_PREVIEW === 'true' || env.VITE_LOCAL_PREVIEW === true;
+  return env.VITE_LOCAL_PREVIEW !== 'false' && env.VITE_LOCAL_PREVIEW !== false;
 }
 
 export function createLocalPreviewPermissions(): UserModulePermissions {
@@ -95,9 +95,9 @@ export function createLocalPreviewEmpresa(): Empresa {
     endpoint_path_estoque_detalhado: '/operacional/estoque/detalhado',
     endpoint_path_resumo: '/financeiro/resumo',
     endpoint_path_duplicatas: '/financeiro/duplicatas',
-    usar_vps_intermediaria: false,
+    usar_vps_intermediaria: true,
     vps_base_url: 'http://187.77.203.16',
-    vps_cliente_identificador: '',
+    vps_cliente_identificador: 'pelegrini',
   };
 }
 
