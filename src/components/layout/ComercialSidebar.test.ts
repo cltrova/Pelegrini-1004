@@ -116,6 +116,13 @@ describe('commercial sidebar menu access', () => {
     expect(screen.queryByText(/BI Reports/i)).not.toBeInTheDocument();
   });
 
+  it('respects reduced motion for the mobile sidebar transition', () => {
+    mockCompany('1004');
+    render(createElement(MemoryRouter, { initialEntries: ['/comercial/dashboard'], future: { v7_startTransition: true, v7_relativeSplatPath: true } }, createElement(ComercialSidebar)));
+
+    expect(screen.getByRole('complementary')).toHaveClass('motion-reduce:transition-none', 'motion-reduce:duration-0');
+  });
+
   it('keeps both disabled future items for other companies', () => {
     mockCompany('9999');
     render(createElement(MemoryRouter, { initialEntries: ['/comercial/dashboard'], future: { v7_startTransition: true, v7_relativeSplatPath: true } }, createElement(ComercialSidebar)));
