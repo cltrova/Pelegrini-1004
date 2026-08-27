@@ -11,6 +11,9 @@ import {
 import { cn } from '@/lib/utils';
 import { useEmpresaAtiva } from '@/hooks/useEmpresaAtiva';
 import { Badge } from '@/components/ui/badge';
+import { resolvePelegriniTheme } from '@/config/pelegriniTheme';
+import { useFilialSelecionada } from '@/contexts/FilialSelecionadaContext';
+import { PelegriniBrandMark } from '@/components/pelegrini';
 
 const baseMenuItems = [
   { label: 'Estoque', icon: Package, path: '/operacional/estoque' },
@@ -21,6 +24,8 @@ export function OperacionalSidebar() {
   const navigate = useNavigate();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const { empresa, isMaster, codEmpresaAtiva } = useEmpresaAtiva();
+  const { filialAtiva } = useFilialSelecionada();
+  const theme = resolvePelegriniTheme(filialAtiva);
 
   const isActive = (path: string) => location.pathname === path;
 
@@ -42,19 +47,17 @@ export function OperacionalSidebar() {
 
       <aside
         className={cn(
-          'fixed left-0 top-0 z-50 h-screen w-64 bg-sidebar text-sidebar-foreground flex flex-col transition-transform duration-300 md:translate-x-0',
+          'pelegrini-sidebar relative fixed left-0 top-0 z-50 h-screen w-64 bg-sidebar text-sidebar-foreground flex flex-col transition-transform duration-300 md:translate-x-0',
           isMobileOpen ? 'translate-x-0' : '-translate-x-full'
         )}
       >
         <div className="flex items-center justify-between px-5 py-6 border-b border-sidebar-border">
           <div className="flex items-center gap-3">
-            <div className="h-9 w-9 rounded-lg bg-amber-600 flex items-center justify-center">
-              <Package className="h-5 w-5 text-white" />
-            </div>
+            <PelegriniBrandMark theme={theme} />
             <div>
               <h1 className="font-bold text-lg leading-tight">Operacional</h1>
               <span className="text-[11px] text-sidebar-muted uppercase tracking-wider">
-                Gestão de Estoque
+                Operacional ativo
               </span>
             </div>
           </div>

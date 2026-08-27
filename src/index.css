@@ -283,6 +283,22 @@
 }
 
 @layer utilities {
+  .pelegrini-sidebar {
+    background:
+      linear-gradient(180deg, color-mix(in srgb, var(--pelegrini-primary) 28%, hsl(var(--sidebar-background))) 0%, hsl(var(--sidebar-background)) 72%),
+      hsl(var(--sidebar-background));
+  }
+
+  .pelegrini-sidebar::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background-image: linear-gradient(135deg, color-mix(in srgb, var(--pelegrini-accent) 16%, transparent) 1px, transparent 1px);
+    background-size: 28px 28px;
+    opacity: 0.08;
+  }
+
   /* Safe area for mobile devices */
   .safe-area-top {
     padding-top: env(safe-area-inset-top);

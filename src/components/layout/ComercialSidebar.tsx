@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import {
-  ShoppingCart,
   LayoutDashboard,
   Users,
   ChevronLeft,
@@ -14,6 +13,9 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useEmpresaAtiva } from '@/hooks/useEmpresaAtiva';
+import { resolvePelegriniTheme } from '@/config/pelegriniTheme';
+import { useFilialSelecionada } from '@/contexts/FilialSelecionadaContext';
+import { PelegriniBrandMark } from '@/components/pelegrini';
 
 interface MenuItem {
   label: string;
@@ -54,6 +56,8 @@ export function ComercialSidebar() {
   const navigate = useNavigate();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const { codEmpresaAtiva } = useEmpresaAtiva();
+  const { filialAtiva } = useFilialSelecionada();
+  const theme = resolvePelegriniTheme(filialAtiva);
   const comercialMenuItems = getComercialMenuItems(codEmpresaAtiva || '');
   const showFutureItems = !hasCotacoesComerciais(codEmpresaAtiva || '');
 
@@ -80,20 +84,18 @@ export function ComercialSidebar() {
       {/* Sidebar */}
       <aside
         className={cn(
-          'fixed left-0 top-0 z-50 h-screen w-64 bg-sidebar text-sidebar-foreground flex flex-col transition-transform duration-300 md:translate-x-0',
+          'pelegrini-sidebar relative fixed left-0 top-0 z-50 h-screen w-64 bg-sidebar text-sidebar-foreground flex flex-col transition-transform duration-300 md:translate-x-0',
           isMobileOpen ? 'translate-x-0' : '-translate-x-full'
         )}
       >
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-6 border-b border-sidebar-border">
           <div className="flex items-center gap-3">
-            <div className="h-9 w-9 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-400 flex items-center justify-center shadow-lg shadow-emerald-500/20">
-              <ShoppingCart className="h-5 w-5 text-white" />
-            </div>
+            <PelegriniBrandMark theme={theme} />
             <div>
               <h1 className="font-bold text-lg leading-tight">Comercial</h1>
               <span className="text-[11px] text-sidebar-muted uppercase tracking-wider">
-                Módulo Ativo
+                Comercial ativo
               </span>
             </div>
           </div>
