@@ -8,7 +8,7 @@ interface LoadingStateProps {
 }
 
 export function LoadingState({
-  message = 'Carregando...',
+  message = 'Carregando operacao Pelegrini',
   className,
   size = 'md',
 }: LoadingStateProps) {
@@ -21,11 +21,11 @@ export function LoadingState({
   return (
     <div
       className={cn(
-        'flex flex-col items-center justify-center py-12 text-muted-foreground border border-border/60 bg-card/75 shadow-sm backdrop-blur-xl',
+        'flex flex-col items-center justify-center rounded-xl border border-border bg-card p-8 text-center shadow-sm text-muted-foreground',
         className
       )}
     >
-      <Loader2 className={cn('animate-spin text-primary', sizes[size])} />
+      <Loader2 className={cn('animate-spin motion-reduce:animate-none text-primary', sizes[size])} />
       {message && <p className="mt-3 text-sm">{message}</p>}
     </div>
   );

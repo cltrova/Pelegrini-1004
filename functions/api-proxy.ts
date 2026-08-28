@@ -17,12 +17,6 @@ function shouldReturnEmptyOnFailure(proxyPath: string): boolean {
     || normalizedPath.includes('/comercial/devolucoes')
     || normalizedPath.includes('/comercial/clientes')
     || normalizedPath.includes('/comercial/agrupado')
-    || normalizedPath.includes('/financeiro/dre')
-    || normalizedPath.includes('/financeiro/variacao')
-    || normalizedPath.includes('/financeiro/duplicatas')
-    || normalizedPath.includes('/financeiro/resumo')
-    || normalizedPath.includes('/financeiro/fluxo-caixa')
-    || normalizedPath.includes('/operacional/estoque')
   );
 }
 
@@ -49,6 +43,18 @@ function resolveUpstreamHostHeader(endpoint: string): string | null {
   }
 }
 
+function isJsonResponse(body: string) {
+  const trimmed = body.trimStart();
+  if (!trimmed) return false;
+
+  try {
+    JSON.parse(trimmed);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export async function onRequest({ request }: { request: Request }) {
   const url = new URL(request.url);
   const endpoint = url.searchParams.get('endpoint') || '';
@@ -70,9 +76,14 @@ export async function onRequest({ request }: { request: Request }) {
     const body = method === 'GET' || method === 'HEAD' ? undefined : await request.arrayBuffer();
     const upstream = await fetch(upstreamUrl, { method, headers, body });
     const responseBody = await upstream.arrayBuffer();
+    const responseText = new TextDecoder().decode(responseBody);
 
     if (!upstream.ok && shouldReturnEmptyOnFailure(proxyPath)) {
-      return fallback(proxyPath, upstream.status, new TextDecoder().decode(responseBody));
+      return fallback(proxyPath, upstream.status, responseText);
+    }
+
+    if (upstream.ok && shouldReturnEmptyOnFailure(proxyPath) && !isJsonResponse(responseText)) {
+      return fallback(proxyPath, upstream.status, responseText);
     }
 
     const responseHeaders = new Headers(upstream.headers);

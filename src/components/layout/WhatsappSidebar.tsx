@@ -14,6 +14,7 @@ import { cn } from '@/lib/utils';
 import { useEmpresaAtiva } from '@/hooks/useEmpresaAtiva';
 import { Badge } from '@/components/ui/badge';
 import { resolvePelegriniTheme } from '@/config/pelegriniTheme';
+import { getPelegriniIdentity } from '@/config/pelegriniIdentity';
 import { useFilialSelecionada } from '@/contexts/FilialSelecionadaContext';
 import { PelegriniBrandMark } from '@/components/pelegrini';
 
@@ -36,6 +37,7 @@ export function WhatsappSidebar() {
   const { empresa, isMaster, codEmpresaAtiva } = useEmpresaAtiva();
   const { filialAtiva } = useFilialSelecionada();
   const theme = resolvePelegriniTheme(filialAtiva);
+  const identity = getPelegriniIdentity(theme.key);
 
   const isActive = (path: string) => {
     if (path === '/whatsapp') {
@@ -65,7 +67,7 @@ export function WhatsappSidebar() {
       {/* Sidebar */}
       <aside
         className={cn(
-          'pelegrini-sidebar fixed left-0 top-0 z-50 h-screen w-64 bg-sidebar text-sidebar-foreground flex flex-col transition-transform duration-300 md:translate-x-0',
+          'pelegrini-sidebar fixed left-0 top-0 z-50 h-screen w-64 bg-sidebar text-sidebar-foreground flex flex-col transition-transform duration-300 motion-reduce:transition-none motion-reduce:duration-0 md:translate-x-0',
           isMobileOpen ? 'translate-x-0' : '-translate-x-full'
         )}
         style={{
@@ -157,8 +159,8 @@ export function WhatsappSidebar() {
         {/* Footer */}
         <div className="p-4 border-t border-sidebar-border">
           <div className="text-xs text-sidebar-muted">
-            <p>BI Reports v1.0.0</p>
-            <p className="mt-1">Módulo WhatsApp</p>
+            <p className="font-medium text-sidebar-foreground">Pelegrini</p>
+            <p className="mt-1">{identity.footerLine}</p>
           </div>
         </div>
       </aside>

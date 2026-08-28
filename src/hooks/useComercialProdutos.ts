@@ -6,6 +6,7 @@ import { useEmpresaAtiva } from '@/hooks/useEmpresaAtiva';
 import { useFilialSelecionada } from '@/contexts/FilialSelecionadaContext';
 import { filtrarPorFilial, filtrarPorEquipePadrao } from '@/utils/filialFilter';
 import { resolveComercialEndpointPath, resolveComercialJsonPath, resolveCodEmpresaBiParam } from '@/utils/filialEndpoint';
+import { readJsonOrFallback } from '@/utils/safeJsonResponse';
 import {
   calcularValorDevolucaoReceita1004,
   corrigirVendedorAusente1004,
@@ -684,7 +685,7 @@ async function fetchFromEndpoint(empresa: Empresa, periodo?: { inicio: string; f
           console.warn(`[ComercialProdutos] ${di}..${df} página ${page}: HTTP ${res.status}`);
           throw new Error(`Produtos ${di}..${df} página ${page}: HTTP ${res.status}`);
         }
-        const json = await res.json();
+        const json = await readJsonOrFallback(res, []);
         const arr = extractArray(json);
 
         // A VPS/ERP ignora o parâmetro `page` em alguns endpoints e devolve
@@ -951,7 +952,7 @@ async function fetchReceitaComissao1004(
       signal: controller.signal,
     });
     if (!res.ok) throw new Error(`Comissoes 1004: HTTP ${res.status}`);
-    const json = await res.json();
+    const json = await readJsonOrFallback(res, []);
     const arr: Record<string, unknown>[] = Array.isArray(json)
       ? json
       : json?.dados || json?.data || json?.comissoes || json?.registros || [];

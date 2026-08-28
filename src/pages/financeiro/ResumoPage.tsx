@@ -23,9 +23,7 @@ import { useCobrancaIntervencoes } from '@/hooks/useCobrancaIntervencoes';
 import { Badge } from '@/components/ui/badge';
 import { FinanceiroSearchPrompt } from '@/components/financeiro/FinanceiroSearchPrompt';
 import { useFinanceiroSearch } from '@/contexts/FinanceiroSearchContext';
-import { resolvePelegriniTheme } from '@/config/pelegriniTheme';
-import { useFilialSelecionada } from '@/contexts/FilialSelecionadaContext';
-import { PelegriniBranchBadge } from '@/components/pelegrini';
+import { PelegriniModuleHeader } from '@/components/pelegrini';
 
 
 const initialFilters: ResumoFilters = {
@@ -41,8 +39,6 @@ const initialFilters: ResumoFilters = {
 export default function ResumoPage() {
   const [filters, setFilters] = useState<ResumoFilters>(initialFilters);
   const [activeTab, setActiveTab] = useState('diagnostico');
-  const { filialAtiva } = useFilialSelecionada();
-  const theme = resolvePelegriniTheme(filialAtiva);
   const { hasSearched, markSearched, resetSearch } = useFinanceiroSearch();
   const { empresa } = useEmpresaAtiva();
   const { pendentes } = useCobrancaIntervencoes();
@@ -76,17 +72,12 @@ export default function ResumoPage() {
 
   return (
     <div className="p-4 md:p-6 space-y-5 max-w-[1600px] mx-auto">
-      {/* Header */}
-      <div className="flex flex-wrap items-end justify-between gap-3 border-b border-border pb-4">
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2">
-            <span className="size-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_hsl(var(--primary))]" />
-            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-sky-600 dark:text-sky-400">
-              Monitoramento de Liquidez — Contas a Receber
-            </span>
-          </div>
-          <PelegriniBranchBadge theme={theme} active />
-        </div>
+      <PelegriniModuleHeader
+        title="Resumo Financeiro"
+        subtitle="Monitoramento de liquidez e contas a receber"
+        moduleKey="financeiro"
+      />
+      <div className="flex flex-wrap items-center justify-end gap-3">
         <div className="flex items-center gap-2">
           {hasSearched && !isLoading && hasSource && !error && alertas.length > 0 && (
             <AlertasCriticosBanner alertas={alertas} />

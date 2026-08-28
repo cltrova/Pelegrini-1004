@@ -6,7 +6,7 @@ import { PelegriniModuleShell } from '@/components/pelegrini';
 export function FinanceiroLayout() {
   return (
     <FinanceiroSearchProvider>
-      <PelegriniModuleShell sidebar={<FinanceiroSidebar />}>
+      <PelegriniModuleShell sidebar={<FinanceiroSidebar />} moduleKey="financeiro">
         <Outlet />
       </PelegriniModuleShell>
     </FinanceiroSearchProvider>

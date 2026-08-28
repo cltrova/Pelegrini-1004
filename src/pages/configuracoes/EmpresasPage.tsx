@@ -22,7 +22,6 @@ import {
   ShoppingCart,
   Layers,
   Activity,
-  Sparkles,
 } from 'lucide-react';
 import { useEmpresas, useEmpresaMutations, Empresa } from '@/hooks/useEmpresaConfig';
 import { useAuth } from '@/contexts/AuthContext';
@@ -54,6 +53,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
 import { cn } from '@/lib/utils';
+import { PelegriniPageSurface } from '@/components/pelegrini';
 
 const MODULES = [
   { key: 'dre', label: 'DRE', icon: BarChart3 },
@@ -195,13 +195,7 @@ export default function EmpresasPage() {
   const statusLabel = statusFilter === 'all' ? 'Todos' : statusFilter === 'ativa' ? 'Ativa' : statusFilter === 'inativa' ? 'Inativa' : 'Pendente';
 
   return (
-    <div className="min-h-screen bg-background relative">
-      {/* Ambient gradient */}
-      <div className="pointer-events-none fixed inset-0 overflow-hidden -z-0">
-        <div className="absolute -top-40 -left-40 h-[28rem] w-[28rem] rounded-full bg-primary/[0.06] blur-[120px]" />
-        <div className="absolute top-1/3 -right-40 h-[24rem] w-[24rem] rounded-full bg-emerald-500/[0.04] blur-[120px]" />
-      </div>
-
+    <PelegriniPageSurface moduleKey="financeiro" className="min-h-screen">
       <div className="relative max-w-[1200px] mx-auto px-6 py-8">
         {/* Header */}
         <div className="flex items-start justify-between gap-4 mb-8 animate-fade-in">
@@ -216,7 +210,7 @@ export default function EmpresasPage() {
             <div className="flex items-center gap-3 flex-wrap">
               <h1 className="text-2xl font-semibold tracking-tight text-foreground">Gestão de Empresas</h1>
               <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full border border-border/60 bg-card/60 backdrop-blur-sm text-[11px] font-medium text-muted-foreground tabular-nums">
-                <Sparkles className="h-3 w-3 text-primary" />
+                <Building2 className="h-3 w-3 text-primary" />
                 {lista.length} {lista.length === 1 ? 'empresa' : 'empresas'}
               </span>
             </div>
@@ -340,7 +334,7 @@ export default function EmpresasPage() {
         ) : (
           <div className="rounded-xl border border-border bg-card/40 backdrop-blur-sm overflow-hidden shadow-xl shadow-black/5 animate-fade-in">
             {/* Header */}
-            <div className="hidden md:grid grid-cols-[1.4fr_1.4fr_1.6fr_0.8fr_60px] gap-4 px-5 py-3 border-b border-border/60 bg-gradient-to-b from-muted/30 to-muted/10 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+            <div className="hidden md:grid grid-cols-[1.4fr_1.4fr_1.6fr_0.8fr_60px] gap-4 px-5 py-3 border-b border-border/60 bg-muted/30 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
               <div>Empresa</div>
               <div>Endpoint</div>
               <div>Módulos</div>
@@ -364,7 +358,7 @@ export default function EmpresasPage() {
                     className={cn(
                       'relative grid grid-cols-1 md:grid-cols-[1.4fr_1.4fr_1.6fr_0.8fr_60px] gap-3 md:gap-4 px-5 py-4',
                       'transition-all duration-200 cursor-pointer group animate-fade-in',
-                      'hover:bg-gradient-to-r hover:from-primary/[0.04] hover:via-muted/20 hover:to-transparent',
+                      'hover:bg-primary/[0.035]',
                     )}
                   >
                     {/* Accent bar on hover */}
@@ -372,7 +366,7 @@ export default function EmpresasPage() {
 
                     {/* Empresa */}
                     <div className="flex items-center gap-3 min-w-0">
-                      <div className="relative h-9 w-9 rounded-lg bg-gradient-to-br from-primary/15 to-primary/5 border border-primary/20 flex items-center justify-center shrink-0 transition-all duration-300 group-hover:scale-105 group-hover:border-primary/40 group-hover:shadow-lg group-hover:shadow-primary/20">
+                      <div className="relative h-9 w-9 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0 transition-all duration-300 group-hover:scale-105 group-hover:border-primary/40">
                         <Building2 className="h-4 w-4 text-primary" />
                       </div>
                       <div className="min-w-0">
@@ -489,6 +483,6 @@ export default function EmpresasPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+    </PelegriniPageSurface>
   );
 }

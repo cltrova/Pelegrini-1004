@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, type CSSProperties } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import {
   MessageSquare,
@@ -14,6 +14,9 @@ import {
 import { cn } from '@/lib/utils';
 import { useEmpresaAtiva } from '@/hooks/useEmpresaAtiva';
 import { Badge } from '@/components/ui/badge';
+import { getPelegriniModuleVisual, resolvePelegriniTheme, resolvePelegriniVisual } from '@/config/pelegriniTheme';
+import { useFilialSelecionada } from '@/contexts/FilialSelecionadaContext';
+import { PelegriniBrandMark } from '@/components/pelegrini';
 import {
   Collapsible,
   CollapsibleContent,
@@ -37,6 +40,10 @@ export function WhatsappHeader() {
   const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { empresa, isMaster, codEmpresaAtiva } = useEmpresaAtiva();
+  const { filialAtiva } = useFilialSelecionada();
+  const theme = resolvePelegriniTheme(filialAtiva);
+  const visual = resolvePelegriniVisual(filialAtiva);
+  const moduleVisual = getPelegriniModuleVisual('whatsapp', theme.key);
   const headerRef = useRef<HTMLDivElement>(null);
 
   const isActive = (path: string) => {
@@ -71,7 +78,14 @@ export function WhatsappHeader() {
   return (
     <div ref={headerRef} className="relative z-50">
       {/* Main header bar */}
-      <header className="h-14 bg-sidebar border-b border-sidebar-border flex items-center px-4 gap-4">
+      <header
+        className="pelegrini-whatsapp-header h-16 bg-sidebar border-b border-sidebar-border flex items-center px-4 gap-4"
+        style={{
+          '--pelegrini-primary': theme.primary,
+          '--pelegrini-secondary': theme.secondary,
+          '--pelegrini-accent': theme.accent,
+        } as CSSProperties}
+      >
         {/* Hamburger button */}
         <button
           onClick={() => setIsMenuOpen(!isMenuOpen)}
@@ -86,13 +100,16 @@ export function WhatsappHeader() {
         </button>
 
         {/* Logo */}
-        <div className="flex items-center gap-2">
-          <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center">
-            <MessageSquare className="h-4 w-4 text-white" />
+        <div className="flex min-w-0 items-center gap-3">
+          <PelegriniBrandMark theme={theme} compact tone="sidebar" />
+          <div className="hidden min-w-0 sm:block">
+            <span className="block font-semibold text-sidebar-foreground">
+              WhatsApp
+            </span>
+            <span className="block truncate text-[11px] text-sidebar-muted">
+              {moduleVisual.kpiPrefix} / {visual.blueprintLabel}
+            </span>
           </div>
-          <span className="font-semibold text-sidebar-foreground hidden sm:inline">
-            WhatsApp
-          </span>
         </div>
 
         {/* Company info */}
@@ -111,9 +128,9 @@ export function WhatsappHeader() {
         )}
 
         {/* Connection status */}
-        <div className="ml-auto flex items-center gap-2 px-3 py-1.5 rounded-lg bg-green-500/10 border border-green-500/20">
-          <Zap className="h-4 w-4 text-green-500" />
-          <span className="text-xs font-medium text-green-500 hidden sm:inline">
+        <div className="ml-auto flex items-center gap-2 px-3 py-1.5 rounded-lg bg-sidebar-accent/70 border border-sidebar-border">
+          <Zap className="h-4 w-4 text-sidebar-primary" />
+          <span className="text-xs font-medium text-sidebar-foreground hidden sm:inline">
             Conectado
           </span>
         </div>
@@ -122,7 +139,14 @@ export function WhatsappHeader() {
       {/* Collapsible navigation menu */}
       <Collapsible open={isMenuOpen}>
         <CollapsibleContent>
-          <nav className="bg-sidebar border-b border-sidebar-border px-4 py-3">
+          <nav
+            className="bg-sidebar border-b border-sidebar-border px-4 py-3"
+            style={{
+              '--pelegrini-primary': theme.primary,
+              '--pelegrini-secondary': theme.secondary,
+              '--pelegrini-accent': theme.accent,
+            } as CSSProperties}
+          >
             <div className="flex flex-wrap items-center gap-2">
               {/* Menu items */}
               {whatsappMenuItems.map((item) => {

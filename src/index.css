@@ -1,14 +1,14 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
-
 @layer base {
   :root {
     /* Light Mode - Clean & Professional */
-    --background: 220 20% 97%;
-    --foreground: 222 47% 11%;
+    --background: 214 35% 98%;
+    --foreground: 213 44% 14%;
 
     --card: 0 0% 100%;
     --card-foreground: 222 47% 11%;
@@ -16,16 +16,16 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222 47% 11%;
 
-    --primary: 217 91% 50%;
+    --primary: 207 91% 27%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 220 14% 92%;
+    --secondary: 213 22% 93%;
     --secondary-foreground: 222 47% 11%;
 
-    --muted: 220 14% 94%;
-    --muted-foreground: 220 9% 46%;
+    --muted: 213 26% 95%;
+    --muted-foreground: 213 14% 43%;
 
-    --accent: 173 80% 40%;
+    --accent: 196 92% 44%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 72% 51%;
@@ -37,20 +37,20 @@
     --warning: 38 92% 50%;
     --warning-foreground: 0 0% 100%;
 
-    --border: 220 13% 88%;
-    --input: 220 13% 88%;
-    --ring: 217 91% 50%;
+    --border: 214 25% 86%;
+    --input: 214 25% 86%;
+    --ring: 207 91% 27%;
 
-    --radius: 0.75rem;
+    --radius: 0.5rem;
 
     /* Sidebar - Light */
-    --sidebar-background: 222 47% 11%;
+    --sidebar-background: 209 68% 16%;
     --sidebar-foreground: 220 14% 96%;
-    --sidebar-primary: 217 91% 60%;
+    --sidebar-primary: 198 92% 56%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 222 47% 18%;
+    --sidebar-accent: 207 55% 22%;
     --sidebar-accent-foreground: 220 14% 96%;
-    --sidebar-border: 222 40% 18%;
+    --sidebar-border: 207 45% 25%;
     --sidebar-ring: 217 91% 60%;
     --sidebar-muted: 220 9% 60%;
 
@@ -999,60 +999,368 @@
     to { transform: rotate(360deg); }
   }
 
-  .pelegrini-motion-backdrop {
-    opacity: 0.9;
+  .pelegrini-page-surface {
+    background:
+      linear-gradient(180deg, color-mix(in srgb, var(--pelegrini-primary, #073f73) 5%, hsl(var(--background))) 0%, hsl(var(--background)) 34%),
+      hsl(var(--background));
   }
 
-  .pelegrini-motion-line {
+  .pelegrini-page-surface[data-theme='transmissao'] {
+    --branch-line-opacity: 0.18;
+  }
+
+  .pelegrini-page-surface[data-theme='chevrolet'] {
+    --branch-line-opacity: 0.14;
+  }
+
+  .pelegrini-surface-pattern {
     position: absolute;
-    height: 2px;
-    width: 38%;
-    border-radius: 999px;
-    background: linear-gradient(90deg, transparent, var(--pelegrini-accent), transparent);
-    opacity: 0.22;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.55;
+    background-image:
+      linear-gradient(color-mix(in srgb, var(--pelegrini-primary, #073f73) 8%, transparent) 1px, transparent 1px),
+      linear-gradient(90deg, color-mix(in srgb, var(--pelegrini-primary, #073f73) 8%, transparent) 1px, transparent 1px);
+    background-size: 44px 44px;
+    mask-image: linear-gradient(180deg, black 0%, transparent 54%);
+  }
+
+  .pelegrini-page-surface[data-pattern='parts-catalog'] .pelegrini-surface-pattern {
+    background-image:
+      linear-gradient(90deg, color-mix(in srgb, var(--pelegrini-accent, #e8b923) 22%, transparent) 0 2px, transparent 2px 100%),
+      linear-gradient(color-mix(in srgb, var(--pelegrini-primary, #034e99) 7%, transparent) 1px, transparent 1px);
+    background-size: 120px 100%, 38px 38px;
+  }
+
+  .pelegrini-page-surface[data-pattern='technical-grid'] .pelegrini-surface-pattern {
+    background-image:
+      radial-gradient(circle at 12px 12px, color-mix(in srgb, var(--pelegrini-accent, #49d2ff) 28%, transparent) 1px, transparent 1.5px),
+      linear-gradient(color-mix(in srgb, var(--pelegrini-primary, #073f73) 10%, transparent) 1px, transparent 1px),
+      linear-gradient(90deg, color-mix(in srgb, var(--pelegrini-primary, #073f73) 10%, transparent) 1px, transparent 1px);
+    background-size: 28px 28px, 56px 56px, 56px 56px;
+  }
+
+  .pelegrini-page-surface .rounded-xl,
+  .pelegrini-page-surface .rounded-2xl,
+  .pelegrini-command-board,
+  .pelegrini-branch-panel,
+  .pelegrini-operational-card,
+  .pelegrini-module-header,
+  .pelegrini-data-panel,
+  .pelegrini-kpi-card,
+  .pelegrini-chart-frame,
+  .pelegrini-branch-visual {
+    border-radius: 8px;
+  }
+
+  .pelegrini-page-surface .premium-card,
+  .pelegrini-page-surface .premium-hover-card,
+  .pelegrini-page-surface .dashboard-header-card,
+  .pelegrini-page-surface .bg-card,
+  .pelegrini-page-surface [class*='bg-card/'] {
+    background: color-mix(in srgb, hsl(var(--card)) 96%, var(--pelegrini-primary, #073f73) 4%) !important;
+    border-color: color-mix(in srgb, hsl(var(--border)) 78%, var(--pelegrini-primary, #073f73) 22%) !important;
+    box-shadow: 0 12px 32px -30px color-mix(in srgb, var(--pelegrini-primary, #073f73) 56%, #000 44%) !important;
+  }
+
+  .pelegrini-page-surface .premium-card:hover,
+  .pelegrini-page-surface .premium-hover-card:hover,
+  .pelegrini-page-surface .dashboard-header-card:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 16px 38px -30px color-mix(in srgb, var(--pelegrini-primary, #073f73) 70%, #000 30%) !important;
+  }
+
+  .pelegrini-page-surface [class*='from-violet'],
+  .pelegrini-page-surface [class*='to-violet'],
+  .pelegrini-page-surface [class*='via-violet'],
+  .pelegrini-page-surface [class*='from-purple'],
+  .pelegrini-page-surface [class*='to-purple'],
+  .pelegrini-page-surface [class*='via-purple'],
+  .pelegrini-page-surface [class*='shadow-purple'],
+  .pelegrini-page-surface [class*='shadow-violet'] {
+    --tw-gradient-from: color-mix(in srgb, var(--pelegrini-primary, #073f73) 16%, hsl(var(--card))) var(--tw-gradient-from-position) !important;
+    --tw-gradient-to: hsl(var(--card)) var(--tw-gradient-to-position) !important;
+    --tw-gradient-stops: var(--tw-gradient-from), color-mix(in srgb, var(--pelegrini-accent, #49d2ff) 10%, hsl(var(--card))) var(--tw-gradient-via-position), var(--tw-gradient-to) !important;
+    --tw-shadow-color: color-mix(in srgb, var(--pelegrini-primary, #073f73) 18%, transparent) !important;
+  }
+
+  .pelegrini-page-surface [class*='text-violet'],
+  .pelegrini-page-surface [class*='text-purple'] {
+    color: color-mix(in srgb, var(--pelegrini-primary, #073f73) 88%, hsl(var(--foreground))) !important;
+  }
+
+  .pelegrini-technical-chip {
+    display: inline-flex;
+    align-items: center;
+    border: 1px solid color-mix(in srgb, var(--pelegrini-primary, #073f73) 18%, hsl(var(--border)));
+    background: color-mix(in srgb, var(--pelegrini-primary, #073f73) 6%, hsl(var(--card)));
+    color: color-mix(in srgb, var(--pelegrini-primary, #073f73) 88%, hsl(var(--foreground)));
+    padding: 0.25rem 0.5rem;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .pelegrini-motion-backdrop {
+    opacity: 0.62;
+  }
+
+  .pelegrini-operational-card {
+    --pelegrini-operational-accent: hsl(var(--primary));
+    border-color: color-mix(in srgb, var(--pelegrini-operational-accent) 18%, hsl(var(--border)));
+    background:
+      linear-gradient(180deg, color-mix(in srgb, var(--pelegrini-operational-accent) 6%, hsl(var(--card))) 0%, hsl(var(--card)) 100%);
+  }
+
+  .pelegrini-operational-card[data-accent='whatsapp'] {
+    --pelegrini-operational-accent: hsl(var(--success));
+  }
+
+  .pelegrini-operational-card[data-accent='comercial'] {
+    --pelegrini-operational-accent: hsl(var(--primary));
+  }
+
+  .pelegrini-operational-card[data-accent='operacional'] {
+    --pelegrini-operational-accent: hsl(var(--warning));
+  }
+
+  .pelegrini-operational-card[data-accent='financeiro'] {
+    --pelegrini-operational-accent: hsl(var(--accent));
+  }
+
+  .pelegrini-operational-card:hover {
+    border-color: color-mix(in srgb, var(--pelegrini-operational-accent) 52%, hsl(var(--border)));
+  }
+
+  .pelegrini-operational-card-accent {
+    background: var(--pelegrini-operational-accent);
+  }
+
+  .pelegrini-operational-card-blueprint {
+    position: absolute;
+    right: 0.75rem;
+    top: 0.75rem;
+    width: 54px;
+    height: 42px;
+    opacity: 0.16;
+    background:
+      linear-gradient(90deg, transparent 0 10px, var(--pelegrini-operational-accent) 10px 12px, transparent 12px 100%),
+      linear-gradient(var(--pelegrini-operational-accent) 0 2px, transparent 2px 100%);
+    background-size: 18px 100%, 100% 12px;
+  }
+
+  .pelegrini-operational-card-signal {
+    background: color-mix(in srgb, var(--pelegrini-operational-accent) 35%, hsl(var(--border)));
+  }
+
+  .pelegrini-operational-card:hover .pelegrini-operational-card-signal {
+    background: var(--pelegrini-operational-accent);
+  }
+
+  .pelegrini-motion-track {
+    position: absolute;
+    height: 1px;
+    width: 42%;
+    background: linear-gradient(90deg, transparent, var(--pelegrini-accent) 18%, var(--pelegrini-primary) 76%, transparent);
+    opacity: 0.3;
     animation: pelegriniMotionSweep 9s linear infinite;
   }
 
-  .pelegrini-motion-line.line-one {
-    top: 18%;
+  .pelegrini-branch-panel {
+    background:
+      linear-gradient(135deg, color-mix(in srgb, var(--pelegrini-primary, #073f73) 7%, hsl(var(--card))) 0%, hsl(var(--card)) 70%);
+  }
+
+  .pelegrini-branch-panel-pattern {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.18;
+    background-image:
+      linear-gradient(90deg, transparent 0 88%, color-mix(in srgb, var(--pelegrini-primary, #073f73) 26%, transparent) 88% 89%, transparent 89%),
+      linear-gradient(color-mix(in srgb, var(--pelegrini-primary, #073f73) 16%, transparent) 1px, transparent 1px);
+    background-size: 48px 100%, 100% 18px;
+  }
+
+  .pelegrini-branch-panel[data-motif='catalog-seal'] .pelegrini-branch-panel-pattern {
+    background-image:
+      linear-gradient(90deg, color-mix(in srgb, var(--pelegrini-accent, #e8b923) 40%, transparent) 0 3px, transparent 3px 100%),
+      linear-gradient(color-mix(in srgb, var(--pelegrini-primary, #034e99) 12%, transparent) 1px, transparent 1px);
+    background-size: 82px 100%, 100% 20px;
+  }
+
+  .pelegrini-sidebar {
+    background:
+      linear-gradient(180deg, color-mix(in srgb, var(--pelegrini-primary, #073f73) 44%, hsl(var(--sidebar-background))) 0%, hsl(var(--sidebar-background)) 72%),
+      hsl(var(--sidebar-background));
+  }
+
+  .pelegrini-sidebar-plate {
+    border: 1px solid color-mix(in srgb, var(--pelegrini-accent, #49d2ff) 18%, hsl(var(--sidebar-border)));
+    background:
+      linear-gradient(135deg, color-mix(in srgb, var(--pelegrini-accent, #49d2ff) 8%, transparent), transparent),
+      color-mix(in srgb, hsl(var(--sidebar-accent)) 70%, transparent);
+    padding: 0.75rem;
+    border-radius: 8px;
+  }
+
+  .sidebar-item-active {
+    background:
+      linear-gradient(90deg, color-mix(in srgb, var(--pelegrini-accent, #49d2ff) 18%, transparent), transparent) !important;
+    box-shadow: inset 3px 0 0 var(--pelegrini-accent, #49d2ff);
+  }
+
+  .pelegrini-whatsapp-header {
+    background:
+      linear-gradient(90deg, color-mix(in srgb, var(--pelegrini-primary, #073f73) 48%, hsl(var(--sidebar-background))) 0%, hsl(var(--sidebar-background)) 78%);
+  }
+
+  .pelegrini-module-header,
+  .pelegrini-data-panel,
+  .pelegrini-chart-frame,
+  .pelegrini-kpi-card,
+  .pelegrini-branch-visual {
+    position: relative;
+    background:
+      linear-gradient(180deg, color-mix(in srgb, var(--pelegrini-primary, #073f73) 4%, hsl(var(--card))) 0%, hsl(var(--card)) 100%);
+    border-color: color-mix(in srgb, var(--pelegrini-primary, #073f73) 18%, hsl(var(--border)));
+    box-shadow: 0 12px 30px -26px color-mix(in srgb, var(--pelegrini-primary, #073f73) 65%, #000 35%);
+  }
+
+  .pelegrini-kpi-card-rail {
+    position: absolute;
+    inset-block: 0;
+    left: 0;
+    width: 3px;
+    background: var(--pelegrini-primary, hsl(var(--primary)));
+  }
+
+  .pelegrini-kpi-card[data-tone='gold'] .pelegrini-kpi-card-rail {
+    background: #e8b923;
+  }
+
+  .pelegrini-kpi-card[data-tone='green'] .pelegrini-kpi-card-rail {
+    background: hsl(var(--success));
+  }
+
+  .pelegrini-kpi-card[data-tone='red'] .pelegrini-kpi-card-rail {
+    background: hsl(var(--destructive));
+  }
+
+  .pelegrini-chart-frame-key {
+    width: 44px;
+    height: 24px;
+    opacity: 0.62;
+    background:
+      linear-gradient(90deg, var(--pelegrini-primary, #073f73) 0 28%, transparent 28% 36%, var(--pelegrini-accent, #49d2ff) 36% 64%, transparent 64% 72%, color-mix(in srgb, var(--pelegrini-primary, #073f73) 50%, hsl(var(--border))) 72% 100%);
+  }
+
+  .pelegrini-branch-visual-grid {
+    position: absolute;
+    inset: 0;
+    opacity: 0.2;
+    background-image:
+      linear-gradient(var(--pelegrini-primary, #073f73) 1px, transparent 1px),
+      linear-gradient(90deg, var(--pelegrini-primary, #073f73) 1px, transparent 1px);
+    background-size: 22px 22px;
+  }
+
+  .pelegrini-branch-visual-symbol {
+    display: grid;
+    grid-template-columns: repeat(3, 12px);
+    gap: 4px;
+    align-items: end;
+    height: 48px;
+  }
+
+  .pelegrini-branch-visual-symbol span {
+    display: block;
+    width: 12px;
+    border: 1px solid color-mix(in srgb, var(--pelegrini-primary, #073f73) 26%, hsl(var(--border)));
+    background: color-mix(in srgb, var(--pelegrini-accent, #49d2ff) 24%, hsl(var(--card)));
+  }
+
+  .pelegrini-branch-visual-symbol span:nth-child(1) { height: 24px; }
+  .pelegrini-branch-visual-symbol span:nth-child(2) { height: 38px; }
+  .pelegrini-branch-visual-symbol span:nth-child(3) { height: 30px; }
+
+  .pelegrini-branch-visual[data-motif='gearbox-blueprint'] .pelegrini-branch-visual-symbol {
+    border: 8px solid color-mix(in srgb, var(--pelegrini-accent, #49d2ff) 42%, transparent);
+    border-radius: 50%;
+    display: block;
+    height: 54px;
+    width: 54px;
+  }
+
+  .pelegrini-branch-visual[data-motif='gearbox-blueprint'] .pelegrini-branch-visual-symbol span {
+    display: none;
+  }
+
+  .pelegrini-branch-visual[data-motif='catalog-seal'] .pelegrini-branch-visual-symbol {
+    border: 2px solid var(--pelegrini-accent, #e8b923);
+    display: block;
+    height: 46px;
+    width: 46px;
+    transform: rotate(-8deg);
+  }
+
+  .pelegrini-branch-visual[data-motif='catalog-seal'] .pelegrini-branch-visual-symbol span {
+    display: none;
+  }
+
+  .pelegrini-motion-track.track-primary {
+    top: 20%;
     left: -20%;
   }
 
-  .pelegrini-motion-line.line-two {
+  .pelegrini-motion-track.track-secondary {
     right: -18%;
-    bottom: 22%;
+    bottom: 24%;
     animation-delay: -4s;
   }
 
-  .pelegrini-motion-gear {
+  .pelegrini-motion-cog {
     position: absolute;
-    top: 18%;
-    right: 8%;
-    width: 160px;
-    height: 160px;
-    border: 1px solid color-mix(in srgb, var(--pelegrini-accent) 45%, transparent);
-    border-radius: 999px;
-    opacity: 0.18;
+    top: 14%;
+    right: 7%;
+    width: 152px;
+    height: 152px;
+    border: 14px dashed color-mix(in srgb, var(--pelegrini-accent) 42%, transparent);
+    border-radius: 50%;
+    opacity: 0.2;
     animation: pelegriniGearTurn 26s linear infinite;
   }
 
-  .pelegrini-motion-gear::before,
-  .pelegrini-motion-gear::after {
+  .pelegrini-motion-cog::before,
+  .pelegrini-motion-cog::after {
     content: '';
     position: absolute;
-    inset: 22%;
-    border: 1px dashed color-mix(in srgb, var(--pelegrini-accent) 60%, transparent);
-    border-radius: inherit;
+    inset: 25%;
+    border: 1px solid color-mix(in srgb, var(--pelegrini-accent) 62%, transparent);
+    border-radius: 50%;
   }
 
-  .pelegrini-motion-backdrop[data-motion='chevrolet'] .pelegrini-motion-gear {
-    border-radius: 22px;
+  .pelegrini-motion-cog::after {
+    inset: 43%;
+    background: color-mix(in srgb, var(--pelegrini-accent) 65%, transparent);
+  }
+
+  .pelegrini-motion-stamp {
+    position: absolute;
+    right: 12%;
+    bottom: 14%;
+    width: 116px;
+    height: 34px;
+    border: 1px solid color-mix(in srgb, var(--pelegrini-secondary) 55%, transparent);
+    opacity: 0.18;
     transform: rotate(8deg);
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .pelegrini-motion-line,
-    .pelegrini-motion-gear {
+    .pelegrini-motion-track,
+    .pelegrini-motion-cog,
+    .pelegrini-motion-stamp {
       animation: none;
     }
   }

@@ -25,13 +25,7 @@ function shouldReturnEmptyOnFailure(proxyPath: string): boolean {
     normalizedPath.includes("/comercial/pedidos") ||
     normalizedPath.includes("/comercial/devolucoes") ||
     normalizedPath.includes("/comercial/clientes") ||
-    normalizedPath.includes("/comercial/agrupado") ||
-    normalizedPath.includes("/financeiro/dre") ||
-    normalizedPath.includes("/financeiro/variacao") ||
-    normalizedPath.includes("/financeiro/duplicatas") ||
-    normalizedPath.includes("/financeiro/resumo") ||
-    normalizedPath.includes("/financeiro/fluxo-caixa") ||
-    normalizedPath.includes("/operacional/estoque")
+    normalizedPath.includes("/comercial/agrupado")
   );
 }
 
@@ -50,6 +44,18 @@ function resolveUpstreamHostHeader(endpoint: string): string | null {
     return host === "187.77.203.16" ? "rsys.cyft.com.br" : null;
   } catch {
     return null;
+  }
+}
+
+function isJsonResponse(body: string) {
+  const trimmed = body.trimStart();
+  if (!trimmed) return false;
+
+  try {
+    JSON.parse(trimmed);
+    return true;
+  } catch {
+    return false;
   }
 }
 
@@ -79,9 +85,15 @@ function localApiProxyPlugin() {
           const body = method === "GET" || method === "HEAD" ? undefined : await readRequestBody(req);
           const upstream = await fetch(upstreamUrl, { method, headers, body });
           const responseBody = Buffer.from(await upstream.arrayBuffer());
+          const responseText = responseBody.toString("utf8");
 
           if (!upstream.ok && shouldReturnEmptyOnFailure(proxyPath)) {
-            sendFallback(res, proxyPath, upstream.status, responseBody.toString("utf8"));
+            sendFallback(res, proxyPath, upstream.status, responseText);
+            return;
+          }
+
+          if (upstream.ok && shouldReturnEmptyOnFailure(proxyPath) && !isJsonResponse(responseText)) {
+            sendFallback(res, proxyPath, upstream.status, responseText);
             return;
           }
 

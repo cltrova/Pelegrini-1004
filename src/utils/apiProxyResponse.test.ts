@@ -1,0 +1,97 @@
+import { describe, expect, it, vi } from 'vitest';
+import { onRequest } from '../../functions/api-proxy';
+
+describe('api-proxy response handling', () => {
+  it('returns an empty JSON payload when a data endpoint responds with HTML', async () => {
+    const originalFetch = globalThis.fetch;
+    vi.stubGlobal('fetch', vi.fn(async () => new Response('<!DOCTYPE html><html></html>', {
+      status: 200,
+      headers: { 'content-type': 'text/html; charset=utf-8' },
+    })));
+
+    try {
+      const request = new Request(
+        'https://rsys.test/api-proxy?endpoint=http%3A%2F%2F187.77.203.16&path=%2Fpelegrini%2Fcomercial%2Fprodutos',
+      );
+
+      const response = await onRequest({ request });
+
+      expect(response.status).toBe(200);
+      expect(response.headers.get('content-type')).toContain('application/json');
+      expect(response.headers.get('x-proxy-upstream-error')).toBe('true');
+      expect(await response.text()).toBe('[]');
+    } finally {
+      vi.stubGlobal('fetch', originalFetch);
+    }
+  });
+
+  it('returns an empty JSON payload when a Comercial endpoint returns HTML mislabeled as JSON', async () => {
+    const originalFetch = globalThis.fetch;
+    vi.stubGlobal('fetch', vi.fn(async () => new Response('<!DOCTYPE html><html></html>', {
+      status: 200,
+      headers: { 'content-type': 'application/json; charset=utf-8' },
+    })));
+
+    try {
+      const request = new Request(
+        'https://rsys.test/api-proxy?endpoint=http%3A%2F%2F187.77.203.16&path=%2Fpelegrini%2Fcomercial%2Fprodutos',
+      );
+
+      const response = await onRequest({ request });
+
+      expect(response.status).toBe(200);
+      expect(response.headers.get('x-proxy-upstream-error')).toBe('true');
+      expect(await response.text()).toBe('[]');
+    } finally {
+      vi.stubGlobal('fetch', originalFetch);
+    }
+  });
+
+  it('returns an empty JSON payload when a Comercial endpoint returns malformed JSON', async () => {
+    const originalFetch = globalThis.fetch;
+    vi.stubGlobal('fetch', vi.fn(async () => new Response('{"produtos":', {
+      status: 200,
+      headers: { 'content-type': 'application/json; charset=utf-8' },
+    })));
+
+    try {
+      const request = new Request(
+        'https://rsys.test/api-proxy?endpoint=http%3A%2F%2F187.77.203.16&path=%2Fpelegrini%2Fcomercial%2Fprodutos',
+      );
+
+      const response = await onRequest({ request });
+
+      expect(response.status).toBe(200);
+      expect(response.headers.get('x-proxy-upstream-error')).toBe('true');
+      expect(await response.text()).toBe('[]');
+    } finally {
+      vi.stubGlobal('fetch', originalFetch);
+    }
+  });
+
+  it.each(['/financeiro/resumo', '/operacional/estoque'])(
+    'preserves a non-JSON response from %s instead of masking it as an empty dataset',
+    async (path) => {
+      const originalFetch = globalThis.fetch;
+      vi.stubGlobal('fetch', vi.fn(async () => new Response('<!DOCTYPE html><html></html>', {
+        status: 200,
+        headers: { 'content-type': 'text/html; charset=utf-8' },
+      })));
+
+      try {
+        const request = new Request(
+          `https://rsys.test/api-proxy?endpoint=http%3A%2F%2F187.77.203.16&path=${encodeURIComponent(path)}`,
+        );
+
+        const response = await onRequest({ request });
+
+        expect(response.status).toBe(200);
+        expect(response.headers.get('x-proxy-upstream-error')).toBeNull();
+        expect(response.headers.get('content-type')).toContain('text/html');
+        expect(await response.text()).toBe('<!DOCTYPE html><html></html>');
+      } finally {
+        vi.stubGlobal('fetch', originalFetch);
+      }
+    },
+  );
+});

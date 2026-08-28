@@ -145,6 +145,22 @@ function deveAplicarEscopoChevrolet10041PorDados(produtos: ProdutoItem[]): boole
   });
 }
 
+function getVendedorRelatorioChevrolet10041(item: ProdutoItem): { codigo: string; nome: string } | null {
+  const record = item as unknown as Record<string, unknown>;
+  const resolved = getVendedorCasaChevrolet10041FromRecord(record);
+  if (resolved) return resolved;
+
+  const codigo = String(
+    item.vendedor_codigo ?? record.cod_vendedor ?? record.CodVendedor ?? '',
+  ).trim();
+  const nome = String(
+    item.vendedor_nome ?? item.nome_interno ?? item.nome_externo ?? record.vendedor ?? record.Vendedor ?? '',
+  ).trim();
+
+  if (!codigo && !nome) return null;
+  return { codigo, nome };
+}
+
 export function ReceitaDetalheDialog({
   open,
   onOpenChange,
@@ -167,7 +183,7 @@ export function ReceitaDetalheDialog({
     return produtos.filter((item) => {
       if (isServicoForaRelatorioChevrolet10041(item as unknown as Record<string, unknown>)) return false;
 
-      const vendedor = getVendedorCasaChevrolet10041FromRecord(item as unknown as Record<string, unknown>);
+      const vendedor = getVendedorRelatorioChevrolet10041(item);
       return vendedorPertenceRelatorioChevrolet10041(vendedor);
     });
   }, [isContextoChevrolet10041, produtos]);

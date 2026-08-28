@@ -1,4 +1,5 @@
 import type { UserModuleKey } from '@/hooks/useUserModulePermissions';
+import { getFilialAccessState, type FilialAccessInput } from '@/utils/filialAccess';
 
 export interface PelegriniHomeModule {
   title: 'WhatsApp' | 'Comercial' | 'Operacional' | 'Financeiro';
@@ -21,7 +22,7 @@ export const pelegriniBrand = {
 export const pelegriniModules: PelegriniHomeModule[] = [
   {
     title: 'WhatsApp',
-    description: 'Atendimento, conversas, agentes e automacoes em uma rotina organizada.',
+    description: 'Conversas, agentes e fila de atendimento para manter o ritmo do balcao.',
     path: '/whatsapp',
     features: ['Chat', 'Agentes', 'Relatorios'],
     moduloKey: 'whatsapp',
@@ -29,7 +30,7 @@ export const pelegriniModules: PelegriniHomeModule[] = [
   },
   {
     title: 'Comercial',
-    description: 'Vendas, metas, clientes e performance comercial para decisao rapida.',
+    description: 'Pedidos, clientes, produtos e cotacoes para decisao rapida no balcao.',
     path: '/comercial/dashboard',
     features: ['Metas', 'Clientes', 'Produtos'],
     moduloKey: 'comercial',
@@ -37,7 +38,7 @@ export const pelegriniModules: PelegriniHomeModule[] = [
   },
   {
     title: 'Operacional',
-    description: 'Estoque, giro e indicadores operacionais para acompanhar a execucao.',
+    description: 'Estoque, giro e disponibilidade de pecas para acompanhar a execucao.',
     path: '/operacional/estoque',
     features: ['Estoque', 'Giro', 'Alertas'],
     moduloKey: 'operacional',
@@ -45,7 +46,7 @@ export const pelegriniModules: PelegriniHomeModule[] = [
   },
   {
     title: 'Financeiro',
-    description: 'Resumo, DRE, variacoes, duplicatas e cobranca em uma visao gerencial.',
+    description: 'Resumo, DRE, variacoes, duplicatas e cobranca em uma leitura gerencial.',
     path: '/financeiro',
     features: ['Resumo', 'DRE', 'Cobranca'],
     moduloKey: 'financeiro',
@@ -59,3 +60,9 @@ export const pelegriniAdminEntry = {
   path: '/configuracoes',
   features: ['Endpoints', 'Empresas', 'Modulos'],
 } as const;
+
+export function getPelegriniBranchAvailability(input: FilialAccessInput): Record<string, boolean> {
+  return Object.fromEntries(
+    getFilialAccessState(input).items.map((filial) => [filial.id, !filial.blocked]),
+  );
+}

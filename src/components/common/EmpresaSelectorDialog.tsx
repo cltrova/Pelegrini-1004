@@ -9,7 +9,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Building2, Check, Globe, BarChart3, TrendingUp, ShoppingCart, MessageSquare, Sparkles } from 'lucide-react';
+import { Building2, Check, Globe, BarChart3, TrendingUp, ShoppingCart, MessageSquare, Bot } from 'lucide-react';
 import { useEmpresas, Empresa } from '@/hooks/useEmpresaConfig';
 import { useEmpresaSelecionada } from '@/contexts/EmpresaSelecionadaContext';
 import { useFilialSelecionada } from '@/contexts/FilialSelecionadaContext';
@@ -112,7 +112,7 @@ export function EmpresaSelectorDialog({
       case 'whatsapp':
         return <MessageSquare className="h-3 w-3" />;
       case 'assistente_ia':
-        return <Sparkles className="h-3 w-3" />;
+        return <Bot className="h-3 w-3" />;
       default:
         return null;
     }
@@ -127,7 +127,7 @@ export function EmpresaSelectorDialog({
   return (
     <>
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[560px] p-0 max-h-[90vh] flex flex-col border-white/[0.08] bg-gradient-to-b from-slate-950/95 to-slate-900/95 backdrop-blur-xl shadow-[0_30px_80px_-20px_rgba(0,0,0,0.8)]">
+      <DialogContent className="sm:max-w-[560px] p-0 max-h-[90vh] flex flex-col border-white/[0.08] bg-slate-950/95 shadow-[0_30px_80px_-20px_rgba(0,0,0,0.8)]">
         <div className="relative p-6">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-3 text-base">

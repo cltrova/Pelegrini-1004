@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { pelegriniAdminEntry, pelegriniBrand, pelegriniModules } from './pelegriniHome';
+import { getPelegriniBranchAvailability, pelegriniAdminEntry, pelegriniBrand, pelegriniModules } from './pelegriniHome';
 
 describe('pelegriniHome config', () => {
   it('uses Pelegrini as the visible product brand', () => {
@@ -15,6 +15,16 @@ describe('pelegriniHome config', () => {
       'Operacional',
       'Financeiro',
     ]);
+  });
+
+  it('uses automotive module copy and removes template residue', () => {
+    const serialized = JSON.stringify({ pelegriniBrand, pelegriniModules, pelegriniAdminEntry });
+
+    expect(serialized).toContain('Pedidos');
+    expect(serialized).toContain('Estoque');
+    expect(serialized).toContain('Cobranca');
+    expect(serialized).not.toContain('Powered by React');
+    expect(serialized).not.toContain('BI Reports');
   });
 
   it('keeps each module connected to an entry route and permission key', () => {
@@ -34,5 +44,24 @@ describe('pelegriniHome config', () => {
       path: '/configuracoes',
     });
     expect(pelegriniAdminEntry.features).toContain('Endpoints');
+  });
+
+  it('disables unavailable branch choices while keeping the local preview branches available', () => {
+    expect(getPelegriniBranchAvailability({
+      codEmpresa: null,
+      isMaster: false,
+      filiaisPermitidas: [],
+      filialPadrao: null,
+    })).toEqual({});
+
+    expect(getPelegriniBranchAvailability({
+      codEmpresa: '1004',
+      isMaster: true,
+      filiaisPermitidas: [],
+      filialPadrao: null,
+    })).toEqual({
+      transmissao: true,
+      chevrolet: true,
+    });
   });
 });

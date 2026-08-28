@@ -4,7 +4,7 @@ import { PelegriniModuleShell } from '@/components/pelegrini';
 
 export function WhatsappLayout() {
   return (
-    <PelegriniModuleShell sidebar={<WhatsappHeader />} variant="header">
+    <PelegriniModuleShell sidebar={<WhatsappHeader />} variant="header" moduleKey="whatsapp">
       <Outlet />
     </PelegriniModuleShell>
   );

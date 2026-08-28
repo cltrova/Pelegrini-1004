@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Package, BarChart3, Table2, RefreshCw, Bot, Search, Download, ToggleLeft, ToggleRight } from 'lucide-react';
+import { BarChart3, Table2, RefreshCw, Bot, Search, Download, ToggleLeft, ToggleRight } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -15,9 +15,7 @@ import { EstoqueOverviewTab } from '@/components/operacional/EstoqueOverviewTab'
 import { EstoqueDetalhesTab } from '@/components/operacional/EstoqueDetalhesTab';
 import { GiroEstoqueTab } from '@/components/operacional/GiroEstoqueTab';
 import { EstoqueAssistantTab } from '@/components/operacional/EstoqueAssistantTab';
-import { resolvePelegriniTheme } from '@/config/pelegriniTheme';
-import { useFilialSelecionada } from '@/contexts/FilialSelecionadaContext';
-import { PelegriniBranchBadge } from '@/components/pelegrini';
+import { PelegriniModuleHeader } from '@/components/pelegrini';
 
 import { LoadingState } from '@/components/common/LoadingState';
 import { EmptyState } from '@/components/common/EmptyState';
@@ -78,8 +76,6 @@ const STATUS_CONFIG_LABELS: Record<GiroStatus, string> = {
 
 export default function EstoquePage() {
   const { consolidadoData, detalhadoData, giroData, isLoading, isError, empresa } = useEstoqueData();
-  const { filialAtiva } = useFilialSelecionada();
-  const theme = resolvePelegriniTheme(filialAtiva);
   const isEmpresa1004 = String(empresa?.cod_empresa_bi) === '1004' || String(empresa?.cod_empresa_bi) === '10041';
   const diasSemVendaOptions = useMemo(() => (
     isEmpresa1004
@@ -258,16 +254,7 @@ export default function EstoquePage() {
   if (isLoading) {
     return (
       <div className="p-6">
-        <div className="flex items-center gap-3 mb-8">
-          <div className="h-10 w-10 rounded-xl bg-amber-600/20 flex items-center justify-center">
-            <Package className="h-5 w-5 text-amber-500" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold">Gestão de Estoque</h1>
-            <PelegriniBranchBadge theme={theme} active className="mt-2" />
-            <p className="text-sm text-muted-foreground">Carregando dados...</p>
-          </div>
-        </div>
+        <PelegriniModuleHeader title="Gestao de Estoque" subtitle="Carregando dados..." moduleKey="operacional" />
         <LoadingState />
       </div>
     );
@@ -283,22 +270,11 @@ export default function EstoquePage() {
 
   return (
     <div className="p-4 md:p-6 space-y-4">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-xl bg-amber-600/20 flex items-center justify-center">
-            <Package className="h-5 w-5 text-amber-500" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold">Gestão de Estoque</h1>
-            <PelegriniBranchBadge theme={theme} active className="mt-2" />
-            <p className="text-sm text-muted-foreground">
-              {empresa?.nome || 'Pelegrini'} — {filteredEstoque.length.toLocaleString('pt-BR')} itens · {giroData.length.toLocaleString('pt-BR')} movimentações
-            </p>
-          </div>
-
-        </div>
-      </div>
+      <PelegriniModuleHeader
+        title="Gestao de Estoque"
+        subtitle={`${empresa?.nome || 'Pelegrini'} - ${filteredEstoque.length.toLocaleString('pt-BR')} itens - ${giroData.length.toLocaleString('pt-BR')} movimentacoes`}
+        moduleKey="operacional"
+      />
 
 
       {/* Search bar + actions — always visible */}
