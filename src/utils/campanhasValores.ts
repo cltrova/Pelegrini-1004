@@ -43,10 +43,20 @@ function isMwmAgosto2026VendaForaFat(item: Record<string, unknown>): boolean {
   );
 }
 
-function isMwmAgosto2026AjusteTotalGeralFat(item: Record<string, unknown>): boolean {
-  return fieldKey(item, 'num_lancamento', 'NumLancamento') === '2191521'
-    && fieldKey(item, 'cod_documento', 'CodDocumento') === '295212'
-    && fieldKey(item, 'num_nf', 'NumNf', 'NumeroNota') === '529603';
+function valorAjusteTotalGeralMwmAgosto2026Fat(item: Record<string, unknown>): number | null {
+  const lancamento = fieldKey(item, 'num_lancamento', 'NumLancamento');
+  const documento = fieldKey(item, 'cod_documento', 'CodDocumento');
+  const nota = fieldKey(item, 'num_nf', 'NumNf', 'NumeroNota');
+
+  if (lancamento === '2191521' && documento === '295212' && nota === '529603') {
+    return toNumber(item.valor_venda_item ?? item.ValorVenda);
+  }
+
+  if (lancamento === '2194134' && documento === '295417' && nota === '5665') {
+    return -36.45;
+  }
+
+  return null;
 }
 
 export function valorReceitaCampanha(item: Record<string, unknown>, codEmpresaBi?: string | null): number {
@@ -117,12 +127,10 @@ export function valorFaturamentoMwmFat1004(item: Record<string, unknown>, codEmp
     return valorBase + toNumber(item.valor_desconto ?? item.ValorDescontoItem ?? item.valor_desconto_item);
   }
 
-  // O TOTAL GERAL do FAT subtrai este ajuste de venda na devolucao 1.411.
-  if (
-    isMwmAgosto2026AjusteTotalGeralFat(item)
-    && rawCfop(item.cfop ?? item.num_cfop) === '1411'
-  ) {
-    return valorBase + toNumber(item.valor_venda_item ?? item.ValorVenda);
+  // O TOTAL GERAL do FAT subtrai estes ajustes de venda em devolucoes 1.411.
+  const ajusteTotalGeral = valorAjusteTotalGeralMwmAgosto2026Fat(item);
+  if (ajusteTotalGeral !== null && rawCfop(item.cfop ?? item.num_cfop) === '1411') {
+    return valorBase + ajusteTotalGeral;
   }
 
   return valorBase;

@@ -188,6 +188,35 @@ describe('criarFiltroTotalizadores1004', () => {
       valor_venda_item: -65.59,
       valor_liquido_final_item: -410.59,
     }, '1004')).toBeCloseTo(-476.18, 2);
+
+    expect(valorFaturamentoMwmFat1004({
+      cod_empresa_bi: '1004',
+      tipo: 'DEVOLUCAO',
+      cfop: '1.411',
+      num_lancamento: 2194134,
+      cod_documento: 295417,
+      num_nf: 5665,
+      valor_total: -296.03,
+      valor_venda_item: -36.60,
+      valor_liquido_final_item: -296.03,
+    }, '1004')).toBeCloseTo(-332.48, 2);
+
+    const totalTela = 504134.72;
+    const totalRelatorio = totalTela
+      + valorFaturamentoMwmFat1004({
+        cod_empresa_bi: '1004',
+        tipo: 'DEVOLUCAO',
+        cfop: '1.411',
+        num_lancamento: 2194134,
+        cod_documento: 295417,
+        num_nf: 5665,
+        valor_total: -296.03,
+        valor_venda_item: -36.60,
+        valor_liquido_final_item: -296.03,
+      }, '1004')
+      - (-296.03);
+
+    expect(totalRelatorio).toBeCloseTo(504098.27, 2);
   });
 
   it('corrige vinculo ausente de lancamento validado no relatorio de junho/2026', () => {
