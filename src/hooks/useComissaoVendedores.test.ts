@@ -3,6 +3,7 @@ import {
   comissaoLinhaPertenceForcaP1004,
   deveExcluirForcaPComissao1004,
   mapComissaoLinha,
+  resolveComissaoVendedoresPath,
 } from './useComissaoVendedores';
 
 describe('mapComissaoLinha', () => {
@@ -82,5 +83,11 @@ describe('mapComissaoLinha', () => {
     expect(deveExcluirForcaPComissao1004('10041', 'chevrolet')).toBe(true);
     expect(deveExcluirForcaPComissao1004('1004', 'transmissao')).toBe(true);
     expect(deveExcluirForcaPComissao1004('1001', undefined)).toBe(false);
+  });
+
+  it('usa o endpoint de comissao da Chevrolet quando a empresa ativa e 10041', () => {
+    expect(resolveComissaoVendedoresPath('10041')).toBe('/comercial/comissoes_ch');
+    expect(resolveComissaoVendedoresPath('1004', 'chevrolet')).toBe('/comercial/comissoes_ch');
+    expect(resolveComissaoVendedoresPath('1004', 'transmissao')).toBe('/comercial/comissoes');
   });
 });

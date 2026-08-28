@@ -3,7 +3,7 @@ import { buildApiProxyUrl } from '@/utils/apiEndpointResolver';
 import { useEmpresaAtiva } from '@/hooks/useEmpresaAtiva';
 import { useFilialSelecionada } from '@/contexts/FilialSelecionadaContext';
 import { resolveCodEmpresaBiParam } from '@/utils/filialEndpoint';
-import { vendedorForcaP1004 } from '@/utils/vendedores1004';
+import { isContextoChevrolet10041, vendedorForcaP1004 } from '@/utils/vendedores1004';
 
 export interface ComissaoFiltros {
   data_ini: string;
@@ -113,12 +113,17 @@ export function deveExcluirForcaPComissao1004(codEmpresaAtiva: unknown, filialAt
   return codEmpresa === '10041' || codEmpresa === '1004' || filial === 'chevrolet';
 }
 
+export function resolveComissaoVendedoresPath(codEmpresaAtiva: unknown, filialAtiva?: unknown, empresa?: unknown): string {
+  return isContextoChevrolet10041(codEmpresaAtiva, filialAtiva, empresa)
+    ? '/comercial/comissoes_ch'
+    : '/comercial/comissoes';
+}
+
 export function useComissaoVendedores(filtros: ComissaoFiltros | null, enabled = true) {
   const { empresa, codEmpresaAtiva } = useEmpresaAtiva();
   const { filialAtiva } = useFilialSelecionada();
 
-  const isChevrolet = filialAtiva === 'chevrolet';
-  const path = isChevrolet ? '/comercial/comissoes_ch' : '/comercial/comissoes';
+  const path = resolveComissaoVendedoresPath(codEmpresaAtiva, filialAtiva, empresa);
   const codBiParam = resolveCodEmpresaBiParam(empresa, filialAtiva);
   const deveExcluirForcaP1004 = deveExcluirForcaPComissao1004(codEmpresaAtiva, filialAtiva);
 
