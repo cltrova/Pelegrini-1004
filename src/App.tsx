@@ -140,7 +140,7 @@ function PasswordGate({ children }: { children: React.ReactNode }) {
 }
 
 const App = () => (
-  <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
+  <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <EmpresaSelecionadaProvider>

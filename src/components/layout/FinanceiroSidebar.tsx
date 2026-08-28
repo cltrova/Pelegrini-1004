@@ -13,7 +13,7 @@ import { cn } from '@/lib/utils';
 import { useEmpresaAtiva } from '@/hooks/useEmpresaAtiva';
 import { useUserModulePermissions } from '@/hooks/useUserModulePermissions';
 import { Badge } from '@/components/ui/badge';
-import { resolvePelegriniTheme } from '@/config/pelegriniTheme';
+import { getPelegriniModuleVisual, resolvePelegriniTheme, resolvePelegriniVisual } from '@/config/pelegriniTheme';
 import { getPelegriniIdentity } from '@/config/pelegriniIdentity';
 import { useFilialSelecionada } from '@/contexts/FilialSelecionadaContext';
 import { PelegriniBrandMark } from '@/components/pelegrini';
@@ -40,6 +40,8 @@ export function FinanceiroSidebar() {
   const { filialAtiva } = useFilialSelecionada();
   const theme = resolvePelegriniTheme(filialAtiva);
   const identity = getPelegriniIdentity(theme.key);
+  const visual = resolvePelegriniVisual(filialAtiva);
+  const moduleVisual = getPelegriniModuleVisual('financeiro', theme.key);
 
   const isActive = (path: string) => location.pathname === path;
 
@@ -117,10 +119,10 @@ export function FinanceiroSidebar() {
         <div className="flex items-center justify-between px-5 py-6 border-b border-sidebar-border">
           <div className="flex items-center gap-3">
             <PelegriniBrandMark theme={theme} tone="sidebar" />
-            <div>
+            <div className="min-w-0">
               <h1 className="font-bold text-lg leading-tight">Financeiro</h1>
               <span className="text-[11px] text-sidebar-muted uppercase tracking-wider">
-                Financeiro ativo
+                {theme.sidebarLabels.subheading}
               </span>
             </div>
           </div>
@@ -163,9 +165,19 @@ export function FinanceiroSidebar() {
           </button>
         </div>
 
+        <div className="px-4 pt-4">
+          <div className="pelegrini-sidebar-plate">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-sidebar-muted">
+              {theme.sidebarLabels.section}
+            </p>
+            <p className="mt-1 text-sm font-semibold text-sidebar-foreground">{moduleVisual.kpiPrefix}</p>
+            <p className="mt-1 text-xs leading-5 text-sidebar-muted">{visual.panelMicrocopy}</p>
+          </div>
+        </div>
+
         {/* Navigation */}
         <nav className="flex-1 overflow-y-auto scrollbar-thin p-4 space-y-2">
-          <p className="sidebar-section">Relatórios</p>
+          <p className="sidebar-section">{theme.sidebarLabels.section}</p>
           {filteredMenuItems.map((item) => {
             const Icon = item.icon;
             return (
@@ -188,7 +200,7 @@ export function FinanceiroSidebar() {
         {/* Footer */}
         <div className="p-4 border-t border-sidebar-border">
           <div className="text-xs text-sidebar-muted">
-            <p className="font-medium text-sidebar-foreground">Pelegrini</p>
+            <p className="font-medium text-sidebar-foreground">{theme.name}</p>
             <p className="mt-1">{identity.footerLine}</p>
           </div>
         </div>

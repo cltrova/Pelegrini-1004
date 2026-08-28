@@ -92,7 +92,7 @@ export function ComercialLayout() {
 
   // Desktop: layout com sidebar
   return (
-    <PelegriniModuleShell sidebar={<ComercialSidebar />}>
+    <PelegriniModuleShell sidebar={<ComercialSidebar />} moduleKey="comercial">
       {bloquearConteudo ? placeholder : <Outlet />}
     </PelegriniModuleShell>
   );

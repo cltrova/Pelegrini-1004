@@ -1,5 +1,6 @@
 import type { MouseEventHandler } from 'react';
 import type { PelegriniTheme } from '@/config/pelegriniTheme';
+import { resolvePelegriniVisual } from '@/config/pelegriniTheme';
 import { cn } from '@/lib/utils';
 
 interface PelegriniBranchPanelProps {
@@ -21,6 +22,8 @@ export function PelegriniBranchPanel({
   disabled = false,
   className,
 }: PelegriniBranchPanelProps) {
+  const visual = resolvePelegriniVisual(theme.key);
+
   return (
     <button
       type="button"
@@ -33,8 +36,10 @@ export function PelegriniBranchPanel({
       )}
       onClick={onSelect}
       disabled={disabled}
+      data-motif={theme.motif}
     >
       <span className="absolute inset-y-0 left-0 w-1" style={{ backgroundColor: theme.accent }} aria-hidden="true" />
+      <span className="pelegrini-branch-panel-pattern" aria-hidden="true" />
       <span className="flex items-start gap-3 pl-1">
         <span className="flex h-10 w-10 shrink-0 items-center justify-center border border-border bg-white p-1">
           <img src={theme.logoSrc} alt="" className="max-h-8 max-w-8 object-contain" />
@@ -42,6 +47,7 @@ export function PelegriniBranchPanel({
         <span className="min-w-0">
           <span className="block text-sm font-semibold text-foreground">{theme.name}</span>
           <span className="mt-1 block text-sm leading-5 text-muted-foreground">{description}</span>
+          <span className="mt-2 block text-xs font-medium text-primary">{visual.blueprintLabel}</span>
         </span>
       </span>
       <span className="mt-4 flex flex-wrap gap-2 pl-1">

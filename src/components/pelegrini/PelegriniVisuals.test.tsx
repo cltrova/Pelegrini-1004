@@ -4,7 +4,12 @@ import { resolvePelegriniTheme } from '@/config/pelegriniTheme';
 import { PelegriniBrandMark } from './PelegriniBrandMark';
 import { PelegriniBranchBadge } from './PelegriniBranchBadge';
 import { PelegriniBranchPanel } from './PelegriniBranchPanel';
+import { PelegriniBranchVisual } from './PelegriniBranchVisual';
+import { PelegriniChartFrame } from './PelegriniChartFrame';
+import { PelegriniDataPanel } from './PelegriniDataPanel';
+import { PelegriniKpiCard } from './PelegriniKpiCard';
 import { PelegriniModuleHeader } from './PelegriniModuleHeader';
+import { PelegriniPageSurface } from './PelegriniPageSurface';
 import { PelegriniOperationalCard } from './PelegriniOperationalCard';
 import { LoadingState } from '@/components/common/LoadingState';
 
@@ -99,6 +104,40 @@ describe('Pelegrini visual components', () => {
 
     expect(screen.getByText('Produtos')).toBeInTheDocument();
     expect(screen.getByText(/Pedidos e carteira/i)).toBeInTheDocument();
+  });
+
+  it('renders branch visual primitives with CT mechanical identity', () => {
+    render(
+      <PelegriniPageSurface moduleKey="operacional">
+        <PelegriniBranchVisual theme={resolvePelegriniTheme('transmissao')} />
+        <PelegriniKpiCard label="Estoque critico" value="18" helper="Cambio e diferencial" />
+        <PelegriniDataPanel title="Mesa tecnica" eyebrow="ZF / Eaton">
+          <span>Aplicacoes pesadas</span>
+        </PelegriniDataPanel>
+      </PelegriniPageSurface>,
+    );
+
+    expect(screen.getByText('Cambio e diferencial')).toBeInTheDocument();
+    expect(screen.getByText('Mesa tecnica')).toBeInTheDocument();
+    expect(screen.getByText('Aplicacoes pesadas')).toBeInTheDocument();
+    expect(screen.getByTestId('pelegrini-page-surface')).toHaveAttribute('data-module', 'operacional');
+    expect(screen.getByTestId('pelegrini-branch-visual')).toHaveAttribute('data-motif', 'gearbox-blueprint');
+  });
+
+  it('renders chart frame with CCH catalog identity', () => {
+    render(
+      <PelegriniChartFrame
+        title="Pedidos originais"
+        helper="Curva Chevrolet"
+        themeKey="chevrolet"
+      >
+        <span>Grafico</span>
+      </PelegriniChartFrame>,
+    );
+
+    expect(screen.getByText('Pedidos originais')).toBeInTheDocument();
+    expect(screen.getByText('Curva Chevrolet')).toBeInTheDocument();
+    expect(screen.getByTestId('pelegrini-chart-frame')).toHaveAttribute('data-theme', 'chevrolet');
   });
 
   it('stops the loading spinner when reduced motion is requested', () => {

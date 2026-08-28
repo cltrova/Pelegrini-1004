@@ -4,7 +4,7 @@ import { PelegriniModuleShell } from '@/components/pelegrini';
 
 export function OperacionalLayout() {
   return (
-    <PelegriniModuleShell sidebar={<OperacionalSidebar />}>
+    <PelegriniModuleShell sidebar={<OperacionalSidebar />} moduleKey="operacional">
       <Outlet />
     </PelegriniModuleShell>
   );

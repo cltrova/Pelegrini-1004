@@ -41,6 +41,7 @@ export function PelegriniOperationalCard({
       disabled={disabled}
     >
       <span className="pelegrini-operational-card-accent absolute inset-x-0 top-0 h-1" aria-hidden="true" />
+      <span className="pelegrini-operational-card-blueprint" aria-hidden="true" />
       <span className="pelegrini-operational-card-signal mb-5 block h-px w-12 transition-colors" aria-hidden="true" />
       <span className="block text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">{title}</span>
       <span className="mt-2 block text-lg font-semibold text-foreground">{label}</span>

@@ -22,6 +22,7 @@ import { useEmpresas } from '@/hooks/useEmpresaConfig';
 import { supabase } from '@/integrations/supabase/client';
 import { isLocalPreviewEnabled } from '@/config/localPreview';
 import { cn } from '@/lib/utils';
+import { PelegriniPageSurface } from '@/components/pelegrini';
 
 // ===== Hooks de métricas =====
 function useAdminStats() {
@@ -63,14 +64,14 @@ function KpiCard({
   accent?: 'primary' | 'success' | 'warning' | 'neutral';
 }) {
   const accentMap = {
-    primary: 'from-primary/20 to-primary/5 border-primary/20 text-primary',
-    success: 'from-emerald-500/20 to-emerald-500/5 border-emerald-500/20 text-emerald-400',
-    warning: 'from-amber-500/20 to-amber-500/5 border-amber-500/20 text-amber-400',
-    neutral: 'from-muted/40 to-muted/10 border-border/60 text-muted-foreground',
+    primary: 'border-primary/20 bg-primary/10 text-primary',
+    success: 'border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300',
+    warning: 'border-amber-500/25 bg-amber-500/10 text-amber-700 dark:text-amber-300',
+    neutral: 'border-border/60 bg-muted/50 text-muted-foreground',
   } as const;
   return (
-    <div className="group relative overflow-hidden rounded-2xl border border-border/60 bg-card p-5 transition-all hover:border-border">
-      <div className="pointer-events-none absolute -top-12 -right-12 h-32 w-32 rounded-full bg-gradient-to-br opacity-60 blur-2xl from-primary/10 to-transparent" />
+    <div className="pelegrini-kpi-card group relative overflow-hidden border border-border/60 bg-card p-5 transition-all hover:border-border">
+      <span className="pelegrini-kpi-card-rail" aria-hidden="true" />
       <div className="relative flex items-start justify-between">
         <div>
           <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
@@ -85,7 +86,7 @@ function KpiCard({
         </div>
         <div
           className={cn(
-            'h-10 w-10 rounded-xl border bg-gradient-to-br flex items-center justify-center shrink-0',
+            'h-10 w-10 rounded-lg border flex items-center justify-center shrink-0',
             accentMap[accent],
           )}
         >
@@ -118,18 +119,16 @@ function ActiveModuleCard({
       onClick={onClick}
       disabled={disabled}
       className={cn(
-        'group relative overflow-hidden rounded-2xl border border-border/60 bg-card text-left p-6',
+        'pelegrini-data-panel group relative overflow-hidden border border-border/60 bg-card text-left p-6',
         'transition-all duration-300',
         'hover:border-primary/40 hover:shadow-[0_12px_40px_-12px_hsl(var(--primary)/0.35)] hover:-translate-y-0.5',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50',
         disabled && 'opacity-50 cursor-not-allowed hover:translate-y-0 hover:border-border/60 hover:shadow-none',
       )}
     >
-      <div className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-gradient-to-br from-primary/[0.08] via-transparent to-transparent" />
-      <div className="pointer-events-none absolute -top-16 -right-16 h-40 w-40 rounded-full bg-primary/5 blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
       <div className="relative">
         <div className="flex items-start justify-between mb-5">
-          <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/20 flex items-center justify-center">
+          <div className="h-12 w-12 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center">
             <Icon className="h-6 w-6 text-primary" />
           </div>
           <Badge
@@ -209,7 +208,7 @@ function ConfiguracoesPageContent() {
   const totalMasters = stats?.masters ?? 0;
 
   return (
-    <div className="min-h-screen bg-background">
+    <PelegriniPageSurface moduleKey="financeiro" className="min-h-screen">
       {/* Top bar */}
       <header className="sticky top-0 z-10 border-b border-border/60 bg-background/80 backdrop-blur-xl">
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center gap-4">
@@ -224,7 +223,7 @@ function ConfiguracoesPageContent() {
           </Button>
           <div className="h-6 w-px bg-border" />
           <div className="flex items-center gap-3">
-            <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/20 flex items-center justify-center">
+            <div className="h-9 w-9 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center">
               <Settings className="h-4.5 w-4.5 text-primary" />
             </div>
             <div>
@@ -327,7 +326,7 @@ function ConfiguracoesPageContent() {
           Apenas usuários com perfil master podem acessar esta área
         </div>
       </div>
-    </div>
+    </PelegriniPageSurface>
   );
 }
 
