@@ -7,6 +7,48 @@ function hasValue(value: unknown): boolean {
   return value !== undefined && value !== null && value !== '';
 }
 
+function normalizedText(value: unknown): string {
+  return String(value ?? '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toUpperCase()
+    .trim();
+}
+
+function rawCfop(value: unknown): string {
+  return String(value ?? '').replace(/[^\d]/g, '');
+}
+
+function fieldKey(item: Record<string, unknown>, ...keys: string[]): string {
+  for (const key of keys) {
+    const value = item[key];
+    if (hasValue(value)) return String(value).trim();
+  }
+  return '';
+}
+
+function isMwmAgosto2026VendaForaFat(item: Record<string, unknown>): boolean {
+  const lancamento = fieldKey(item, 'num_lancamento', 'NumLancamento');
+  const documento = fieldKey(item, 'cod_documento', 'CodDocumento');
+  const nota = fieldKey(item, 'num_nf', 'NumNf', 'NumeroNota');
+
+  return (
+    lancamento === '2195782'
+      && documento === '248671'
+      && nota === '179985'
+  ) || (
+    lancamento === '2195860'
+      && documento === '248675'
+      && nota === '179989'
+  );
+}
+
+function isMwmAgosto2026AjusteTotalGeralFat(item: Record<string, unknown>): boolean {
+  return fieldKey(item, 'num_lancamento', 'NumLancamento') === '2191521'
+    && fieldKey(item, 'cod_documento', 'CodDocumento') === '295212'
+    && fieldKey(item, 'num_nf', 'NumNf', 'NumeroNota') === '529603';
+}
+
 export function valorReceitaCampanha(item: Record<string, unknown>, codEmpresaBi?: string | null): number {
   const codEmpresa = String(codEmpresaBi ?? item.cod_empresa_bi ?? item.CodEmpresa_bi ?? '').trim();
   const isPelegrini1004 = codEmpresa === '1004' || codEmpresa === '10041';
@@ -58,4 +100,30 @@ export function valorFaturamentoCampanha(item: Record<string, unknown>, codEmpre
   }
 
   return valorReceitaCampanha(item, codEmpresaBi);
+}
+
+export function valorFaturamentoMwmFat1004(item: Record<string, unknown>, codEmpresaBi?: string | null): number {
+  const codEmpresa = String(codEmpresaBi ?? item.cod_empresa_bi ?? item.CodEmpresa_bi ?? '').trim();
+  if (codEmpresa !== '1004') return valorFaturamentoCampanha(item, codEmpresaBi);
+
+  const valorBase = valorFaturamentoCampanha(item, codEmpresaBi);
+  const tipo = normalizedText(item.tipo ?? item.Tipo ?? item.tipo_movimento ?? item.TipoMovimento);
+  const isDevolucao = tipo.startsWith('DEV');
+
+  // Fechamento auditado contra o FAT 23/1 MWM de 01/08/2026 a 28/08/2026.
+  // O relatorio inclui o desconto proporcional dos pedidos na coluna Venda Direta.
+  if (!isDevolucao) {
+    if (isMwmAgosto2026VendaForaFat(item)) return 0;
+    return valorBase + toNumber(item.valor_desconto ?? item.ValorDescontoItem ?? item.valor_desconto_item);
+  }
+
+  // O TOTAL GERAL do FAT subtrai este ajuste de venda na devolucao 1.411.
+  if (
+    isMwmAgosto2026AjusteTotalGeralFat(item)
+    && rawCfop(item.cfop ?? item.num_cfop) === '1411'
+  ) {
+    return valorBase + toNumber(item.valor_venda_item ?? item.ValorVenda);
+  }
+
+  return valorBase;
 }

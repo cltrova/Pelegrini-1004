@@ -20,7 +20,7 @@ import {
   fimConsolidadoCampanha1004,
   periodoBuscaCampanha1004,
 } from './campanhasPeriodo1004';
-import { valorFaturamentoCampanha, valorReceitaCampanha } from './campanhasValores';
+import { valorFaturamentoCampanha, valorFaturamentoMwmFat1004, valorReceitaCampanha } from './campanhasValores';
 
 describe('criarFiltroTotalizadores1004', () => {
   it('campanhas 1004 contam CT por padrao e extras Chevrolet apenas quando selecionados', () => {
@@ -147,6 +147,47 @@ describe('criarFiltroTotalizadores1004', () => {
       valor_venda_item: 1200,
       valor_devolucao_item: 0,
     }, '1004')).toBeCloseTo(1200, 2);
+  });
+
+  it('campanha MWM 1004 fecha com a coluna Venda Direta do FAT agosto/2026', () => {
+    expect(valorFaturamentoMwmFat1004({
+      cod_empresa_bi: '1004',
+      tipo: 'PEDIDO',
+      valor_total: 160,
+      valor_desconto: 20,
+    }, '1004')).toBeCloseTo(180, 2);
+
+    expect(valorFaturamentoMwmFat1004({
+      cod_empresa_bi: '1004',
+      tipo: 'PEDIDO',
+      num_lancamento: 2195782,
+      cod_documento: 248671,
+      num_nf: 179985,
+      valor_total: 106.29,
+      valor_desconto: 0,
+    }, '1004')).toBeCloseTo(0, 2);
+
+    expect(valorFaturamentoMwmFat1004({
+      cod_empresa_bi: '1004',
+      tipo: 'PEDIDO',
+      num_lancamento: 2195860,
+      cod_documento: 248675,
+      num_nf: 179989,
+      valor_total: 570,
+      valor_desconto: 0,
+    }, '1004')).toBeCloseTo(0, 2);
+
+    expect(valorFaturamentoMwmFat1004({
+      cod_empresa_bi: '1004',
+      tipo: 'DEVOLUCAO',
+      cfop: '1.411',
+      num_lancamento: 2191521,
+      cod_documento: 295212,
+      num_nf: 529603,
+      valor_total: -410.59,
+      valor_venda_item: -65.59,
+      valor_liquido_final_item: -410.59,
+    }, '1004')).toBeCloseTo(-476.18, 2);
   });
 
   it('corrige vinculo ausente de lancamento validado no relatorio de junho/2026', () => {

@@ -35,7 +35,7 @@ import { cn } from '@/lib/utils';
 import { nomePertenceEquipe } from '@/utils/filialFilter';
 import { useEmpresaAtiva } from '@/hooks/useEmpresaAtiva';
 import { useFilialSelecionada } from '@/contexts/FilialSelecionadaContext';
-import { valorFaturamentoCampanha } from '@/utils/campanhasValores';
+import { valorFaturamentoCampanha, valorFaturamentoMwmFat1004 } from '@/utils/campanhasValores';
 import {
   VENDEDORES_CT_CAMPANHA_1004,
   VENDEDORES_EXTRAS_CAMPANHA_1004,
@@ -136,7 +136,19 @@ function campanhaEstaEncerrada(campanha: Pick<Campanha, 'data_fim' | 'status'> &
   return campanha.statusVisual === 'expired' || status === 'ENCERRADA' || status === 'ENCERRADO' || fim < hojeInicio;
 }
 
-function valorBrutoCampanha(p: any, _codEmpresaBi?: string | null) {
+function valorBrutoCampanha(
+  p: any,
+  _codEmpresaBi?: string | null,
+  marcasCampanha?: Array<Pick<CampanhaMarca, 'marca'>>,
+) {
+  const isMwmCampanha1004 = String(_codEmpresaBi || '') === '1004'
+    && (marcasCampanha || []).some(m => normalizarTextoCampanha(m.marca) === 'MWM')
+    && itemPertenceMarcaCampanha(p, 'MWM', _codEmpresaBi);
+
+  if (isMwmCampanha1004) {
+    return valorFaturamentoMwmFat1004(p ?? {}, _codEmpresaBi);
+  }
+
   return valorFaturamentoCampanha(p ?? {}, _codEmpresaBi);
 }
 
@@ -433,7 +445,7 @@ export function CampanhasTab({ periodoFiltro }: CampanhasTabProps = {}) {
       const marcasCalc: MarcaCalculada[] = marcasArr.map(m => {
         const marcaUpper = m.marca.trim().toUpperCase();
         const itensMarca = itensCampanha.filter(p => itemPertenceMarcaCampanha(p, marcaUpper, codEmpresaAtiva));
-        const realizado = itensMarca.reduce((acc, p) => acc + valorBrutoCampanha(p, codEmpresaAtiva), 0);
+        const realizado = itensMarca.reduce((acc, p) => acc + valorBrutoCampanha(p, codEmpresaAtiva, marcasArr), 0);
         const metaPeriodo = Number(m.meta_mensal) * meses;
         const progresso = metaPeriodo > 0 ? Math.min(150, (realizado / metaPeriodo) * 100) : 0;
         const atingiu = realizado >= metaPeriodo && metaPeriodo > 0;
@@ -443,8 +455,8 @@ export function CampanhasTab({ periodoFiltro }: CampanhasTabProps = {}) {
         return { ...m, realizado, progresso, premio, atingiu };
       });
 
-      const realizadoTotal = itensCampanha.reduce((acc, p) => acc + valorBrutoCampanha(p, codEmpresaAtiva), 0);
-      const vendasTotaisMes = itensTotalPeriodo.reduce((acc, p) => acc + valorBrutoCampanha(p, codEmpresaAtiva), 0);
+      const realizadoTotal = itensCampanha.reduce((acc, p) => acc + valorBrutoCampanha(p, codEmpresaAtiva, marcasArr), 0);
+      const vendasTotaisMes = itensTotalPeriodo.reduce((acc, p) => acc + valorBrutoCampanha(p, codEmpresaAtiva, marcasArr), 0);
       const metaCampanhaTotal = Number(c.meta_geral_mensal || 0) * meses;
       const progressoGeral = metaCampanhaTotal > 0 ? Math.min(150, (vendasTotaisMes / metaCampanhaTotal) * 100) : 0;
       const bonusGanho = vendasTotaisMes >= metaCampanhaTotal && metaCampanhaTotal > 0;
@@ -456,7 +468,7 @@ export function CampanhasTab({ periodoFiltro }: CampanhasTabProps = {}) {
       itensRanking.forEach(p => {
         const nome = nomeVendedorCampanha(p);
         if (!nome) return;
-        vendMap.set(nome, (vendMap.get(nome) || 0) + valorBrutoCampanha(p, codEmpresaAtiva));
+        vendMap.set(nome, (vendMap.get(nome) || 0) + valorBrutoCampanha(p, codEmpresaAtiva, marcasArr));
       });
       const vendedoresContrib = Array.from(vendMap.entries())
         .map(([nome, valor]) => ({ nome, valor }))
@@ -1371,7 +1383,7 @@ function computeMesCalc(c: CampanhaCalculada, mesInicio: Date, mesFim: Date): Ca
   const marcasCalc: MarcaCalculada[] = c.marcasCalc.map(m => {
     const marcaUpper = m.marca.trim().toUpperCase();
     const itensMarca = itensMesCampanha.filter((p: any) => itemPertenceMarcaCampanha(p, marcaUpper, c.rankingCodEmpresaBi));
-    const realizado = itensMarca.reduce((acc, p: any) => acc + valorBrutoCampanha(p, c.rankingCodEmpresaBi), 0);
+    const realizado = itensMarca.reduce((acc, p: any) => acc + valorBrutoCampanha(p, c.rankingCodEmpresaBi, c.marcasCalc), 0);
     const metaMes = Number(m.meta_mensal);
     const progresso = metaMes > 0 ? Math.min(150, (realizado / metaMes) * 100) : 0;
     const atingiu = realizado >= metaMes && metaMes > 0;
@@ -1380,8 +1392,8 @@ function computeMesCalc(c: CampanhaCalculada, mesInicio: Date, mesFim: Date): Ca
     const premio = atingiu ? (percent > 0 ? metaMes * (percent / 100) : fixo) : 0;
     return { ...m, realizado, progresso, premio, atingiu };
   });
-  const realizadoTotal = itensMesCampanha.reduce((acc, p: any) => acc + valorBrutoCampanha(p, c.rankingCodEmpresaBi), 0);
-  const vendasTotaisMes = itensTotalMes.reduce((acc, p: any) => acc + valorBrutoCampanha(p, c.rankingCodEmpresaBi), 0);
+  const realizadoTotal = itensMesCampanha.reduce((acc, p: any) => acc + valorBrutoCampanha(p, c.rankingCodEmpresaBi, c.marcasCalc), 0);
+  const vendasTotaisMes = itensTotalMes.reduce((acc, p: any) => acc + valorBrutoCampanha(p, c.rankingCodEmpresaBi, c.marcasCalc), 0);
   const metaMesGeral = Number(c.meta_geral_mensal || 0);
   const progressoGeral = metaMesGeral > 0 ? Math.min(150, (vendasTotaisMes / metaMesGeral) * 100) : 0;
   const bonusGanho = vendasTotaisMes >= metaMesGeral && metaMesGeral > 0;
@@ -1390,7 +1402,7 @@ function computeMesCalc(c: CampanhaCalculada, mesInicio: Date, mesFim: Date): Ca
   itensMesRanking.forEach((p: any) => {
     const nome = nomeVendedorCampanha(p);
     if (!nome) return;
-    vendMap.set(nome, (vendMap.get(nome) || 0) + valorBrutoCampanha(p, c.rankingCodEmpresaBi));
+    vendMap.set(nome, (vendMap.get(nome) || 0) + valorBrutoCampanha(p, c.rankingCodEmpresaBi, c.marcasCalc));
   });
   const vendedoresContrib = Array.from(vendMap.entries())
     .map(([nome, valor]) => ({ nome, valor }))
@@ -1682,7 +1694,7 @@ function MarcaInteractiveCard({ c, m, index }: { c: CampanhaCalculada; m: MarcaC
     itensMarca.forEach((p: any) => {
       const nome = (p.nome_externo || p.nome_interno || p.vendedor_nome || '').toString().trim();
       if (!nome) return;
-      map.set(nome, (map.get(nome) || 0) + valorBrutoCampanha(p, c.rankingCodEmpresaBi));
+      map.set(nome, (map.get(nome) || 0) + valorBrutoCampanha(p, c.rankingCodEmpresaBi, c.marcasCalc));
     });
     return Array.from(map.entries()).map(([nome, valor]) => ({ nome, valor })).sort((a, b) => b.valor - a.valor).slice(0, 5);
   }, [itensMarca]);
@@ -1692,7 +1704,7 @@ function MarcaInteractiveCard({ c, m, index }: { c: CampanhaCalculada; m: MarcaC
     itensMarca.forEach((p: any) => {
       const nome = (p.cliente_razao || p.nome_grupo || '').toString().trim();
       if (!nome) return;
-      map.set(nome, (map.get(nome) || 0) + valorBrutoCampanha(p, c.rankingCodEmpresaBi));
+      map.set(nome, (map.get(nome) || 0) + valorBrutoCampanha(p, c.rankingCodEmpresaBi, c.marcasCalc));
     });
     return Array.from(map.entries()).map(([nome, valor]) => ({ nome, valor })).sort((a, b) => b.valor - a.valor).slice(0, 5);
   }, [itensMarca]);
@@ -1703,7 +1715,7 @@ function MarcaInteractiveCard({ c, m, index }: { c: CampanhaCalculada; m: MarcaC
       const nome = (p.descricao || p.cod_produto || '').toString().trim();
       if (!nome) return;
       const cur = map.get(nome) || { valor: 0, qtd: 0 };
-      cur.valor += valorBrutoCampanha(p, c.rankingCodEmpresaBi);
+      cur.valor += valorBrutoCampanha(p, c.rankingCodEmpresaBi, c.marcasCalc);
       cur.qtd += p.quantidade || 0;
       map.set(nome, cur);
     });
@@ -1718,7 +1730,7 @@ function MarcaInteractiveCard({ c, m, index }: { c: CampanhaCalculada; m: MarcaC
       const d = new Date(dt);
       if (isNaN(d.getTime())) return;
       const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-      map.set(key, (map.get(key) || 0) + valorBrutoCampanha(p, c.rankingCodEmpresaBi));
+      map.set(key, (map.get(key) || 0) + valorBrutoCampanha(p, c.rankingCodEmpresaBi, c.marcasCalc));
     });
     return Array.from(map.entries()).sort(([a], [b]) => a.localeCompare(b));
   }, [itensMarca]);
@@ -2049,7 +2061,7 @@ function VendedorDetalheDialog({
     [campanhaMes.itensPeriodo, campanhaMes.marcasCalc, campanhaMes.rankingVendedoresExtras1004, vendedorNome]
   );
 
-  const totalVend = itensVend.reduce((a, p: any) => a + valorBrutoCampanha(p, campanhaMes.rankingCodEmpresaBi), 0);
+  const totalVend = itensVend.reduce((a, p: any) => a + valorBrutoCampanha(p, campanhaMes.rankingCodEmpresaBi, campanhaMes.marcasCalc), 0);
   const pedidosSet = new Set(itensVend.map((p: any) => p.cod_pedido || p.id).filter(Boolean));
   const nPedidos = pedidosSet.size || itensVend.length;
   const ticketMedio = nPedidos > 0 ? totalVend / nPedidos : 0;
@@ -2060,7 +2072,7 @@ function VendedorDetalheDialog({
     const marcaUpper = m.marca.trim().toUpperCase();
     const vendidoMarca = itensVend
       .filter((p: any) => itemPertenceMarcaCampanha(p, marcaUpper, campanhaMes.rankingCodEmpresaBi))
-      .reduce((a: number, p: any) => a + valorBrutoCampanha(p, campanhaMes.rankingCodEmpresaBi), 0);
+      .reduce((a: number, p: any) => a + valorBrutoCampanha(p, campanhaMes.rankingCodEmpresaBi, campanhaMes.marcasCalc), 0);
     const contrib = m.realizado > 0 ? (vendidoMarca / m.realizado) * 100 : 0;
     const premioPotencial = m.percentual_premio > 0
       ? Number(m.meta_mensal) * (m.percentual_premio / 100)
@@ -2101,13 +2113,13 @@ function VendedorDetalheDialog({
           && itemPertenceEscopoCampanha(p, calc.rankingCodEmpresaBi, calc.rankingFilialAtiva, getVendedoresExtrasCampanha1004(calc))
           && marcaOk;
       });
-      const total = itensV.reduce((a: number, p: any) => a + valorBrutoCampanha(p, calc.rankingCodEmpresaBi), 0);
+      const total = itensV.reduce((a: number, p: any) => a + valorBrutoCampanha(p, calc.rankingCodEmpresaBi, calc.marcasCalc), 0);
       const pos = calc.vendedoresContrib.findIndex(v => v.nome === vendedorNome) + 1;
       const premio = calc.marcasCalc.reduce((acc, mm) => {
         if (!mm.atingiu || mm.realizado <= 0) return acc;
         const vendMarca = itensV
           .filter((p: any) => itemPertenceMarcaCampanha(p, mm.marca, calc.rankingCodEmpresaBi))
-          .reduce((a: number, p: any) => a + valorBrutoCampanha(p, calc.rankingCodEmpresaBi), 0);
+          .reduce((a: number, p: any) => a + valorBrutoCampanha(p, calc.rankingCodEmpresaBi, calc.marcasCalc), 0);
         return acc + mm.premio * (vendMarca / mm.realizado);
       }, 0) + (calc.bonusGanho && calc.realizadoTotal > 0 ? Number(cOrig.bonus_meta_geral || 0) * (total / calc.realizadoTotal) : 0);
       return { label: m.label, status: m.status, total, pos, premio };
