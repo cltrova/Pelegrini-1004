@@ -51,18 +51,20 @@ describe('mapComissaoLinha', () => {
     expect(linha.devolucao).toBeCloseTo(4_268.50, 2);
   });
 
-  it('usa A FATURAR do relatorio FAT como pedidos em aberto, separado do saldo de meta', () => {
+  it('mantem A FATURAR separado de pedidos em aberto', () => {
     const linha = mapComissaoLinha({
       'COD VENDEDOR': '00010',
       VENDEDOR: 'XEXEU',
       'OBJ MENSAL': '240.000,00',
       'FAT. ATÉ HOJE': '154.879,90',
       'A FATURAR': '4.341,00',
+      'PEDIDOS EM ABERTO': '1.234,56',
       'NOVA PROJ.': '85.120,10',
     });
 
     expect(linha.faturadoAteHoje).toBeCloseTo(154_879.90, 2);
-    expect(linha.pedidosAberto).toBeCloseTo(4_341, 2);
+    expect(linha.aFaturar).toBeCloseTo(4_341, 2);
+    expect(linha.pedidosAberto).toBeCloseTo(1_234.56, 2);
     expect(linha.novaProjecao).toBeCloseTo(85_120.10, 2);
   });
 
