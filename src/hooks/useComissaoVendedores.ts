@@ -89,7 +89,7 @@ export function mapComissaoLinha(row: any): ComissaoLinha {
     faturadoAteHoje: num(pick(row, 'acumulada', 'Acumulada', 'valor_acumulado', 'ValorAcumulado', 'faturado_ate_hoje', 'FaturadoAteHoje', 'FAT. ATÉ HOJE', 'FAT ATE HOJE', 'faturado')),
     aFaturar: num(pick(row, 'a_faturar', 'AFaturar', 'A FATURAR')),
     valorTotal: vendaTotal || num(pick(row, 'valor_total', 'ValorTotal', 'total')),
-    pedidosAberto: num(pick(row, 'PedidosAberto', 'PedidosEmAberto', 'pedidos_em_aberto', 'pedidos_aberto', 'PEDIDOS EM ABERTO')),
+    pedidosAberto: num(pick(row, 'PedidosAberto', 'PedidosEmAberto', 'pedidos_em_aberto', 'pedidos_aberto', 'PEDIDOS EM ABERTO', 'a_faturar_pedidos', 'A FATURAR', 'AFaturar', 'a_faturar')),
     projecao: num(pick(row, 'projecao', 'Projecao')),
     novaProjecao: num(pick(row, 'nova_projecao', 'NovaProjecao', 'NOVA PROJ.', 'NOVA PROJ', 'NovaProj')),
     pmv: num(pick(row, 'pmv', 'PMV', 'preco_medio_venda', 'PrecoMedioVenda')),

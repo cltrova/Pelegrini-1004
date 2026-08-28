@@ -68,6 +68,17 @@ describe('mapComissaoLinha', () => {
     expect(linha.novaProjecao).toBeCloseTo(85_120.10, 2);
   });
 
+  it('usa A FATURAR como fallback quando a API nao envia campo de pedidos em aberto', () => {
+    const linha = mapComissaoLinha({
+      Vendedor: '10',
+      NomeVendedor: 'XEXEU',
+      AFaturar: 65_057.10,
+    });
+
+    expect(linha.aFaturar).toBeCloseTo(65_057.10, 2);
+    expect(linha.pedidosAberto).toBeCloseTo(65_057.10, 2);
+  });
+
   it('identifica linhas da Forca P na comissao do cliente 1004', () => {
     const dayvid = mapComissaoLinha({ cod_vendedor: '250', nome_vendedor: 'DAYVID' });
     const servico = mapComissaoLinha({ cod_vendedor: '155', nome_vendedor: 'SERVIÇO DE TERCEIRO' });
