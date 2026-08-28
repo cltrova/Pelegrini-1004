@@ -28,7 +28,7 @@ describe('criarFiltroTotalizadores1004', () => {
     expect(vendedorPertenceCampanha1004({ cod_vendedor_externo: '99', nome_externo: 'ELIANE' })).toBe(false);
     expect(vendedorPertenceCampanha1004({ cod_vendedor_externo: '99', nome_externo: 'ELIANE' }, new Set(['99']))).toBe(true);
     expect(vendedorPertenceCampanha1004({ cod_vendedor_externo: '45', nome_externo: 'FERNANDO M CCH' }, new Set(['34']))).toBe(true);
-    expect(vendedorPertenceCampanha1004({ cod_vendedor_externo: '47', nome_externo: 'RAFAEL CCH' }, new Set(['47']))).toBe(false);
+    expect(vendedorPertenceCampanha1004({ cod_vendedor_externo: '85', nome_externo: 'RAFAEL CCH' }, new Set(['47']))).toBe(true);
     expect(vendedorPertenceCampanha1004({ cod_vendedor_externo: '250', nome_externo: 'DAYVID' }, new Set(['250']))).toBe(false);
     expect(vendedorPertenceCampanha1004({ cod_vendedor_externo: '10', nome_externo: 'XEXEU CCH' }, new Set(['10']))).toBe(false);
   });
@@ -192,14 +192,14 @@ describe('criarFiltroTotalizadores1004', () => {
     expect(meses[1].fim.getDate()).toBe(30);
   });
 
-  it('campanha 1004 em mes aberto usa somente dias consolidados ate D-1', () => {
+  it('campanha 1004 em mes aberto consolida ate o dia atual da base oficial', () => {
     const fimOriginal = new Date(2026, 7, 31, 23, 59, 59, 999);
     const hoje = new Date(2026, 7, 12, 10, 30, 0, 0);
     const fim = fimConsolidadoCampanha1004({ cod_empresa_bi: '1004' }, fimOriginal, hoje);
 
     expect(fim.getFullYear()).toBe(2026);
     expect(fim.getMonth()).toBe(7);
-    expect(fim.getDate()).toBe(11);
+    expect(fim.getDate()).toBe(12);
     expect(fim.getHours()).toBe(23);
     expect(fim.getMinutes()).toBe(59);
   });

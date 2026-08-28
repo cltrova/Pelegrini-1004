@@ -83,9 +83,7 @@ export function fimConsolidadoCampanha1004(
   const fimInicio = startOfDay(fim);
   if (fimInicio < hojeInicio) return fim;
 
-  const ontem = new Date(hojeInicio);
-  ontem.setDate(ontem.getDate() - 1);
-  return endOfDay(ontem);
+  return endOfDay(hojeInicio);
 }
 
 export function mesesCampanha1004(campanha: CampanhaPeriodo1004) {

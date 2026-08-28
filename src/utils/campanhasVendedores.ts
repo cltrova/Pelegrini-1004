@@ -1,5 +1,5 @@
 export const VENDEDORES_CT_CAMPANHA_1004 = ['78', '98', '59', '63', '71'] as const;
-export const VENDEDORES_EXTRAS_CAMPANHA_1004 = ['99', '11', '34'] as const;
+export const VENDEDORES_EXTRAS_CAMPANHA_1004 = ['99', '11', '34', '47'] as const;
 
 const VENDEDORES_CT_CAMPANHA_1004_SET = new Set<string>(VENDEDORES_CT_CAMPANHA_1004);
 const VENDEDORES_EXTRAS_CAMPANHA_1004_SET = new Set<string>(VENDEDORES_EXTRAS_CAMPANHA_1004);
@@ -7,6 +7,8 @@ const VENDEDORES_EXTRAS_CAMPANHA_1004_SET = new Set<string>(VENDEDORES_EXTRAS_CA
 const CODIGO_API_CANONICO_CAMPANHA_1004: Record<string, string> = {
   // /comercial/produtos pode retornar FERNANDO CCH como 45, enquanto o filtro usa 34.
   '45': '34',
+  // O FAT da campanha MWM traz RAFAEL CCH como 85, enquanto o cadastro comercial usa 47.
+  '85': '47',
 };
 
 export function codigoVendedorCampanha(item: Record<string, unknown>): string {

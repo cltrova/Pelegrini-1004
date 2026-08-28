@@ -3,6 +3,7 @@ export const VENDEDORES_EXTRAS_CAMPANHA_1004 = [
   { codigo: '99', nome: 'ELIANE' },
   { codigo: '11', nome: 'MARCIO CCH' },
   { codigo: '34', nome: 'FERNANDO CCH' },
+  { codigo: '47', nome: 'RAFAEL CCH' },
 ];
 export const RECEITA_1004_RULE_VERSION = 'receita-1004-comissoes-oficial-v9';
 

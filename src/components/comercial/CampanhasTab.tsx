@@ -189,6 +189,7 @@ function normalizarVendedorExtraFiltroCampanha1004(value: unknown): string | nul
   if (nome.includes('ELIANE')) return '99';
   if (nome.includes('MARCIO')) return '11';
   if (nome.includes('FERNANDO')) return '34';
+  if (nome.includes('RAFAEL')) return '47';
   return null;
 }
 
