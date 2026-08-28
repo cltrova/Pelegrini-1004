@@ -197,7 +197,17 @@ function getVendedoresExtrasCampanha1004(item: Pick<CampanhaCalculada, 'rankingV
   return new Set(item.rankingVendedoresExtras1004 || []);
 }
 
-function vendedoresExtrasPadraoCampanha1004(campanha: Pick<Campanha, 'cod_empresa_bi' | 'nome' | 'data_fim' | 'marcas'>) {
+function campanhaMwm1004(campanha: Pick<Campanha, 'cod_empresa_bi' | 'nome' | 'marcas'>) {
+  const codEmpresa = String(campanha.cod_empresa_bi ?? '').trim();
+  const nome = normalizarTextoCampanha(campanha.nome);
+  const marcas = (campanha.marcas || [])
+    .map((marca) => normalizarTextoCampanha(typeof marca === 'string' ? marca : marca?.marca))
+    .join(' ');
+
+  return codEmpresa === '1004' && (nome.includes('MWM') || marcas.includes('MWM'));
+}
+
+function vendedoresExtrasPadraoCampanha1004(_campanha: Pick<Campanha, 'cod_empresa_bi' | 'nome' | 'data_fim' | 'marcas'>) {
   return [] as string[];
 }
 
@@ -340,12 +350,20 @@ export function CampanhasTab({ periodoFiltro }: CampanhasTabProps = {}) {
   const [marcaFilter, setMarcaFilter] = useState<string[]>([]);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [vendedoresExtras1004, setVendedoresExtras1004] = useState<string[]>([]);
+  const [vendedoresExtras1004Inicializados, setVendedoresExtras1004Inicializados] = useState(false);
   const { codEmpresaAtiva } = useEmpresaAtiva();
   const { filialAtiva } = useFilialSelecionada();
   const vendedoresExtrasSelecionados1004 = useMemo(
     () => new Set(vendedoresExtras1004),
     [vendedoresExtras1004],
   );
+
+  useEffect(() => {
+    if (vendedoresExtras1004Inicializados) return;
+    if (!campanhas.some(campanhaMwm1004)) return;
+    setVendedoresExtras1004([...VENDEDORES_EXTRAS_CAMPANHA_1004]);
+    setVendedoresExtras1004Inicializados(true);
+  }, [campanhas, vendedoresExtras1004Inicializados]);
 
   // Período usado no cálculo: respeita o filtro do dashboard quando houver interseção,
   // mas não deixa uma campanha histórica zerar quando o dashboard está em outro mês.
