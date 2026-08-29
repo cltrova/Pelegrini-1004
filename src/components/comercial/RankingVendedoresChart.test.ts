@@ -2,17 +2,21 @@ import { describe, expect, it } from 'vitest';
 import { getRankingVendedoresChartLayout } from './rankingVendedoresChartLayout';
 
 describe('RankingVendedoresChart label hierarchy', () => {
-  it('destaca o valor sem permitir sobreposicao entre vendedores', () => {
+  it('mantem o grafico fluido dentro do card', () => {
     expect(getRankingVendedoresChartLayout(5)).toMatchObject({
-      chartMinWidth: 1500,
-      sellerFontSize: 22,
+      chartMinWidth: 0,
+      sellerFontSize: 11,
       sellerFontWeight: 700,
-      valueFontSize: 36,
-      valueFontWeight: 900,
+      valueFontSize: 13,
+      valueFontWeight: 750,
     });
   });
 
-  it('reserva largura adicional quando ha muitos vendedores', () => {
-    expect(getRankingVendedoresChartLayout(10).chartMinWidth).toBe(3000);
+  it('reduz a tipografia quando ha muitos vendedores sem criar largura fixa', () => {
+    expect(getRankingVendedoresChartLayout(10)).toMatchObject({
+      chartMinWidth: 0,
+      sellerFontSize: 10,
+      valueFontSize: 11,
+    });
   });
 });

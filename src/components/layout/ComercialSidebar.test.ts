@@ -20,7 +20,11 @@ vi.mock('@/contexts/AuthContext', () => ({
 }));
 
 vi.mock('@/contexts/FilialSelecionadaContext', () => ({
-  useFilialSelecionada: vi.fn(() => ({ filialAtiva: '1004' })),
+  useFilialSelecionada: vi.fn(() => ({
+    filialAtiva: 'transmissao',
+    codEmpresaContexto: '1004',
+    setFilialAtivaForEmpresa: vi.fn(),
+  })),
 }));
 
 vi.mock('@/hooks/useCotacoesComerciais', () => ({
@@ -108,12 +112,30 @@ describe('commercial sidebar menu access', () => {
     expect(screen.queryByText('BREVE')).not.toBeInTheDocument();
   });
 
-  it('uses Pelegrini footer copy instead of legacy BI Reports copy', () => {
+  it('uses the active branch as the visible brand instead of generic module chrome', () => {
     mockCompany('1004');
     render(createElement(MemoryRouter, { initialEntries: ['/comercial/dashboard'], future: { v7_startTransition: true, v7_relativeSplatPath: true } }, createElement(ComercialSidebar)));
 
-    expect(screen.getByText('Pelegrini - operacao automotiva integrada')).toBeInTheDocument();
+    expect(screen.getByText('Casa da Transmissão')).toBeInTheDocument();
+    expect(screen.queryByText('Pelegrini - operacao automotiva integrada')).not.toBeInTheDocument();
     expect(screen.queryByText(/BI Reports/i)).not.toBeInTheDocument();
+  });
+
+  it('renders compact navigation without the descriptive sidebar plate', () => {
+    mockCompany('1004');
+    render(createElement(MemoryRouter, { initialEntries: ['/comercial/dashboard'], future: { v7_startTransition: true, v7_relativeSplatPath: true } }, createElement(ComercialSidebar)));
+
+    expect(screen.getByRole('complementary')).not.toHaveTextContent(/Leitura tecnica/i);
+    expect(screen.queryByText(/Pedidos e carteira/i)).not.toBeInTheDocument();
+  });
+
+  it('keeps the CT and CCH switcher available inside the module', () => {
+    mockCompany('1004');
+    render(createElement(MemoryRouter, { initialEntries: ['/comercial/dashboard'], future: { v7_startTransition: true, v7_relativeSplatPath: true } }, createElement(ComercialSidebar)));
+
+    expect(screen.getByRole('radiogroup', { name: /Filial ativa/i })).toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: /Casa da Transmissão/i })).toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: /Casa do Chevrolet/i })).toBeInTheDocument();
   });
 
   it('respects reduced motion for the mobile sidebar transition', () => {

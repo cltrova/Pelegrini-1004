@@ -1,8 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { Header } from '@/components/layout/Header';
-import { MobileHeader } from '@/components/layout/MobileHeader';
 import { WhatsappMobileBottomNav } from '@/components/layout/WhatsappMobileBottomNav';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { SetupTab } from '@/components/whatsapp/settings/SetupTab';
@@ -209,7 +207,6 @@ export default function SettingsPage() {
   if (isMobile) {
     return (
       <div className="flex flex-col min-h-screen bg-background">
-        <MobileHeader title="Configurações" subtitle="WhatsApp" />
         <div className="flex-1 overflow-hidden pb-20">
           {content}
         </div>
@@ -220,7 +217,6 @@ export default function SettingsPage() {
   
   return (
     <div className="min-h-screen flex flex-col">
-      <Header />
       {content}
     </div>
   );

@@ -13,10 +13,9 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useEmpresaAtiva } from '@/hooks/useEmpresaAtiva';
-import { getPelegriniModuleVisual, resolvePelegriniTheme, resolvePelegriniVisual } from '@/config/pelegriniTheme';
-import { getPelegriniIdentity } from '@/config/pelegriniIdentity';
+import { resolvePelegriniTheme } from '@/config/pelegriniTheme';
 import { useFilialSelecionada } from '@/contexts/FilialSelecionadaContext';
-import { PelegriniBrandMark } from '@/components/pelegrini';
+import { PelegriniBrandMark, PelegriniBranchSwitcher } from '@/components/pelegrini';
 
 interface MenuItem {
   label: string;
@@ -58,10 +57,7 @@ export function ComercialSidebar() {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const { codEmpresaAtiva } = useEmpresaAtiva();
   const { filialAtiva } = useFilialSelecionada();
-  const theme = resolvePelegriniTheme(filialAtiva);
-  const identity = getPelegriniIdentity(theme.key);
-  const visual = resolvePelegriniVisual(filialAtiva);
-  const moduleVisual = getPelegriniModuleVisual('comercial', theme.key);
+  const theme = resolvePelegriniTheme(filialAtiva || codEmpresaAtiva);
   const comercialMenuItems = getComercialMenuItems(codEmpresaAtiva || '');
   const showFutureItems = !hasCotacoesComerciais(codEmpresaAtiva || '');
 
@@ -88,7 +84,7 @@ export function ComercialSidebar() {
       {/* Sidebar */}
       <aside
         className={cn(
-          'pelegrini-sidebar fixed left-0 top-0 z-50 h-screen w-64 bg-sidebar text-sidebar-foreground flex flex-col transition-transform duration-300 motion-reduce:transition-none motion-reduce:duration-0 md:translate-x-0',
+          'pelegrini-sidebar fixed left-0 top-0 z-50 h-screen w-[232px] bg-sidebar text-sidebar-foreground flex flex-col transition-transform duration-300 motion-reduce:transition-none motion-reduce:duration-0 md:translate-x-0',
           isMobileOpen ? 'translate-x-0' : '-translate-x-full'
         )}
         style={{
@@ -98,22 +94,18 @@ export function ComercialSidebar() {
         } as CSSProperties}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-6 border-b border-sidebar-border">
-          <div className="flex items-center gap-3">
-            <PelegriniBrandMark theme={theme} tone="sidebar" />
-            <div className="min-w-0">
-              <h1 className="font-bold text-lg leading-tight">Comercial</h1>
-              <span className="text-[11px] text-sidebar-muted uppercase tracking-wider">
-                {theme.sidebarLabels.subheading}
-              </span>
-            </div>
-          </div>
+        <div className="flex items-center justify-between px-4 py-4 border-b border-sidebar-border">
+          <PelegriniBrandMark theme={theme} tone="sidebar" className="max-w-[13rem]" />
           <button
             onClick={() => setIsMobileOpen(false)}
             className="md:hidden p-1 hover:bg-sidebar-accent rounded"
           >
             <X className="h-5 w-5" />
           </button>
+        </div>
+
+        <div className="px-4 pt-3">
+          <PelegriniBranchSwitcher variant="sidebar" />
         </div>
 
         {/* Back to home */}
@@ -127,21 +119,11 @@ export function ComercialSidebar() {
           </button>
         </div>
 
-        <div className="mx-4 mt-4 h-px bg-sidebar-border" />
-
-        <div className="px-4 pt-4">
-          <div className="pelegrini-sidebar-plate">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-sidebar-muted">
-              {theme.sidebarLabels.section}
-            </p>
-            <p className="mt-1 text-sm font-semibold text-sidebar-foreground">{moduleVisual.kpiPrefix}</p>
-            <p className="mt-1 text-xs leading-5 text-sidebar-muted">{visual.panelMicrocopy}</p>
-          </div>
-        </div>
+        <div className="mx-4 mt-3 h-px bg-sidebar-border" />
 
         {/* Navigation */}
-        <nav className="flex-1 overflow-y-auto scrollbar-thin p-4 space-y-1">
-          <p className="sidebar-section">{theme.sidebarLabels.section}</p>
+        <nav className="flex-1 overflow-y-auto scrollbar-thin px-3 py-3 space-y-1">
+          <p className="sidebar-section">Comercial</p>
           {comercialMenuItems.map((item) => {
             const Icon = item.icon;
             const active = isActive(item.path);
@@ -193,10 +175,9 @@ export function ComercialSidebar() {
         </nav>
 
         {/* Footer */}
-        <div className="p-4 border-t border-sidebar-border">
-          <div className="text-xs text-sidebar-muted">
-            <p className="font-medium text-sidebar-foreground">{theme.name}</p>
-            <p className="mt-1">{identity.footerLine}</p>
+        <div className="p-3 border-t border-sidebar-border">
+          <div className="text-[11px] font-medium uppercase tracking-[0.14em] text-sidebar-muted">
+            {theme.shortName} · Operacao comercial
           </div>
         </div>
       </aside>

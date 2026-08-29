@@ -5,16 +5,13 @@ import {
   ChevronLeft,
   Menu,
   X,
-  Building2,
   History,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useEmpresaAtiva } from '@/hooks/useEmpresaAtiva';
-import { Badge } from '@/components/ui/badge';
-import { getPelegriniModuleVisual, resolvePelegriniTheme, resolvePelegriniVisual } from '@/config/pelegriniTheme';
-import { getPelegriniIdentity } from '@/config/pelegriniIdentity';
+import { resolvePelegriniTheme } from '@/config/pelegriniTheme';
 import { useFilialSelecionada } from '@/contexts/FilialSelecionadaContext';
-import { PelegriniBrandMark } from '@/components/pelegrini';
+import { PelegriniBrandMark, PelegriniBranchSwitcher } from '@/components/pelegrini';
 
 const baseMenuItems = [
   { label: 'Estoque', icon: Package, path: '/operacional/estoque' },
@@ -24,12 +21,9 @@ export function OperacionalSidebar() {
   const location = useLocation();
   const navigate = useNavigate();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
-  const { empresa, isMaster, codEmpresaAtiva } = useEmpresaAtiva();
+  const { codEmpresaAtiva } = useEmpresaAtiva();
   const { filialAtiva } = useFilialSelecionada();
-  const theme = resolvePelegriniTheme(filialAtiva);
-  const identity = getPelegriniIdentity(theme.key);
-  const visual = resolvePelegriniVisual(filialAtiva);
-  const moduleVisual = getPelegriniModuleVisual('operacional', theme.key);
+  const theme = resolvePelegriniTheme(filialAtiva || codEmpresaAtiva);
 
   const isActive = (path: string) => location.pathname === path;
 
@@ -51,7 +45,7 @@ export function OperacionalSidebar() {
 
       <aside
         className={cn(
-          'pelegrini-sidebar fixed left-0 top-0 z-50 h-screen w-64 bg-sidebar text-sidebar-foreground flex flex-col transition-transform duration-300 motion-reduce:transition-none motion-reduce:duration-0 md:translate-x-0',
+          'pelegrini-sidebar fixed left-0 top-0 z-50 h-screen w-[232px] bg-sidebar text-sidebar-foreground flex flex-col transition-transform duration-300 motion-reduce:transition-none motion-reduce:duration-0 md:translate-x-0',
           isMobileOpen ? 'translate-x-0' : '-translate-x-full'
         )}
         style={{
@@ -60,16 +54,8 @@ export function OperacionalSidebar() {
           '--pelegrini-accent': theme.accent,
         } as CSSProperties}
       >
-        <div className="flex items-center justify-between px-5 py-6 border-b border-sidebar-border">
-          <div className="flex items-center gap-3">
-            <PelegriniBrandMark theme={theme} tone="sidebar" />
-            <div className="min-w-0">
-              <h1 className="font-bold text-lg leading-tight">Operacional</h1>
-              <span className="text-[11px] text-sidebar-muted uppercase tracking-wider">
-                {theme.sidebarLabels.subheading}
-              </span>
-            </div>
-          </div>
+        <div className="flex items-center justify-between px-4 py-4 border-b border-sidebar-border">
+          <PelegriniBrandMark theme={theme} tone="sidebar" className="max-w-[13rem]" />
           <button
             onClick={() => setIsMobileOpen(false)}
             className="md:hidden p-1 hover:bg-sidebar-accent rounded"
@@ -78,24 +64,9 @@ export function OperacionalSidebar() {
           </button>
         </div>
 
-        {codEmpresaAtiva && (
-          <div className="px-4 pt-4">
-            <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-sidebar-accent/50 border border-sidebar-border">
-              <Building2 className="h-4 w-4 text-sidebar-muted" />
-              <div className="flex-1 min-w-0">
-                <p className="text-xs text-sidebar-muted">Empresa</p>
-                <p className="text-sm font-medium truncate">
-                  {empresa?.nome || codEmpresaAtiva}
-                </p>
-              </div>
-              {isMaster && (
-                <Badge variant="outline" className="text-[10px] shrink-0">
-                  Master
-                </Badge>
-              )}
-            </div>
-          </div>
-        )}
+        <div className="px-4 pt-3">
+          <PelegriniBranchSwitcher variant="sidebar" />
+        </div>
 
         <div className="px-4 pt-4">
           <button
@@ -107,18 +78,8 @@ export function OperacionalSidebar() {
           </button>
         </div>
 
-        <div className="px-4 pt-4">
-          <div className="pelegrini-sidebar-plate">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-sidebar-muted">
-              {theme.sidebarLabels.section}
-            </p>
-            <p className="mt-1 text-sm font-semibold text-sidebar-foreground">{moduleVisual.kpiPrefix}</p>
-            <p className="mt-1 text-xs leading-5 text-sidebar-muted">{visual.panelMicrocopy}</p>
-          </div>
-        </div>
-
-        <nav className="flex-1 overflow-y-auto scrollbar-thin p-4 space-y-2">
-          <p className="sidebar-section">{theme.sidebarLabels.section}</p>
+        <nav className="flex-1 overflow-y-auto scrollbar-thin px-3 py-3 space-y-1">
+          <p className="sidebar-section">Operacional</p>
           {[
             ...baseMenuItems,
             ...(codEmpresaAtiva === '1004' || codEmpresaAtiva === '10041'
@@ -143,10 +104,9 @@ export function OperacionalSidebar() {
           })}
         </nav>
 
-        <div className="p-4 border-t border-sidebar-border">
-          <div className="text-xs text-sidebar-muted">
-            <p className="font-medium text-sidebar-foreground">{theme.name}</p>
-            <p className="mt-1">{identity.footerLine}</p>
+        <div className="p-3 border-t border-sidebar-border">
+          <div className="text-[11px] font-medium uppercase tracking-[0.14em] text-sidebar-muted">
+            {theme.shortName} · Estoque e giro
           </div>
         </div>
       </aside>

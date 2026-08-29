@@ -5,6 +5,7 @@ interface PelegriniBrandMarkProps {
   theme: PelegriniTheme;
   compact?: boolean;
   className?: string;
+  showTagline?: boolean;
   tone?: 'default' | 'sidebar';
 }
 
@@ -12,6 +13,7 @@ export function PelegriniBrandMark({
   theme,
   compact = false,
   className,
+  showTagline = true,
   tone = 'default',
 }: PelegriniBrandMarkProps) {
   const isSidebar = tone === 'sidebar';
@@ -26,12 +28,10 @@ export function PelegriniBrandMark({
       </div>
       {!compact && (
         <div className="min-w-0">
-          <p className={cn('truncate text-sm font-semibold tracking-normal', isSidebar ? 'text-sidebar-foreground' : 'text-foreground')}>
+          <p className={cn('text-sm font-semibold tracking-normal', isSidebar ? 'leading-tight text-sidebar-foreground' : 'truncate text-foreground')}>
             {theme.name}
           </p>
-          <p className={cn('truncate text-xs', isSidebar ? 'text-sidebar-muted' : 'text-muted-foreground')}>
-            {theme.tagline}
-          </p>
+          {!isSidebar && showTagline && <p className="hidden truncate text-xs text-muted-foreground xl:block">{theme.tagline}</p>}
         </div>
       )}
     </div>

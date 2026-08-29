@@ -8,7 +8,7 @@ interface LoadingStateProps {
 }
 
 export function LoadingState({
-  message = 'Carregando operacao Pelegrini',
+  message = 'Carregando dados da filial',
   className,
   size = 'md',
 }: LoadingStateProps) {

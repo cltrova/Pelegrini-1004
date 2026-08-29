@@ -287,8 +287,12 @@ export function calcularCotacoesKpis(rows: readonly CotacaoComercial[], motivos:
 export function calcularCotacaoPrioridade(row: CotacaoComercial, origem: CotacaoOrigem): CotacaoPrioridade {
   const pontosValor = row.valor >= 30_000 ? 35 : row.valor >= 10_000 ? 24 : row.valor >= 3_000 ? 12 : 4;
   const pontosIdade = row.diasEmAberto >= 15 ? 35 : row.diasEmAberto >= 8 ? 24 : row.diasEmAberto >= 4 ? 14 : 4;
+  const [ano, mes, dia] = row.dataCotacao.split('-').map(Number);
+  const dataReferencia = row.dataCotacao
+    ? new Date(Date.UTC(ano, mes - 1, dia) + row.diasEmAberto * 86_400_000).toISOString().slice(0, 10)
+    : '';
   const pontosStatus = origem === 'abertas'
-    ? row.dataValidade && row.dataValidade < new Date().toISOString().slice(0, 10) ? 20 : 8
+    ? row.dataValidade && dataReferencia && row.dataValidade < dataReferencia ? 20 : 8
     : row.status === 'recusada' ? 18 : row.status === 'vencida' ? 14 : 8;
   const score = Math.min(100, Math.round(pontosValor + pontosIdade + pontosStatus + 10));
   const nivel: CotacaoPrioridadeNivel = score >= 75 ? 'quente' : score >= 45 ? 'atencao' : 'frio';

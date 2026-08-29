@@ -12,7 +12,7 @@ interface PelegriniPageSurfaceProps {
 
 export function PelegriniPageSurface({ children, moduleKey = 'comercial', className }: PelegriniPageSurfaceProps) {
   const { filialAtiva } = useFilialSelecionada();
-  const theme = resolvePelegriniTheme(filialAtiva);
+  const theme = resolvePelegriniTheme(filialAtiva || 'transmissao');
 
   return (
     <section

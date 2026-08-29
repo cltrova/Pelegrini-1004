@@ -637,9 +637,12 @@ export default function MetasVendedoresPage() {
   const semVendedores = !vendedoresBaseVisual.length;
   const isCampanhas1004Ativa = isPelegriniPage && activeTab === 'campanhas';
   const filtersResumo = pendingFilters ? (aplicarFiltroPadraoPelegrini(pendingFilters) ?? pendingFilters) : undefined;
-  const tabTriggerClass = isPelegriniPage
-    ? 'text-sm text-muted-foreground transition-colors hover:text-foreground data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm'
-    : 'text-sm';
+  const tabTriggerClass = cn(
+    'flex-none whitespace-nowrap px-4 text-sm',
+    isPelegriniPage
+      ? 'text-muted-foreground transition-colors hover:text-foreground data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm'
+      : undefined,
+  );
 
 
   // Badge ranking icon
@@ -691,16 +694,17 @@ export default function MetasVendedoresPage() {
 
 
       {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v); try { sessionStorage.setItem('comercial:metas:tab', v); } catch {} }} className="space-y-6">
+      <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v); try { sessionStorage.setItem('comercial:metas:tab', v); } catch { /* storage pode estar bloqueado pelo navegador */ } }} className="space-y-6">
+        <div className="w-full overflow-x-auto overscroll-x-contain rounded-md [scrollbar-width:thin]">
         <TabsList className={cn(
-          `grid w-full h-12 ${isPelegriniPage ? 'grid-cols-7' : 'grid-cols-5'}`,
+          'flex h-12 w-max min-w-full justify-start',
           isPelegriniPage && 'border border-border/60 bg-muted/40 p-1 text-muted-foreground shadow-none [&_button:hover]:text-foreground [&_button[data-state=active]]:bg-primary [&_button[data-state=active]]:text-primary-foreground [&_button[data-state=active]]:shadow-sm',
         )}>
-          <TabsTrigger value="visao-geral" className="text-sm">Visão Geral</TabsTrigger>
+          <TabsTrigger value="visao-geral" className={tabTriggerClass}>Visão Geral</TabsTrigger>
           {isPelegriniPage && (
           <TabsTrigger value="detalhes" className={tabTriggerClass}>Detalhes</TabsTrigger>
           )}
-          <TabsTrigger value="metas-diarias" className="text-sm">Metas Diárias</TabsTrigger>
+          <TabsTrigger value="metas-diarias" className={tabTriggerClass}>Metas Diárias</TabsTrigger>
           <TabsTrigger value="ranking" className={tabTriggerClass}>Ranking</TabsTrigger>
           <TabsTrigger value="comparativos" className={tabTriggerClass}>Comparativos</TabsTrigger>
           <TabsTrigger value="insights" className={tabTriggerClass}>Insights IA</TabsTrigger>
@@ -708,6 +712,7 @@ export default function MetasVendedoresPage() {
             <TabsTrigger value="campanhas" className={tabTriggerClass}>Campanhas</TabsTrigger>
           )}
         </TabsList>
+        </div>
 
 
         {/* ==================== ABA: VISÃO GERAL ==================== */}

@@ -10,8 +10,8 @@ import { Button } from '@/components/ui/button';
 import { empresaPossuiFiliais, getFiliaisDaEmpresa } from '@/config/filiaisEmpresa';
 import { getPelegriniIdentity, getPelegriniModuleIdentity, type PelegriniModuleKey } from '@/config/pelegriniIdentity';
 import { getPelegriniBranchAvailability, pelegriniAdminEntry, pelegriniModules, type PelegriniHomeModule } from '@/config/pelegriniHome';
-import { PELEGRINI_THEMES, resolvePelegriniTheme, resolvePelegriniVisual } from '@/config/pelegriniTheme';
-import { PelegriniBrandMark, PelegriniBranchPanel, PelegriniBranchVisual, PelegriniMotionBackdrop, PelegriniOperationalCard } from '@/components/pelegrini';
+import { PELEGRINI_THEMES, resolvePelegriniTheme } from '@/config/pelegriniTheme';
+import { PelegriniBrandMark, PelegriniBranchPanel, PelegriniBranchSwitcher, PelegriniOperationalCard } from '@/components/pelegrini';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFilialSelecionada } from '@/contexts/FilialSelecionadaContext';
 import { useEmpresaConfig } from '@/hooks/useEmpresaConfig';
@@ -44,9 +44,8 @@ export default function HomePage() {
   const { hasModulo, isMaster } = useEmpresaConfig();
   const { permissions, hasUserModuleAccess } = useUserModulePermissions();
   const { clearFilial, codEmpresaContexto, filialAtiva, setFilialAtivaForEmpresa } = useFilialSelecionada();
-  const homeTheme = resolvePelegriniTheme(filialAtiva);
+  const homeTheme = resolvePelegriniTheme(filialAtiva || 'transmissao');
   const homeIdentity = getPelegriniIdentity(homeTheme.key);
-  const homeVisual = resolvePelegriniVisual(filialAtiva);
   const branchThemes = [PELEGRINI_THEMES.transmissao, PELEGRINI_THEMES.chevrolet];
   const [empresaSelectorOpen, setEmpresaSelectorOpen] = useState(false);
   const [selectedModulePath, setSelectedModulePath] = useState('');
@@ -108,36 +107,40 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-background" data-pelegrini-theme={homeTheme.key}>
-      <PelegriniMotionBackdrop theme={homeTheme} intensity="soft" />
       <header className="sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-6 py-4">
-          <PelegriniBrandMark theme={homeTheme} />
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
+          <PelegriniBrandMark theme={homeTheme} className="min-w-0 flex-1" />
           <div className="flex shrink-0 items-center gap-3">
+            <PelegriniBranchSwitcher className="hidden lg:inline-grid" variant="header" />
             <ThemeToggle />
             {isAuthenticated ? <div className="flex items-center gap-2">
               {canAccessSettings && <Button variant="ghost" size="sm" onClick={() => navigate('/configuracoes')} className="gap-2 text-muted-foreground hover:text-foreground"><Settings className="h-4 w-4" /><span className="hidden lg:inline">Configuracoes</span></Button>}
-              <span className="hidden text-sm text-muted-foreground md:inline">{user?.email}</span>
+              <span className="hidden text-sm text-muted-foreground xl:inline">{user?.email}</span>
               <Button variant="outline" size="sm" onClick={logout} className="gap-2"><LogOut className="h-4 w-4" /><span className="hidden md:inline">Sair</span></Button>
             </div> : <LoginDialog />}
           </div>
         </div>
       </header>
 
-      <main className="relative mx-auto max-w-7xl px-6 py-6">
-        <section className="pelegrini-command-board relative mb-6 overflow-hidden border border-border bg-card p-5 shadow-sm">
-          <PelegriniMotionBackdrop theme={homeTheme} intensity="strong" className="opacity-30" />
-          <div className="relative grid gap-5 lg:grid-cols-[1.25fr_0.75fr] lg:items-start">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">{homeIdentity.eyebrow}</p>
-              <h1 className="mt-2 max-w-3xl text-3xl font-bold leading-tight text-foreground">{homeIdentity.heroTitle}</h1>
-              <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">{homeIdentity.operatingLine}</p>
-              <div className="mt-4 max-w-xl">
-                <PelegriniBranchVisual theme={homeTheme} />
+      <main className="relative mx-auto max-w-7xl px-4 py-5 sm:px-6 sm:py-7">
+        <section className="mb-5 flex flex-col gap-2 border-b border-border pb-5 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase text-primary">Central de gestão CT/CCH</p>
+            <h1 className="mt-1 text-2xl font-bold leading-tight text-foreground sm:text-3xl">Escolha a operação e acesse o módulo</h1>
+          </div>
+          <p className="max-w-lg text-sm leading-5 text-muted-foreground">Indicadores comerciais, estoque, financeiro e atendimento organizados por filial.</p>
+        </section>
+
+        <div className="grid gap-5 lg:grid-cols-[minmax(17rem,0.72fr)_minmax(0,1.6fr)]">
+          <section aria-labelledby="home-branches-title">
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <div>
+                <p className="text-xs font-semibold uppercase text-muted-foreground">Contexto</p>
+                <h2 id="home-branches-title" className="mt-1 text-lg font-semibold text-foreground">Filial ativa</h2>
               </div>
-              <div className="mt-5 flex flex-wrap gap-2">{homeIdentity.microIndicators.map((indicator) => <span key={indicator} className="border border-border bg-background px-2 py-1 text-xs font-semibold text-foreground">{indicator}</span>)}</div>
-              <p className="mt-4 text-xs font-medium uppercase tracking-[0.16em] text-primary">{homeVisual.panelMicrocopy}</p>
+              <span className="pelegrini-technical-chip">{homeTheme.shortName}</span>
             </div>
-            <div className="grid gap-3">
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
               {branchThemes.map((theme) => {
                 const identity = getPelegriniIdentity(theme.key);
                 const disabled = !branchAvailability[theme.key];
@@ -150,7 +153,7 @@ export default function HomePage() {
                     key={theme.key}
                     theme={theme}
                     active={filialAtiva === theme.key}
-                    indicators={identity.microIndicators}
+                    indicators={identity.microIndicators.slice(0, 2)}
                     description={disabled ? unavailableDescription : identity.selectorDescription}
                     onSelect={disabled ? undefined : () => handleBranchSelect(theme.key)}
                     disabled={disabled}
@@ -158,18 +161,18 @@ export default function HomePage() {
                 );
               })}
             </div>
-          </div>
-        </section>
+          </section>
 
-        <section aria-labelledby="home-modules-title">
-          <div className="mb-3 flex items-end justify-between gap-4"><div><p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Acesso operacional</p><h2 id="home-modules-title" className="mt-1 text-xl font-semibold text-foreground">Modulos da operacao</h2></div><span className="text-sm text-muted-foreground">{modules.length} modulos</span></div>
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">{modules.filter((module) => !isAuthenticated || isMaster || module.disabled || (hasModulo(module.moduloKey) && hasUserModuleAccess(module.moduloKey))).map((module) => {
-            const identity = getPelegriniModuleIdentity(module.moduloKey as PelegriniModuleKey);
-            return <PelegriniOperationalCard key={module.title} title={module.title} label={identity.operationalLabel} description={identity.description} tags={identity.tags} accent={identity.key} onClick={module.disabled ? undefined : () => handleModuleClick(module)} disabled={module.disabled} />;
-          })}</div>
-        </section>
+          <section aria-labelledby="home-modules-title">
+            <div className="mb-3 flex items-end justify-between gap-4"><div><p className="text-xs font-semibold uppercase text-muted-foreground">Acesso direto</p><h2 id="home-modules-title" className="mt-1 text-lg font-semibold text-foreground">Módulos da operação</h2></div><span className="text-xs text-muted-foreground">{modules.length} disponíveis</span></div>
+            <div className="grid gap-3 sm:grid-cols-2">{modules.filter((module) => !isAuthenticated || isMaster || module.disabled || (hasModulo(module.moduloKey) && hasUserModuleAccess(module.moduloKey))).map((module) => {
+              const identity = getPelegriniModuleIdentity(module.moduloKey as PelegriniModuleKey);
+              return <PelegriniOperationalCard className="home-module-card" key={module.title} title={module.title} label={identity.operationalLabel} description={identity.description} tags={identity.tags.slice(0, 2)} accent={identity.key} onClick={module.disabled ? undefined : () => handleModuleClick(module)} disabled={module.disabled} />;
+            })}</div>
+          </section>
+        </div>
 
-        {canAccessSettings && <section className="mt-6 border-t border-border pt-5" aria-labelledby="home-admin-title"><p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Administracao</p><button type="button" onClick={() => navigate(pelegriniAdminEntry.path)} className="pelegrini-data-panel mt-3 flex w-full items-center justify-between gap-4 border border-border bg-card p-4 text-left shadow-sm transition-colors hover:border-primary/40"><div><h2 id="home-admin-title" className="text-base font-semibold text-foreground">{pelegriniAdminEntry.title}</h2><p className="mt-1 text-sm text-muted-foreground">{pelegriniAdminEntry.description}</p></div><span className="hidden flex-wrap justify-end gap-2 sm:flex">{pelegriniAdminEntry.features.map((feature) => <span key={feature} className="border border-border bg-background px-2 py-1 text-xs font-medium text-muted-foreground">{feature}</span>)}</span></button></section>}
+        {canAccessSettings && <section className="mt-5 border-t border-border pt-4" aria-labelledby="home-admin-title"><button type="button" onClick={() => navigate(pelegriniAdminEntry.path)} className="flex w-full items-center justify-between gap-4 rounded-lg border border-border bg-card px-4 py-3 text-left shadow-sm transition-colors hover:border-primary/40"><div><h2 id="home-admin-title" className="text-sm font-semibold text-foreground">Configurações</h2><p className="mt-0.5 text-xs text-muted-foreground">Empresas, usuários e endpoints</p></div><Settings className="h-4 w-4 text-muted-foreground" /></button></section>}
       </main>
 
       <ModuleDetailsDialog open={detailsDialogOpen} onOpenChange={setDetailsDialogOpen} module={selectedModuleForDetails} />

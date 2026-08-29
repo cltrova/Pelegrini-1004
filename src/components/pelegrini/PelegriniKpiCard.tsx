@@ -11,12 +11,12 @@ interface PelegriniKpiCardProps {
 
 export function PelegriniKpiCard({ label, value, helper, tone = 'blue', className }: PelegriniKpiCardProps) {
   return (
-    <article className={cn('pelegrini-kpi-card group relative overflow-hidden border bg-card p-4', className)} data-tone={tone}>
+    <article className={cn('pelegrini-kpi-card group relative min-w-0 overflow-hidden border bg-card p-4', className)} data-tone={tone}>
       <span className="pelegrini-kpi-card-rail" aria-hidden="true" />
-      <div className="relative">
+      <div className="relative min-w-0">
         <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">{label}</p>
-        <div className="mt-2 text-2xl font-semibold tabular-nums text-foreground">{value}</div>
-        {helper && <p className="mt-1 text-sm text-muted-foreground">{helper}</p>}
+        <div className="kpi-fluid-value mt-2 break-words font-semibold tabular-nums text-foreground">{value}</div>
+        {helper && <p className="mt-1 min-w-0 text-sm text-muted-foreground">{helper}</p>}
       </div>
     </article>
   );

@@ -7,16 +7,14 @@ import {
   ChevronLeft,
   Menu,
   X,
-  Building2,
   Zap,
   Bot,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useEmpresaAtiva } from '@/hooks/useEmpresaAtiva';
-import { Badge } from '@/components/ui/badge';
 import { getPelegriniModuleVisual, resolvePelegriniTheme, resolvePelegriniVisual } from '@/config/pelegriniTheme';
 import { useFilialSelecionada } from '@/contexts/FilialSelecionadaContext';
-import { PelegriniBrandMark } from '@/components/pelegrini';
+import { PelegriniBrandMark, PelegriniBranchSwitcher } from '@/components/pelegrini';
 import {
   Collapsible,
   CollapsibleContent,
@@ -39,10 +37,10 @@ export function WhatsappHeader() {
   const location = useLocation();
   const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const { empresa, isMaster, codEmpresaAtiva } = useEmpresaAtiva();
+  const { codEmpresaAtiva } = useEmpresaAtiva();
   const { filialAtiva } = useFilialSelecionada();
-  const theme = resolvePelegriniTheme(filialAtiva);
-  const visual = resolvePelegriniVisual(filialAtiva);
+  const theme = resolvePelegriniTheme(filialAtiva || codEmpresaAtiva);
+  const visual = resolvePelegriniVisual(filialAtiva || codEmpresaAtiva);
   const moduleVisual = getPelegriniModuleVisual('whatsapp', theme.key);
   const headerRef = useRef<HTMLDivElement>(null);
 
@@ -79,7 +77,7 @@ export function WhatsappHeader() {
     <div ref={headerRef} className="relative z-50">
       {/* Main header bar */}
       <header
-        className="pelegrini-whatsapp-header h-16 bg-sidebar border-b border-sidebar-border flex items-center px-4 gap-4"
+        className="pelegrini-whatsapp-header min-h-16 bg-sidebar border-b border-sidebar-border flex items-center px-4 py-2 gap-3"
         style={{
           '--pelegrini-primary': theme.primary,
           '--pelegrini-secondary': theme.secondary,
@@ -103,29 +101,16 @@ export function WhatsappHeader() {
         <div className="flex min-w-0 items-center gap-3">
           <PelegriniBrandMark theme={theme} compact tone="sidebar" />
           <div className="hidden min-w-0 sm:block">
-            <span className="block font-semibold text-sidebar-foreground">
-              WhatsApp
+            <span className="block font-semibold leading-tight text-sidebar-foreground">
+              {theme.name}
             </span>
-            <span className="block truncate text-[11px] text-sidebar-muted">
+            <span className="block max-w-[28rem] truncate text-[11px] text-sidebar-muted">
               {moduleVisual.kpiPrefix} / {visual.blueprintLabel}
             </span>
           </div>
         </div>
 
-        {/* Company info */}
-        {codEmpresaAtiva && (
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-sidebar-accent/50 border border-sidebar-border">
-            <Building2 className="h-4 w-4 text-sidebar-muted" />
-            <span className="text-sm font-medium text-sidebar-foreground truncate max-w-[150px]">
-              {empresa?.nome || codEmpresaAtiva}
-            </span>
-            {isMaster && (
-              <Badge variant="outline" className="text-[10px] shrink-0">
-                Master
-              </Badge>
-            )}
-          </div>
-        )}
+        <PelegriniBranchSwitcher className="hidden md:inline-grid" variant="header" />
 
         {/* Connection status */}
         <div className="ml-auto flex items-center gap-2 px-3 py-1.5 rounded-lg bg-sidebar-accent/70 border border-sidebar-border">

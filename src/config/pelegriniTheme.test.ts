@@ -7,13 +7,12 @@ import {
 } from './pelegriniTheme';
 
 describe('pelegriniTheme', () => {
-  it('resolves the neutral Pelegrini theme when no branch is active', () => {
+  it('uses Casa da Transmissão as the visual fallback when no branch is active', () => {
     const theme = resolvePelegriniTheme(null);
 
-    expect(getPelegriniThemeKey(null)).toBe('pelegrini');
-    expect(theme.name).toBe('Pelegrini');
-    expect(theme.tagline).toContain('gestao');
-    expect(theme.logoSrc).toBe('/brand/pelegrini-icon.svg');
+    expect(getPelegriniThemeKey(null)).toBe('transmissao');
+    expect(theme.name).toBe('Casa da Transmissão');
+    expect(theme.logoSrc).toBe('/brand/casa-transmissao.png');
   });
 
   it('resolves Casa da Transmissão with heavy parts vocabulary', () => {
@@ -27,6 +26,16 @@ describe('pelegriniTheme', () => {
     expect(theme.motif).toBe('gearbox-blueprint');
     expect(theme.surfacePattern).toBe('technical-grid');
     expect(theme.chartPalette).toEqual(expect.arrayContaining(['#073F73', '#49D2FF']));
+    expect(theme.navigation.activeIndicator).toBe('#49D2FF');
+    expect(theme.data.valueScale).toBe('fluid');
+    expect(theme.density.cardGap).toBe('1rem');
+  });
+
+  it('maps ERP company codes to their branch themes', () => {
+    expect(getPelegriniThemeKey('1004')).toBe('transmissao');
+    expect(resolvePelegriniTheme('1004').name).toBe('Casa da Transmissão');
+    expect(getPelegriniThemeKey('10041')).toBe('chevrolet');
+    expect(resolvePelegriniTheme('10041').name).toBe('Casa do Chevrolet');
   });
 
   it('resolves Casa do Chevrolet with original parts vocabulary', () => {
@@ -40,6 +49,8 @@ describe('pelegriniTheme', () => {
     expect(theme.motif).toBe('catalog-seal');
     expect(theme.surfacePattern).toBe('parts-catalog');
     expect(theme.chartPalette).toEqual(expect.arrayContaining(['#034E99', '#E8B923']));
+    expect(theme.navigation.activeIndicator).toBe('#E8B923');
+    expect(theme.status.attention).toBe('#E8B923');
   });
 
   it('returns visual tokens that keep CT and CCH clearly different', () => {

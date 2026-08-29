@@ -20,7 +20,7 @@ export function PelegriniModuleShell({
   moduleKey = 'comercial',
 }: PelegriniModuleShellProps) {
   const { filialAtiva } = useFilialSelecionada();
-  const theme = resolvePelegriniTheme(filialAtiva);
+  const theme = resolvePelegriniTheme(filialAtiva || 'transmissao');
   const usesHeader = variant === 'header';
 
   return (
@@ -40,7 +40,7 @@ export function PelegriniModuleShell({
     >
       <div>{sidebar}</div>
       <main
-        className={cn('pelegrini-page-surface relative flex-1 overflow-x-hidden', !usesHeader && 'md:ml-64')}
+        className={cn('pelegrini-page-surface relative min-w-0 flex-1 overflow-x-hidden', !usesHeader && 'md:ml-[232px]')}
         data-theme={theme.key}
         data-module={moduleKey}
         data-pattern={theme.surfacePattern}

@@ -3,9 +3,8 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { ConversationList } from '@/components/whatsapp/ConversationList';
 import { ChatArea } from '@/components/whatsapp/ChatArea';
 import { ChatDetails } from '@/components/whatsapp/ChatDetails';
-import { MobileHeader } from '@/components/layout/MobileHeader';
 import { WhatsappMobileBottomNav } from '@/components/layout/WhatsappMobileBottomNav';
-import { Header } from '@/components/layout/Header';
+import { MessageSquare } from 'lucide-react';
 import { useWhatsappConversations, useWhatsappRealtime, useMarkAsRead } from '@/hooks/useWhatsappData';
 import type { ConversationFilters } from '@/types/whatsapp';
 import { useEmpresaAtiva } from '@/hooks/useEmpresaAtiva';
@@ -77,7 +76,6 @@ export default function ChatPage() {
       <div className="h-screen flex flex-col bg-background overflow-hidden">
         {mobileView === 'list' && (
           <>
-            <MobileHeader title="Conversas" subtitle="WhatsApp" />
             <div className="flex-1 overflow-y-auto pb-20">
               <ConversationList
                 conversations={conversations || []}
@@ -124,8 +122,6 @@ export default function ChatPage() {
   // Desktop version - 3 column layout
   return (
     <div className="h-screen flex flex-col overflow-hidden">
-      <Header />
-      
       <div className="flex-1 flex overflow-hidden min-h-0">
         {/* Left column - Conversation list */}
         <div className="w-80 border-r border-border flex flex-col flex-shrink-0 overflow-hidden">
@@ -158,7 +154,7 @@ export default function ChatPage() {
             <div className="flex-1 flex items-center justify-center h-full text-muted-foreground">
               <div className="text-center">
                 <div className="h-16 w-16 rounded-full bg-muted/50 flex items-center justify-center mx-auto mb-4">
-                  <span className="text-3xl">💬</span>
+                  <MessageSquare className="h-7 w-7 text-primary" aria-hidden="true" />
                 </div>
                 <h3 className="text-lg font-medium text-foreground mb-2">
                   Selecione uma conversa

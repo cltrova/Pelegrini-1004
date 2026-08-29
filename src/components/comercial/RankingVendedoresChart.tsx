@@ -14,7 +14,6 @@ import {
   type PeriodoFiltroRanking,
   resolveMetaReferenciaRankingVendedor,
 } from '@/utils/rankingVendedoresMeta';
-import { getRankingVendedoresChartLayout } from './rankingVendedoresChartLayout';
 import { RankingVendedoresLabels } from './RankingVendedoresLabels';
 
 interface VendedorRow {
@@ -85,11 +84,6 @@ export function RankingVendedoresChart({ data, periodo, onClick, variant = 'defa
       .sort((a, b) => modo === 'faturamento' ? b.mes - a.mes : b.pctMeta - a.pctMeta)
       .map((v, i) => ({ ...v, rank: i + 1 }));
   }, [data, modo, periodo]);
-
-  const chartLayout = useMemo(
-    () => getRankingVendedoresChartLayout(enriched.length),
-    [enriched.length],
-  );
 
   const maxVal = useMemo(() => {
     if (!enriched.length) return 1;
@@ -185,9 +179,9 @@ export function RankingVendedoresChart({ data, periodo, onClick, variant = 'defa
             Sem dados no período selecionado
           </div>
         ) : (
-          <div className="w-full overflow-x-auto pb-2">
-            <div style={{ minWidth: chartLayout.chartMinWidth }}>
-              <div className="h-[340px]">
+          <div className="w-full min-w-0 pb-2">
+            <div className="min-w-0">
+              <div className="h-[280px] sm:h-[320px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart
                     data={enriched}

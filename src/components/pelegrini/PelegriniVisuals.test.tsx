@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { resolvePelegriniTheme } from '@/config/pelegriniTheme';
 import { PelegriniBrandMark } from './PelegriniBrandMark';
@@ -11,10 +11,24 @@ import { PelegriniKpiCard } from './PelegriniKpiCard';
 import { PelegriniModuleHeader } from './PelegriniModuleHeader';
 import { PelegriniPageSurface } from './PelegriniPageSurface';
 import { PelegriniOperationalCard } from './PelegriniOperationalCard';
+import { PelegriniBranchSwitcher } from './PelegriniBranchSwitcher';
+import { PelegriniResponsiveValue } from './PelegriniResponsiveValue';
+import { PelegriniFilterBar } from './PelegriniFilterBar';
+import { PelegriniTabs } from './PelegriniTabs';
 import { LoadingState } from '@/components/common/LoadingState';
 
+const setFilialAtivaForEmpresa = vi.fn();
+
 vi.mock('@/contexts/FilialSelecionadaContext', () => ({
-  useFilialSelecionada: () => ({ filialAtiva: 'transmissao' }),
+  useFilialSelecionada: () => ({
+    filialAtiva: 'transmissao',
+    codEmpresaContexto: '1004',
+    setFilialAtivaForEmpresa,
+  }),
+}));
+
+vi.mock('@/contexts/AuthContext', () => ({
+  useAuth: () => ({ isMaster: true, profile: null }),
 }));
 
 describe('Pelegrini visual components', () => {
@@ -25,6 +39,15 @@ describe('Pelegrini visual components', () => {
 
     expect(screen.getByAltText('Logo Casa da Transmissão')).toBeInTheDocument();
     expect(screen.getByText('Casa da Transmissão')).toBeInTheDocument();
+  });
+
+  it('keeps the sidebar brand compact without a clipped tagline', () => {
+    const theme = resolvePelegriniTheme('transmissao');
+
+    render(<PelegriniBrandMark theme={theme} tone="sidebar" />);
+
+    expect(screen.getByText('Casa da Transmissão')).toBeInTheDocument();
+    expect(screen.queryByText(theme.tagline)).not.toBeInTheDocument();
   });
 
   it('renders branch trust signals', () => {
@@ -122,6 +145,69 @@ describe('Pelegrini visual components', () => {
     expect(screen.getByText('Aplicacoes pesadas')).toBeInTheDocument();
     expect(screen.getByTestId('pelegrini-page-surface')).toHaveAttribute('data-module', 'operacional');
     expect(screen.getByTestId('pelegrini-branch-visual')).toHaveAttribute('data-motif', 'gearbox-blueprint');
+  });
+
+  it('keeps KPI values responsive inside tight cards', () => {
+    const { container } = render(
+      <PelegriniKpiCard
+        label="Faturamento"
+        value="R$ 12.345.678,90"
+        helper="Valor auditado"
+      />,
+    );
+
+    const value = screen.getByText('R$ 12.345.678,90');
+
+    expect(container.firstElementChild).toHaveClass('min-w-0');
+    expect(value).toHaveClass('kpi-fluid-value', 'break-words');
+  });
+
+  it('switches the active branch without changing the current route', () => {
+    render(<PelegriniBranchSwitcher variant="sidebar" />);
+
+    expect(screen.getByRole('radiogroup', { name: /Filial ativa/i })).toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: /Casa da Transmissão/i })).toHaveAttribute('aria-checked', 'true');
+
+    fireEvent.click(screen.getByRole('radio', { name: /Casa do Chevrolet/i }));
+
+    expect(setFilialAtivaForEmpresa).toHaveBeenCalledWith('1004', 'chevrolet');
+  });
+
+  it('renders long financial values without truncation', () => {
+    render(<PelegriniResponsiveValue>R$ 123.456.789,90</PelegriniResponsiveValue>);
+
+    expect(screen.getByText('R$ 123.456.789,90')).toHaveClass('pelegrini-responsive-value');
+    expect(screen.getByText('R$ 123.456.789,90')).not.toHaveClass('truncate');
+  });
+
+  it('keeps filter controls in a collapsible responsive region', () => {
+    render(
+      <PelegriniFilterBar activeCount={2} summary="Agosto e 5 vendedores">
+        <button type="button">Aplicar filtros</button>
+      </PelegriniFilterBar>,
+    );
+
+    expect(screen.getByRole('button', { name: /Filtros.*2 ativos/i })).toHaveAttribute('aria-expanded', 'false');
+    fireEvent.click(screen.getByRole('button', { name: /Filtros.*2 ativos/i }));
+    expect(screen.getByRole('button', { name: 'Aplicar filtros' })).toBeVisible();
+  });
+
+  it('gives long tab sets their own horizontal scroll region', () => {
+    render(
+      <PelegriniTabs
+        ariaLabel="Visões comerciais"
+        items={[
+          { value: 'geral', label: 'Visão Geral' },
+          { value: 'detalhes', label: 'Detalhes' },
+          { value: 'comparativos', label: 'Comparativos' },
+        ]}
+        value="geral"
+        onValueChange={() => undefined}
+      />,
+    );
+
+    expect(screen.getByRole('tablist', { name: 'Visões comerciais' })).toHaveClass('pelegrini-tabs-list');
+    expect(screen.getByRole('tab', { name: 'Visão Geral' })).toHaveAttribute('aria-selected', 'true');
   });
 
   it('renders chart frame with CCH catalog identity', () => {
