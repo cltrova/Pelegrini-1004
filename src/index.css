@@ -1196,6 +1196,48 @@
       hsl(var(--sidebar-background));
   }
 
+  @media (min-width: 768px) {
+    .pelegrini-sidebar-collapsible {
+      width: 72px;
+      overflow-x: hidden;
+      transition: width 220ms ease, box-shadow 220ms ease;
+      box-shadow: 10px 0 30px -28px hsl(var(--foreground) / 0.45);
+    }
+
+    .pelegrini-sidebar-collapsible:hover,
+    .pelegrini-sidebar-collapsible:focus-within {
+      width: 232px;
+      box-shadow: 18px 0 40px -24px hsl(var(--foreground) / 0.5);
+    }
+
+    .pelegrini-sidebar-collapsible:not(:hover):not(:focus-within) .pelegrini-brand-mark {
+      gap: 0;
+    }
+
+    .pelegrini-sidebar-collapsible:not(:hover):not(:focus-within) .pelegrini-brand-mark > :last-child:not(:first-child),
+    .pelegrini-sidebar-collapsible:not(:hover):not(:focus-within) .sidebar-item > span,
+    .pelegrini-sidebar-collapsible:not(:hover):not(:focus-within) button > span,
+    .pelegrini-sidebar-collapsible:not(:hover):not(:focus-within) .sidebar-section {
+      width: 0;
+      min-width: 0;
+      overflow: hidden;
+      opacity: 0;
+      white-space: nowrap;
+      pointer-events: none;
+    }
+
+    .pelegrini-sidebar-collapsible:not(:hover):not(:focus-within) .sidebar-item,
+    .pelegrini-sidebar-collapsible:not(:hover):not(:focus-within) nav + div button {
+      justify-content: center;
+    }
+
+    .pelegrini-sidebar-collapsible .pelegrini-brand-mark > :last-child,
+    .pelegrini-sidebar-collapsible .sidebar-item > span,
+    .pelegrini-sidebar-collapsible button > span {
+      transition: opacity 160ms ease;
+    }
+  }
+
   .home-module-card {
     min-height: 0;
     padding: 1rem;

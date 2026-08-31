@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -32,13 +32,13 @@ export function FilialSelectorDialog({
   required = false,
 }: FilialSelectorDialogProps) {
   const { filialAtiva, setFilialAtivaForEmpresa } = useFilialSelecionada();
-  const { isMaster, profile } = useAuth() as any;
-  const filialAccess = getFilialAccessState({
+  const { isMaster, profile } = useAuth();
+  const filialAccess = useMemo(() => getFilialAccessState({
     codEmpresa,
     isMaster,
-    filiaisPermitidas: profile?.filiais_permitidas as string[] | null | undefined,
-    filialPadrao: profile?.filial_id as string | null | undefined,
-  });
+    filiaisPermitidas: profile?.filiais_permitidas,
+    filialPadrao: profile?.filial_id,
+  }), [codEmpresa, isMaster, profile?.filial_id, profile?.filiais_permitidas]);
   const filiais = filialAccess.items;
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
@@ -48,7 +48,7 @@ export function FilialSelectorDialog({
       setSelectedId(activeIsAvailable ? filialAtiva : null);
     }
     else setSelectedId(null);
-  }, [open, filialAtiva, codEmpresa, isMaster, profile?.filial_id, profile?.filiais_permitidas]);
+  }, [open, filialAtiva, filialAccess.available]);
 
   if (filiais.length === 0) return null;
 
@@ -72,10 +72,10 @@ export function FilialSelectorDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Building2 className="h-5 w-5" />
-            Selecionar Filial
+            Escolha a unidade
           </DialogTitle>
           <DialogDescription>
-            Escolha a filial para ajustar visual, filtros e indicadores do painel.
+            Selecione qual operação deseja acessar.
           </DialogDescription>
         </DialogHeader>
 
@@ -92,7 +92,7 @@ export function FilialSelectorDialog({
                   theme={branchTheme}
                   active={active}
                   indicators={branchIdentity.microIndicators}
-                  description={blocked ? 'Acesso pendente de liberação pelo master em Configurações.' : branchIdentity.selectorDescription}
+                  description={blocked ? 'Acesso não liberado para este usuário.' : branchIdentity.selectorDescription}
                   onSelect={() => {
                     if (!blocked) setSelectedId(f.id);
                   }}
@@ -102,7 +102,7 @@ export function FilialSelectorDialog({
                 {blocked && (
                   <p className="mt-2 flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400">
                     <Lock className="h-3.5 w-3.5 shrink-0" />
-                    Bloqueada: acesso pendente de liberação pelo master em Configurações.
+                    Acesso não liberado.
                   </p>
                 )}
               </div>

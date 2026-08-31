@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
-import { Users, UserPlus, TrendingUp, ShoppingCart, Building2, ArrowUpRight, ArrowDownRight, Minus } from 'lucide-react';
+import { Users, UserPlus, TrendingUp, ShoppingCart, Building2, ArrowUpRight, ArrowDownRight, Minus, Info } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { PelegriniResponsiveValue } from '@/components/pelegrini';
 import { cn } from '@/lib/utils';
 import { formatCurrency, formatPercent } from '@/utils/formatters';
 
@@ -74,9 +76,10 @@ interface HeroCardProps {
   icon: React.ComponentType<{ className?: string }>;
   deltaPct: number | null;
   deltaHint: string;
+  explanation: string;
 }
 
-function HeroCard({ label, value, format, icon: Icon, deltaPct, deltaHint }: HeroCardProps) {
+function HeroCard({ label, value, format, icon: Icon, deltaPct, deltaHint, explanation }: HeroCardProps) {
   const animated = useCountUp(value);
   return (
     <Card
@@ -98,15 +101,27 @@ function HeroCard({ label, value, format, icon: Icon, deltaPct, deltaHint }: Her
       />
       <CardContent className="relative p-5 md:p-6">
         <div className="flex items-start justify-between gap-3">
-          <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-            {label}
-          </p>
+          <div className="flex min-w-0 items-center gap-1.5">
+            <p className="text-[11px] font-medium uppercase text-muted-foreground">{label}</p>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  className="inline-flex h-5 w-5 shrink-0 items-center justify-center text-muted-foreground transition-colors hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  aria-label={`O que significa ${label}`}
+                >
+                  <Info className="h-3.5 w-3.5" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent className="max-w-64 text-xs leading-5">{explanation}</TooltipContent>
+            </Tooltip>
+          </div>
           <Icon className="h-4 w-4 text-muted-foreground/70 transition-all duration-300 group-hover:text-primary group-hover:scale-110" />
         </div>
 
-        <p className="mono-value mt-4 text-3xl font-semibold tracking-tight tabular-nums transition-colors duration-300 group-hover:text-foreground md:text-4xl">
+        <PelegriniResponsiveValue as="p" size="hero" className="mono-value mt-4 font-semibold tabular-nums transition-colors duration-300 group-hover:text-foreground">
           {format(animated)}
-        </p>
+        </PelegriniResponsiveValue>
 
         <div className="mt-3 flex items-center gap-2">
           <Delta pct={deltaPct} />
@@ -140,6 +155,7 @@ export function ClientesHeroSection({
       icon: Users,
       deltaPct: null,
       deltaHint: 'no período',
+      explanation: 'Clientes com movimentação de compra dentro do período selecionado.',
     },
     {
       label: 'Novos Clientes',
@@ -148,6 +164,7 @@ export function ClientesHeroSection({
       icon: UserPlus,
       deltaPct: null,
       deltaHint: 'primeira compra recente',
+      explanation: 'Clientes cuja primeira compra registrada ocorreu no período analisado.',
     },
     {
       label: 'Receita Gerada',
@@ -156,6 +173,7 @@ export function ClientesHeroSection({
       icon: TrendingUp,
       deltaPct: receitaPct,
       deltaHint: 'vs. mês anterior',
+      explanation: 'Faturamento líquido gerado pela carteira de clientes no período.',
     },
     {
       label: 'Ticket Médio',
@@ -164,6 +182,7 @@ export function ClientesHeroSection({
       icon: ShoppingCart,
       deltaPct: null,
       deltaHint: 'por pedido',
+      explanation: 'Receita gerada dividida pela quantidade de pedidos do período.',
     },
     {
       label: 'Vendedores Ativos',
@@ -172,21 +191,13 @@ export function ClientesHeroSection({
       icon: Building2,
       deltaPct: null,
       deltaHint: 'no período',
+      explanation: 'Vendedores que registraram movimentação na carteira durante o período.',
     },
   ];
 
   return (
     <section className="relative overflow-hidden rounded-2xl border border-border/60 bg-gradient-to-br from-muted/40 via-background to-background p-5 md:p-8">
-      <div className="mb-6 flex items-end justify-between gap-4">
-        <div>
-          <p className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground">
-            Visão da Carteira
-          </p>
-          <h1 className="mt-1 text-xl font-semibold tracking-tight md:text-2xl">
-            Análise de Clientes
-          </h1>
-        </div>
-      </div>
+      <h1 className="mb-6 text-xl font-semibold md:text-2xl">Análise de Clientes</h1>
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4 xl:grid-cols-5">
         {cards.map((c) => (

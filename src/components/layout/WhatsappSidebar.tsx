@@ -13,7 +13,7 @@ import { cn } from '@/lib/utils';
 import { useEmpresaAtiva } from '@/hooks/useEmpresaAtiva';
 import { resolvePelegriniTheme } from '@/config/pelegriniTheme';
 import { useFilialSelecionada } from '@/contexts/FilialSelecionadaContext';
-import { PelegriniBrandMark, PelegriniBranchSwitcher } from '@/components/pelegrini';
+import { PelegriniBrandMark } from '@/components/pelegrini';
 
 interface MenuItem {
   label: string;
@@ -62,8 +62,9 @@ export function WhatsappSidebar() {
 
       {/* Sidebar */}
       <aside
+        data-desktop-state="collapsed"
         className={cn(
-          'pelegrini-sidebar fixed left-0 top-0 z-50 h-screen w-[232px] bg-sidebar text-sidebar-foreground flex flex-col transition-transform duration-300 motion-reduce:transition-none motion-reduce:duration-0 md:translate-x-0',
+          'pelegrini-sidebar pelegrini-sidebar-collapsible fixed left-0 top-0 z-50 h-screen w-[232px] bg-sidebar text-sidebar-foreground flex flex-col transition-transform duration-300 motion-reduce:transition-none motion-reduce:duration-0 md:translate-x-0',
           isMobileOpen ? 'translate-x-0' : '-translate-x-full'
         )}
         style={{
@@ -81,10 +82,6 @@ export function WhatsappSidebar() {
           >
             <X className="h-5 w-5" />
           </button>
-        </div>
-
-        <div className="px-4 pt-3">
-          <PelegriniBranchSwitcher variant="sidebar" />
         </div>
 
         {/* Status da conexão */}
@@ -108,7 +105,6 @@ export function WhatsappSidebar() {
 
         {/* Navigation */}
         <nav className="flex-1 overflow-y-auto scrollbar-thin px-3 py-3 space-y-1">
-          <p className="sidebar-section">WhatsApp</p>
           {whatsappMenuItems.map((item) => {
             const Icon = item.icon;
             return (
@@ -128,12 +124,6 @@ export function WhatsappSidebar() {
           })}
         </nav>
 
-        {/* Footer */}
-        <div className="p-3 border-t border-sidebar-border">
-          <div className="text-[11px] font-medium uppercase tracking-[0.14em] text-sidebar-muted">
-            {theme.shortName} · Atendimento
-          </div>
-        </div>
       </aside>
     </>
   );

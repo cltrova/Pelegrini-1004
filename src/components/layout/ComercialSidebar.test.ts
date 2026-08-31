@@ -129,13 +129,19 @@ describe('commercial sidebar menu access', () => {
     expect(screen.queryByText(/Pedidos e carteira/i)).not.toBeInTheDocument();
   });
 
-  it('keeps the CT and CCH switcher available inside the module', () => {
+  it('keeps branch selection out of the module sidebar', () => {
     mockCompany('1004');
     render(createElement(MemoryRouter, { initialEntries: ['/comercial/dashboard'], future: { v7_startTransition: true, v7_relativeSplatPath: true } }, createElement(ComercialSidebar)));
 
-    expect(screen.getByRole('radiogroup', { name: /Filial ativa/i })).toBeInTheDocument();
-    expect(screen.getByRole('radio', { name: /Casa da Transmissão/i })).toBeInTheDocument();
-    expect(screen.getByRole('radio', { name: /Casa do Chevrolet/i })).toBeInTheDocument();
+    expect(screen.queryByRole('radiogroup', { name: /Filial ativa/i })).not.toBeInTheDocument();
+  });
+
+  it('starts compact on desktop and expands through hover styles', () => {
+    mockCompany('1004');
+    render(createElement(MemoryRouter, { initialEntries: ['/comercial/dashboard'], future: { v7_startTransition: true, v7_relativeSplatPath: true } }, createElement(ComercialSidebar)));
+
+    expect(screen.getByRole('complementary')).toHaveClass('pelegrini-sidebar-collapsible');
+    expect(screen.getByRole('complementary')).toHaveAttribute('data-desktop-state', 'collapsed');
   });
 
   it('respects reduced motion for the mobile sidebar transition', () => {

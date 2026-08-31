@@ -30,5 +30,8 @@ describe('FilialSelectorDialog', () => {
     expect(screen.getByText('Diferencial')).toBeInTheDocument();
     expect(screen.getByText('Original GM')).toBeInTheDocument();
     expect(screen.getByText('Desde 1992')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Casa da Transmissão/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Casa do Chevrolet/i })).toBeInTheDocument();
+    expect(screen.queryByText(/^Pelegrini$/i)).not.toBeInTheDocument();
   });
 });

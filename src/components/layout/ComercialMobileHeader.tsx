@@ -1,5 +1,5 @@
 import { ThemeToggle } from '@/components/common/ThemeToggle';
-import { PelegriniBrandMark, PelegriniBranchSwitcher } from '@/components/pelegrini';
+import { PelegriniBrandMark } from '@/components/pelegrini';
 import { resolvePelegriniTheme } from '@/config/pelegriniTheme';
 import { useFilialSelecionada } from '@/contexts/FilialSelecionadaContext';
 import { useEmpresaAtiva } from '@/hooks/useEmpresaAtiva';
@@ -26,9 +26,6 @@ export function ComercialMobileHeader({ title = 'Comercial' }: ComercialMobileHe
           <span className="text-[10px] font-semibold uppercase text-muted-foreground">{title}</span>
           <ThemeToggle />
         </div>
-      </div>
-      <div className="border-t border-border/60 px-4 py-2">
-        <PelegriniBranchSwitcher variant="header" className="w-full" />
       </div>
     </header>
   );

@@ -16,6 +16,7 @@ import { PelegriniResponsiveValue } from './PelegriniResponsiveValue';
 import { PelegriniFilterBar } from './PelegriniFilterBar';
 import { PelegriniTabs } from './PelegriniTabs';
 import { LoadingState } from '@/components/common/LoadingState';
+import { PelegriniModuleShell } from './PelegriniModuleShell';
 
 const setFilialAtivaForEmpresa = vi.fn();
 
@@ -178,6 +179,17 @@ describe('Pelegrini visual components', () => {
 
     expect(screen.getByText('R$ 123.456.789,90')).toHaveClass('pelegrini-responsive-value');
     expect(screen.getByText('R$ 123.456.789,90')).not.toHaveClass('truncate');
+  });
+
+  it('reserves only the compact sidebar rail in the module shell', () => {
+    render(
+      <PelegriniModuleShell sidebar={<aside>Menu</aside>}>
+        <span>Conteudo</span>
+      </PelegriniModuleShell>,
+    );
+
+    expect(screen.getByRole('main')).toHaveClass('md:ml-[72px]');
+    expect(screen.getByRole('main')).not.toHaveClass('md:ml-[232px]');
   });
 
   it('keeps filter controls in a collapsible responsive region', () => {

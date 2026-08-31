@@ -40,7 +40,7 @@ export function PelegriniModuleShell({
     >
       <div>{sidebar}</div>
       <main
-        className={cn('pelegrini-page-surface relative min-w-0 flex-1 overflow-x-hidden', !usesHeader && 'md:ml-[232px]')}
+        className={cn('pelegrini-page-surface relative min-w-0 flex-1 overflow-x-hidden', !usesHeader && 'md:ml-[72px]')}
         data-theme={theme.key}
         data-module={moduleKey}
         data-pattern={theme.surfacePattern}

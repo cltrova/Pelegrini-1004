@@ -12,9 +12,9 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useEmpresaAtiva } from '@/hooks/useEmpresaAtiva';
-import { getPelegriniModuleVisual, resolvePelegriniTheme, resolvePelegriniVisual } from '@/config/pelegriniTheme';
+import { resolvePelegriniTheme } from '@/config/pelegriniTheme';
 import { useFilialSelecionada } from '@/contexts/FilialSelecionadaContext';
-import { PelegriniBrandMark, PelegriniBranchSwitcher } from '@/components/pelegrini';
+import { PelegriniBrandMark } from '@/components/pelegrini';
 import {
   Collapsible,
   CollapsibleContent,
@@ -40,8 +40,6 @@ export function WhatsappHeader() {
   const { codEmpresaAtiva } = useEmpresaAtiva();
   const { filialAtiva } = useFilialSelecionada();
   const theme = resolvePelegriniTheme(filialAtiva || codEmpresaAtiva);
-  const visual = resolvePelegriniVisual(filialAtiva || codEmpresaAtiva);
-  const moduleVisual = getPelegriniModuleVisual('whatsapp', theme.key);
   const headerRef = useRef<HTMLDivElement>(null);
 
   const isActive = (path: string) => {
@@ -104,13 +102,8 @@ export function WhatsappHeader() {
             <span className="block font-semibold leading-tight text-sidebar-foreground">
               {theme.name}
             </span>
-            <span className="block max-w-[28rem] truncate text-[11px] text-sidebar-muted">
-              {moduleVisual.kpiPrefix} / {visual.blueprintLabel}
-            </span>
           </div>
         </div>
-
-        <PelegriniBranchSwitcher className="hidden md:inline-grid" variant="header" />
 
         {/* Connection status */}
         <div className="ml-auto flex items-center gap-2 px-3 py-1.5 rounded-lg bg-sidebar-accent/70 border border-sidebar-border">

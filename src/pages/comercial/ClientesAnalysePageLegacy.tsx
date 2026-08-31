@@ -44,7 +44,6 @@ import {
   Target,
   Download,
   FileText,
-  PieChart as PieChartIcon,
 } from 'lucide-react';
 
 import {
@@ -52,9 +51,6 @@ import {
   Area,
   BarChart,
   Bar,
-  PieChart,
-  Pie,
-  Cell,
   LineChart as RechartsLineChart,
   Line,
   XAxis,
@@ -62,7 +58,6 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  Legend,
 } from 'recharts';
 import { cn } from '@/lib/utils';
 import type { ComercialFilters, ClientePerformance } from '@/types/comercial';
@@ -976,61 +971,6 @@ export default function ClientesAnalysePageLegacy() {
             })()
           ) : (
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-              {/* Top 5 Clientes - Donut */}
-              <Card className="overflow-hidden border-border/60 shadow-sm transition-shadow hover:shadow-md">
-                <div className="flex items-center justify-between gap-3 border-b border-border/60 bg-gradient-to-br from-primary/[0.04] via-transparent to-transparent px-5 py-4 md:px-6">
-                  <div className="flex items-center gap-2.5">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 ring-1 ring-primary/20">
-                      <PieChartIcon className="h-4 w-4 text-primary" />
-                    </div>
-                    <div>
-                      <h3 className="text-sm font-semibold text-foreground/90">Top 5 Clientes — Representatividade</h3>
-                      <p className="text-xs text-muted-foreground">Participação dos 5 maiores no faturamento</p>
-                    </div>
-                  </div>
-                  <Badge variant="secondary" className="text-[11px] font-medium tabular-nums">
-                    {formatPercent(top5Clientes.percentualTotal)} do total
-                  </Badge>
-                </div>
-                <CardContent className="p-4 md:p-6">
-                  <div className="h-72">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie
-                          data={top5Clientes.data}
-                          cx="50%"
-                          cy="50%"
-                          innerRadius={62}
-                          outerRadius={92}
-                          paddingAngle={3}
-                          cornerRadius={4}
-                          dataKey="value"
-                          animationDuration={900}
-                          animationEasing="ease-out"
-                        >
-                          {top5Clientes.data.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={entry.fill} stroke="hsl(var(--background))" strokeWidth={2} />
-                          ))}
-                        </Pie>
-                        <Tooltip
-                          formatter={(value: number) => [formatCurrency(value), 'Faturamento']}
-                          contentStyle={{
-                            backgroundColor: 'hsl(var(--popover))',
-                            border: '1px solid hsl(var(--border))',
-                            borderRadius: '12px',
-                            boxShadow: '0 8px 24px hsl(var(--foreground) / 0.08)',
-                          }}
-                        />
-                        <Legend
-                          iconType="circle"
-                          formatter={(value) => <span className="text-xs text-muted-foreground">{value}</span>}
-                        />
-                      </PieChart>
-                    </ResponsiveContainer>
-                  </div>
-                </CardContent>
-              </Card>
-
               <TopClientesRanking
                 clientes={clientesPerformance.slice(0, 10)}
                 variacoesPorCodigo={variacoesTop10}
