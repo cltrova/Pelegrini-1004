@@ -16,6 +16,7 @@ export {
 } from './PelegriniModuleSidebar';
 export { PelegriniPageSurface } from './PelegriniPageSurface';
 export { PelegriniOperationalCard } from './PelegriniOperationalCard';
+export { PelegriniPageHeader } from './PelegriniPageHeader';
 export { PelegriniBranchPanel } from './PelegriniBranchPanel';
 export { PelegriniResponsiveValue } from './PelegriniResponsiveValue';
 export { PelegriniTabs } from './PelegriniTabs';

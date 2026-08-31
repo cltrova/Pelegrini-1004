@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { getPelegriniModuleIdentity, type PelegriniModuleKey } from '@/config/pelegriniIdentity';
 import { pelegriniAdminEntry, pelegriniModules, type PelegriniHomeModule } from '@/config/pelegriniHome';
 import { resolvePelegriniTheme } from '@/config/pelegriniTheme';
-import { PelegriniBrandMark, PelegriniOperationalCard } from '@/components/pelegrini';
+import { PelegriniBrandMark, PelegriniOperationalCard, PelegriniPageHeader } from '@/components/pelegrini';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFilialSelecionada } from '@/contexts/FilialSelecionadaContext';
 import { useEmpresaSelecionada } from '@/contexts/EmpresaSelecionadaContext';
@@ -91,7 +91,6 @@ export default function HomePage() {
           <div className="flex shrink-0 items-center gap-3">
             <ThemeToggle />
             {isAuthenticated ? <div className="flex items-center gap-2">
-              {canAccessSettings && <Button variant="ghost" size="sm" onClick={() => navigate('/configuracoes')} className="gap-2 text-muted-foreground hover:text-foreground"><Settings className="h-4 w-4" /><span className="hidden lg:inline">Configuracoes</span></Button>}
               <span className="hidden text-sm text-muted-foreground xl:inline">{user?.email}</span>
               <Button variant="outline" size="sm" onClick={logout} className="gap-2"><LogOut className="h-4 w-4" /><span className="hidden md:inline">Sair</span></Button>
             </div> : <LoginDialog />}
@@ -100,21 +99,19 @@ export default function HomePage() {
       </header>
 
       <main className="relative mx-auto max-w-7xl px-4 py-5 sm:px-6 sm:py-7">
-        <section className="mb-5 border-b border-border pb-5">
-          <h1 className="text-2xl font-bold leading-tight text-foreground sm:text-3xl">Módulos</h1>
-        </section>
+        <PelegriniPageHeader title="Módulos" eyebrow={homeTheme.shortName} />
 
-        <div>
+        <div className="mt-4 min-w-0">
           <section aria-labelledby="home-modules-title">
             <h2 id="home-modules-title" className="sr-only">Módulos disponíveis</h2>
-            <div className="grid gap-3 sm:grid-cols-2">{modules.filter((module) => !isAuthenticated || isMaster || module.disabled || (hasModulo(module.moduloKey) && hasUserModuleAccess(module.moduloKey))).map((module) => {
+            <div className="grid min-w-0 gap-3 sm:grid-cols-2" data-home-modules>{modules.filter((module) => !isAuthenticated || isMaster || module.disabled || (hasModulo(module.moduloKey) && hasUserModuleAccess(module.moduloKey))).map((module) => {
               const identity = getPelegriniModuleIdentity(module.moduloKey as PelegriniModuleKey);
-              return <PelegriniOperationalCard className="home-module-card" key={module.title} title={module.title} label={identity.operationalLabel} description={identity.description} tags={identity.tags.slice(0, 2)} accent={identity.key} onClick={module.disabled ? undefined : () => handleModuleClick(module)} disabled={module.disabled} />;
+              return <PelegriniOperationalCard className="home-module-card" key={module.title} title={module.title} label={identity.operationalLabel} description={identity.description} tags={identity.tags.slice(0, 2)} accent={identity.key} icon={module.icon} onClick={module.disabled ? undefined : () => handleModuleClick(module)} disabled={module.disabled} />;
             })}</div>
           </section>
         </div>
 
-        {canAccessSettings && <section className="mt-5 border-t border-border pt-4" aria-labelledby="home-admin-title"><button type="button" onClick={() => navigate(pelegriniAdminEntry.path)} className="flex w-full items-center justify-between gap-4 rounded-lg border border-border bg-card px-4 py-3 text-left shadow-sm transition-colors hover:border-primary/40"><div><h2 id="home-admin-title" className="text-sm font-semibold text-foreground">Configurações</h2><p className="mt-0.5 text-xs text-muted-foreground">Empresas, usuários e endpoints</p></div><Settings className="h-4 w-4 text-muted-foreground" /></button></section>}
+        {canAccessSettings && <section className="mt-5 border-t border-border pt-3" aria-labelledby="home-admin-title"><button type="button" onClick={() => navigate(pelegriniAdminEntry.path)} className="flex min-h-11 w-full items-center justify-between gap-4 rounded-lg px-3 text-left text-muted-foreground transition-colors hover:bg-muted/40 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"><h2 id="home-admin-title" className="text-sm font-semibold">{pelegriniAdminEntry.title}</h2><Settings className="h-4 w-4" /></button></section>}
       </main>
 
       <ModuleDetailsDialog open={detailsDialogOpen} onOpenChange={setDetailsDialogOpen} module={selectedModuleForDetails} />

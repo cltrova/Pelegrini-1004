@@ -1109,8 +1109,7 @@
   .pelegrini-operational-card {
     --pelegrini-operational-accent: hsl(var(--primary));
     border-color: color-mix(in srgb, var(--pelegrini-operational-accent) 18%, hsl(var(--border)));
-    background:
-      linear-gradient(180deg, color-mix(in srgb, var(--pelegrini-operational-accent) 6%, hsl(var(--card))) 0%, hsl(var(--card)) 100%);
+    background: hsl(var(--card));
   }
 
   .pelegrini-operational-card[data-accent='whatsapp'] {
@@ -1134,27 +1133,6 @@
   }
 
   .pelegrini-operational-card-accent {
-    background: var(--pelegrini-operational-accent);
-  }
-
-  .pelegrini-operational-card-blueprint {
-    position: absolute;
-    right: 0.75rem;
-    top: 0.75rem;
-    width: 54px;
-    height: 42px;
-    opacity: 0.16;
-    background:
-      linear-gradient(90deg, transparent 0 10px, var(--pelegrini-operational-accent) 10px 12px, transparent 12px 100%),
-      linear-gradient(var(--pelegrini-operational-accent) 0 2px, transparent 2px 100%);
-    background-size: 18px 100%, 100% 12px;
-  }
-
-  .pelegrini-operational-card-signal {
-    background: color-mix(in srgb, var(--pelegrini-operational-accent) 35%, hsl(var(--border)));
-  }
-
-  .pelegrini-operational-card:hover .pelegrini-operational-card-signal {
     background: var(--pelegrini-operational-accent);
   }
 
@@ -1312,14 +1290,8 @@
   }
 
   .home-module-card {
-    min-height: 0;
-    padding: 1rem;
+    min-height: 44px;
   }
-
-  .home-module-card .pelegrini-operational-card-signal { margin-bottom: 0.75rem; }
-  .home-module-card > span:nth-of-type(4) { margin-top: 0.35rem; font-size: 1rem; }
-  .home-module-card > span:nth-of-type(5) { margin-top: 0.35rem; line-height: 1.35; }
-  .home-module-card > span:last-child { margin-top: 0.75rem; }
 
   .pelegrini-sidebar .pelegrini-brand-mark img {
     max-width: 9.25rem;
@@ -1351,7 +1323,6 @@
   }
 
   .pelegrini-module-header,
-  .pelegrini-data-panel,
   .pelegrini-chart-frame,
   .pelegrini-kpi-card,
   .pelegrini-branch-visual {
@@ -1360,6 +1331,11 @@
       linear-gradient(180deg, color-mix(in srgb, var(--pelegrini-primary, #073f73) 4%, hsl(var(--card))) 0%, hsl(var(--card)) 100%);
     border-color: color-mix(in srgb, var(--pelegrini-primary, #073f73) 18%, hsl(var(--border)));
     box-shadow: 0 12px 30px -26px color-mix(in srgb, var(--pelegrini-primary, #073f73) 65%, #000 35%);
+  }
+
+  .pelegrini-data-panel {
+    border-color: color-mix(in srgb, var(--pelegrini-primary, #073f73) 18%, hsl(var(--border)));
+    background: hsl(var(--card));
   }
 
   .pelegrini-page-surface :where(.premium-card, .premium-hover-card, .dashboard-header-card, .bg-card, [class*='bg-card/'], .pelegrini-kpi-card, .pelegrini-data-panel) {

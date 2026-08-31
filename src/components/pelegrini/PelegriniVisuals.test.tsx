@@ -99,13 +99,14 @@ describe('Pelegrini visual components', () => {
     );
 
     expect(screen.getByText('Pedidos e carteira')).toBeInTheDocument();
+    expect(screen.queryByText('Clientes, produtos, cotacoes e vendas.')).not.toBeInTheDocument();
     const card = screen.getByRole('button', {
-      name: /Comercial.*Pedidos e carteira.*Clientes, produtos, cotacoes e vendas.*Clientes.*Produtos/i,
+      name: /Comercial.*Pedidos e carteira.*Clientes.*Produtos/i,
     });
 
     expect(card).toHaveClass('pelegrini-operational-card');
     expect(card).toHaveAttribute('data-accent', 'comercial');
-    expect(card).toHaveAccessibleName(/Comercial.*Pedidos e carteira.*Clientes, produtos, cotacoes e vendas.*Clientes.*Produtos/i);
+    expect(card).toHaveAccessibleName(/Comercial.*Pedidos e carteira.*Clientes.*Produtos/i);
   });
 
   it('renders a disabled operational card with its availability status', () => {
