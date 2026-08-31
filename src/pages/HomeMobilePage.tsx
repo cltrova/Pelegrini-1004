@@ -6,7 +6,6 @@ import { LoginDialog } from '@/components/auth/LoginDialog';
 import { ModuleDetailsDialog } from '@/components/common/ModuleDetailsDialog';
 import { FilialSelectorDialog } from '@/components/common/FilialSelectorDialog';
 import { Button } from '@/components/ui/button';
-import { MobileBottomNav } from '@/components/layout/MobileBottomNav';
 import { PelegriniBrandMark, PelegriniOperationalCard, PelegriniPageHeader } from '@/components/pelegrini';
 import { getPelegriniModuleIdentity, type PelegriniModuleKey } from '@/config/pelegriniIdentity';
 import { pelegriniAdminEntry, pelegriniModules, type PelegriniHomeModule } from '@/config/pelegriniHome';
@@ -63,7 +62,7 @@ export default function HomeMobilePage() {
 
   return (
     <div
-      className="min-h-screen min-w-0 max-w-full overflow-x-clip bg-background pb-20"
+      className="min-h-screen min-w-0 max-w-full overflow-x-clip bg-background pb-6"
       data-pelegrini-theme={homeTheme.key}
       style={{
         '--pelegrini-primary': homeTheme.primary,
@@ -79,7 +78,6 @@ export default function HomeMobilePage() {
       </main>
       <ModuleDetailsDialog open={detailsDialogOpen} onOpenChange={setDetailsDialogOpen} module={selectedModuleForDetails} />
       <FilialSelectorDialog open={pendingModuleNavigation !== null} onOpenChange={(open) => { if (!open) setPendingModuleNavigation(null); }} codEmpresa={codEmpresaParaFilial} required={false} onConfirm={() => { const targetPath = pendingModuleNavigation?.path; setPendingModuleNavigation(null); if (targetPath) navigate(targetPath); }} />
-      <MobileBottomNav />
     </div>
   );
 }

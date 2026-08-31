@@ -14,7 +14,7 @@ export function ComercialLayout() {
   const isMobile = useIsMobile();
   const navigate = useNavigate();
   const { filialAtiva, codEmpresaContexto, clearFilial, setFilialAtivaForEmpresa, empresaPossuiFiliaisAtiva } = useFilialSelecionada();
-  const { isMaster, profile } = useAuth() as any;
+  const { isMaster, profile } = useAuth();
   const mountClearedRef = useRef(false);
   const filialAccess = getFilialAccessState({
     codEmpresa: codEmpresaContexto,

@@ -217,6 +217,7 @@ describe('Pelegrini visual components', () => {
     const themeButton = screen.getByRole('button', { name: 'Alternar tema' });
 
     expect(themeButton.parentElement).toHaveClass('h-11', 'w-11', '[&>button]:h-full', '[&>button]:w-full');
+    expect(screen.queryByText('Comercial')).not.toBeInTheDocument();
   });
 
   it('keeps filter controls in a collapsible responsive region', () => {

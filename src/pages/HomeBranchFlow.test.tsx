@@ -68,7 +68,6 @@ vi.mock('@/hooks/useUserModulePermissions', () => ({
 vi.mock('@/hooks/use-mobile', () => ({ useIsMobile: () => testState.isMobile }));
 vi.mock('@/components/common/ThemeToggle', () => ({ ThemeToggle: () => null }));
 vi.mock('@/components/auth/LoginDialog', () => ({ LoginDialog: () => null }));
-vi.mock('@/components/layout/MobileBottomNav', () => ({ MobileBottomNav: () => null }));
 
 function RouteDestination() {
   const location = useLocation();
@@ -147,6 +146,12 @@ describe('Home branch flow', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Acessar' }));
 
     expectDestination('/operacional/estoque');
+  });
+
+  it('keeps the mobile module entry free from a redundant one-item navigation bar', () => {
+    renderHome(<HomeMobilePage />);
+
+    expect(screen.queryByRole('navigation')).not.toBeInTheDocument();
   });
 
   it('preserves the Financeiro entry resolver when branch selection confirms', () => {
