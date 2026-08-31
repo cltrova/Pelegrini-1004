@@ -33,8 +33,8 @@ export default function ComissaoPage() {
   const [calculaSt, setCalculaSt] = useState(false);
   const [exibirMargem, setExibirMargem] = useState(true);
   const [vendedoresSel, setVendedoresSel] = useState<string[]>([]);
-  const [operacaoFiscalInicial, setOperacaoFiscalInicial] = useState('0');
-  const [operacaoFiscalFinal, setOperacaoFiscalFinal] = useState('62');
+  const [operacaoFiscalInicial, setOperacaoFiscalInicial] = useState('');
+  const [operacaoFiscalFinal, setOperacaoFiscalFinal] = useState('');
 
   const [aplicado, setAplicado] = useState<ComissaoFiltros | null>(null);
 
@@ -152,12 +152,12 @@ export default function ComissaoPage() {
               <Input className="h-10" value={codMeta} onChange={(e) => setCodMeta(e.target.value)} placeholder="Opcional" />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs">Operação fiscal inicial</Label>
-              <Input className="h-10" inputMode="numeric" value={operacaoFiscalInicial} onChange={(e) => setOperacaoFiscalInicial(e.target.value)} />
+              <Label className="text-xs" htmlFor="operacao-fiscal-inicial">Operação fiscal inicial</Label>
+              <Input id="operacao-fiscal-inicial" className="h-10" inputMode="numeric" value={operacaoFiscalInicial} onChange={(e) => setOperacaoFiscalInicial(e.target.value)} placeholder="Ex.: 0" />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs">Operação fiscal final</Label>
-              <Input className="h-10" inputMode="numeric" value={operacaoFiscalFinal} onChange={(e) => setOperacaoFiscalFinal(e.target.value)} />
+              <Label className="text-xs" htmlFor="operacao-fiscal-final">Operação fiscal final</Label>
+              <Input id="operacao-fiscal-final" className="h-10" inputMode="numeric" value={operacaoFiscalFinal} onChange={(e) => setOperacaoFiscalFinal(e.target.value)} placeholder="Ex.: 62" />
             </div>
           </div>
 

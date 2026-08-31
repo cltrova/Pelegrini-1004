@@ -105,7 +105,7 @@ describe('mapComissaoLinha', () => {
     expect(resolveComissaoVendedoresPath('1004', 'transmissao')).toBe('/comercial/comissoes');
   });
 
-  it('envia filtro padrao de operacao fiscal na consulta de comissao', () => {
+  it('envia filtro de operacao fiscal quando preenchido manualmente', () => {
     const params = buildComissaoSearchParams({
       data_ini: '2026-08-01',
       data_fim: '2026-08-31',
@@ -118,6 +118,22 @@ describe('mapComissaoLinha', () => {
 
     expect(params.get('operacao_fiscal_inicial')).toBe('0');
     expect(params.get('operacao_fiscal_final')).toBe('62');
+    expect(params.get('cod_empresa_bi')).toBe('10041');
+  });
+
+  it('nao envia operacao fiscal quando o filtro fica vazio', () => {
+    const params = buildComissaoSearchParams({
+      data_ini: '2026-08-01',
+      data_fim: '2026-08-31',
+      deduzir_devolucao: true,
+      calcula_st: false,
+      exibir_valores_margem: true,
+      operacao_fiscal_inicial: '',
+      operacao_fiscal_final: '',
+    }, '10041');
+
+    expect(params.has('operacao_fiscal_inicial')).toBe(false);
+    expect(params.has('operacao_fiscal_final')).toBe(false);
     expect(params.get('cod_empresa_bi')).toBe('10041');
   });
 });
