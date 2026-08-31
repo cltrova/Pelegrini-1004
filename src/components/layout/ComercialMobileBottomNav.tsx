@@ -76,11 +76,11 @@
                </button>
              </PopoverTrigger>
              <PopoverContent side="top" align="end" className="w-56 p-1">
-               <NavLink to="/comercial/cotacoes" className="flex h-9 items-center gap-2 rounded-sm px-2 text-sm hover:bg-accent">
+               <NavLink to="/comercial/cotacoes" className="flex h-11 items-center gap-2 rounded-sm px-2 text-sm hover:bg-accent">
                  <Clock aria-hidden="true" className="h-4 w-4" />
                  Cotações Abertas
                </NavLink>
-               <NavLink to="/comercial/perdidas" className="flex h-9 items-center gap-2 rounded-sm px-2 text-sm hover:bg-accent">
+               <NavLink to="/comercial/perdidas" className="flex h-11 items-center gap-2 rounded-sm px-2 text-sm hover:bg-accent">
                  <XCircle aria-hidden="true" className="h-4 w-4" />
                  Vendas Perdidas
                </NavLink>

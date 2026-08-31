@@ -174,8 +174,13 @@ describe('commercial sidebar menu access', () => {
       expect(button).toHaveClass('h-14', 'min-w-0', 'flex-1');
     });
     fireEvent.click(mobileButtons[4]);
-    expect(screen.getByRole('link', { name: 'Cotações Abertas' })).toHaveAttribute('href', '/comercial/cotacoes');
-    expect(screen.getByRole('link', { name: 'Vendas Perdidas' })).toHaveAttribute('href', '/comercial/perdidas');
+    const openQuotesLink = screen.getByRole('link', { name: 'Cotações Abertas' });
+    const lostSalesLink = screen.getByRole('link', { name: 'Vendas Perdidas' });
+
+    expect(openQuotesLink).toHaveAttribute('href', '/comercial/cotacoes');
+    expect(openQuotesLink).toHaveClass('h-11');
+    expect(lostSalesLink).toHaveAttribute('href', '/comercial/perdidas');
+    expect(lostSalesLink).toHaveClass('h-11');
 
     cleanup();
     mockCompany('9999');
