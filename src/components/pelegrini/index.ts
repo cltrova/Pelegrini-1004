@@ -9,6 +9,11 @@ export { PelegriniKpiCard } from './PelegriniKpiCard';
 export { PelegriniMotionBackdrop } from './PelegriniMotionBackdrop';
 export { PelegriniModuleShell } from './PelegriniModuleShell';
 export { PelegriniModuleHeader } from './PelegriniModuleHeader';
+export {
+  PelegriniModuleSidebar,
+  type PelegriniModuleSidebarProps,
+  type PelegriniSidebarItem,
+} from './PelegriniModuleSidebar';
 export { PelegriniPageSurface } from './PelegriniPageSurface';
 export { PelegriniOperationalCard } from './PelegriniOperationalCard';
 export { PelegriniBranchPanel } from './PelegriniBranchPanel';
