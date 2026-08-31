@@ -16,6 +16,7 @@ import { PelegriniResponsiveValue } from './PelegriniResponsiveValue';
 import { PelegriniFilterBar } from './PelegriniFilterBar';
 import { PelegriniTabs } from './PelegriniTabs';
 import { LoadingState } from '@/components/common/LoadingState';
+import { ComercialMobileHeader } from '@/components/layout/ComercialMobileHeader';
 import { PelegriniModuleShell } from './PelegriniModuleShell';
 
 const setFilialAtivaForEmpresa = vi.fn();
@@ -30,6 +31,10 @@ vi.mock('@/contexts/FilialSelecionadaContext', () => ({
 
 vi.mock('@/contexts/AuthContext', () => ({
   useAuth: () => ({ isMaster: true, profile: null }),
+}));
+
+vi.mock('@/hooks/useEmpresaAtiva', () => ({
+  useEmpresaAtiva: () => ({ codEmpresaAtiva: '1004' }),
 }));
 
 describe('Pelegrini visual components', () => {
@@ -181,15 +186,34 @@ describe('Pelegrini visual components', () => {
     expect(screen.getByText('R$ 123.456.789,90')).not.toHaveClass('truncate');
   });
 
-  it('reserves only the compact sidebar rail in the module shell', () => {
-    render(
+  it('contains sidebar shell content without changing the header variant inset', () => {
+    const { rerender } = render(
       <PelegriniModuleShell sidebar={<aside>Menu</aside>}>
-        <span>Conteudo</span>
+        <span data-testid="module-content">Conteudo</span>
       </PelegriniModuleShell>,
     );
 
-    expect(screen.getByRole('main')).toHaveClass('md:ml-[72px]');
-    expect(screen.getByRole('main')).not.toHaveClass('md:ml-[232px]');
+    const main = screen.getByRole('main');
+
+    expect(main).toHaveClass('md:ml-[72px]', 'min-w-0', 'overflow-x-clip');
+    expect(main).not.toHaveClass('md:ml-[232px]', 'overflow-x-hidden');
+    expect(screen.getByTestId('module-content').parentElement).toHaveClass('min-w-0');
+
+    rerender(
+      <PelegriniModuleShell sidebar={<header>Cabecalho</header>} variant="header">
+        <span>Conteudo com cabecalho</span>
+      </PelegriniModuleShell>,
+    );
+
+    expect(screen.getByRole('main')).not.toHaveClass('md:ml-[72px]');
+  });
+
+  it('gives the mobile header theme control a stable 44 px hit target', () => {
+    render(<ComercialMobileHeader />);
+
+    const themeButton = screen.getByRole('button', { name: 'Alternar tema' });
+
+    expect(themeButton.parentElement).toHaveClass('h-11', 'w-11', '[&>button]:h-full', '[&>button]:w-full');
   });
 
   it('keeps filter controls in a collapsible responsive region', () => {

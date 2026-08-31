@@ -24,7 +24,9 @@ export function ComercialMobileHeader({ title = 'Comercial' }: ComercialMobileHe
         />
         <div className="flex shrink-0 items-center gap-2">
           <span className="text-[10px] font-semibold uppercase text-muted-foreground">{title}</span>
-          <ThemeToggle />
+          <div className="h-11 w-11 shrink-0 [&>button]:h-full [&>button]:w-full">
+            <ThemeToggle />
+          </div>
         </div>
       </div>
     </header>
