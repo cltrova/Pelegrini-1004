@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { LogOut, MessageSquare, Settings, ShoppingCart, TrendingUp, Truck } from 'lucide-react';
 import { ThemeToggle } from '@/components/common/ThemeToggle';
@@ -22,6 +22,11 @@ interface ModuleItem extends PelegriniHomeModule {
   disabled: boolean;
 }
 
+interface PendingModuleNavigation {
+  path: string;
+  moduleKey: PelegriniModuleKey;
+}
+
 const icons: Record<PelegriniHomeModule['accent'], ModuleItem['icon']> = { emerald: MessageSquare, purple: ShoppingCart, orange: Truck, blue: TrendingUp };
 const modules: ModuleItem[] = pelegriniModules.map((module) => ({ ...module, icon: icons[module.accent], disabled: false }));
 
@@ -35,15 +40,8 @@ export default function HomeMobilePage() {
   const homeTheme = resolvePelegriniTheme(filialAtiva || 'transmissao');
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
   const [selectedModuleForDetails, setSelectedModuleForDetails] = useState<ModuleItem | null>(null);
-  const [filialDialogOpen, setFilialDialogOpen] = useState(false);
-  const [filialTargetPath, setFilialTargetPath] = useState('');
+  const [pendingModuleNavigation, setPendingModuleNavigation] = useState<PendingModuleNavigation | null>(null);
   const codEmpresaParaFilial = isMaster ? '1004' : codEmpresaUsuario;
-
-  useEffect(() => {
-    if (!isAuthenticated) return;
-    if (isMaster) setEmpresaSelecionada('1004');
-    setFilialDialogOpen(true);
-  }, [isAuthenticated, isMaster, setEmpresaSelecionada]);
 
   const getFinanceiroEntryPath = () => {
     if ((permissions?.modulo_resumo || isMaster) && hasModulo('resumo')) return '/financeiro/resumo';
@@ -59,8 +57,8 @@ export default function HomeMobilePage() {
     if (module.disabled) return;
     if (!isAuthenticated || !hasFullAccess) { setSelectedModuleForDetails(module); setDetailsDialogOpen(true); return; }
     const targetPath = module.moduloKey === 'financeiro' ? getFinanceiroEntryPath() : module.path;
-    if (!filialAtiva) { if (isMaster) setEmpresaSelecionada('1004'); setFilialTargetPath(targetPath); setFilialDialogOpen(true); return; }
-    navigate(targetPath);
+    if (isMaster) setEmpresaSelecionada('1004');
+    setPendingModuleNavigation({ path: targetPath, moduleKey: module.moduloKey as PelegriniModuleKey });
   };
 
   return (
@@ -72,7 +70,7 @@ export default function HomeMobilePage() {
         {canAccessSettings && <section className="border-t border-border pt-5" aria-labelledby="mobile-admin-title"><p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Administracao</p><button type="button" onClick={() => navigate(pelegriniAdminEntry.path)} className="mt-3 w-full border border-border bg-card p-4 text-left shadow-sm"><h2 id="mobile-admin-title" className="text-base font-semibold text-foreground">{pelegriniAdminEntry.title}</h2><p className="mt-1 text-sm leading-5 text-muted-foreground">{pelegriniAdminEntry.description}</p></button></section>}
       </main>
       <ModuleDetailsDialog open={detailsDialogOpen} onOpenChange={setDetailsDialogOpen} module={selectedModuleForDetails} />
-      <FilialSelectorDialog open={filialDialogOpen} onOpenChange={setFilialDialogOpen} codEmpresa={codEmpresaParaFilial} required onConfirm={() => { setFilialDialogOpen(false); if (filialTargetPath) navigate(filialTargetPath); }} />
+      <FilialSelectorDialog open={pendingModuleNavigation !== null} onOpenChange={(open) => { if (!open) setPendingModuleNavigation(null); }} codEmpresa={codEmpresaParaFilial} required={false} onConfirm={() => { const targetPath = pendingModuleNavigation?.path; setPendingModuleNavigation(null); if (targetPath) navigate(targetPath); }} />
       <MobileBottomNav />
     </div>
   );

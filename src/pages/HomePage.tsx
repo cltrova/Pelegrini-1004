@@ -23,6 +23,11 @@ interface ModuleItem extends PelegriniHomeModule {
   disabled: boolean;
 }
 
+interface PendingModuleNavigation {
+  path: string;
+  moduleKey: PelegriniModuleKey;
+}
+
 const modulePresentation: Record<PelegriniHomeModule['accent'], ModuleItem['icon']> = {
   emerald: MessageSquare,
   purple: ShoppingCart,
@@ -45,8 +50,7 @@ export default function HomePage() {
   const { filialAtiva } = useFilialSelecionada();
   const { setEmpresaSelecionada } = useEmpresaSelecionada();
   const homeTheme = resolvePelegriniTheme(filialAtiva || 'transmissao');
-  const [filialDialogOpen, setFilialDialogOpen] = useState(false);
-  const [filialTargetPath, setFilialTargetPath] = useState('');
+  const [pendingModuleNavigation, setPendingModuleNavigation] = useState<PendingModuleNavigation | null>(null);
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
   const [selectedModuleForDetails, setSelectedModuleForDetails] = useState<ModuleItem | null>(null);
   const codEmpresaParaFilial = isMaster ? '1004' : codEmpresaUsuario;
@@ -54,12 +58,6 @@ export default function HomePage() {
   useEffect(() => {
     if (isAuthenticated && isVendedor) navigate('/whatsapp');
   }, [isAuthenticated, isVendedor, navigate]);
-
-  useEffect(() => {
-    if (!isAuthenticated || isVendedor) return;
-    if (isMaster) setEmpresaSelecionada('1004');
-    setFilialDialogOpen(true);
-  }, [isAuthenticated, isMaster, isVendedor, setEmpresaSelecionada]);
 
   const getFinanceiroEntryPath = () => {
     if ((permissions?.modulo_resumo || isMaster) && hasModulo('resumo')) return '/financeiro/resumo';
@@ -79,13 +77,8 @@ export default function HomePage() {
     }
     if (module.disabled) return;
     const targetPath = module.moduloKey === 'financeiro' ? getFinanceiroEntryPath() : module.path;
-    if (!filialAtiva) {
-      if (isMaster) setEmpresaSelecionada('1004');
-      setFilialTargetPath(targetPath);
-      setFilialDialogOpen(true);
-      return;
-    }
-    navigate(targetPath);
+    if (isMaster) setEmpresaSelecionada('1004');
+    setPendingModuleNavigation({ path: targetPath, moduleKey: module.moduloKey as PelegriniModuleKey });
   };
 
   if (isMobile) return <HomeMobilePage />;
@@ -125,7 +118,7 @@ export default function HomePage() {
       </main>
 
       <ModuleDetailsDialog open={detailsDialogOpen} onOpenChange={setDetailsDialogOpen} module={selectedModuleForDetails} />
-      <FilialSelectorDialog open={filialDialogOpen} onOpenChange={setFilialDialogOpen} codEmpresa={codEmpresaParaFilial} required onConfirm={() => { setFilialDialogOpen(false); if (filialTargetPath) navigate(filialTargetPath); }} />
+      <FilialSelectorDialog open={pendingModuleNavigation !== null} onOpenChange={(open) => { if (!open) setPendingModuleNavigation(null); }} codEmpresa={codEmpresaParaFilial} required={false} onConfirm={() => { const targetPath = pendingModuleNavigation?.path; setPendingModuleNavigation(null); if (targetPath) navigate(targetPath); }} />
     </div>
   );
 }
