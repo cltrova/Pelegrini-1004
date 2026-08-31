@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  buildComissaoSearchParams,
   comissaoLinhaPertenceForcaP1004,
   deveExcluirForcaPComissao1004,
   mapComissaoLinha,
@@ -102,5 +103,21 @@ describe('mapComissaoLinha', () => {
     expect(resolveComissaoVendedoresPath('10041')).toBe('/comercial/comissoes_ch');
     expect(resolveComissaoVendedoresPath('1004', 'chevrolet')).toBe('/comercial/comissoes_ch');
     expect(resolveComissaoVendedoresPath('1004', 'transmissao')).toBe('/comercial/comissoes');
+  });
+
+  it('envia filtro padrao de operacao fiscal na consulta de comissao', () => {
+    const params = buildComissaoSearchParams({
+      data_ini: '2026-08-01',
+      data_fim: '2026-08-31',
+      deduzir_devolucao: true,
+      calcula_st: false,
+      exibir_valores_margem: true,
+      operacao_fiscal_inicial: '0',
+      operacao_fiscal_final: '62',
+    }, '10041');
+
+    expect(params.get('operacao_fiscal_inicial')).toBe('0');
+    expect(params.get('operacao_fiscal_final')).toBe('62');
+    expect(params.get('cod_empresa_bi')).toBe('10041');
   });
 });

@@ -33,6 +33,8 @@ export default function ComissaoPage() {
   const [calculaSt, setCalculaSt] = useState(false);
   const [exibirMargem, setExibirMargem] = useState(true);
   const [vendedoresSel, setVendedoresSel] = useState<string[]>([]);
+  const [operacaoFiscalInicial, setOperacaoFiscalInicial] = useState('0');
+  const [operacaoFiscalFinal, setOperacaoFiscalFinal] = useState('62');
 
   const [aplicado, setAplicado] = useState<ComissaoFiltros | null>(null);
 
@@ -50,6 +52,8 @@ export default function ComissaoPage() {
       deduzir_devolucao: deduzirDevolucao,
       calcula_st: calculaSt,
       exibir_valores_margem: exibirMargem,
+      operacao_fiscal_inicial: operacaoFiscalInicial || undefined,
+      operacao_fiscal_final: operacaoFiscalFinal || undefined,
     });
   };
 
@@ -116,7 +120,7 @@ export default function ComissaoPage() {
           <CardTitle className="text-sm">Filtros</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-6">
             <div className="space-y-1.5">
               <Label className="text-xs">Ano</Label>
               <Select value={String(ano)} onValueChange={(v) => setAno(Number(v))}>
@@ -146,6 +150,14 @@ export default function ComissaoPage() {
             <div className="space-y-1.5">
               <Label className="text-xs">Código da meta</Label>
               <Input className="h-10" value={codMeta} onChange={(e) => setCodMeta(e.target.value)} placeholder="Opcional" />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Operação fiscal inicial</Label>
+              <Input className="h-10" inputMode="numeric" value={operacaoFiscalInicial} onChange={(e) => setOperacaoFiscalInicial(e.target.value)} />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Operação fiscal final</Label>
+              <Input className="h-10" inputMode="numeric" value={operacaoFiscalFinal} onChange={(e) => setOperacaoFiscalFinal(e.target.value)} />
             </div>
           </div>
 

@@ -15,6 +15,8 @@ export interface ComissaoFiltros {
   calcula_st: boolean;
   exibir_valores_margem: boolean;
   dias_uteis_ate_hoje?: string;
+  operacao_fiscal_inicial?: string;
+  operacao_fiscal_final?: string;
 }
 
 export interface ComissaoLinha {
@@ -119,6 +121,23 @@ export function resolveComissaoVendedoresPath(codEmpresaAtiva: unknown, filialAt
     : '/comercial/comissoes';
 }
 
+export function buildComissaoSearchParams(filtros: ComissaoFiltros, codBiParam?: string | null): URLSearchParams {
+  const params = new URLSearchParams();
+  params.set('data_ini', filtros.data_ini);
+  params.set('data_fim', filtros.data_fim);
+  if (filtros.cod_meta) params.set('cod_meta', filtros.cod_meta);
+  if (filtros.vendedor_inicial) params.set('vendedor_inicial', filtros.vendedor_inicial);
+  if (filtros.vendedor_final) params.set('vendedor_final', filtros.vendedor_final);
+  params.set('deduzir_devolucao', String(filtros.deduzir_devolucao));
+  params.set('calcula_st', String(filtros.calcula_st));
+  params.set('exibir_valores_margem', String(filtros.exibir_valores_margem));
+  if (filtros.dias_uteis_ate_hoje) params.set('dias_uteis_ate_hoje', filtros.dias_uteis_ate_hoje);
+  if (filtros.operacao_fiscal_inicial) params.set('operacao_fiscal_inicial', filtros.operacao_fiscal_inicial);
+  if (filtros.operacao_fiscal_final) params.set('operacao_fiscal_final', filtros.operacao_fiscal_final);
+  if (codBiParam) params.set('cod_empresa_bi', codBiParam);
+  return params;
+}
+
 export function useComissaoVendedores(filtros: ComissaoFiltros | null, enabled = true) {
   const { empresa, codEmpresaAtiva } = useEmpresaAtiva();
   const { filialAtiva } = useFilialSelecionada();
@@ -133,17 +152,7 @@ export function useComissaoVendedores(filtros: ComissaoFiltros | null, enabled =
     staleTime: 5 * 60 * 1000,
     queryFn: async (): Promise<ComissaoLinha[]> => {
       if (!filtros) return [];
-      const params = new URLSearchParams();
-      params.set('data_ini', filtros.data_ini);
-      params.set('data_fim', filtros.data_fim);
-      if (filtros.cod_meta) params.set('cod_meta', filtros.cod_meta);
-      if (filtros.vendedor_inicial) params.set('vendedor_inicial', filtros.vendedor_inicial);
-      if (filtros.vendedor_final) params.set('vendedor_final', filtros.vendedor_final);
-      params.set('deduzir_devolucao', String(filtros.deduzir_devolucao));
-      params.set('calcula_st', String(filtros.calcula_st));
-      params.set('exibir_valores_margem', String(filtros.exibir_valores_margem));
-      if (filtros.dias_uteis_ate_hoje) params.set('dias_uteis_ate_hoje', filtros.dias_uteis_ate_hoje);
-      if (codBiParam) params.set('cod_empresa_bi', codBiParam);
+      const params = buildComissaoSearchParams(filtros, codBiParam);
 
       const url = buildApiProxyUrl(empresa, `${path}?${params.toString()}`);
       console.log('[Comissao] URL:', `${path}?${params.toString()}`);
