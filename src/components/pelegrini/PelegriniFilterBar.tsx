@@ -23,7 +23,7 @@ export function PelegriniFilterBar({ actions, activeCount, children, className, 
         <button aria-expanded={open} className="pelegrini-filter-bar-trigger" onClick={() => setOpen((current) => !current)} type="button">
           <SlidersHorizontal aria-hidden="true" />
           <span>Filtros</span>
-          {resolvedActiveCount > 0 && <span className="pelegrini-filter-count">{activeLabel}</span>}
+          {resolvedActiveCount > 0 && <span className="pelegrini-filter-count rounded-lg">{activeLabel}</span>}
           {summary && <span className="pelegrini-filter-summary">{summary}</span>}
           <ChevronDown aria-hidden="true" className={cn(open && 'rotate-180')} />
         </button>

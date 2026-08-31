@@ -31,7 +31,7 @@ export function PelegriniOperationalCard({
     <button
       type="button"
       className={cn(
-        'pelegrini-operational-card group relative grid min-h-11 min-w-0 w-full grid-cols-[2.5rem_minmax(0,1fr)] gap-3 overflow-hidden rounded-lg border bg-card p-3 text-left',
+        'pelegrini-operational-card group relative grid min-h-11 min-w-0 w-full max-w-full grid-cols-[2.5rem_minmax(0,1fr)] gap-3 overflow-hidden rounded-lg border bg-card p-3 text-left',
         'transition-[border-color,background-color] duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
         disabled ? 'cursor-not-allowed opacity-50' : 'hover:bg-muted/30',
         className,

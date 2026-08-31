@@ -2,6 +2,8 @@ import { render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
 import { ShoppingCart } from 'lucide-react';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import HomePage from '@/pages/HomePage';
 import HomeMobilePage from '@/pages/HomeMobilePage';
 import { PelegriniDataPanel } from './PelegriniDataPanel';
@@ -62,6 +64,7 @@ describe('Pelegrini visual foundation', () => {
   beforeEach(() => {
     testState.isMobile = false;
     testState.filialAtiva = 'transmissao';
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: 1024 });
   });
 
   it('renders the page header as a contained title and action row', () => {
@@ -140,23 +143,82 @@ describe('Pelegrini visual foundation', () => {
   });
 
   it('composes mobile Home as one contained column with 44 px controls', () => {
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: 390 });
+
     const { container } = render(<MemoryRouter><HomeMobilePage /></MemoryRouter>);
 
-    expect(container.querySelector('[data-home-modules]')).not.toHaveClass('sm:grid-cols-2');
-    expect(container.querySelectorAll('.home-module-card')).toHaveLength(4);
-    expect(container.querySelectorAll('.home-module-card')[0]).toHaveClass('min-h-11');
+    const home = container.firstElementChild;
+    const moduleGrid = container.querySelector('[data-home-modules]');
+    const moduleCards = container.querySelectorAll('.home-module-card');
+
+    expect(window.innerWidth).toBe(390);
+    expect(home).toHaveClass('min-w-0', 'max-w-full', 'overflow-x-clip');
+    expect(moduleGrid).toHaveClass('min-w-0', 'w-full', 'max-w-full');
+    expect(moduleGrid).not.toHaveClass('sm:grid-cols-2');
+    expect(moduleCards).toHaveLength(4);
+    moduleCards.forEach((card) => {
+      expect(card).toHaveClass('min-h-11', 'min-w-0', 'w-full', 'max-w-full', 'grid-cols-[2.5rem_minmax(0,1fr)]');
+    });
+    expect(container.querySelector('[class*="w-screen"]')).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Configuracoes/i })).toHaveClass('min-h-11');
     expect(container.textContent).not.toMatch(/Pelegrini|Lovable|BI Reports/i);
   });
 
-  it('applies the active branch identity without rendering an inline branch selector', () => {
+  it('installs distinct CT and CCH operational variables without an inline branch selector', () => {
+    const ctDesktop = render(<MemoryRouter><HomePage /></MemoryRouter>);
+    const ctHome = ctDesktop.container.firstElementChild as HTMLElement;
+
+    expect(ctHome).toHaveAttribute('data-pelegrini-theme', 'transmissao');
+    expect(ctHome.style.getPropertyValue('--pelegrini-primary')).toBe('#073F73');
+    expect(ctHome.style.getPropertyValue('--pelegrini-secondary')).toBe('#0A5291');
+    expect(ctHome.style.getPropertyValue('--pelegrini-accent')).toBe('#49D2FF');
+
+    ctDesktop.unmount();
+    const ctMobile = render(<MemoryRouter><HomeMobilePage /></MemoryRouter>);
+    const ctMobileHome = ctMobile.container.firstElementChild as HTMLElement;
+
+    expect(ctMobileHome.style.getPropertyValue('--pelegrini-primary')).toBe('#073F73');
+    expect(ctMobileHome.style.getPropertyValue('--pelegrini-secondary')).toBe('#0A5291');
+    expect(ctMobileHome.style.getPropertyValue('--pelegrini-accent')).toBe('#49D2FF');
+
+    ctMobile.unmount();
     testState.filialAtiva = 'chevrolet';
 
-    const { container } = render(<MemoryRouter><HomePage /></MemoryRouter>);
+    const cchDesktop = render(<MemoryRouter><HomePage /></MemoryRouter>);
+    const cchHome = cchDesktop.container.firstElementChild as HTMLElement;
 
-    expect(container.firstElementChild).toHaveAttribute('data-pelegrini-theme', 'chevrolet');
+    expect(cchHome).toHaveAttribute('data-pelegrini-theme', 'chevrolet');
+    expect(cchHome.style.getPropertyValue('--pelegrini-primary')).toBe('#034E99');
+    expect(cchHome.style.getPropertyValue('--pelegrini-secondary')).toBe('#0A67BF');
+    expect(cchHome.style.getPropertyValue('--pelegrini-accent')).toBe('#E8B923');
+    expect(cchHome.style.getPropertyValue('--pelegrini-accent')).not.toBe(ctHome.style.getPropertyValue('--pelegrini-accent'));
     expect(screen.getByRole('img', { name: 'Logo Casa do Chevrolet' })).toBeInTheDocument();
     expect(screen.getByText('CCH')).toBeInTheDocument();
     expect(screen.queryByText('Escolha a unidade')).not.toBeInTheDocument();
+
+    cchDesktop.unmount();
+    const cchMobile = render(<MemoryRouter><HomeMobilePage /></MemoryRouter>);
+    const cchMobileHome = cchMobile.container.firstElementChild as HTMLElement;
+
+    expect(cchMobileHome.style.getPropertyValue('--pelegrini-primary')).toBe('#034E99');
+    expect(cchMobileHome.style.getPropertyValue('--pelegrini-secondary')).toBe('#0A67BF');
+    expect(cchMobileHome.style.getPropertyValue('--pelegrini-accent')).toBe('#E8B923');
+  });
+
+  it('keeps visual foundation value rules independent from viewport width', () => {
+    const css = readFileSync(join(process.cwd(), 'src/index.css'), 'utf8');
+    const valueRules = [
+      ...css.matchAll(/\.(?:kpi-fluid-value|pelegrini-responsive-value(?:\[data-size='(?:sm|lg|hero)'\])?)\s*\{[^}]*\}/g),
+    ].map(([rule]) => rule).join('\n');
+
+    expect(valueRules).not.toBe('');
+    expect(valueRules).not.toMatch(/\d(?:\.\d+)?vw\b/);
+    expect(valueRules).toMatch(/font-size:\s*\d(?:\.\d+)?rem/);
+
+    const filterCountRule = css.match(/\.pelegrini-filter-count\s*\{([^}]*)\}/)?.[1] ?? '';
+    const filterCountRadius = Number(filterCountRule.match(/border-radius:\s*(\d+)px/)?.[1]);
+
+    expect(filterCountRadius).toBeGreaterThan(0);
+    expect(filterCountRadius).toBeLessThanOrEqual(8);
   });
 });

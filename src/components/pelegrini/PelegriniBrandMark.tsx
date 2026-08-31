@@ -20,10 +20,7 @@ export function PelegriniBrandMark({
 
   return (
     <div className={cn('pelegrini-brand-mark flex min-w-0 items-center gap-3', className)} data-brand={theme.key}>
-      <div
-        className="relative flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden border border-border bg-white shadow-sm"
-        style={{ boxShadow: `0 14px 34px -20px ${theme.glow}` }}
-      >
+      <div className="relative flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden border border-border bg-white shadow-sm">
         <img src={theme.logoSrc} alt={theme.logoAlt} className="max-h-10 max-w-10 object-contain" />
       </div>
       {!compact && (

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type CSSProperties } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { LogOut, MessageSquare, Settings, ShoppingCart, TrendingUp, Truck } from 'lucide-react';
 import { ThemeToggle } from '@/components/common/ThemeToggle';
@@ -84,7 +84,15 @@ export default function HomePage() {
   if (isMobile) return <HomeMobilePage />;
 
   return (
-    <div className="min-h-screen bg-background" data-pelegrini-theme={homeTheme.key}>
+    <div
+      className="min-h-screen bg-background"
+      data-pelegrini-theme={homeTheme.key}
+      style={{
+        '--pelegrini-primary': homeTheme.primary,
+        '--pelegrini-secondary': homeTheme.secondary,
+        '--pelegrini-accent': homeTheme.accent,
+      } as CSSProperties}
+    >
       <header className="sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
           <PelegriniBrandMark theme={homeTheme} className="min-w-0 flex-1" />

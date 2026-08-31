@@ -41,10 +41,12 @@ describe('Pelegrini visual components', () => {
   it('renders a branch brand mark with logo and name', () => {
     const theme = resolvePelegriniTheme('transmissao');
 
-    render(<PelegriniBrandMark theme={theme} />);
+    const { container } = render(<PelegriniBrandMark theme={theme} />);
 
     expect(screen.getByAltText('Logo Casa da Transmissão')).toBeInTheDocument();
     expect(screen.getByText('Casa da Transmissão')).toBeInTheDocument();
+    expect(screen.getByAltText('Logo Casa da Transmissão').parentElement).not.toHaveAttribute('style');
+    expect(container.querySelector('[class*="glow"]')).not.toBeInTheDocument();
   });
 
   it('keeps the sidebar brand compact without a clipped tagline', () => {
@@ -224,8 +226,17 @@ describe('Pelegrini visual components', () => {
       </PelegriniFilterBar>,
     );
 
-    expect(screen.getByRole('button', { name: /Filtros.*2 ativos/i })).toHaveAttribute('aria-expanded', 'false');
-    fireEvent.click(screen.getByRole('button', { name: /Filtros.*2 ativos/i }));
+    const trigger = screen.getByRole('button', { name: /Filtros.*2 ativos/i });
+    const controls = screen.getByRole('button', { name: 'Aplicar filtros' }).closest('.pelegrini-filter-controls');
+
+    expect(trigger).toHaveAttribute('aria-expanded', 'false');
+    expect(controls).toHaveClass('hidden');
+    expect(screen.getByText('2 ativos')).toHaveClass('rounded-lg');
+
+    fireEvent.click(trigger);
+
+    expect(trigger).toHaveAttribute('aria-expanded', 'true');
+    expect(controls).not.toHaveClass('hidden');
     expect(screen.getByRole('button', { name: 'Aplicar filtros' })).toBeVisible();
   });
 
