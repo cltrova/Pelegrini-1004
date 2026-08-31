@@ -12,6 +12,7 @@ import {
 import { ResumoKPIs } from '@/types/resumo';
 import { formatCurrency, formatInteger, formatPercent } from '@/utils/formatters';
 import { cn } from '@/lib/utils';
+import { PelegriniResponsiveValue } from '@/components/pelegrini';
 
 interface Props {
   kpis: ResumoKPIs;
@@ -94,7 +95,7 @@ export function ResumoKPICards({ kpis }: Props) {
   ];
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+    <div className="pelegrini-kpi-grid grid grid-cols-[repeat(auto-fit,minmax(min(100%,13rem),1fr))] gap-3">
       {items.map((it) => {
         const t = toneClasses[it.tone];
         const Icon = it.icon;
@@ -102,21 +103,21 @@ export function ResumoKPICards({ kpis }: Props) {
           <Card
             key={it.label}
             className={cn(
-              'p-4 ring-1 shadow-sm transition-all hover:shadow-md',
+              'pelegrini-kpi-card min-w-0 p-4 ring-1 shadow-sm transition-all hover:shadow-md',
               t.bg,
               t.ring,
             )}
           >
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider truncate">
+                <p className="text-xs font-medium leading-tight text-muted-foreground uppercase tracking-wider">
                   {it.label}
                 </p>
-                <p className={cn('text-xl md:text-2xl font-bold mt-1 truncate', t.text)}>
+                <PelegriniResponsiveValue as="p" size="md" className={cn('mt-1', t.text)}>
                   {it.value}
-                </p>
+                </PelegriniResponsiveValue>
                 {it.hint && (
-                  <p className="text-[11px] text-muted-foreground mt-1 truncate">{it.hint}</p>
+                  <p className="mt-1 text-[11px] leading-tight text-muted-foreground">{it.hint}</p>
                 )}
               </div>
               <div className={cn('h-9 w-9 rounded-lg flex items-center justify-center shrink-0', t.iconBg)}>

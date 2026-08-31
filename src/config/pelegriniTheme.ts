@@ -27,6 +27,32 @@ export interface PelegriniTheme {
   surfacePattern: 'branch-map' | 'technical-grid' | 'parts-catalog';
   businessWords: string[];
   trustSignals: string[];
+  navigation: {
+    activeIndicator: string;
+    rail: string;
+    text: string;
+  };
+  typography: {
+    display: string;
+    body: string;
+    numeric: string;
+  };
+  data: {
+    valueScale: 'fluid';
+    chartGrid: string;
+    tableStripe: string;
+  };
+  status: {
+    success: string;
+    attention: string;
+    danger: string;
+    information: string;
+  };
+  density: {
+    cardGap: string;
+    controlHeight: string;
+    pagePadding: string;
+  };
 }
 
 export interface PelegriniVisual {
@@ -73,6 +99,11 @@ export const PELEGRINI_THEMES: Record<PelegriniThemeKey, PelegriniTheme> = {
     surfacePattern: 'branch-map',
     businessWords: ['Comercial', 'Operacional', 'Financeiro', 'Atendimento'],
     trustSignals: ['Gestão integrada', 'Filiais conectadas', 'Decisão rápida'],
+    navigation: { activeIndicator: '#22C7E8', rail: '#073F73', text: '#EAF4FC' },
+    typography: { display: 'Inter', body: 'Inter', numeric: 'ui-monospace' },
+    data: { valueScale: 'fluid', chartGrid: '#D8E4EE', tableStripe: '#F5F8FB' },
+    status: { success: '#138A63', attention: '#D49A16', danger: '#C43D4B', information: '#0B5A9E' },
+    density: { cardGap: '1rem', controlHeight: '2.5rem', pagePadding: '1.5rem' },
   },
   transmissao: {
     key: 'transmissao',
@@ -99,6 +130,11 @@ export const PELEGRINI_THEMES: Record<PelegriniThemeKey, PelegriniTheme> = {
     surfacePattern: 'technical-grid',
     businessWords: ['Câmbio', 'Diferencial', 'Motor', 'Óleos e aditivos'],
     trustSignals: ['ZF', 'Eaton', 'MWM', 'Meritor'],
+    navigation: { activeIndicator: '#49D2FF', rail: '#073F73', text: '#EFF9FF' },
+    typography: { display: 'Inter', body: 'Inter', numeric: 'ui-monospace' },
+    data: { valueScale: 'fluid', chartGrid: '#D7E4EF', tableStripe: '#F3F7FA' },
+    status: { success: '#118A68', attention: '#D49A16', danger: '#C43D4B', information: '#0A5291' },
+    density: { cardGap: '1rem', controlHeight: '2.5rem', pagePadding: '1.5rem' },
   },
   chevrolet: {
     key: 'chevrolet',
@@ -125,6 +161,11 @@ export const PELEGRINI_THEMES: Record<PelegriniThemeKey, PelegriniTheme> = {
     surfacePattern: 'parts-catalog',
     businessWords: ['Peças originais', 'Freio', 'Arrefecimento', 'Motor'],
     trustSignals: ['Desde 1992', 'Entrega rápida', 'Atendimento especializado'],
+    navigation: { activeIndicator: '#E8B923', rail: '#034E99', text: '#F3F8FC' },
+    typography: { display: 'Inter', body: 'Inter', numeric: 'ui-monospace' },
+    data: { valueScale: 'fluid', chartGrid: '#D9E4EF', tableStripe: '#F5F8FC' },
+    status: { success: '#168664', attention: '#E8B923', danger: '#C43D4B', information: '#0A67BF' },
+    density: { cardGap: '1rem', controlHeight: '2.5rem', pagePadding: '1.5rem' },
   },
 };
 
@@ -177,9 +218,9 @@ const moduleVisuals: Record<PelegriniThemeKey, Record<PelegriniModuleKey, Pelegr
 };
 
 export function getPelegriniThemeKey(filialId?: string | null): PelegriniThemeKey {
-  if (filialId === 'transmissao') return 'transmissao';
-  if (filialId === 'chevrolet') return 'chevrolet';
-  return 'pelegrini';
+  if (filialId === 'transmissao' || filialId === '1004') return 'transmissao';
+  if (filialId === 'chevrolet' || filialId === '10041') return 'chevrolet';
+  return 'transmissao';
 }
 
 export function resolvePelegriniTheme(filialId?: string | null): PelegriniTheme {

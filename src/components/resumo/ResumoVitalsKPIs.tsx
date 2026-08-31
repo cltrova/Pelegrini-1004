@@ -11,6 +11,7 @@ import {
   Info,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { PelegriniResponsiveValue } from '@/components/pelegrini';
 import {
   Tooltip,
   TooltipContent,
@@ -34,8 +35,8 @@ export function ResumoVitalsKPIs({ kpis, pdd }: Props) {
       <div className="space-y-3">
         <Card className="relative overflow-hidden p-5 bg-gradient-to-br from-primary/5 via-card to-card border-primary/30">
           <div className="absolute top-0 left-0 w-1 h-full bg-primary" />
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div>
+          <div className="grid min-w-0 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(15rem,0.55fr)] lg:items-center">
+            <div className="min-w-0">
               <div className="flex items-center gap-2 mb-2">
                 <Wallet className="h-4 w-4 text-primary" />
                 <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
@@ -43,16 +44,16 @@ export function ResumoVitalsKPIs({ kpis, pdd }: Props) {
                 </span>
                 <InfoHint text="Essa soma fecha exatamente assim: Em Aberto + Faturado no Prazo + Faturado Vencido + Recebido." />
               </div>
-              <div className="font-mono text-3xl md:text-4xl font-bold tracking-tight tabular-nums text-foreground">
+              <PelegriniResponsiveValue as="div" size="hero" className="text-foreground">
                 {formatCurrency(totalCarteira)}
-              </div>
-              <div className="text-xs text-muted-foreground mt-1.5">
+              </PelegriniResponsiveValue>
+              <div className="mt-1.5 break-words text-xs leading-relaxed text-muted-foreground">
                 {formatCurrency(kpis.totalPedidosEmAberto)} + {formatCurrency(kpis.totalAVencer)} +{' '}
                 {formatCurrency(kpis.totalVencido)} + {formatCurrency(kpis.totalRecebido)}
               </div>
             </div>
 
-            <div className="flex flex-col gap-1 text-xs font-mono min-w-[260px]">
+            <div className="flex min-w-0 flex-col gap-1 text-xs font-mono">
               <DistRow color="bg-amber-500" label="Em Aberto (não faturado)" pct={pct(kpis.totalPedidosEmAberto)} />
               <DistRow color="bg-sky-500" label="Faturado no prazo" pct={pct(kpis.totalAVencer)} />
               <DistRow color="bg-rose-500" label="Faturado vencido" pct={pct(kpis.totalVencido)} />
@@ -61,7 +62,7 @@ export function ResumoVitalsKPIs({ kpis, pdd }: Props) {
           </div>
         </Card>
 
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+        <div className="pelegrini-kpi-grid grid grid-cols-[repeat(auto-fit,minmax(min(100%,12rem),1fr))] gap-3">
           <StageCard
             tone="amber"
             icon={Package}
@@ -82,24 +83,24 @@ export function ResumoVitalsKPIs({ kpis, pdd }: Props) {
             tooltip="Duplicatas já emitidas e ainda dentro do prazo de pagamento."
           />
 
-          <Card className="relative overflow-hidden p-4 bg-rose-500/5 border-rose-500/40 shadow-[0_0_24px_-12px_hsl(var(--destructive))]">
+          <Card className="pelegrini-kpi-card relative min-w-0 overflow-hidden p-4 bg-rose-500/5 border-rose-500/40 shadow-[0_0_24px_-12px_hsl(var(--destructive))]">
             <div className="absolute top-0 left-0 w-1 h-full bg-rose-500" />
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.15em] text-rose-600 dark:text-rose-400 min-w-0">
                 <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
-                <span className="truncate">Faturado</span>
+                <span>Faturado</span>
               </div>
               <InfoHint
                 tone="rose"
                 text="Duplicatas já emitidas cuja data de vencimento passou e seguem sem pagamento."
               />
             </div>
-            <div className="text-[10px] text-rose-600/80 dark:text-rose-400/80 -mt-1 mb-1 italic font-semibold truncate">
+            <div className="text-[10px] text-rose-600/80 dark:text-rose-400/80 -mt-1 mb-1 italic font-semibold">
               (vencido)
             </div>
-            <div className="font-mono text-xl md:text-2xl font-bold text-rose-600 dark:text-rose-400 tabular-nums truncate">
+            <PelegriniResponsiveValue as="div" size="md" className="text-rose-600 dark:text-rose-400">
               {formatCurrency(kpis.totalVencido)}
-            </div>
+            </PelegriniResponsiveValue>
             <div className="mt-1 text-[11px] text-muted-foreground font-mono">
               {formatInteger(kpis.qtdDuplicatasVencidas)} títulos · atraso médio{' '}
               <span className="text-foreground">{formatInteger(kpis.diasMedioAtraso)}d</span>
@@ -116,7 +117,7 @@ export function ResumoVitalsKPIs({ kpis, pdd }: Props) {
             tooltip="Valores que já entraram no caixa."
           />
 
-          <Card className="relative overflow-hidden p-4 bg-amber-500/5 border-amber-500/40">
+          <Card className="pelegrini-kpi-card relative min-w-0 overflow-hidden p-4 bg-amber-500/5 border-amber-500/40">
             <div className="absolute top-0 left-0 w-1 h-full bg-amber-500" />
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.15em] text-amber-600 dark:text-amber-400">
@@ -128,9 +129,9 @@ export function ResumoVitalsKPIs({ kpis, pdd }: Props) {
                 text="PDD é a perda estimada sobre os títulos vencidos, usando faixas progressivas de atraso."
               />
             </div>
-            <div className="font-mono text-xl md:text-2xl font-bold text-amber-600 dark:text-amber-400 tabular-nums truncate">
+            <PelegriniResponsiveValue as="div" size="md" className="text-amber-600 dark:text-amber-400">
               {formatCurrency(pdd.total)}
-            </div>
+            </PelegriniResponsiveValue>
             <div className="mt-1 text-[11px] text-muted-foreground font-mono">
               {formatPercent(pdd.percentual)} da carteira a receber
             </div>
@@ -165,24 +166,24 @@ function StageCard({ tone, icon: Icon, label, sublabel, value, sub, tooltip }: S
     tone === 'amber' ? 'bg-amber-500' : tone === 'sky' ? 'bg-sky-500' : 'bg-emerald-500';
 
   return (
-    <Card className="relative overflow-hidden p-4 bg-card border-border hover:border-foreground/20 transition-colors">
+    <Card className="pelegrini-kpi-card relative min-w-0 overflow-hidden p-4 bg-card border-border hover:border-foreground/20 transition-colors">
       <div className={cn('absolute top-0 left-0 w-1 h-full', barClass)} />
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground min-w-0">
           <Icon className="h-3.5 w-3.5 shrink-0" />
-          <span className="truncate">{label}</span>
+          <span>{label}</span>
         </div>
         <InfoHint text={tooltip} />
       </div>
       {sublabel && (
-        <div className="text-[10px] text-muted-foreground/80 -mt-1 mb-1 italic truncate">
+        <div className="text-[10px] text-muted-foreground/80 -mt-1 mb-1 italic">
           {sublabel}
         </div>
       )}
-      <div className={cn('font-mono text-xl md:text-2xl font-bold tabular-nums truncate', valueClass)}>
+      <PelegriniResponsiveValue as="div" size="md" className={valueClass}>
         {value}
-      </div>
-      {sub && <div className="mt-1 text-[11px] text-muted-foreground font-mono truncate">{sub}</div>}
+      </PelegriniResponsiveValue>
+      {sub && <div className="mt-1 text-[11px] leading-tight text-muted-foreground font-mono">{sub}</div>}
     </Card>
   );
 }

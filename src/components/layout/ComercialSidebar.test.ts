@@ -20,7 +20,11 @@ vi.mock('@/contexts/AuthContext', () => ({
 }));
 
 vi.mock('@/contexts/FilialSelecionadaContext', () => ({
-  useFilialSelecionada: vi.fn(() => ({ filialAtiva: '1004' })),
+  useFilialSelecionada: vi.fn(() => ({
+    filialAtiva: 'transmissao',
+    codEmpresaContexto: '1004',
+    setFilialAtivaForEmpresa: vi.fn(),
+  })),
 }));
 
 vi.mock('@/hooks/useCotacoesComerciais', () => ({
@@ -108,12 +112,36 @@ describe('commercial sidebar menu access', () => {
     expect(screen.queryByText('BREVE')).not.toBeInTheDocument();
   });
 
-  it('uses Pelegrini footer copy instead of legacy BI Reports copy', () => {
+  it('uses the active branch as the visible brand instead of generic module chrome', () => {
     mockCompany('1004');
     render(createElement(MemoryRouter, { initialEntries: ['/comercial/dashboard'], future: { v7_startTransition: true, v7_relativeSplatPath: true } }, createElement(ComercialSidebar)));
 
-    expect(screen.getByText('Pelegrini - operacao automotiva integrada')).toBeInTheDocument();
+    expect(screen.getByText('Casa da Transmissão')).toBeInTheDocument();
+    expect(screen.queryByText('Pelegrini - operacao automotiva integrada')).not.toBeInTheDocument();
     expect(screen.queryByText(/BI Reports/i)).not.toBeInTheDocument();
+  });
+
+  it('renders compact navigation without the descriptive sidebar plate', () => {
+    mockCompany('1004');
+    render(createElement(MemoryRouter, { initialEntries: ['/comercial/dashboard'], future: { v7_startTransition: true, v7_relativeSplatPath: true } }, createElement(ComercialSidebar)));
+
+    expect(screen.getByRole('complementary')).not.toHaveTextContent(/Leitura tecnica/i);
+    expect(screen.queryByText(/Pedidos e carteira/i)).not.toBeInTheDocument();
+  });
+
+  it('keeps branch selection out of the module sidebar', () => {
+    mockCompany('1004');
+    render(createElement(MemoryRouter, { initialEntries: ['/comercial/dashboard'], future: { v7_startTransition: true, v7_relativeSplatPath: true } }, createElement(ComercialSidebar)));
+
+    expect(screen.queryByRole('radiogroup', { name: /Filial ativa/i })).not.toBeInTheDocument();
+  });
+
+  it('starts compact on desktop and expands through hover styles', () => {
+    mockCompany('1004');
+    render(createElement(MemoryRouter, { initialEntries: ['/comercial/dashboard'], future: { v7_startTransition: true, v7_relativeSplatPath: true } }, createElement(ComercialSidebar)));
+
+    expect(screen.getByRole('complementary')).toHaveClass('pelegrini-sidebar-collapsible');
+    expect(screen.getByRole('complementary')).toHaveAttribute('data-desktop-state', 'collapsed');
   });
 
   it('respects reduced motion for the mobile sidebar transition', () => {
@@ -146,8 +174,13 @@ describe('commercial sidebar menu access', () => {
       expect(button).toHaveClass('h-14', 'min-w-0', 'flex-1');
     });
     fireEvent.click(mobileButtons[4]);
-    expect(screen.getByRole('link', { name: 'Cotações Abertas' })).toHaveAttribute('href', '/comercial/cotacoes');
-    expect(screen.getByRole('link', { name: 'Vendas Perdidas' })).toHaveAttribute('href', '/comercial/perdidas');
+    const openQuotesLink = screen.getByRole('link', { name: 'Cotações Abertas' });
+    const lostSalesLink = screen.getByRole('link', { name: 'Vendas Perdidas' });
+
+    expect(openQuotesLink).toHaveAttribute('href', '/comercial/cotacoes');
+    expect(openQuotesLink).toHaveClass('h-11');
+    expect(lostSalesLink).toHaveAttribute('href', '/comercial/perdidas');
+    expect(lostSalesLink).toHaveClass('h-11');
 
     cleanup();
     mockCompany('9999');

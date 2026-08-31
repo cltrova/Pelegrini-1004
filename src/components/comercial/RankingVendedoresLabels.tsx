@@ -25,7 +25,6 @@ export function RankingVendedoresLabels({ data, modo }: Props) {
       style={{ gridTemplateColumns: `repeat(${data.length}, minmax(0, 1fr))` }}
     >
       {data.map((row, index) => {
-        const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '';
         const shortName = row.nome.length > 14 ? `${row.nome.slice(0, 13)}…` : row.nome;
         const valueLabel = modo === 'meta'
           ? formatPercent(row.pctMeta || 0)
@@ -37,10 +36,10 @@ export function RankingVendedoresLabels({ data, modo }: Props) {
               className="block truncate text-muted-foreground"
               style={{ fontSize: layout.sellerFontSize, fontWeight: layout.sellerFontWeight }}
             >
-              {medal ? `${medal} ` : ''}{shortName}
+              {index + 1}. {shortName}
             </span>
             <span
-              className="mt-2 block whitespace-nowrap font-mono text-foreground"
+              className="mt-1 block whitespace-nowrap font-mono text-foreground"
               style={{ fontSize: layout.valueFontSize, fontWeight: layout.valueFontWeight }}
             >
               {valueLabel}

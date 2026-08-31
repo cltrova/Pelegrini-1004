@@ -1,6 +1,4 @@
 import { useIsMobile } from '@/hooks/use-mobile';
-import { Header } from '@/components/layout/Header';
-import { MobileHeader } from '@/components/layout/MobileHeader';
 import { WhatsappMobileBottomNav } from '@/components/layout/WhatsappMobileBottomNav';
 import { AgentsTab } from '@/components/whatsapp/settings/agents/AgentsTab';
 
@@ -24,7 +22,6 @@ export default function AgentesPage() {
   if (isMobile) {
     return (
       <div className="flex flex-col min-h-screen bg-background">
-        <MobileHeader title="Agentes" subtitle="WhatsApp" />
         <div className="flex-1 overflow-hidden pb-20">{content}</div>
         <WhatsappMobileBottomNav />
       </div>
@@ -33,7 +30,6 @@ export default function AgentesPage() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Header />
       {content}
     </div>
   );

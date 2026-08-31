@@ -11,11 +11,11 @@ export interface PelegriniHomeModule {
 }
 
 export const pelegriniBrand = {
-  name: 'Pelegrini',
+  name: 'Operação CT/CCH',
   subtitle: 'Gestao automotiva por filial',
-  eyebrow: 'Grupo Pelegrini',
-  headline: 'Pelegrini em tempo real: vendas, estoque, financeiro e atendimento por filial',
-  footer: 'Pelegrini · Casa da Transmissao · Casa do Chevrolet',
+  eyebrow: 'Casa da Transmissao | Casa do Chevrolet',
+  headline: 'Casa da Transmissão e Casa do Chevrolet em tempo real',
+  footer: 'Casa da Transmissao · Casa do Chevrolet',
   version: 'v1.0.0',
 } as const;
 

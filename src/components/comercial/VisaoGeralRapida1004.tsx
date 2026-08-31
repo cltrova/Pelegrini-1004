@@ -15,6 +15,7 @@ import { RankingVendedoresChart } from './RankingVendedoresChart';
 import { useEmpresaAtiva } from '@/hooks/useEmpresaAtiva';
 import { useFilialSelecionada } from '@/contexts/FilialSelecionadaContext';
 import { isContextoChevrolet10041, vendedorOcultoFiltroContextual1004 } from '@/utils/vendedores1004';
+import { PelegriniResponsiveValue } from '@/components/pelegrini';
 
 
 interface Props {
@@ -384,7 +385,7 @@ export function VisaoGeralRapida1004({
       <div className={cn(
         "grid gap-3",
         isEmpresaPelegrini
-          ? (showDevolucoesCard ? "grid-cols-1 sm:grid-cols-2 xl:grid-cols-5" : "grid-cols-1 sm:grid-cols-2 xl:grid-cols-4")
+          ? "grid-cols-[repeat(auto-fit,minmax(min(100%,12rem),1fr))]"
           : (showDevolucoesCard ? "grid-cols-5" : "grid-cols-4"),
       )}>
         {totalizadores.map((t) => {
@@ -406,7 +407,7 @@ export function VisaoGeralRapida1004({
               onKeyDown={clickable ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onReceitaClick?.(); } } : undefined}
               title={clickable ? 'Clique para ver o detalhamento da Receita' : undefined}
               className={cn(
-                'group relative overflow-hidden transition-all duration-300',
+                'group pelegrini-kpi-card relative min-w-0 overflow-hidden transition-all duration-300',
                 isEmpresaPelegrini
                   ? 'pelegrini-led-card border-border/60 bg-card text-foreground hover:-translate-y-0.5'
                   : 'border-border/60 hover:-translate-y-0.5 hover:shadow-lg hover:ring-1',
@@ -436,9 +437,9 @@ export function VisaoGeralRapida1004({
                     <Icon className={cn('h-3.5 w-3.5', isEmpresaPelegrini ? 'text-primary' : t.iconColor)} />
                   </div>
                 </div>
-                <div className={cn("text-2xl xl:text-[26px] font-bold font-mono leading-none", isEmpresaPelegrini ? 'text-foreground' : 'tracking-tight')}>
+                <PelegriniResponsiveValue as="div" size="md" className={cn(isEmpresaPelegrini ? 'text-foreground' : 'tracking-tight')}>
                   {t.value}
-                </div>
+                </PelegriniResponsiveValue>
                 
                 {t.bar != null && (
                   <div className={cn("mt-2 h-1 rounded-full overflow-hidden", isEmpresaPelegrini ? 'bg-muted/60' : 'bg-muted/60')}>

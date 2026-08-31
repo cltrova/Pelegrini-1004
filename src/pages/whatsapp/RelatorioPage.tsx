@@ -9,7 +9,6 @@ import { LoadingState } from '@/components/common/LoadingState';
 import { LayoutDashboard, Users, UserCheck } from 'lucide-react';
 import { ReportFilters as ReportFiltersComponent, ReportFiltersState, defaultReportFilters } from '@/components/whatsapp/reports/ReportFilters';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { MobileHeader } from '@/components/layout/MobileHeader';
 import { WhatsappMobileBottomNav } from '@/components/layout/WhatsappMobileBottomNav';
 
 export default function RelatorioPage() {
@@ -100,7 +99,6 @@ export default function RelatorioPage() {
   if (isMobile) {
     return (
       <div className="flex flex-col min-h-screen bg-background">
-        <MobileHeader title="Relatórios" subtitle="WhatsApp" />
         <div className="flex-1 overflow-hidden pb-20">
           {content}
         </div>

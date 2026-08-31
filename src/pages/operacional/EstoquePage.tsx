@@ -272,7 +272,7 @@ export default function EstoquePage() {
     <div className="p-4 md:p-6 space-y-4">
       <PelegriniModuleHeader
         title="Gestao de Estoque"
-        subtitle={`${empresa?.nome || 'Pelegrini'} - ${filteredEstoque.length.toLocaleString('pt-BR')} itens - ${giroData.length.toLocaleString('pt-BR')} movimentacoes`}
+        subtitle={`${filteredEstoque.length.toLocaleString('pt-BR')} itens · ${giroData.length.toLocaleString('pt-BR')} movimentações`}
         moduleKey="operacional"
       />
 

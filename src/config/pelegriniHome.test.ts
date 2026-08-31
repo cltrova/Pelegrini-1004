@@ -2,10 +2,11 @@ import { describe, expect, it } from 'vitest';
 import { getPelegriniBranchAvailability, pelegriniAdminEntry, pelegriniBrand, pelegriniModules } from './pelegriniHome';
 
 describe('pelegriniHome config', () => {
-  it('uses Pelegrini as the visible product brand', () => {
-    expect(pelegriniBrand.name).toBe('Pelegrini');
-    expect(pelegriniBrand.headline).toContain('Pelegrini');
-    expect(pelegriniBrand.footer).toContain('Pelegrini');
+  it('uses branch houses as the visible entry identity instead of generic Pelegrini chrome', () => {
+    expect(pelegriniBrand.name).toBe('Operação CT/CCH');
+    expect(pelegriniBrand.headline).toContain('Casa da Transmissão');
+    expect(pelegriniBrand.headline).toContain('Casa do Chevrolet');
+    expect(pelegriniBrand.footer).not.toContain('Pelegrini');
   });
 
   it('defines the four main Pelegrini modules in order', () => {
