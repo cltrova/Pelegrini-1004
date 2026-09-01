@@ -91,7 +91,6 @@ function expectDestination(path: string) {
 
 function chooseCasaDaTransmissao() {
   fireEvent.click(screen.getByRole('button', { name: /Casa da Transmissão/i }));
-  fireEvent.click(screen.getByRole('button', { name: 'Acessar' }));
 }
 
 describe('Home branch flow', () => {
@@ -113,39 +112,47 @@ describe('Home branch flow', () => {
 
   afterEach(() => vi.clearAllMocks());
 
-  it('opens branch selection only after a desktop Comercial click and cancel stays on Home', () => {
+  it('opens the desktop branch selection before exposing modules even with a stored branch', () => {
+    testState.filialAtiva = 'chevrolet';
     renderHome(<HomePage />);
 
-    expect(screen.queryByText('Escolha a unidade')).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: /Comercial/i }));
-    expect(screen.getByText('Escolha a unidade')).toBeInTheDocument();
-
-    fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }));
-    expect(screen.queryByText('Escolha a unidade')).not.toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Módulos' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Escolha a filial' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Casa da Transmissão/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Casa do Chevrolet/i })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Comercial/i })).not.toBeInTheDocument();
   });
 
-  it('stores the chosen branch and enters the exact desktop Comercial path', () => {
+  it('stores the desktop branch before showing modules and then navigates directly', () => {
     renderHome(<HomePage />);
 
-    fireEvent.click(screen.getByRole('button', { name: /Comercial/i }));
     chooseCasaDaTransmissao();
-
     expect(testState.setFilialAtivaForEmpresa).toHaveBeenCalledWith('1004', 'transmissao');
+    expect(screen.getByRole('heading', { name: 'Módulos' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Trocar filial/i })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /Comercial/i }));
     expectDestination('/comercial/dashboard');
   });
 
-  it('requires a fresh mobile branch choice and enters the exact Operacional path', () => {
+  it('uses the same branch-first flow on mobile', () => {
     testState.filialAtiva = 'chevrolet';
     renderHome(<HomeMobilePage />);
 
-    expect(screen.queryByText('Escolha a unidade')).not.toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Escolha a filial' })).toBeInTheDocument();
+    chooseCasaDaTransmissao();
     fireEvent.click(screen.getByRole('button', { name: /Operacional/i }));
-    expect(screen.getByText('Escolha a unidade')).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: /Casa da Transmissão/i }));
-    fireEvent.click(screen.getByRole('button', { name: 'Acessar' }));
 
     expectDestination('/operacional/estoque');
+  });
+
+  it('returns to branch selection without navigating when the user changes branch', () => {
+    renderHome(<HomePage />);
+
+    chooseCasaDaTransmissao();
+    fireEvent.click(screen.getByRole('button', { name: /Trocar filial/i }));
+
+    expect(screen.getByRole('heading', { name: 'Escolha a filial' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Comercial/i })).not.toBeInTheDocument();
   });
 
   it('keeps the mobile module entry free from a redundant one-item navigation bar', () => {
@@ -154,23 +161,22 @@ describe('Home branch flow', () => {
     expect(screen.queryByRole('navigation')).not.toBeInTheDocument();
   });
 
-  it('preserves the Financeiro entry resolver when branch selection confirms', () => {
+  it('preserves the Financeiro entry resolver after the initial branch choice', () => {
     testState.permissions.modulo_resumo = false;
     testState.empresaModules.delete('resumo');
     renderHome(<HomePage />);
 
-    fireEvent.click(screen.getByRole('button', { name: /Financeiro/i }));
     chooseCasaDaTransmissao();
+    fireEvent.click(screen.getByRole('button', { name: /Financeiro/i }));
 
     expectDestination('/financeiro/dre');
   });
 
-  it('navigates Settings directly without opening branch selection', () => {
+  it('navigates Settings directly from the selection header', () => {
     renderHome(<HomePage />);
 
     fireEvent.click(screen.getAllByRole('button', { name: /Configuracoes/i })[0]);
 
-    expect(screen.queryByText('Escolha a unidade')).not.toBeInTheDocument();
     expectDestination('/configuracoes');
   });
 
@@ -178,10 +184,10 @@ describe('Home branch flow', () => {
     testState.isAuthenticated = false;
     renderHome(<HomePage />);
 
+    chooseCasaDaTransmissao();
     fireEvent.click(screen.getByRole('button', { name: /Comercial/i }));
 
     expect(screen.getByText('Potencialize Suas Vendas')).toBeInTheDocument();
-    expect(screen.queryByText('Escolha a unidade')).not.toBeInTheDocument();
   });
 
   it('preserves the seller redirect', () => {
