@@ -1,11 +1,21 @@
 import { useQuery } from '@tanstack/react-query';
 import { useEmpresaAtiva } from '@/hooks/useEmpresaAtiva';
+import type { Empresa } from '@/hooks/useEmpresaConfig';
 import { supabase } from '@/integrations/supabase/client';
 import { buildApiProxyUrl } from '@/utils/apiEndpointResolver';
 import { EstoqueRecord, GiroRecord } from '@/types/estoque';
 import { filtrarEstoqueCasaChevrolet10041 } from '@/utils/estoque10041';
 
-async function fetchFromStorage(storagePath: string): Promise<any[]> {
+type EstoqueApiRow = Record<string, unknown>;
+
+function parseEstoqueRows(payload: unknown): EstoqueApiRow[] {
+  if (!Array.isArray(payload)) {
+    throw new Error('Formato inesperado na fonte de estoque');
+  }
+  return payload.filter((row): row is EstoqueApiRow => Boolean(row) && typeof row === 'object');
+}
+
+async function fetchFromStorage(storagePath: string): Promise<EstoqueApiRow[]> {
   console.log(`[Estoque] Buscando do storage: ${storagePath}`);
   const { data, error } = await supabase.storage
     .from('dados-json')
@@ -15,13 +25,13 @@ async function fetchFromStorage(storagePath: string): Promise<any[]> {
     throw error;
   }
   const text = await data.text();
-  return JSON.parse(text);
+  return parseEstoqueRows(JSON.parse(text));
 }
 
 async function fetchFromEndpoint(
-  empresa: any,
+  empresa: Empresa,
   endpointPath: string
-): Promise<any[]> {
+): Promise<EstoqueApiRow[]> {
   const fullUrl = buildApiProxyUrl(empresa, endpointPath);
 
   console.log(`[Estoque] Buscando do endpoint: ${fullUrl}`);
@@ -47,7 +57,7 @@ async function fetchFromEndpoint(
       }
       throw new Error(`Erro do endpoint: ${response.status}`);
     }
-    return await response.json();
+    return parseEstoqueRows(await response.json());
   } catch (e) {
     clearTimeout(timeout);
     const message = e instanceof Error ? e.message : String(e);
@@ -60,11 +70,11 @@ async function fetchFromEndpoint(
 }
 
 async function fetchEstoqueSource(
-  empresa: any,
+  empresa: Empresa,
   type: 'giro' | 'consolidado' | 'detalhado'
-): Promise<any[]> {
-  const jsonKey = `json_path_estoque_${type}` as keyof typeof empresa;
-  const endpointKey = `endpoint_path_estoque_${type}` as keyof typeof empresa;
+): Promise<EstoqueApiRow[]> {
+  const jsonKey = `json_path_estoque_${type}` as keyof Empresa;
+  const endpointKey = `endpoint_path_estoque_${type}` as keyof Empresa;
 
   const jsonPath = empresa[jsonKey] as string | null;
   const endpointPath = empresa[endpointKey] as string | null;
@@ -96,6 +106,94 @@ async function fetchEstoqueSource(
   return [];
 }
 
+function normalizeBranchText(value: unknown): string {
+  return String(value ?? '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+    .toUpperCase();
+}
+
+function isGiroRowFromActiveBranch(row: GiroRecord, codEmpresaAtiva?: string | null): boolean {
+  const activeCode = String(codEmpresaAtiva ?? '').trim();
+  const rowCode = String(row.cod_empresa_bi ?? '').trim();
+  const isChevrolet = normalizeBranchText(row.empresa).includes('CHEVROLET');
+
+  if (activeCode === '10041') {
+    return rowCode === '10041' || (!rowCode && isChevrolet);
+  }
+
+  if (activeCode === '1004') {
+    return rowCode !== '10041' && !isChevrolet;
+  }
+
+  return true;
+}
+
+export function buildEstoqueFallbackFromGiro(
+  giroRows: GiroRecord[],
+  codEmpresaAtiva?: string | null,
+): EstoqueRecord[] {
+  const latestByProduct = new Map<string, GiroRecord>();
+
+  giroRows
+    .filter((row) => isGiroRowFromActiveBranch(row, codEmpresaAtiva))
+    .forEach((row) => {
+      const key = `${row.cod_empresa}:${row.cod_produto}`;
+      const current = latestByProduct.get(key);
+      if (!current || row.data_movimento > current.data_movimento) {
+        latestByProduct.set(key, row);
+      }
+    });
+
+  const activeCode = Number(codEmpresaAtiva) || 0;
+
+  return [...latestByProduct.values()].map((row) => {
+    const quantity = Number(row.quantidade_estoque) || 0;
+    const stockValue = Number(row.valor_estoque) || 0;
+    const estimatedCost = quantity !== 0 ? stockValue / quantity : 0;
+    const movementDate = row.data_movimento || null;
+    const hasSale = Number(row.saida_venda) > 0;
+    const hasPurchase = Number(row.entrada_compra) > 0;
+    const hasTransfer = Number(row.saida_transferencia) > 0 || Number(row.entrada_transferencia) > 0;
+
+    return {
+      cod_empresa_bi: Number(row.cod_empresa_bi) || activeCode,
+      cod_empresa: row.cod_empresa,
+      empresa: row.empresa,
+      cod_produto: row.cod_produto,
+      produto: row.produto,
+      cod_fabricante: row.cod_fabricante,
+      cod_fornecedor: '',
+      cod_grupo_produto: row.cod_grupo,
+      grupo: row.grupo,
+      cod_marca_produto: row.cod_marca,
+      marca: row.marca,
+      cod_linha: row.cod_linha || '',
+      linha: row.linha,
+      nr_fabricante: row.cod_fabricante,
+      nr_original: '',
+      aplicacao_produto: '',
+      classe_abc: '',
+      quantidade_estoque: quantity,
+      data_ultima_compra: hasPurchase ? movementDate : null,
+      operacao_ultima_compra: hasPurchase ? 'COMPRA' : null,
+      data_ultima_transferencia: hasTransfer ? movementDate : null,
+      operacao_ultima_transferencia: hasTransfer ? 'TRANSFERENCIA' : null,
+      data_ultima_venda: hasSale ? movementDate : null,
+      cod_cliente_ultima_venda: '',
+      cliente_ultima_venda: '',
+      quantidade_compra_produto: Number(row.entrada_compra) || 0,
+      valor_estoque: stockValue,
+      custo: estimatedCost,
+      custo_fornecedor: estimatedCost,
+      custo_medio: estimatedCost,
+      custo_ultima_compra: estimatedCost,
+      tipo_relatorio: 'GIRO API - CONTINGENCIA',
+    };
+  });
+}
+
 export function useEstoqueData() {
   const { empresa, codEmpresaAtiva, isLoading: isLoadingEmpresa } = useEmpresaAtiva();
 
@@ -120,11 +218,11 @@ export function useEstoqueData() {
     staleTime: 5 * 60 * 1000,
   });
 
-  const consolidadoData = filtrarEstoqueCasaChevrolet10041(
+  const estoqueConsolidadoPrincipal = filtrarEstoqueCasaChevrolet10041(
     (consolidadoQuery.data || []) as unknown as Array<Record<string, unknown>>,
     codEmpresaAtiva,
   ) as unknown as EstoqueRecord[];
-  const detalhadoData = filtrarEstoqueCasaChevrolet10041(
+  const estoqueDetalhadoPrincipal = filtrarEstoqueCasaChevrolet10041(
     (detalhadoQuery.data || []) as unknown as Array<Record<string, unknown>>,
     codEmpresaAtiva,
   ) as unknown as EstoqueRecord[];
@@ -132,6 +230,13 @@ export function useEstoqueData() {
     (giroQuery.data || []) as unknown as Array<Record<string, unknown>>,
     codEmpresaAtiva,
   ) as unknown as GiroRecord[];
+  const estoqueFallback = buildEstoqueFallbackFromGiro(giroData, codEmpresaAtiva);
+  const consolidadoData = estoqueConsolidadoPrincipal.length > 0
+    ? estoqueConsolidadoPrincipal
+    : estoqueFallback;
+  const detalhadoData = estoqueDetalhadoPrincipal.length > 0
+    ? estoqueDetalhadoPrincipal
+    : estoqueFallback;
 
   const isLoading = isLoadingEmpresa || consolidadoQuery.isLoading || detalhadoQuery.isLoading || giroQuery.isLoading;
   const isError = consolidadoQuery.isError || detalhadoQuery.isError || giroQuery.isError;
