@@ -5,6 +5,7 @@ import { useFilialSelecionada } from '@/contexts/FilialSelecionadaContext';
 import { FilialSelectorDialog } from '@/components/common/FilialSelectorDialog';
 import { getFilialPorId } from '@/config/filiaisEmpresa';
 import { resolvePelegriniTheme } from '@/config/pelegriniTheme';
+import { cn } from '@/lib/utils';
 
 export function FilialBadge() {
   const { empresaPossuiFiliaisAtiva, filialNome, codEmpresaContexto, filialAtiva } = useFilialSelecionada();
@@ -29,7 +30,10 @@ export function FilialBadge() {
           <img
             src={filialConfig.logoSrc}
             alt=""
-            className="h-5 w-5 rounded-[4px] object-contain bg-background"
+            className={cn(
+              'h-5 object-contain bg-transparent',
+              theme.key === 'chevrolet' ? 'pelegrini-chevrolet-logo w-12' : 'w-5',
+            )}
           />
         ) : (
           <Building2 className="h-3.5 w-3.5 text-primary" />

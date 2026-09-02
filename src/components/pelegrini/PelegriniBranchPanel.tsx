@@ -41,8 +41,18 @@ export function PelegriniBranchPanel({
       <span className="absolute inset-y-0 left-0 w-1" style={{ backgroundColor: theme.accent }} aria-hidden="true" />
       <span className="pelegrini-branch-panel-pattern" aria-hidden="true" />
       <span className="flex items-start gap-3 pl-1">
-        <span className="flex h-10 w-10 shrink-0 items-center justify-center border border-border bg-white p-1">
-          <img src={theme.logoSrc} alt="" className="max-h-8 max-w-8 object-contain" />
+        <span className={cn(
+          'flex h-10 shrink-0 items-center justify-center border border-transparent bg-transparent p-1',
+          theme.key === 'chevrolet' ? 'w-20' : 'w-10',
+        )}>
+          <img
+            src={theme.logoSrc}
+            alt=""
+            className={cn(
+              'max-h-8 object-contain',
+              theme.key === 'chevrolet' ? 'pelegrini-chevrolet-logo max-w-20' : 'max-w-8',
+            )}
+          />
         </span>
         <span className="min-w-0">
           <span className="block text-sm font-semibold text-foreground">{theme.name}</span>

@@ -24,9 +24,17 @@ describe('brand assets', () => {
         expect.objectContaining({
           id: 'chevrolet',
           nome: 'Casa da Chevrolet',
-          logoSrc: '/brand/casa-chevrolet.png',
+          logoSrc: '/brand/casa-chevrolet-wordmark.png',
         }),
       ]),
     );
+  });
+
+  it('changes the transparent Chevrolet wordmark color with the active theme', () => {
+    const css = readFileSync(join(process.cwd(), 'src', 'index.css'), 'utf8');
+
+    expect(css).toContain('.pelegrini-chevrolet-logo');
+    expect(css).toContain('.dark .pelegrini-chevrolet-logo');
+    expect(css).toContain('filter: brightness(0) invert(1)');
   });
 });

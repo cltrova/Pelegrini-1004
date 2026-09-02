@@ -49,13 +49,28 @@ describe('Pelegrini visual components', () => {
     expect(container.querySelector('[class*="glow"]')).not.toBeInTheDocument();
   });
 
-  it('keeps the sidebar brand compact without a clipped tagline', () => {
+  it('keeps only the enlarged transparent logo in the sidebar brand', () => {
     const theme = resolvePelegriniTheme('transmissao');
 
     render(<PelegriniBrandMark theme={theme} tone="sidebar" />);
 
-    expect(screen.getByText('Casa da Transmissão')).toBeInTheDocument();
+    const logo = screen.getByAltText('Logo Casa da Transmissão');
+    expect(logo).toHaveAttribute('src', '/brand/home/transmissao-transparent.png');
+    expect(logo).toHaveClass('pelegrini-sidebar-logo');
+    expect(screen.queryByText('Casa da Transmissão')).not.toBeInTheDocument();
     expect(screen.queryByText(theme.tagline)).not.toBeInTheDocument();
+  });
+
+  it('renders the Chevrolet wordmark without a background plate', () => {
+    const theme = resolvePelegriniTheme('chevrolet');
+
+    render(<PelegriniBrandMark theme={theme} tone="sidebar" />);
+
+    const logo = screen.getByAltText('Logo Casa do Chevrolet');
+    expect(logo).toHaveAttribute('src', '/brand/casa-chevrolet-wordmark.png');
+    expect(logo).toHaveClass('pelegrini-chevrolet-logo', 'pelegrini-sidebar-logo');
+    expect(logo.parentElement).toHaveClass('bg-transparent', 'border-transparent');
+    expect(screen.queryByText('Casa do Chevrolet')).not.toBeInTheDocument();
   });
 
   it('renders branch trust signals', () => {

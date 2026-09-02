@@ -5,8 +5,20 @@ import { supabase } from '@/integrations/supabase/client';
 import { buildApiProxyUrl } from '@/utils/apiEndpointResolver';
 import { EstoqueRecord, GiroRecord } from '@/types/estoque';
 import { filtrarEstoqueCasaChevrolet10041 } from '@/utils/estoque10041';
+import { useFilialSelecionada } from '@/contexts/FilialSelecionadaContext';
+import { resolveCodEmpresaBiParam } from '@/utils/filialEndpoint';
 
 type EstoqueApiRow = Record<string, unknown>;
+
+export function withEstoqueCompanyCode(endpointPath: string, codEmpresaBi?: string | null): string {
+  const code = String(codEmpresaBi ?? '').trim();
+  if (!endpointPath || !code) return endpointPath;
+
+  const [path, query = ''] = endpointPath.split('?');
+  const params = new URLSearchParams(query);
+  params.set('cod_empresa_bi', code);
+  return `${path}?${params.toString()}`;
+}
 
 function parseEstoqueRows(payload: unknown): EstoqueApiRow[] {
   if (!Array.isArray(payload)) {
@@ -71,7 +83,8 @@ async function fetchFromEndpoint(
 
 async function fetchEstoqueSource(
   empresa: Empresa,
-  type: 'giro' | 'consolidado' | 'detalhado'
+  type: 'giro' | 'consolidado' | 'detalhado',
+  codEmpresaBi?: string | null,
 ): Promise<EstoqueApiRow[]> {
   const jsonKey = `json_path_estoque_${type}` as keyof Empresa;
   const endpointKey = `endpoint_path_estoque_${type}` as keyof Empresa;
@@ -98,7 +111,7 @@ async function fetchEstoqueSource(
       const sep = endpointPath.includes('?') ? '&' : '?';
       finalPath = `${endpointPath}${sep}data_ini=${fmt(inicio)}&data_fim=${fmt(hoje)}`;
     }
-    return fetchFromEndpoint(empresa, finalPath);
+    return fetchFromEndpoint(empresa, withEstoqueCompanyCode(finalPath, codEmpresaBi));
   }
 
 
@@ -196,41 +209,43 @@ export function buildEstoqueFallbackFromGiro(
 
 export function useEstoqueData() {
   const { empresa, codEmpresaAtiva, isLoading: isLoadingEmpresa } = useEmpresaAtiva();
+  const { filialAtiva } = useFilialSelecionada();
+  const estoqueCompanyCode = resolveCodEmpresaBiParam(empresa, filialAtiva) || codEmpresaAtiva;
 
   const consolidadoQuery = useQuery({
-    queryKey: ['estoque-consolidado', codEmpresaAtiva],
-    queryFn: async () => fetchEstoqueSource(empresa!, 'consolidado'),
+    queryKey: ['estoque-consolidado', estoqueCompanyCode],
+    queryFn: async () => fetchEstoqueSource(empresa!, 'consolidado', estoqueCompanyCode),
     enabled: !!empresa && !!empresa.modulo_operacional,
     staleTime: 5 * 60 * 1000,
   });
 
   const detalhadoQuery = useQuery({
-    queryKey: ['estoque-detalhado', codEmpresaAtiva],
-    queryFn: async () => fetchEstoqueSource(empresa!, 'detalhado'),
+    queryKey: ['estoque-detalhado', estoqueCompanyCode],
+    queryFn: async () => fetchEstoqueSource(empresa!, 'detalhado', estoqueCompanyCode),
     enabled: !!empresa && !!empresa.modulo_operacional,
     staleTime: 5 * 60 * 1000,
   });
 
   const giroQuery = useQuery({
-    queryKey: ['estoque-giro', codEmpresaAtiva],
-    queryFn: async () => fetchEstoqueSource(empresa!, 'giro'),
+    queryKey: ['estoque-giro', estoqueCompanyCode],
+    queryFn: async () => fetchEstoqueSource(empresa!, 'giro', estoqueCompanyCode),
     enabled: !!empresa && !!empresa.modulo_operacional,
     staleTime: 5 * 60 * 1000,
   });
 
   const estoqueConsolidadoPrincipal = filtrarEstoqueCasaChevrolet10041(
     (consolidadoQuery.data || []) as unknown as Array<Record<string, unknown>>,
-    codEmpresaAtiva,
+    estoqueCompanyCode,
   ) as unknown as EstoqueRecord[];
   const estoqueDetalhadoPrincipal = filtrarEstoqueCasaChevrolet10041(
     (detalhadoQuery.data || []) as unknown as Array<Record<string, unknown>>,
-    codEmpresaAtiva,
+    estoqueCompanyCode,
   ) as unknown as EstoqueRecord[];
-  const giroData = filtrarEstoqueCasaChevrolet10041(
+  const giroData = (filtrarEstoqueCasaChevrolet10041(
     (giroQuery.data || []) as unknown as Array<Record<string, unknown>>,
-    codEmpresaAtiva,
-  ) as unknown as GiroRecord[];
-  const estoqueFallback = buildEstoqueFallbackFromGiro(giroData, codEmpresaAtiva);
+    estoqueCompanyCode,
+  ) as unknown as GiroRecord[]).filter(row => isGiroRowFromActiveBranch(row, estoqueCompanyCode));
+  const estoqueFallback = buildEstoqueFallbackFromGiro(giroData, estoqueCompanyCode);
   const consolidadoData = estoqueConsolidadoPrincipal.length > 0
     ? estoqueConsolidadoPrincipal
     : estoqueFallback;

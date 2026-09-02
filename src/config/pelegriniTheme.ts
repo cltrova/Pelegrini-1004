@@ -141,7 +141,7 @@ export const PELEGRINI_THEMES: Record<PelegriniThemeKey, PelegriniTheme> = {
     name: 'Casa do Chevrolet',
     shortName: 'CCH',
     tagline: 'pecas originais Chevrolet com atendimento especializado',
-    logoSrc: '/brand/casa-chevrolet.png',
+    logoSrc: '/brand/casa-chevrolet-wordmark.png',
     logoAlt: 'Logo Casa do Chevrolet',
     primary: '#034E99',
     secondary: '#0A67BF',

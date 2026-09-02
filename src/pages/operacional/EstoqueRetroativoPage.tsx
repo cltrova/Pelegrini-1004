@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Loader2, Search, FileSpreadsheet, CalendarDays } from 'lucide-react';
+import { Loader2, Search, FileSpreadsheet, CalendarDays, Package, Boxes, Building2, CircleDollarSign } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { useEmpresaAtiva } from '@/hooks/useEmpresaAtiva';
 import { useFilialSelecionada } from '@/contexts/FilialSelecionadaContext';
@@ -52,6 +52,9 @@ const toNumber = (v: any): number => {
   return isNaN(n) ? 0 : n;
 };
 
+const getValorUnitario = (row: EstoqueItem, tipo: ValorExcel): number =>
+  toNumber(tipo === 'custo' ? row.valor_unitario : row.preco_venda_unitario);
+
 const pad7 = (v: any) => String(v ?? '').replace(/\D/g, '').padStart(7, '0').slice(-7);
 
 const getFilialKey = (r: any): string => {
@@ -82,11 +85,6 @@ export default function EstoqueRetroativoPage() {
   const [busca, setBusca] = useState('');
   const [ultimaData, setUltimaData] = useState('');
   const [valorExcel, setValorExcel] = useState<ValorExcel>('venda');
-
-  const getValorUnitario = (r: EstoqueItem): number => {
-    const campo = valorExcel === 'custo' ? r.valor_unitario : r.preco_venda_unitario;
-    return toNumber(campo);
-  };
 
   const filiaisDisponiveis = useMemo(() => {
     const map = new Map<string, string>();
@@ -199,7 +197,7 @@ export default function EstoqueRetroativoPage() {
         r.marca ?? '',
         r.unidade ?? '',
         Number(toNumber(r.saldo_estoque).toFixed(2)),
-        Number(getValorUnitario(r).toFixed(2)),
+        Number(getValorUnitario(r, valorExcel).toFixed(2)),
       ]);
     });
     const ws = XLSX.utils.aoa_to_sheet(aoa);
@@ -229,103 +227,93 @@ export default function EstoqueRetroativoPage() {
     XLSX.writeFile(wb, `ESTOQUE_PELEGRINI_${dd}.xlsx`);
   };
 
+  const resumo = useMemo(() => {
+    const quantidade = filtered.reduce((total, row) => total + toNumber(row.saldo_estoque), 0);
+    const valor = filtered.reduce(
+      (total, row) => total + toNumber(row.saldo_estoque) * getValorUnitario(row, valorExcel),
+      0,
+    );
+    const filiais = new Set(filtered.map(getFilialKey).filter(key => key !== '|')).size;
+    return { quantidade, valor, filiais };
+  }, [filtered, valorExcel]);
+
   return (
-    <div className="p-6 space-y-6 max-w-[1600px] mx-auto">
-      <div>
-        <h1 className="text-2xl font-bold">Estoque Retroativo</h1>
-        <p className="text-sm text-muted-foreground">
-          Consulta de saldo de estoque em uma data específica.
-          {codEmpresaBi && (
-            <span className="ml-1">Empresa ativa: <strong>{codEmpresaBi}</strong></span>
-          )}
-        </p>
-      </div>
-
-      <Card className="p-4">
-        <div className="flex flex-wrap items-end gap-4">
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="data_estoque" className="text-xs">
-              Data do estoque *
-            </Label>
-            <div className="relative">
-              <CalendarDays className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-              <Input
-                id="data_estoque"
-                type="date"
-                value={dataEstoque}
-                onChange={(e) => setDataEstoque(e.target.value)}
-                className="pl-8 w-[180px]"
-              />
-            </div>
-          </div>
-          <Button onClick={consultar} disabled={loading || !dataEstoque}>
-            {loading ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Consultando...
-              </>
-            ) : (
-              <>
-                <Search className="h-4 w-4 mr-2" />
-                Consultar estoque
-              </>
-            )}
-          </Button>
+    <div className="mx-auto w-full min-w-0 max-w-[1600px] space-y-5 px-4 py-5 sm:px-6 lg:py-6">
+      <header className="ml-10 flex flex-col gap-1 sm:ml-0 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h1 className="text-xl font-semibold sm:text-2xl">Estoque Retroativo</h1>
+          <p className="text-sm text-muted-foreground">Consulte o saldo registrado em uma data específica.</p>
         </div>
-      </Card>
+        {codEmpresaBi ? <span className="text-xs text-muted-foreground">Empresa {codEmpresaBi}</span> : null}
+      </header>
 
-      {rows.length > 0 && (
-        <>
-          <Card className="p-4">
-            <div className="flex flex-wrap items-end gap-4">
-              <div className="flex flex-col gap-1.5">
-                <Label className="text-xs">Filial</Label>
-                <Select value={filialFiltro} onValueChange={setFilialFiltro}>
-                  <SelectTrigger className="w-[240px]">
-                    <SelectValue placeholder="Todas as filiais" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="__all__">Todas as filiais</SelectItem>
-                    {filiaisDisponiveis.map((e) => (
-                      <SelectItem key={e.value} value={e.value}>
-                        {e.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            <div className="flex flex-col gap-1.5 flex-1 min-w-[240px]">
-              <Label className="text-xs">Buscar</Label>
-              <Input
-                placeholder="Código, descrição, nº original, fabricante ou marca"
-                value={busca}
-                onChange={(e) => setBusca(e.target.value)}
-              />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <Label className="text-xs">Valor do Excel *</Label>
-              <Select value={valorExcel} onValueChange={(v) => setValorExcel(v as ValorExcel)}>
-                <SelectTrigger className="w-[220px]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="venda">Preço de venda</SelectItem>
-                  <SelectItem value="custo">Custo do fornecedor</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <Button onClick={gerarExcel} variant="default">
-              <FileSpreadsheet className="h-4 w-4 mr-2" />
-              Gerar Excel
-            </Button>
+      <section aria-label="Consulta retroativa" className="flex flex-col gap-3 rounded-md border bg-card p-3 sm:flex-row sm:items-end">
+        <div className="w-full sm:w-auto">
+          <Label htmlFor="data_estoque" className="text-xs">Data do estoque</Label>
+          <div className="relative mt-1.5">
+            <CalendarDays className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input id="data_estoque" type="date" value={dataEstoque} onChange={event => setDataEstoque(event.target.value)} className="w-full pl-9 sm:w-48" />
           </div>
-            <div className="mt-3 text-xs text-muted-foreground">
-              {filtered.length} de {rows.length} itens
-            </div>
-          </Card>
+        </div>
+        <Button onClick={consultar} disabled={loading || !dataEstoque} className="gap-2 sm:w-auto">
+          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+          {loading ? 'Consultando' : 'Consultar'}
+        </Button>
+      </section>
+
+      {!ultimaData ? (
+        <div className="flex min-h-32 items-center justify-center rounded-md border border-dashed px-4 text-center text-sm text-muted-foreground">
+          Selecione uma data para consultar a posição do estoque.
+        </div>
+      ) : rows.length === 0 ? (
+        <div className="flex min-h-32 items-center justify-center rounded-md border border-dashed px-4 text-center text-sm text-muted-foreground">
+          Nenhum item encontrado para a data consultada.
+        </div>
+      ) : (
+        <>
+          <section aria-label="Resumo da consulta" className="grid grid-cols-2 gap-2 lg:grid-cols-4">
+            {[
+              { icon: Package, label: 'Produtos', value: `${filtered.length} ${filtered.length === 1 ? 'produto' : 'produtos'}` },
+              { icon: Boxes, label: 'Saldo total', value: resumo.quantidade.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) },
+              { icon: CircleDollarSign, label: valorExcel === 'venda' ? 'Valor de venda' : 'Valor de custo', value: resumo.valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) },
+              { icon: Building2, label: 'Filiais', value: resumo.filiais.toLocaleString('pt-BR') },
+            ].map(item => (
+              <div key={item.label} className="flex min-h-20 items-center gap-3 rounded-md border bg-card p-3">
+                <item.icon className="h-4 w-4 shrink-0 text-primary" />
+                <div className="min-w-0"><p className="text-xs text-muted-foreground">{item.label}</p><p className="mt-1 truncate text-sm font-semibold tabular-nums sm:text-base">{item.value}</p></div>
+              </div>
+            ))}
+          </section>
+
+          <section aria-label="Filtros dos resultados" className="grid gap-2 rounded-md border bg-card p-3 sm:grid-cols-2 xl:grid-cols-[220px_minmax(260px,1fr)_220px_auto]">
+            <Select value={filialFiltro} onValueChange={setFilialFiltro}>
+              <SelectTrigger aria-label="Filial"><SelectValue placeholder="Todas as filiais" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__all__">Todas as filiais</SelectItem>
+                {filiaisDisponiveis.map(item => <SelectItem key={item.value} value={item.value}>{item.label}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <Input type="search" aria-label="Buscar nos resultados" placeholder="Buscar código, descrição ou marca" value={busca} onChange={event => setBusca(event.target.value)} />
+            <Select value={valorExcel} onValueChange={value => setValorExcel(value as ValorExcel)}>
+              <SelectTrigger aria-label="Base de valor"><SelectValue /></SelectTrigger>
+              <SelectContent><SelectItem value="venda">Preço de venda</SelectItem><SelectItem value="custo">Custo do fornecedor</SelectItem></SelectContent>
+            </Select>
+            <Button onClick={gerarExcel} variant="outline" className="gap-2"><FileSpreadsheet className="h-4 w-4" /> Exportar</Button>
+          </section>
 
           <Card className="overflow-hidden">
-            <div className="max-h-[65vh] overflow-auto">
+            <div className="divide-y md:hidden">
+              {filtered.slice(0, 500).map((row, index) => (
+                <article key={`${getFilialKey(row)}-${row.cod_produto}-${index}`} className="space-y-3 p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0"><p className="truncate text-sm font-semibold">{row.descricao || 'Produto sem descrição'}</p><p className="mt-0.5 text-xs text-muted-foreground">{pad7(row.cod_produto)} · {row.marca || 'Sem marca'}</p></div>
+                    <span className="shrink-0 text-sm font-semibold tabular-nums">{toNumber(row.saldo_estoque).toLocaleString('pt-BR', { maximumFractionDigits: 2 })}</span>
+                  </div>
+                  <div className="flex items-center justify-between gap-3 text-xs text-muted-foreground"><span className="truncate">{getFilialLabel(row)}</span><span className="whitespace-nowrap font-medium text-foreground tabular-nums">{getValorUnitario(row, valorExcel).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span></div>
+                </article>
+              ))}
+            </div>
+            <div className="hidden max-h-[65vh] overflow-auto md:block">
               <Table>
                 <TableHeader className="sticky top-0 bg-background z-10">
                   <TableRow>
@@ -342,7 +330,7 @@ export default function EstoqueRetroativoPage() {
                 </TableHeader>
                 <TableBody>
                   {filtered.slice(0, 500).map((r, i) => (
-                    <TableRow key={i}>
+                    <TableRow key={`${getFilialKey(r)}-${r.cod_produto}-${i}`}>
                       <TableCell className="font-mono text-xs">{pad7(r.cod_produto)}</TableCell>
                       <TableCell className="max-w-[320px] truncate">{r.descricao}</TableCell>
                       <TableCell className="text-xs">{r.numero_original}</TableCell>
@@ -355,8 +343,8 @@ export default function EstoqueRetroativoPage() {
                           maximumFractionDigits: 2,
                         })}
                       </TableCell>
-                      <TableCell className="text-right tabular-nums">
-                        {toNumber(r.valor_unitario).toLocaleString('pt-BR', {
+                      <TableCell className="whitespace-nowrap text-right tabular-nums">
+                        {getValorUnitario(r, valorExcel).toLocaleString('pt-BR', {
                           minimumFractionDigits: 2,
                           maximumFractionDigits: 2,
                         })}
@@ -366,12 +354,8 @@ export default function EstoqueRetroativoPage() {
                   ))}
                 </TableBody>
               </Table>
-              {filtered.length > 500 && (
-                <div className="p-3 text-xs text-muted-foreground text-center border-t">
-                  Exibindo os primeiros 500 registros. Use os filtros ou exporte para Excel para ver todos.
-                </div>
-              )}
             </div>
+            {filtered.length > 500 ? <div className="border-t p-3 text-center text-xs text-muted-foreground">Exibindo os primeiros 500 registros. Refine os filtros ou exporte para consultar todos.</div> : null}
           </Card>
         </>
       )}

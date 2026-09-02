@@ -45,7 +45,12 @@ export function PelegriniBranchSwitcher({ className, variant = 'header' }: Peleg
             style={{ '--branch-switch-color': theme.accent } as CSSProperties}
             type="button"
           >
-            <img alt="" aria-hidden="true" src={theme.logoSrc} />
+            <img
+              alt=""
+              aria-hidden="true"
+              className={cn(theme.key === 'chevrolet' && 'pelegrini-chevrolet-logo')}
+              src={theme.logoSrc}
+            />
             <span>{theme.shortName}</span>
             {item.blocked ? <Lock aria-hidden="true" /> : active ? <Check aria-hidden="true" /> : null}
           </button>

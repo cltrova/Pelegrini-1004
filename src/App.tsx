@@ -39,6 +39,7 @@ import AgentesPage from "./pages/whatsapp/AgentesPage";
 import ConfiguracoesPage from "./pages/ConfiguracoesPage";
 import UsuariosPage from "./pages/configuracoes/UsuariosPage";
 import EmpresasPage from "./pages/configuracoes/EmpresasPage";
+import EstoqueAssistantSettingsPage from "./pages/configuracoes/EstoqueAssistantSettingsPage";
 import HomePage from "./pages/HomePage";
 import NotFound from "./pages/NotFound";
 
@@ -257,6 +258,7 @@ const App = () => (
                 </RequireRole>
               } />
               <Route path="/configuracoes/usuarios" element={<UsuariosPage />} />
+              <Route path="/configuracoes/assistente-estoque" element={<EstoqueAssistantSettingsPage />} />
               <Route path="/configuracoes/empresas" element={
                 <RequireRole allowedRoles={['master']}>
                   <EmpresasPage />

@@ -153,7 +153,12 @@ describe('EstoquePage', () => {
 
     expect(within(table).queryByText('KIT EMBREAGEM PESADA')).not.toBeInTheDocument();
     expect(within(table).getByText('BOMBA D AGUA')).toBeInTheDocument();
-    expect(screen.getByText('Distribuição de Status')).toBeInTheDocument();
+    expect(screen.queryByText('Movimentação mensal')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /Abrir analise de giro/i }));
+    expect(screen.getByRole('dialog', { name: 'Analise de giro' })).toBeInTheDocument();
+    expect(screen.getByText('Movimentação mensal')).toBeInTheDocument();
+    expect(screen.getByText('Maior giro')).toBeInTheDocument();
+    expect(screen.getByText('Mais tempo sem venda')).toBeInTheDocument();
     expect(screen.getByText('6 meses')).toBeInTheDocument();
   });
 
@@ -163,9 +168,13 @@ describe('EstoquePage', () => {
     fireEvent.click(screen.getByRole('tab', { name: 'Assistente' }));
 
     expect(await screen.findByText('Assistente de Estoque')).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Assistente de estoque' })).toBeInTheDocument();
     expect(screen.getByPlaceholderText('Pergunte sobre seu estoque...')).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: 'Insights' })).toBeInTheDocument();
-    expect(screen.getByRole('tab', { name: 'Cérebro' })).toBeInTheDocument();
+    expect(screen.queryByRole('tab', { name: 'Cérebro' })).not.toBeInTheDocument();
+    expect(screen.queryByText('Qual produto gira mais?')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Mostrar sugestoes' }));
+    expect(screen.getByText('Qual produto gira mais?')).toBeInTheDocument();
   });
 
   it('preserva o guard de carregamento', () => {

@@ -13,6 +13,7 @@ import {
   Layers,
   Activity,
   ShieldCheck,
+  Bot,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -298,9 +299,9 @@ function ConfiguracoesPageContent() {
                 Módulos ativos e prontos para uso
               </p>
             </div>
-            <span className="text-xs text-muted-foreground tabular-nums">2 módulos</span>
+            <span className="text-xs text-muted-foreground tabular-nums">3 módulos</span>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
             <ActiveModuleCard
               icon={Building2}
               title="Gestão de Empresas"
@@ -315,6 +316,14 @@ function ConfiguracoesPageContent() {
               description="Controle usuários, funções, papéis e níveis de acesso ao sistema."
               metric={`${totalUsuarios} usuários ativos`}
               onClick={() => navigate('/configuracoes/usuarios')}
+              disabled={!isMaster}
+            />
+            <ActiveModuleCard
+              icon={Bot}
+              title="Assistente de Estoque"
+              description="Personalize as instruções usadas pelo Chat e pelos Insights de estoque."
+              metric="Configuração por empresa"
+              onClick={() => navigate('/configuracoes/assistente-estoque')}
               disabled={!isMaster}
             />
           </div>

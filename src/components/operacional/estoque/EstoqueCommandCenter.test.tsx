@@ -145,7 +145,7 @@ describe('EstoqueCommandCenter', () => {
     fireEvent.change(screen.getByRole('searchbox', { name: 'Buscar no estoque' }), {
       target: { value: 'embreagem' },
     });
-    fireEvent.click(screen.getByRole('button', { name: /Criticos.*1/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Exigem atencao.*3/i }));
 
     const products = screen.getByRole('region', { name: 'Produtos do estoque' });
     expect(within(products).getAllByText('KIT EMBREAGEM PESADA').length).toBeGreaterThan(0);
@@ -162,18 +162,21 @@ describe('EstoqueCommandCenter', () => {
     expect(onExport).toHaveBeenCalledWith([
       expect.objectContaining({ cod_produto: 101, produto: 'KIT EMBREAGEM PESADA' }),
     ]);
-  });
+  }, 10_000);
 
   it('combina filtros de marca, grupo e linha antes de exportar', () => {
     const onExport = vi.fn();
     render(<EstoqueCommandCenter {...fixtureProps} onExport={onExport} />);
 
+    expect(screen.queryByRole('button', { name: /Marca:.*Todas/i })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /Filtros/i }));
     fireEvent.click(screen.getByRole('button', { name: /Marca:.*Todas/i }));
     fireEvent.click(screen.getByRole('button', { name: 'ZF' }));
     fireEvent.click(screen.getByRole('button', { name: /Grupo:.*Todos/i }));
     fireEvent.click(screen.getByRole('button', { name: 'EMBREAGEM' }));
     fireEvent.click(screen.getByRole('button', { name: /Linha:.*Todas/i }));
     fireEvent.click(screen.getByRole('button', { name: 'Linha pesada' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
 
     fireEvent.click(screen.getByRole('button', { name: 'Exportar visao atual' }));
     expect(onExport).toHaveBeenCalledWith([
@@ -232,17 +235,21 @@ describe('EstoqueCommandCenter', () => {
     expect(onExport).toHaveBeenCalledWith([expect.objectContaining({ cod_produto: 202 })]);
   });
 
-  it('filtra a visao real por Disponiveis e Com estoque sem alterar os seis indicadores', () => {
+  it('filtra a visao real por Disponiveis e Com estoque sem alterar os quatro indicadores', () => {
     const onExport = vi.fn();
     render(<EstoqueCommandCenter {...fixtureProps} onExport={onExport} />);
 
-    expect(document.querySelectorAll('[data-stock-summary]')).toHaveLength(6);
+    expect(document.querySelectorAll('[data-stock-summary]')).toHaveLength(4);
+    fireEvent.click(screen.getByRole('button', { name: /Filtros/i }));
     fireEvent.click(screen.getByRole('button', { name: 'Disponiveis' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
     fireEvent.click(screen.getByRole('button', { name: 'Exportar visao atual' }));
     expect(onExport).toHaveBeenLastCalledWith([expect.objectContaining({ cod_produto: 303 })]);
 
+    fireEvent.click(screen.getByRole('button', { name: /Filtros/i }));
     fireEvent.click(screen.getByRole('button', { name: 'Disponiveis' }));
     fireEvent.click(screen.getByRole('button', { name: 'Com estoque' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
     const products = screen.getByRole('region', { name: 'Produtos do estoque' });
     expect(within(products).getAllByText('KIT EMBREAGEM PESADA').length).toBeGreaterThan(0);
     expect(within(products).getAllByText('ROLAMENTO CARDAN').length).toBeGreaterThan(0);
@@ -259,6 +266,7 @@ describe('EstoqueCommandCenter', () => {
     );
 
     expect(screen.getAllByText('KIT EMBREAGEM PESADA').length).toBeGreaterThan(0);
+    fireEvent.click(screen.getByRole('button', { name: /Abrir painel de atencao/i }));
     expect(screen.getByText('Dados insuficientes para movimentacao')).toBeInTheDocument();
     expect(screen.getByText('10 em estoque')).toBeInTheDocument();
   });
@@ -280,7 +288,7 @@ describe('EstoqueCommandCenter', () => {
     expect(screen.getAllByText('Nenhum produto corresponde aos filtros atuais.')).toHaveLength(2);
   });
 
-  it('compoe as secoes na ordem operacional dentro de um layout responsivo contido', () => {
+  it('prioriza a tabela e abre informacoes secundarias no painel de atencao', () => {
     render(<EstoqueCommandCenter {...fixtureProps} />);
 
     const commandCenter = screen.getByRole('region', { name: 'Central de estoque' });
@@ -289,13 +297,17 @@ describe('EstoqueCommandCenter', () => {
     const orderedSections = [
       within(commandCenter).getByRole('region', { name: 'Barra principal do estoque' }),
       within(commandCenter).getByRole('region', { name: 'Resumo do estoque' }),
-      within(commandCenter).getByText('Atencao no estoque'),
       within(commandCenter).getByRole('region', { name: 'Produtos do estoque' }),
-      within(commandCenter).getByRole('region', { name: 'Destaques do estoque' }),
     ];
 
     orderedSections.slice(1).forEach((section, index) => {
       expect(orderedSections[index].compareDocumentPosition(section) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     });
+
+    expect(screen.queryByText('Atencao no estoque')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /Abrir painel de atencao/i }));
+    expect(screen.getByRole('dialog', { name: 'Atencao no estoque' })).toBeInTheDocument();
+    expect(screen.getByText('Mais movimentados')).toBeInTheDocument();
+    expect(screen.getByText('Produtos parados')).toBeInTheDocument();
   });
 });

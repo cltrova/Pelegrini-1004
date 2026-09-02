@@ -158,9 +158,11 @@ export function PelegriniModuleSidebar({
         } as CSSProperties}
       >
         <div className="sidebar-brand-row relative flex h-[72px] shrink-0 items-center border-b border-sidebar-border px-3">
-          <div className="sidebar-brand-compact" data-testid="sidebar-brand-compact">
-            <PelegriniBrandMark theme={theme} compact tone="sidebar" />
-          </div>
+          {theme.key !== 'chevrolet' && (
+            <div className="sidebar-brand-compact" data-testid="sidebar-brand-compact">
+              <PelegriniBrandMark theme={theme} compact tone="sidebar" />
+            </div>
+          )}
           <div className="sidebar-brand-expanded">
             <PelegriniBrandMark theme={theme} tone="sidebar" />
           </div>

@@ -72,7 +72,6 @@ const defaultColumns: StockColumnKey[] = [
   'brand',
   'group',
   'quantity',
-  'minimum',
   'lastMovement',
   'status',
 ];
@@ -276,15 +275,15 @@ export function EstoqueProductsTable({
   };
 
   return (
-    <section aria-label="Produtos do estoque" className="min-w-0 max-w-full overflow-hidden border border-border bg-card">
-      <div className="flex min-w-0 flex-wrap items-center justify-between gap-2 border-b border-border bg-muted/20 px-3 py-2">
+    <section aria-label="Produtos do estoque" className="min-w-0 max-w-full overflow-hidden border border-border/80 bg-background">
+      <div className="flex min-w-0 flex-wrap items-center justify-between gap-2 border-b border-border/80 px-3 py-1.5">
         <p className="min-w-0 text-sm text-muted-foreground">
           <span className="font-semibold tabular-nums text-foreground">{products.length}</span>{' '}
           {products.length === 1 ? 'produto' : 'produtos'}
         </p>
         <div className="flex min-w-0 flex-wrap items-center justify-end gap-2">
           <Select value={sortMode} onValueChange={(value) => onSortChange(value as StockSortMode)}>
-            <SelectTrigger aria-label="Ordenar produtos" className="h-9 w-[12.5rem] max-w-full bg-background">
+            <SelectTrigger aria-label="Ordenar produtos" className="h-8 w-[11.5rem] max-w-full bg-background text-xs">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -298,7 +297,7 @@ export function EstoqueProductsTable({
             <DropdownMenuTrigger asChild>
               <Button
                 aria-label="Escolher colunas"
-                className="h-9 gap-2"
+                className="h-8 gap-2 text-xs"
                 onClick={() => {
                   if (!columnsMenuOpen) setColumnsMenuOpen(true);
                 }}
@@ -334,14 +333,14 @@ export function EstoqueProductsTable({
         {products.length === 0 ? (
           <p className="px-4 py-10 text-center text-sm text-muted-foreground">{emptyMessage}</p>
         ) : (
-          <div className="max-h-[36rem] min-w-max overflow-y-auto">
+          <div className="max-h-[calc(100vh-20rem)] min-h-[18rem] min-w-max overflow-y-auto">
             <table className="w-full text-left text-sm">
               <thead aria-label="Cabecalho da tabela" className="sticky top-0 z-10 bg-muted">
                 <tr className="border-b border-border">
                   {selectedColumns.map((column) => (
                     <th
                       className={cn(
-                        'whitespace-nowrap px-3 py-2.5 text-xs font-semibold text-muted-foreground',
+                        'whitespace-nowrap px-3 py-2 text-[11px] font-semibold uppercase text-muted-foreground',
                         column.numeric && 'text-right',
                         column.key === 'product' && 'min-w-[18rem]',
                       )}
@@ -359,7 +358,7 @@ export function EstoqueProductsTable({
                     {selectedColumns.map((column) => (
                       <td
                         className={cn(
-                          'max-w-[18rem] px-3 py-2.5 align-middle text-foreground',
+                          'h-11 max-w-[18rem] px-3 py-1.5 align-middle text-foreground',
                           column.numeric && 'text-right',
                         )}
                         key={column.key}

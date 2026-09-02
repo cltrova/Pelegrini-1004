@@ -39,36 +39,45 @@ const insightsFixture: StockProductInsight[] = [
 ];
 
 describe('EstoqueSummaryCards', () => {
-  it('mantem seis indicadores responsivos e valores contidos', () => {
+  it('mantem quatro indicadores compactos e valores contidos', () => {
     const { container } = render(
       <EstoqueSummaryCards products={insightsFixture} activeFilter="all" onFilterChange={vi.fn()} />,
     );
 
     const grid = screen.getByLabelText('Resumo do estoque');
-    expect(grid).toHaveClass('grid-cols-2', 'lg:grid-cols-3', 'xl:grid-cols-6', 'min-w-0');
-    expect(container.querySelectorAll('[data-stock-summary]')).toHaveLength(6);
+    expect(grid).toHaveClass('grid-cols-2', 'lg:grid-cols-4', 'min-w-0');
+    expect(container.querySelectorAll('[data-stock-summary]')).toHaveLength(4);
     container.querySelectorAll('[data-stock-summary]').forEach((card) => {
       expect(card).toHaveClass('min-w-0');
     });
   });
 
-  it('aplica e remove um filtro rapido pelo mesmo indicador', () => {
+  it('aplica e remove o filtro de atencao pelo mesmo indicador', () => {
     const onFilterChange = vi.fn();
     const { rerender } = render(
       <EstoqueSummaryCards products={insightsFixture} activeFilter="all" onFilterChange={onFilterChange} />,
     );
 
-    const critical = screen.getByRole('button', { name: /Criticos.*1/i });
-    expect(critical).toHaveAttribute('aria-pressed', 'false');
-    fireEvent.click(critical);
-    expect(onFilterChange).toHaveBeenLastCalledWith('critical');
+    const attention = screen.getByRole('button', { name: /Exigem atencao.*4/i });
+    expect(attention).toHaveAttribute('aria-pressed', 'false');
+    fireEvent.click(attention);
+    expect(onFilterChange).toHaveBeenLastCalledWith('attention');
 
     rerender(
-      <EstoqueSummaryCards products={insightsFixture} activeFilter="critical" onFilterChange={onFilterChange} />,
+      <EstoqueSummaryCards products={insightsFixture} activeFilter="attention" onFilterChange={onFilterChange} />,
     );
-    expect(screen.getByRole('button', { name: /Criticos.*1/i })).toHaveAttribute('aria-pressed', 'true');
-    fireEvent.click(screen.getByRole('button', { name: /Criticos.*1/i }));
+    expect(screen.getByRole('button', { name: /Exigem atencao.*4/i })).toHaveAttribute('aria-pressed', 'true');
+    fireEvent.click(screen.getByRole('button', { name: /Exigem atencao.*4/i }));
     expect(onFilterChange).toHaveBeenLastCalledWith('all');
+  });
+
+  it('agrupa criticos, estoque baixo e parados no indicador de atencao', () => {
+    const onFilterChange = vi.fn();
+    render(<EstoqueSummaryCards products={insightsFixture} activeFilter="all" onFilterChange={onFilterChange} />);
+
+    const attention = screen.getByRole('button', { name: /Exigem atencao.*4/i });
+    fireEvent.click(attention);
+    expect(onFilterChange).toHaveBeenCalledWith('attention');
   });
 
   it('mantem valor estimado informativo sem aplicar filtro', () => {
@@ -176,6 +185,7 @@ describe('EstoqueSmartFilters', () => {
       />,
     );
 
+    fireEvent.click(screen.getByRole('button', { name: 'Filtros' }));
     fireEvent.click(screen.getByRole('button', { name: /Marca:.*Todas/i }));
     fireEvent.click(screen.getByRole('button', { name: 'ZF' }));
     expect(onBrandsChange).toHaveBeenCalledWith(['ZF']);
@@ -198,6 +208,7 @@ describe('EstoqueSmartFilters', () => {
       />,
     );
 
+    fireEvent.click(screen.getByRole('button', { name: 'Filtros' }));
     const available = screen.getByRole('button', { name: 'Disponiveis' });
     const withStock = screen.getByRole('button', { name: 'Com estoque' });
     expect(available).toHaveAttribute('aria-pressed', 'false');
@@ -247,6 +258,7 @@ describe('EstoqueSmartFilters', () => {
     expect(onQuickFilterChange).toHaveBeenCalledWith('all');
     expect(onBrandsChange).toHaveBeenCalledWith([]);
 
+    fireEvent.click(screen.getByRole('button', { name: /Filtros, 4 ativos/i }));
     fireEvent.click(screen.getByRole('button', { name: 'Limpar todos os filtros' }));
     expect(onClearAll).toHaveBeenCalledTimes(1);
   });

@@ -2,6 +2,8 @@ import { render, screen, within } from '@testing-library/react';
 import { LayoutDashboard, Package } from 'lucide-react';
 import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { resolvePelegriniTheme } from '@/config/pelegriniTheme';
 import { PelegriniModuleSidebar } from './PelegriniModuleSidebar';
 
@@ -10,14 +12,20 @@ const items = [
   { label: 'Produtos', path: '/comercial/produtos', icon: Package },
 ];
 
-function renderSidebar({ withFutureItem = false } = {}) {
+function renderSidebar({
+  withFutureItem = false,
+  branch = 'transmissao',
+}: {
+  withFutureItem?: boolean;
+  branch?: 'transmissao' | 'chevrolet';
+} = {}) {
   return render(
     <MemoryRouter
       initialEntries={['/comercial/dashboard']}
       future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
     >
       <PelegriniModuleSidebar
-        theme={resolvePelegriniTheme('transmissao')}
+        theme={resolvePelegriniTheme(branch)}
         items={items}
         futureItems={withFutureItem ? [{ ...items[1], label: 'Em análise', disabled: true }] : undefined}
         mobileOpen={false}
@@ -40,6 +48,36 @@ describe('PelegriniModuleSidebar', () => {
     const compactBrand = screen.getByTestId('sidebar-brand-compact');
     expect(compactBrand).toBeInTheDocument();
     expect(within(compactBrand).getByRole('img', { name: 'Logo Casa da Transmissão' })).toBeInTheDocument();
+  });
+
+  it('keeps the Chevrolet brand empty while the sidebar is collapsed', () => {
+    renderSidebar({ branch: 'chevrolet' });
+
+    expect(screen.queryByTestId('sidebar-brand-compact')).not.toBeInTheDocument();
+    expect(screen.getByRole('img', { name: 'Logo Casa do Chevrolet' })).toBeInTheDocument();
+  });
+
+  it('swaps the sidebar brands only after the width transition has settled', () => {
+    const css = readFileSync(join(process.cwd(), 'src', 'index.css'), 'utf8');
+
+    expect(css).toContain('.pelegrini-sidebar-collapsible .sidebar-brand-expanded');
+    expect(css).toContain('transition-delay: 210ms');
+    expect(css).not.toContain('focus-within .sidebar-brand-compact {\n      display: none;');
+  });
+
+  it('anchors each logo to the center of its final sidebar width', () => {
+    renderSidebar();
+
+    const compactBrand = screen.getByTestId('sidebar-brand-compact');
+    const expandedBrand = compactBrand.nextElementSibling as HTMLElement;
+
+    expect(within(compactBrand).getByRole('img')).toHaveClass('max-w-12');
+    expect(within(expandedBrand).getByRole('img')).toHaveClass('max-w-24');
+
+    const css = readFileSync(join(process.cwd(), 'src', 'index.css'), 'utf8');
+    expect(css).toContain('left: 36px');
+    expect(css).toContain('left: 124px');
+    expect(css).toContain('translate(-50%, -50%)');
   });
 
   it('wraps every navigation label and the home label explicitly', () => {

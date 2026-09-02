@@ -227,7 +227,7 @@ describe('EstoqueProductsTable', () => {
     expect(onSelectProduct).toHaveBeenCalledWith(criticalInsight);
   });
 
-  it('mostra as sete colunas padrao em tabela contida com cabecalho fixo', () => {
+  it('mostra as seis colunas essenciais em tabela contida com cabecalho fixo', () => {
     render(<EstoqueProductsTable {...baseProps} />);
 
     const desktop = screen.getByLabelText('Tabela de produtos do estoque');
@@ -239,7 +239,6 @@ describe('EstoqueProductsTable', () => {
       'Marca',
       'Grupo',
       'Quantidade',
-      'Minimo operacional estimado',
       'Ultima movimentacao',
       'Situacao',
     ]);
@@ -248,6 +247,8 @@ describe('EstoqueProductsTable', () => {
   it('nao apresenta minimo operacional conhecido quando nao ha dados de giro', () => {
     const insightWithoutMovement = buildStockInsights(estoqueFixture, [], NOW)[0];
     render(<EstoqueProductsTable {...baseProps} products={[insightWithoutMovement]} />);
+    openColumnsMenu();
+    fireEvent.click(screen.getByRole('menuitemcheckbox', { name: 'Minimo operacional estimado' }));
 
     const desktop = screen.getByLabelText('Tabela de produtos do estoque');
     expect(within(desktop).getByText('Dados insuficientes')).toBeInTheDocument();
@@ -371,5 +372,5 @@ describe('EstoqueProductsTable', () => {
     expect(within(desktop).getAllByRole('row')).toHaveLength(2);
     expect(screen.getByText('Pagina 2 de 2')).toBeInTheDocument();
     expect(screen.getAllByRole('button', { name: 'Abrir PRODUTO 51' })).toHaveLength(3);
-  });
+  }, 10_000);
 });

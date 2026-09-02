@@ -2,8 +2,6 @@ import {
   CircleDollarSign,
   CircleOff,
   Package,
-  PauseCircle,
-  Siren,
   TriangleAlert,
   type LucideIcon,
 } from 'lucide-react';
@@ -56,20 +54,6 @@ export function EstoqueSummaryCards({
       tone: 'neutral',
     },
     {
-      key: 'critical',
-      label: 'Criticos',
-      value: products.filter((item) => item.status === 'critical').length.toLocaleString('pt-BR'),
-      icon: Siren,
-      tone: 'danger',
-    },
-    {
-      key: 'low',
-      label: 'Estoque baixo',
-      value: products.filter((item) => item.status === 'low').length.toLocaleString('pt-BR'),
-      icon: TriangleAlert,
-      tone: 'attention',
-    },
-    {
       key: 'out',
       label: 'Sem estoque',
       value: products.filter((item) => item.status === 'out').length.toLocaleString('pt-BR'),
@@ -77,10 +61,15 @@ export function EstoqueSummaryCards({
       tone: 'danger',
     },
     {
-      key: 'stagnant',
-      label: 'Parados',
-      value: products.filter((item) => item.stagnantDays > 90).length.toLocaleString('pt-BR'),
-      icon: PauseCircle,
+      key: 'attention',
+      label: 'Exigem atencao',
+      value: products.filter((item) => (
+        item.status === 'out' ||
+        item.status === 'critical' ||
+        item.status === 'low' ||
+        item.stagnantDays > 90
+      )).length.toLocaleString('pt-BR'),
+      icon: TriangleAlert,
       tone: 'attention',
     },
   ];
@@ -88,34 +77,26 @@ export function EstoqueSummaryCards({
   return (
     <section
       aria-label="Resumo do estoque"
-      className="grid min-w-0 grid-cols-2 gap-3 lg:grid-cols-3 xl:grid-cols-6"
+      className="grid min-w-0 grid-cols-2 border-y border-border/70 bg-muted/10 lg:grid-cols-4"
     >
       {summaries.map((summary) => {
         const Icon = summary.icon;
         const active = summary.key !== 'value' && activeFilter === summary.key;
         const content = (
           <>
-            <span
-              aria-hidden="true"
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-current/20 bg-background/70"
-            >
+            <span aria-hidden="true" className="hidden h-8 w-8 shrink-0 items-center justify-center text-muted-foreground sm:flex">
               <Icon className="h-4 w-4" />
             </span>
             <span className="min-w-0 flex-1">
-              <span className="block break-words text-[11px] font-semibold uppercase text-muted-foreground">
+              <span className="block truncate text-[10px] font-semibold uppercase text-muted-foreground">
                 {summary.label}
               </span>
               <PelegriniResponsiveValue
-                className="mt-1 block min-w-0 break-words font-semibold tabular-nums text-foreground"
+                className="block min-w-0 whitespace-nowrap font-semibold tabular-nums text-foreground"
                 size="sm"
               >
                 {summary.value}
               </PelegriniResponsiveValue>
-              {active && (
-                <span className="mt-1 block text-[10px] font-semibold uppercase text-foreground">
-                  Filtro ativo
-                </span>
-              )}
             </span>
             <span
               aria-hidden="true"
@@ -124,11 +105,12 @@ export function EstoqueSummaryCards({
           </>
         );
         const className = cn(
-          'relative flex min-h-24 min-w-0 max-w-full items-start gap-3 overflow-hidden rounded-lg border bg-card p-3 text-left',
+          'relative flex min-h-16 min-w-0 max-w-full items-center gap-2 overflow-hidden px-3 py-2 text-left',
           'transition-[border-color,background-color] duration-150',
           active
-            ? 'border-[color:var(--pelegrini-accent,hsl(var(--primary)))] bg-muted/40 ring-1 ring-[color:var(--pelegrini-accent,hsl(var(--primary)))]'
-            : 'border-border',
+            ? 'bg-primary/[0.07] text-primary'
+            : 'text-foreground',
+          'border-r border-border/70 last:border-r-0 even:border-r-0 lg:even:border-r lg:last:border-r-0',
         );
 
         if (summary.key === 'value') {

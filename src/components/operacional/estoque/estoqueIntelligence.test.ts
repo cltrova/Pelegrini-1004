@@ -151,6 +151,16 @@ describe('stock intelligence', () => {
     ]);
   });
 
+  it('agrupa rupturas, criticos, baixos e parados no filtro de atencao', () => {
+    const insights = buildStockInsights(estoqueFixtureComTresItens, giroFixture, NOW);
+
+    expect(filterStockInsights(insights, { search: '', quickFilter: 'attention' }).map((item) => item.cod_produto)).toEqual([
+      101,
+      202,
+      303,
+    ]);
+  });
+
   it('reconstroi o saldo anterior desfazendo entrada e saida', () => {
     const insight = buildStockInsights(estoqueFixture, giroEvolucaoFixture, NOW)[0];
 

@@ -55,7 +55,7 @@ export const FILIAIS_POR_EMPRESA: Record<string, FilialConfig[]> = {
     {
       id: 'chevrolet',
       nome: 'Casa da Chevrolet',
-      logoSrc: '/brand/casa-chevrolet.png',
+      logoSrc: '/brand/casa-chevrolet-wordmark.png',
       logoAlt: 'Logo Casa da Chevrolet',
       matchFilial: ['CH', 'CASA DA CHEVROLET', 'CHEVROLET'],
       equipePadrao: EQUIPE_CHEVROLET_PELEGRINI,
@@ -65,7 +65,7 @@ export const FILIAIS_POR_EMPRESA: Record<string, FilialConfig[]> = {
     {
       id: 'chevrolet',
       nome: 'Casa da Chevrolet',
-      logoSrc: '/brand/casa-chevrolet.png',
+      logoSrc: '/brand/casa-chevrolet-wordmark.png',
       logoAlt: 'Logo Casa da Chevrolet',
       matchFilial: ['CH', 'CCH', 'CASA DA CHEVROLET', 'CHEVROLET'],
       equipePadrao: EQUIPE_CHEVROLET_PELEGRINI,

@@ -66,7 +66,7 @@ const branchPresentation: Record<HomeBranch, {
   chevrolet: {
     name: 'Casa do Chevrolet',
     subtitle: 'Peças originais, agilidade e confiança desde 1992',
-    logo: '/brand/home/chevrolet.png',
+    logo: '/brand/casa-chevrolet-wordmark.png',
     blueprint: '/brand/home/blueprint-chevrolet.png',
     eyebrow: 'Central Casa do Chevrolet',
     title: 'Sua operação Chevrolet em um só lugar',
@@ -101,8 +101,11 @@ function LayeredBrandLogo({ branch, className = '' }: { branch: HomeBranch; clas
   const presentation = branchPresentation[branch];
   return (
     <span className={`pelegrini-home-logo-stack ${branch} ${className}`}>
-      <img src={presentation.logo} alt={presentation.name} />
-      {branch === 'chevrolet' && <img src={presentation.logo} alt="" aria-hidden="true" className="pelegrini-home-logo-overlay" />}
+      <img
+        src={presentation.logo}
+        alt={presentation.name}
+        className={branch === 'chevrolet' ? 'pelegrini-chevrolet-logo' : undefined}
+      />
     </span>
   );
 }

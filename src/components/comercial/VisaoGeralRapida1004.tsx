@@ -219,7 +219,6 @@ export function VisaoGeralRapida1004({
       ? Number(kpisGerais.totalFaturado || 0) || 1
       : dadosPorVendedor.reduce((a, v) => a + v.mes, 0) || 1;
     return dadosPorVendedor
-      .filter(v => v.mes > 0)
       .map(v => ({ nome: v.nome, valor: v.mes, pct: (v.mes / total) * 100 }));
   }, [dadosPorVendedor, isEmpresaPelegrini, kpisGerais.totalFaturado]);
 
@@ -551,7 +550,7 @@ export function VisaoGeralRapida1004({
                       "font-medium leading-tight",
                       isEmpresa1001 ? "flex-1 min-w-0 break-words" : "truncate"
                     )}>{v.nome}</span>
-                    <span className={cn("font-mono text-right tabular-nums", isEmpresaPelegrini ? 'text-muted-foreground' : 'text-muted-foreground')}>
+                    <span className="font-mono text-right tabular-nums text-foreground">
                       {formatCurrency(v.valor)}
                     </span>
                     <span

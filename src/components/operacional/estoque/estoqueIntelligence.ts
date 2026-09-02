@@ -1,7 +1,7 @@
 import type { EstoqueRecord, GiroRecord } from '@/types/estoque';
 
 export type StockStatus = 'available' | 'low' | 'critical' | 'out';
-export type StockQuickFilter = 'all' | StockStatus | 'stagnant' | 'with-stock';
+export type StockQuickFilter = 'all' | StockStatus | 'stagnant' | 'with-stock' | 'attention';
 export type StockSortMode = 'stock-desc' | 'stock-asc' | 'product' | 'last-movement' | 'brand';
 export type StockMovementTrend = 'increasing' | 'decreasing' | 'stagnant' | 'irregular';
 export type StockPrimaryMovementType = 'sale' | 'withdrawal' | 'purchase' | 'entry';
@@ -267,6 +267,12 @@ export function filterStockInsights(
     const matchesLine = lines.size === 0 || lines.has(item.linha ?? '');
     const matchesQuickFilter =
       filters.quickFilter === 'all' ||
+      (filters.quickFilter === 'attention' && (
+        item.status === 'out' ||
+        item.status === 'critical' ||
+        item.status === 'low' ||
+        item.stagnantDays > 90
+      )) ||
       (filters.quickFilter === 'stagnant' && item.stagnantDays > 90) ||
       (filters.quickFilter === 'with-stock' && item.quantidade_estoque > 0) ||
       item.status === filters.quickFilter;

@@ -6,12 +6,29 @@ import {
   corrigirVendedorAusente1004,
   criarFiltroTotalizadores1004,
   isServicoForaRelatorioChevrolet10041,
+  incluirVendedoresSemReceita1004,
   montarVendedoresElegiveisFiltro1004,
   vendedorMatchesFiltro1004,
   vendedorForcaP1004,
   vendedorNaoComissionavel1004,
   vendedorPertenceRelatorioChevrolet10041,
 } from './vendedores1004';
+
+describe('incluirVendedoresSemReceita1004', () => {
+  it('mantem no ranking vendedores sem faturamento sem duplicar quem ja possui receita', () => {
+    const resultado = incluirVendedoresSemReceita1004(
+      [{ codigo: '10', nome: 'XEXEU', faturamentoMesAtual: 9821, participacao: 12.7 }],
+      [
+        { codigo: '10', nome: 'XEXEU', faturamentoMesAtual: 0, participacao: 0 },
+        { codigo: '99', nome: 'ELIANE', faturamentoMesAtual: 0, participacao: 0 },
+      ],
+    );
+
+    expect(resultado).toHaveLength(2);
+    expect(resultado[0]).toMatchObject({ nome: 'XEXEU', faturamentoMesAtual: 9821 });
+    expect(resultado[1]).toMatchObject({ nome: 'ELIANE', faturamentoMesAtual: 0, participacao: 0 });
+  });
+});
 import {
   vendedorPertenceCampanha1004,
 } from './campanhasVendedores';

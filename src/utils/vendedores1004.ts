@@ -851,3 +851,24 @@ export function montarVendedoresElegiveisFiltro1004<T extends { codigo?: unknown
 
   return Array.from(map.values()).sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
 }
+
+export function incluirVendedoresSemReceita1004<
+  T extends { codigo?: unknown; nome?: unknown; faturamentoMesAtual?: number; participacao?: number },
+>(linhasReceita: T[], vendedoresBase: T[]): T[] {
+  const codigosComReceita = new Set(
+    linhasReceita.map((row) => String(row.codigo ?? '').trim()).filter(Boolean),
+  );
+  const nomesComReceita = new Set(
+    linhasReceita.map((row) => normalizeVendedor1004(row.nome)).filter(Boolean),
+  );
+  const linhasSemReceita = vendedoresBase
+    .filter((row) => {
+      const codigo = String(row.codigo ?? '').trim();
+      const nome = normalizeVendedor1004(row.nome);
+      return (!codigo || !codigosComReceita.has(codigo)) && (!nome || !nomesComReceita.has(nome));
+    })
+    .map((row) => ({ ...row, faturamentoMesAtual: 0, participacao: 0 }));
+
+  return [...linhasReceita, ...linhasSemReceita]
+    .sort((a, b) => Number(b.faturamentoMesAtual ?? 0) - Number(a.faturamentoMesAtual ?? 0));
+}

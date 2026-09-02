@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import type { GiroRecord } from '@/types/estoque';
-import { buildEstoqueFallbackFromGiro } from './useEstoqueData';
+import { buildEstoqueFallbackFromGiro, withEstoqueCompanyCode } from './useEstoqueData';
 
 const giro: GiroRecord = {
   cod_empresa_bi: null as unknown as number,
@@ -68,5 +68,17 @@ describe('buildEstoqueFallbackFromGiro', () => {
 
   it('nao reaproveita dados identificados como CT na Casa do Chevrolet', () => {
     expect(buildEstoqueFallbackFromGiro([giro], '10041')).toEqual([]);
+  });
+});
+
+describe('withEstoqueCompanyCode', () => {
+  it('envia a filial Chevrolet como 10041 sem perder outros filtros', () => {
+    expect(withEstoqueCompanyCode('/operacional/estoque/giro?data_ini=2026-06-01', '10041'))
+      .toBe('/operacional/estoque/giro?data_ini=2026-06-01&cod_empresa_bi=10041');
+  });
+
+  it('substitui um codigo antigo em vez de duplicar o parametro', () => {
+    expect(withEstoqueCompanyCode('/operacional/estoque?cod_empresa_bi=1004&modo=detalhado', '10041'))
+      .toBe('/operacional/estoque?cod_empresa_bi=10041&modo=detalhado');
   });
 });

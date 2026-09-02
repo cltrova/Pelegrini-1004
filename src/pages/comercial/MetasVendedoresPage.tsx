@@ -52,6 +52,7 @@ import {
   aplicarEquipeContextualPelegrini1004AoFiltro,
   criarFiltroTotalizadores1004,
   isContextoChevrolet10041,
+  incluirVendedoresSemReceita1004,
   montarVendedoresFiltroReceita1004,
   montarVendedoresFiltroVendasChevrolet10041,
   somarDevolucoesReceitaVendedores1004,
@@ -462,7 +463,7 @@ export default function MetasVendedoresPage() {
       };
     });
 
-    return linhasReceita.sort((a, b) => b.faturamentoMesAtual - a.faturamentoMesAtual);
+    return incluirVendedoresSemReceita1004(linhasReceita, vendedoresComMeta);
   }, [isPelegriniPage, receita1004PorVendedor, receita1004Totalizada, vendedoresComMeta]);
 
 

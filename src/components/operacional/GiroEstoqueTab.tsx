@@ -1,15 +1,13 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Tooltip as RechartsTooltip, Tooltip } from 'recharts';
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer,
-  PieChart, Pie, Cell, Legend, LineChart, Line, Area, AreaChart,
+  XAxis, YAxis, CartesianGrid, ResponsiveContainer, Area, AreaChart,
   Tooltip as ReTooltip
 } from 'recharts';
-import { CheckCircle2, AlertTriangle, XCircle, TrendingUp, TrendingDown, Minus, ArrowUpDown, ChevronRight, X } from 'lucide-react';
+import { CheckCircle2, AlertTriangle, XCircle, TrendingUp, TrendingDown, Minus, ArrowUpDown, BarChart3 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { EstoqueRecord, GiroRecord, GiroFiltersState, GiroProductSummary, GiroStatus } from '@/types/estoque';
 import { analyzeSalesTrends, TrendDirection } from '@/utils/salesTrendAnalysis';
@@ -29,92 +27,39 @@ const STATUS_CONFIG: Record<GiroStatus, { label: string; color: string; icon: ty
   excesso: { label: 'Excesso', color: 'text-blue-400', icon: TrendingUp, bg: 'bg-blue-500/20', gradient: 'from-blue-500 to-blue-400' },
 };
 
-const COLORS = ['#10b981', '#f59e0b', '#ef4444', '#3b82f6'];
-
 const formatCurrency = (v: number) =>
   new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(v);
 
 const formatNumber = (v: number) =>
   new Intl.NumberFormat('pt-BR').format(v);
 
-const formatPercent = (v: number) => `${v.toFixed(1)}%`;
-
-// Premium tooltip matching Visão Geral style
-function PremiumTooltip({ active, payload, label, total, valueLabel = 'Valor', isCurrency = false }: any) {
-  if (!active || !payload?.length) return null;
-  const value = payload[0]?.value ?? 0;
-  const pct = total > 0 ? (value / total) * 100 : 0;
-
-  return (
-    <div className="bg-card/95 backdrop-blur-xl border border-border rounded-xl p-3 shadow-2xl min-w-[180px]">
-      <p className="text-xs text-muted-foreground mb-1 font-medium">{label || payload[0]?.name}</p>
-      <p className="text-base font-bold text-foreground">
-        {isCurrency ? formatCurrency(value) : formatNumber(value)}
-      </p>
-      {total > 0 && (
-        <div className="flex items-center gap-2 mt-1">
-          <div className="h-1 flex-1 bg-muted rounded-full overflow-hidden">
-            <div
-              className="h-full rounded-full bg-gradient-to-r from-amber-500 to-amber-400 transition-all duration-500"
-              style={{ width: `${Math.min(pct, 100)}%` }}
-            />
-          </div>
-          <span className="text-xs font-semibold text-amber-500">{formatPercent(pct)}</span>
-        </div>
-      )}
-    </div>
-  );
+interface LineTooltipEntry {
+  color?: string;
+  name?: string;
+  value?: number;
 }
 
-function PremiumLineTooltip({ active, payload, label }: any) {
+interface LineTooltipProps {
+  active?: boolean;
+  payload?: LineTooltipEntry[];
+  label?: string;
+}
+
+function PremiumLineTooltip({ active, payload, label }: LineTooltipProps) {
   if (!active || !payload?.length) return null;
   return (
     <div className="bg-card/95 backdrop-blur-xl border border-border rounded-xl p-3 shadow-2xl min-w-[160px]">
       <p className="text-xs text-muted-foreground mb-2 font-medium">{label}</p>
-      {payload.map((p: any, i: number) => (
+      {payload.map((p, i) => (
         <div key={i} className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <div className="h-2.5 w-2.5 rounded-full" style={{ background: p.color }} />
             <span className="text-xs text-muted-foreground">{p.name}</span>
           </div>
-          <span className="text-sm font-bold tabular-nums">{formatNumber(p.value)}</span>
+          <span className="text-sm font-bold tabular-nums">{formatNumber(p.value ?? 0)}</span>
         </div>
       ))}
     </div>
-  );
-}
-
-// Drill-down breadcrumb
-function GiroDrillBreadcrumb({ path, onNavigate }: { path: string[]; onNavigate: (index: number) => void }) {
-  if (path.length <= 1) return null;
-  return (
-    <div className="flex items-center gap-1 text-xs text-muted-foreground mb-2">
-      {path.map((item, i) => (
-        <span key={i} className="flex items-center gap-1">
-          {i > 0 && <ChevronRight className="h-3 w-3" />}
-          <button
-            onClick={() => onNavigate(i)}
-            className={cn(
-              'hover:text-foreground transition-colors',
-              i === path.length - 1 ? 'text-foreground font-semibold' : 'hover:underline'
-            )}
-          >
-            {item}
-          </button>
-        </span>
-      ))}
-    </div>
-  );
-}
-
-function ActiveFilterChip({ label, value, onRemove }: { label: string; value: string; onRemove: () => void }) {
-  return (
-    <Badge variant="secondary" className="gap-1 pl-2 pr-1 py-1 text-xs bg-amber-500/10 text-amber-500 border-amber-500/20">
-      {label}: {value}
-      <button onClick={onRemove} className="ml-1 hover:bg-amber-500/20 rounded-full p-0.5">
-        <X className="h-3 w-3" />
-      </button>
-    </Badge>
   );
 }
 
@@ -132,12 +77,10 @@ function calcGiroStatus(estoque: number, vendasPeriodo: number, meses: number): 
 }
 
 export function GiroEstoqueTab({ giroData, estoqueData, filters, setFilters }: Props) {
-  const [sortField, setSortField] = useState<string>('valor_estoque');
+  const [sortField, setSortField] = useState<keyof GiroProductSummary>('valor_estoque');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
   const [visibleCount, setVisibleCount] = useState(50);
-  const [hoveredStatus, setHoveredStatus] = useState<string | null>(null);
-  const [drillPath, setDrillPath] = useState<string[]>(['Giro']);
-  const [drillFilter, setDrillFilter] = useState<{ type: string; value: string } | null>(null);
+  const [analysisOpen, setAnalysisOpen] = useState(false);
 
   // Compute date cutoff based on period
   const dateCutoff = useMemo(() => {
@@ -249,10 +192,12 @@ export function GiroEstoqueTab({ giroData, estoqueData, filters, setFilters }: P
   // Sort
   const sorted = useMemo(() => {
     return [...productSummaries].sort((a, b) => {
-      const va = (a as any)[sortField] ?? 0;
-      const vb = (b as any)[sortField] ?? 0;
-      if (typeof va === 'string') return sortDir === 'asc' ? va.localeCompare(vb) : vb.localeCompare(va);
-      return sortDir === 'asc' ? va - vb : vb - va;
+      const va = a[sortField] ?? 0;
+      const vb = b[sortField] ?? 0;
+      if (typeof va === 'string' && typeof vb === 'string') {
+        return sortDir === 'asc' ? va.localeCompare(vb) : vb.localeCompare(va);
+      }
+      return sortDir === 'asc' ? Number(va) - Number(vb) : Number(vb) - Number(va);
     });
   }, [productSummaries, sortField, sortDir]);
 
@@ -262,17 +207,6 @@ export function GiroEstoqueTab({ giroData, estoqueData, filters, setFilters }: P
     productSummaries.forEach(s => counts[s.status]++);
     return counts;
   }, [productSummaries]);
-
-  // Charts data
-  const statusPieData = useMemo(() => {
-    return (Object.keys(STATUS_CONFIG) as GiroStatus[]).map(key => ({
-      name: STATUS_CONFIG[key].label,
-      key,
-      value: statusCounts[key],
-    }));
-  }, [statusCounts]);
-
-  const totalProducts = productSummaries.length;
 
   const topGiro = useMemo(() => {
     return [...productSummaries]
@@ -318,363 +252,144 @@ export function GiroEstoqueTab({ giroData, estoqueData, filters, setFilters }: P
       }));
   }, [filteredGiro]);
 
-  const filterOptions = useMemo(() => ({
-    empresas: [...new Set(productSummaries.map(s => s.empresa))].sort(),
-    marcas: [...new Set(productSummaries.map(s => s.marca))].sort(),
-    grupos: [...new Set(productSummaries.map(s => s.grupo))].sort(),
-  }), [productSummaries]);
-
-  const toggleSort = (field: string) => {
+  const toggleSort = (field: keyof GiroProductSummary) => {
     if (sortField === field) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
     else { setSortField(field); setSortDir('desc'); }
   };
 
-  const handleBarClick = useCallback((chartType: string) => (entry: any) => {
-    if (!entry) return;
-    const value = entry.fullName || entry.name;
-    setDrillFilter({ type: chartType, value });
-    setDrillPath(prev => [...prev, value]);
-  }, []);
-
-  const handleBreadcrumbNav = useCallback((index: number) => {
-    if (index === 0) {
-      setDrillFilter(null);
-      setDrillPath(['Giro']);
-    }
-  }, []);
-
-  const clearDrill = useCallback(() => {
-    setDrillFilter(null);
-    setDrillPath(['Giro']);
-  }, []);
-
-  const activeChips = useMemo(() => {
-    const chips: { label: string; value: string; onRemove: () => void }[] = [];
-    if (drillFilter)
-      chips.push({ label: 'Drill-down', value: drillFilter.value, onRemove: clearDrill });
-    return chips;
-  }, [drillFilter, clearDrill]);
-
-  // SVG gradients
-  const svgGradients = (
-    <svg width={0} height={0} className="absolute">
-      <defs>
-        <linearGradient id="giro-grad-emerald" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0%" stopColor="#10b981" />
-          <stop offset="100%" stopColor="#34d399" />
-        </linearGradient>
-        <linearGradient id="giro-grad-red" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0%" stopColor="#ef4444" />
-          <stop offset="100%" stopColor="#f87171" />
-        </linearGradient>
-        <linearGradient id="giro-grad-amber" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0%" stopColor="#f59e0b" />
-          <stop offset="100%" stopColor="#fbbf24" />
-        </linearGradient>
-        <linearGradient id="giro-grad-blue" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0%" stopColor="#3b82f6" />
-          <stop offset="100%" stopColor="#60a5fa" />
-        </linearGradient>
-        <linearGradient id="giro-area-amber" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#f59e0b" stopOpacity={0.3} />
-          <stop offset="100%" stopColor="#f59e0b" stopOpacity={0.02} />
-        </linearGradient>
-        <linearGradient id="giro-area-blue" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#3b82f6" stopOpacity={0.3} />
-          <stop offset="100%" stopColor="#3b82f6" stopOpacity={0.02} />
-        </linearGradient>
-      </defs>
-    </svg>
-  );
-
-  const PIE_COLORS = ['#10b981', '#f59e0b', '#ef4444', '#3b82f6'];
-
   return (
-    <div className="space-y-4">
-      {svgGradients}
+    <div className="min-w-0 space-y-3">
+      <div className="flex min-w-0 items-center justify-between gap-3">
+        <p className="text-sm text-muted-foreground">
+          <span className="font-semibold tabular-nums text-foreground">{sorted.length}</span> produtos analisados
+        </p>
+        <Button aria-label="Abrir analise de giro" className="h-9 gap-2" onClick={() => setAnalysisOpen(true)} type="button" variant="outline">
+          <BarChart3 aria-hidden="true" className="h-4 w-4" />
+          <span>Analise de giro</span>
+        </Button>
+      </div>
 
-      {/* Trend Alerts - Collapsible */}
-      <EstoqueTrendAlerts giroData={giroData} />
+      <Sheet onOpenChange={setAnalysisOpen} open={analysisOpen}>
+        <SheetContent className="w-[min(96vw,48rem)] overflow-x-hidden overflow-y-auto p-0 sm:max-w-3xl" side="right">
+          <SheetHeader className="border-b border-border px-5 py-4 pr-12 text-left">
+            <SheetTitle>Analise de giro</SheetTitle>
+            <SheetDescription>Tendencia mensal e produtos que merecem acompanhamento.</SheetDescription>
+          </SheetHeader>
+          <div className="space-y-5 p-5">
+            <EstoqueTrendAlerts giroData={giroData} />
+            <section className="space-y-3" aria-label="Movimentacao mensal">
+              <div className="flex items-center justify-between gap-3">
+                <h3 className="text-sm font-semibold">Movimentação mensal</h3>
+                <Badge variant="outline" className="text-[10px] text-muted-foreground">{filters.periodoMeses} meses</Badge>
+              </div>
+              <div className="h-[230px] min-w-0">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={evolucaoMensal}>
+                    <defs>
+                      <linearGradient id="giro-area-vendas" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#f59e0b" stopOpacity={0.22} />
+                        <stop offset="100%" stopColor="#f59e0b" stopOpacity={0} />
+                      </linearGradient>
+                      <linearGradient id="giro-area-compras" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#3b82f6" stopOpacity={0.18} />
+                        <stop offset="100%" stopColor="#3b82f6" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" strokeOpacity={0.3} />
+                    <XAxis dataKey="mes" tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} />
+                    <YAxis tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} />
+                    <ReTooltip content={<PremiumLineTooltip />} cursor={{ stroke: 'hsl(var(--muted-foreground))', strokeDasharray: '4 4' }} />
+                    <Area type="monotone" dataKey="vendas" stroke="#f59e0b" strokeWidth={2} fill="url(#giro-area-vendas)" name="Vendas" dot={false} activeDot={{ r: 4 }} animationDuration={180} />
+                    <Area type="monotone" dataKey="compras" stroke="#3b82f6" strokeWidth={2} fill="url(#giro-area-compras)" name="Compras" dot={false} activeDot={{ r: 4 }} animationDuration={180} />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            </section>
+            <div className="grid min-w-0 gap-5 md:grid-cols-2">
+              <section aria-label="Maior giro" className="min-w-0">
+                <h3 className="border-b border-border pb-2 text-sm font-semibold">Maior giro</h3>
+                <div className="divide-y divide-border/70">
+                  {topGiro.slice(0, 5).map((item, index) => (
+                    <div key={`${item.fullName}-${index}`} className="flex h-11 min-w-0 items-center gap-3">
+                      <span className="w-5 text-xs text-muted-foreground">{index + 1}</span>
+                      <span className="min-w-0 flex-1 truncate text-sm" title={item.fullName}>{item.fullName}</span>
+                      <span className="whitespace-nowrap text-sm font-semibold tabular-nums">{item.giro.toFixed(2)}x</span>
+                    </div>
+                  ))}
+                </div>
+              </section>
+              <section aria-label="Mais tempo sem venda" className="min-w-0">
+                <h3 className="border-b border-border pb-2 text-sm font-semibold">Mais tempo sem venda</h3>
+                <div className="divide-y divide-border/70">
+                  {topParados.slice(0, 5).map((item, index) => (
+                    <div key={`${item.fullName}-${index}`} className="flex h-11 min-w-0 items-center gap-3">
+                      <span className="w-5 text-xs text-muted-foreground">{index + 1}</span>
+                      <span className="min-w-0 flex-1 truncate text-sm" title={item.fullName}>{item.fullName}</span>
+                      <span className="whitespace-nowrap text-sm font-semibold tabular-nums text-amber-600 dark:text-amber-400">{item.dias}d</span>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            </div>
+          </div>
+        </SheetContent>
+      </Sheet>
 
-
-      {/* Breadcrumbs & active filter chips */}
-      {(activeChips.length > 0 || drillPath.length > 1) && (
-        <div className="flex flex-wrap items-center gap-2">
-          <GiroDrillBreadcrumb path={drillPath} onNavigate={handleBreadcrumbNav} />
-          {activeChips.map((f, i) => (
-            <ActiveFilterChip key={i} {...f} />
-          ))}
-        </div>
-      )}
-
-      {/* Status KPI Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="grid min-w-0 grid-cols-2 border-y border-border/70 md:flex" aria-label="Filtros por status" role="group">
         {(Object.keys(STATUS_CONFIG) as GiroStatus[]).map(key => {
           const cfg = STATUS_CONFIG[key];
           const Icon = cfg.icon;
-          const count = statusCounts[key];
-          const pct = productSummaries.length > 0 ? ((count / productSummaries.length) * 100).toFixed(0) : '0';
           const isSelected = filters.statusFilter.includes(key);
           return (
-            <Card
-              key={key}
+            <button
+              aria-pressed={isSelected}
               className={cn(
-                'premium-card cursor-pointer transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg',
-                isSelected && 'ring-2 ring-amber-500 shadow-lg'
+                'flex h-12 min-w-0 items-center justify-center gap-2 border-border/70 px-2 text-left transition-colors duration-150 hover:bg-muted/50 md:h-14 md:min-w-[9rem] md:flex-1 md:border-r md:px-3 md:last:border-r-0',
+                'odd:border-r even:border-r-0 [&:nth-child(-n+2)]:border-b md:odd:border-r md:even:border-r md:[&:nth-child(-n+2)]:border-b-0',
+                isSelected && 'bg-primary/[0.07] text-primary',
               )}
-              onClick={() => setFilters(f => ({
-                ...f,
-                statusFilter: f.statusFilter.includes(key)
-                  ? f.statusFilter.filter(s => s !== key)
-                  : [...f.statusFilter, key]
+              key={key}
+              onClick={() => setFilters(current => ({
+                ...current,
+                statusFilter: current.statusFilter.includes(key)
+                  ? current.statusFilter.filter(status => status !== key)
+                  : [...current.statusFilter, key],
               }))}
+              type="button"
             >
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className={cn('h-10 w-10 rounded-lg flex items-center justify-center transition-transform hover:scale-110', cfg.bg)}>
-                    <Icon className={cn('h-5 w-5', cfg.color)} />
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold tabular-nums">{count}</p>
-                    <p className="text-xs text-muted-foreground">{cfg.label} ({pct}%)</p>
-                  </div>
-                </div>
-                {/* Mini progress bar */}
-                <div className="mt-2 h-1 bg-muted rounded-full overflow-hidden">
-                  <div
-                    className={cn('h-full rounded-full bg-gradient-to-r transition-all duration-700', cfg.gradient)}
-                    style={{ width: `${pct}%` }}
-                  />
-                </div>
-              </CardContent>
-            </Card>
+              <Icon aria-hidden="true" className={cn('h-4 w-4 shrink-0', cfg.color)} />
+              <span className="truncate text-xs text-muted-foreground">{cfg.label}</span>
+              <span className="font-semibold tabular-nums text-foreground">{statusCounts[key]}</span>
+            </button>
           );
         })}
       </div>
 
-      {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Status Distribution — Donut with center total */}
-        <Card className="premium-card group hover:shadow-xl hover:shadow-emerald-500/5 transition-all duration-300 hover:-translate-y-0.5">
-          <CardHeader className="pb-2">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-sm font-medium flex items-center gap-2">
-                <div className="h-1 w-6 rounded-full bg-gradient-to-r from-emerald-500 to-emerald-400" />
-                Distribuição de Status
-              </CardTitle>
-              <Badge variant="outline" className="text-[10px] px-1.5 py-0 text-muted-foreground">
-                Clique para filtrar
-              </Badge>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-col gap-4 xl:flex-row xl:items-center">
-              {/* Donut */}
-              <div className="relative flex-shrink-0" style={{ width: 200, height: 200 }}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart onMouseLeave={() => setHoveredStatus(null)}>
-                    <Pie
-                      data={statusPieData}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={50}
-                      outerRadius={85}
-                      dataKey="value"
-                      paddingAngle={3}
-                      cursor="pointer"
-                      onClick={(entry: any) => {
-                        if (!entry) return;
-                        const statusKey = entry.key as GiroStatus;
-                        setFilters(f => ({
-                          ...f,
-                          statusFilter: f.statusFilter.includes(statusKey)
-                            ? f.statusFilter.filter(s => s !== statusKey)
-                            : [...f.statusFilter, statusKey]
-                        }));
-                      }}
-                      onMouseEnter={(_, index) => setHoveredStatus(statusPieData[index]?.name ?? null)}
-                      animationDuration={800}
-                      animationEasing="ease-out"
-                    >
-                      {statusPieData.map((item, i) => {
-                        const isActive = !hoveredStatus || hoveredStatus === item.name;
-                        return (
-                          <Cell
-                            key={item.name}
-                            fill={PIE_COLORS[i]}
-                            stroke={isActive ? 'hsl(var(--background))' : 'none'}
-                            strokeWidth={isActive ? 3 : 0}
-                            opacity={isActive ? 1 : 0.35}
-                          />
-                        );
-                      })}
-                    </Pie>
-                  </PieChart>
-                </ResponsiveContainer>
-                {/* Center total label */}
-                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                  <div className="flex h-24 w-24 flex-col items-center justify-center rounded-full border border-border/60 bg-background/90 text-center shadow-lg backdrop-blur-sm">
-                    <p className="text-lg font-bold leading-tight">{formatNumber(totalProducts)}</p>
-                    <p className="text-[10px] text-muted-foreground">produtos</p>
+      <section aria-label="Produtos analisados no giro" className="min-w-0 overflow-hidden border border-border/80 bg-background">
+          <div className="divide-y md:hidden">
+            {sorted.slice(0, visibleCount).map(s => {
+              const cfg = STATUS_CONFIG[s.status];
+              return (
+                <article key={`${s.empresa}-${s.cod_produto}`} className="space-y-2 px-3 py-2.5">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-semibold">{s.produto}</p>
+                      <p className="mt-0.5 text-xs text-muted-foreground">{s.cod_produto} · {s.marca || 'Sem marca'}</p>
+                    </div>
+                    <Badge variant="outline" className={cn('shrink-0 text-xs', cfg.color, cfg.bg)}>{cfg.label}</Badge>
                   </div>
-                </div>
-              </div>
-
-              {/* Side list */}
-              <div className="flex-1 space-y-1">
-                {statusPieData.map((item, i) => {
-                  const pct = totalProducts > 0 ? ((item.value / totalProducts) * 100).toFixed(1) : '0';
-                  const isHighlighted = hoveredStatus === item.name || !hoveredStatus;
-                  return (
-                    <button
-                      key={item.name}
-                      onClick={() => {
-                        const statusKey = item.key as GiroStatus;
-                        setFilters(f => ({
-                          ...f,
-                          statusFilter: f.statusFilter.includes(statusKey)
-                            ? f.statusFilter.filter(s => s !== statusKey)
-                            : [...f.statusFilter, statusKey]
-                        }));
-                      }}
-                      onMouseEnter={() => setHoveredStatus(item.name)}
-                      onMouseLeave={() => setHoveredStatus(null)}
-                      className={cn(
-                        'flex w-full items-center justify-between rounded-lg px-3 py-2 transition-colors',
-                        isHighlighted ? 'bg-muted/60 border border-border/60' : 'hover:bg-muted/40 border border-transparent'
-                      )}
-                    >
-                      <div className="flex items-center gap-2.5">
-                        <div className="h-3 w-3 rounded-full shrink-0" style={{ background: PIE_COLORS[i] }} />
-                        <span className="text-sm font-medium">{item.name}</span>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <span className="text-sm font-semibold tabular-nums">{formatNumber(item.value)}</span>
-                        <span className="text-xs text-muted-foreground tabular-nums w-12 text-right">{pct}%</span>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Monthly Evolution — Area chart with premium tooltip */}
-        <Card className="premium-card group hover:shadow-xl hover:shadow-amber-500/5 transition-all duration-300 hover:-translate-y-0.5">
-          <CardHeader className="pb-2">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-sm font-medium flex items-center gap-2">
-                <div className="h-1 w-6 rounded-full bg-gradient-to-r from-amber-500 to-amber-400" />
-                Evolução Mensal de Movimentação
-              </CardTitle>
-              <Badge variant="outline" className="text-[10px] px-1.5 py-0 text-muted-foreground">
-                {filters.periodoMeses} meses
-              </Badge>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={280}>
-              <AreaChart data={evolucaoMensal}>
-                <defs>
-                  <linearGradient id="giro-area-vendas" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#f59e0b" stopOpacity={0.3} />
-                    <stop offset="100%" stopColor="#f59e0b" stopOpacity={0.02} />
-                  </linearGradient>
-                  <linearGradient id="giro-area-compras" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#3b82f6" stopOpacity={0.3} />
-                    <stop offset="100%" stopColor="#3b82f6" stopOpacity={0.02} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" strokeOpacity={0.3} />
-                <XAxis dataKey="mes" tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} />
-                <YAxis tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} />
-                <ReTooltip content={<PremiumLineTooltip />} cursor={{ stroke: 'hsl(var(--muted-foreground))', strokeDasharray: '4 4' }} />
-                <Area type="monotone" dataKey="vendas" stroke="#f59e0b" strokeWidth={2.5} fill="url(#giro-area-vendas)" name="Vendas" dot={{ r: 3, fill: '#f59e0b', strokeWidth: 0 }} activeDot={{ r: 5, fill: '#f59e0b', stroke: 'hsl(var(--background))', strokeWidth: 2 }} animationDuration={800} />
-                <Area type="monotone" dataKey="compras" stroke="#3b82f6" strokeWidth={2.5} fill="url(#giro-area-compras)" name="Compras" dot={{ r: 3, fill: '#3b82f6', strokeWidth: 0 }} activeDot={{ r: 5, fill: '#3b82f6', stroke: 'hsl(var(--background))', strokeWidth: 2 }} animationDuration={800} />
-              </AreaChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-
-        {/* Top Giro — Premium bar chart */}
-        <Card className="premium-card group hover:shadow-xl hover:shadow-emerald-500/5 transition-all duration-300 hover:-translate-y-0.5">
-          <CardHeader className="pb-2">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-sm font-medium flex items-center gap-2">
-                <div className="h-1 w-6 rounded-full bg-gradient-to-r from-emerald-500 to-emerald-400" />
-                Top 10 Maior Giro
-              </CardTitle>
-              <Badge variant="outline" className="text-[10px] px-1.5 py-0 text-muted-foreground">
-                Clique para filtrar
-              </Badge>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={280}>
-              <BarChart data={topGiro} layout="vertical" margin={{ left: 10, right: 20 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" strokeOpacity={0.3} horizontal={false} />
-                <XAxis type="number" tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} />
-                <YAxis type="category" dataKey="name" width={130} tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} />
-                <ReTooltip content={<PremiumTooltip total={topGiro.reduce((s, r) => s + r.giro, 0)} />} cursor={{ fill: 'hsl(var(--muted))', opacity: 0.3 }} />
-                <Bar
-                  dataKey="giro"
-                  fill="url(#giro-grad-emerald)"
-                  radius={[0, 6, 6, 0]}
-                  cursor="pointer"
-                  onClick={(d: any) => handleBarClick('marca')({ ...d, fullName: d.marca, name: d.marca })}
-                  animationDuration={800}
-                  animationEasing="ease-out"
-                />
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-
-        {/* Top Parados — Premium bar chart */}
-        <Card className="premium-card group hover:shadow-xl hover:shadow-red-500/5 transition-all duration-300 hover:-translate-y-0.5">
-          <CardHeader className="pb-2">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-sm font-medium flex items-center gap-2">
-                <div className="h-1 w-6 rounded-full bg-gradient-to-r from-red-500 to-red-400" />
-                Top 10 Produtos Parados
-              </CardTitle>
-              <Badge variant="outline" className="text-[10px] px-1.5 py-0 text-muted-foreground">
-                Dias sem venda
-              </Badge>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={280}>
-              <BarChart data={topParados} layout="vertical" margin={{ left: 10, right: 20 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" strokeOpacity={0.3} horizontal={false} />
-                <XAxis type="number" tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} />
-                <YAxis type="category" dataKey="name" width={130} tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} />
-                <ReTooltip content={<PremiumTooltip total={topParados.reduce((s, r) => s + r.dias, 0)} />} cursor={{ fill: 'hsl(var(--muted))', opacity: 0.3 }} />
-                <Bar
-                  dataKey="dias"
-                  fill="url(#giro-grad-red)"
-                  radius={[0, 6, 6, 0]}
-                  cursor="pointer"
-                  onClick={(d: any) => handleBarClick('marca')({ ...d, fullName: d.marca, name: d.marca })}
-                  animationDuration={800}
-                  animationEasing="ease-out"
-                />
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Table */}
-      <Card className="premium-card">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm">{sorted.length} produtos analisados</CardTitle>
-        </CardHeader>
-        <CardContent className="p-0">
-          <div className="overflow-x-auto max-h-[500px] overflow-y-auto">
+                  <dl className="grid grid-cols-3 gap-2 text-xs">
+                    <div><dt className="text-muted-foreground">Estoque</dt><dd className="mt-1 font-semibold tabular-nums">{formatNumber(s.quantidade_estoque)}</dd></div>
+                    <div><dt className="text-muted-foreground">Giro</dt><dd className="mt-1 font-semibold tabular-nums">{s.giro.toFixed(2)}x</dd></div>
+                    <div><dt className="text-muted-foreground">Sem venda</dt><dd className="mt-1 font-semibold tabular-nums">{s.dias_sem_venda >= 9999 ? 'N/A' : `${s.dias_sem_venda}d`}</dd></div>
+                  </dl>
+                </article>
+              );
+            })}
+          </div>
+          <div className="hidden max-h-[calc(100vh-19rem)] min-h-[18rem] overflow-auto md:block">
             <Table>
-              <TableHeader className="sticky top-0 bg-card z-10">
+              <TableHeader className="sticky top-0 z-10 bg-muted">
                 <TableRow>
                   <TableHead className="min-w-[60px] cursor-pointer" onClick={() => toggleSort('cod_produto')}>
                     Código <ArrowUpDown className="h-3 w-3 inline" />
@@ -702,10 +417,10 @@ export function GiroEstoqueTab({ giroData, estoqueData, filters, setFilters }: P
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {sorted.slice(0, visibleCount).map((s, i) => {
+                {sorted.slice(0, visibleCount).map(s => {
                   const cfg = STATUS_CONFIG[s.status];
                   return (
-                    <TableRow key={i}>
+                    <TableRow className="h-11" key={`${s.empresa}-${s.cod_produto}`}>
                       <TableCell className="font-mono text-xs">{s.cod_produto}</TableCell>
                       <TableCell className="font-medium text-sm max-w-[180px] truncate">{s.produto}</TableCell>
                       <TableCell className="text-xs">{s.marca}</TableCell>
@@ -716,7 +431,7 @@ export function GiroEstoqueTab({ giroData, estoqueData, filters, setFilters }: P
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right font-mono">{s.quantidade_estoque}</TableCell>
-                      <TableCell className="text-right font-mono text-sm">{formatCurrency(s.valor_estoque)}</TableCell>
+                      <TableCell className="whitespace-nowrap text-right font-mono text-sm">{formatCurrency(s.valor_estoque)}</TableCell>
                       <TableCell className="text-right font-mono">{s.total_vendas}</TableCell>
                       <TableCell className="text-right font-mono">{s.giro.toFixed(2)}</TableCell>
                       <TableCell className="text-right">
@@ -749,7 +464,7 @@ export function GiroEstoqueTab({ giroData, estoqueData, filters, setFilters }: P
             </Table>
           </div>
           {visibleCount < sorted.length && (
-            <div className="flex items-center justify-center gap-3 py-4 border-t border-border/50">
+            <div className="flex items-center justify-center gap-3 border-t border-border/50 py-3">
               <span className="text-xs text-muted-foreground">
                 Mostrando {Math.min(visibleCount, sorted.length)} de {sorted.length}
               </span>
@@ -769,8 +484,7 @@ export function GiroEstoqueTab({ giroData, estoqueData, filters, setFilters }: P
               </Button>
             </div>
           )}
-        </CardContent>
-      </Card>
+      </section>
     </div>
   );
 }
