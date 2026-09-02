@@ -138,7 +138,10 @@ describe('Pelegrini visual foundation', () => {
     fireEvent.click(screen.getByRole('button', { name: /Casa da Transmissão/i }));
     expect(screen.getByRole('heading', { level: 2, name: /^M[oó]dulos$/ })).toBeInTheDocument();
     expect(container.querySelector('[data-home-modules]')).toHaveClass('pelegrini-home-module-grid');
-    expect(container.querySelectorAll('.pelegrini-home-module-card')).toHaveLength(4);
+    expect(container.querySelectorAll('.pelegrini-home-module-card')).toHaveLength(3);
+    expect(screen.queryByText('WhatsApp')).not.toBeInTheDocument();
+    const css = readFileSync(join(process.cwd(), 'src', 'index.css'), 'utf8');
+    expect(css).toContain('justify-content: center');
     expect(screen.getByRole('button', { name: /Configuracoes/i })).toBeInTheDocument();
     expect(container.textContent).not.toMatch(/Lovable|BI Reports/i);
     expect(container.querySelector('[class*="gradient"]')).not.toBeInTheDocument();
@@ -157,7 +160,7 @@ describe('Pelegrini visual foundation', () => {
     const moduleGrid = container.querySelector('[data-home-modules]');
     const moduleCards = container.querySelectorAll('.pelegrini-home-module-card');
     expect(moduleGrid).toHaveClass('pelegrini-home-module-grid');
-    expect(moduleCards).toHaveLength(4);
+    expect(moduleCards).toHaveLength(3);
     moduleCards.forEach((card) => {
       expect(card).toHaveClass('pelegrini-home-module-card');
     });

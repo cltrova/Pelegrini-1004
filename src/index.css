@@ -1951,12 +1951,14 @@
 
 .pelegrini-home-modules { margin-top: 24px; }
 .pelegrini-home-modules > h2 { margin: 0 0 14px; font-size: 1.22rem; font-weight: 760; }
-.pelegrini-home-module-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+.pelegrini-home-module-grid { display: flex; flex-wrap: wrap; justify-content: center; gap: 14px; }
 .pelegrini-home-module-card {
   position: relative;
   display: flex;
   min-width: 0;
   min-height: 205px;
+  flex: 1 1 280px;
+  max-width: calc((100% - 28px) / 3);
   flex-direction: column;
   align-items: flex-start;
   padding: 18px;
@@ -1984,7 +1986,7 @@
 @keyframes pelegriniHomeFlow { to { stroke-dashoffset: -110; } }
 
 @media (max-width: 980px) {
-  .pelegrini-home-module-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .pelegrini-home-module-card { max-width: calc((100% - 14px) / 2); }
   .pelegrini-home-carousel { grid-template-columns: 58% 42%; }
 }
 
@@ -2013,8 +2015,7 @@
   .pelegrini-home-carousel-copy h1 { font-size: 1.35rem; }
   .pelegrini-home-carousel-photos { min-height: 210px; order: -1; }
   .pelegrini-home-carousel-photos::after { box-shadow: inset 0 -18px 24px -20px rgb(2 25 50 / 0.8); }
-  .pelegrini-home-module-grid { grid-template-columns: 1fr; }
-  .pelegrini-home-module-card { min-height: 190px; }
+  .pelegrini-home-module-card { min-height: 190px; max-width: 100%; flex-basis: 100%; }
 }
 
 @media (prefers-reduced-motion: reduce) {
