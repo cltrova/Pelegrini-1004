@@ -49,6 +49,11 @@ const PIE_COLORS = [
   'hsl(var(--secondary))',
 ];
 
+export function getCorParticipacaoVendedor(nome: string, index: number): string {
+  if (nome.trim().toUpperCase() === 'ELIELTON') return '#db2777';
+  return PIE_COLORS[index % PIE_COLORS.length];
+}
+
 function getReceitaPedido1004(p: any): number {
   if (p.tipo === 'DEVOLUCAO') {
     return -Math.abs(Number(p.valor_devolucao_real || p.valor_real || p.valor_liquido || 0));
@@ -534,8 +539,9 @@ export function VisaoGeralRapida1004({
                 {participacao.length === 0 && (
                   <div className={cn("text-center text-xs py-6", isEmpresaPelegrini ? 'text-muted-foreground' : 'text-muted-foreground')}>Sem dados</div>
                 )}
-                {participacao.map((v, i) => (
-                  <div
+                {participacao.map((v, i) => {
+                  const corParticipacao = getCorParticipacaoVendedor(v.nome, i);
+                  return <div
                     key={v.nome}
                     className={cn(
                       "items-center gap-2 text-sm",
@@ -544,7 +550,7 @@ export function VisaoGeralRapida1004({
                   >
                     <span
                       className="h-2.5 w-2.5 rounded-full flex-shrink-0"
-                      style={{ background: PIE_COLORS[i % PIE_COLORS.length] }}
+                      style={{ background: corParticipacao }}
                     />
                     <span className={cn(
                       "font-medium leading-tight",
@@ -555,12 +561,12 @@ export function VisaoGeralRapida1004({
                     </span>
                     <span
                       className="font-mono font-semibold w-14 text-right tabular-nums"
-                      style={{ color: PIE_COLORS[i % PIE_COLORS.length] }}
+                      style={{ color: corParticipacao }}
                     >
                       {v.pct.toFixed(1)}%
                     </span>
-                  </div>
-                ))}
+                  </div>;
+                })}
               </div>
 
             </div>
