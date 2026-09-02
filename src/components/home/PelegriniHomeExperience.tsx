@@ -18,7 +18,7 @@ import { LoginDialog } from '@/components/auth/LoginDialog';
 import { ModuleDetailsDialog } from '@/components/common/ModuleDetailsDialog';
 import { Button } from '@/components/ui/button';
 import { getPelegriniModuleIdentity, type PelegriniModuleKey } from '@/config/pelegriniIdentity';
-import { pelegriniAdminEntry, pelegriniModules, type PelegriniHomeModule } from '@/config/pelegriniHome';
+import { getPelegriniVisibleModules, pelegriniAdminEntry, type PelegriniHomeModule } from '@/config/pelegriniHome';
 import { PELEGRINI_THEMES } from '@/config/pelegriniTheme';
 import { getFilialAccessState } from '@/utils/filialAccess';
 import { useAuth } from '@/contexts/AuthContext';
@@ -45,7 +45,7 @@ const moduleIcons: Record<PelegriniHomeModule['accent'], ModuleItem['icon']> = {
   blue: TrendingUp,
 };
 
-const modules: ModuleItem[] = pelegriniModules.map((module) => ({
+const modules: ModuleItem[] = getPelegriniVisibleModules().map((module) => ({
   ...module,
   icon: moduleIcons[module.accent],
   disabled: false,

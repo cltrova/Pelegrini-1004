@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { getPelegriniBranchAvailability, pelegriniAdminEntry, pelegriniBrand, pelegriniModules } from './pelegriniHome';
+import {
+  getPelegriniBranchAvailability,
+  getPelegriniVisibleModules,
+  pelegriniAdminEntry,
+  pelegriniBrand,
+  pelegriniModules,
+} from './pelegriniHome';
 
 describe('pelegriniHome config', () => {
   it('uses branch houses as the visible entry identity instead of generic Pelegrini chrome', () => {
@@ -37,6 +43,18 @@ describe('pelegriniHome config', () => {
         expect.objectContaining({ title: 'Financeiro', path: '/financeiro', moduloKey: 'financeiro' }),
       ]),
     );
+  });
+
+  it('hides WhatsApp from the module chooser without removing its route configuration', () => {
+    expect(getPelegriniVisibleModules().map((module) => module.title)).toEqual([
+      'Comercial',
+      'Operacional',
+      'Financeiro',
+    ]);
+    expect(pelegriniModules.find((module) => module.moduloKey === 'whatsapp')).toMatchObject({
+      path: '/whatsapp',
+      hidden: true,
+    });
   });
 
   it('defines a configuration entry for endpoint setup', () => {

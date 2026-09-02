@@ -8,6 +8,7 @@ export interface PelegriniHomeModule {
   features: string[];
   moduloKey: UserModuleKey;
   accent: 'emerald' | 'purple' | 'orange' | 'blue';
+  hidden?: boolean;
 }
 
 export const pelegriniBrand = {
@@ -27,6 +28,7 @@ export const pelegriniModules: PelegriniHomeModule[] = [
     features: ['Chat', 'Agentes', 'Relatorios'],
     moduloKey: 'whatsapp',
     accent: 'emerald',
+    hidden: true,
   },
   {
     title: 'Comercial',
@@ -53,6 +55,10 @@ export const pelegriniModules: PelegriniHomeModule[] = [
     accent: 'blue',
   },
 ];
+
+export function getPelegriniVisibleModules(): PelegriniHomeModule[] {
+  return pelegriniModules.filter((module) => !module.hidden);
+}
 
 export const pelegriniAdminEntry = {
   title: 'Configuracoes',
