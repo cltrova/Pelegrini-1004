@@ -49,14 +49,14 @@ describe('Pelegrini visual components', () => {
     expect(container.querySelector('[class*="glow"]')).not.toBeInTheDocument();
   });
 
-  it('keeps only the enlarged transparent logo in the sidebar brand', () => {
+  it('uses the full transparent wordmark in the expanded transmission sidebar brand', () => {
     const theme = resolvePelegriniTheme('transmissao');
 
     render(<PelegriniBrandMark theme={theme} tone="sidebar" />);
 
     const logo = screen.getByAltText('Logo Casa da Transmissão');
-    expect(logo).toHaveAttribute('src', '/brand/home/transmissao-transparent.png');
-    expect(logo).toHaveClass('pelegrini-sidebar-logo');
+    expect(logo).toHaveAttribute('src', '/brand/sidebar/transmissao-wordmark.png');
+    expect(logo).toHaveClass('pelegrini-sidebar-logo', 'pelegrini-transmissao-wordmark');
     expect(screen.queryByText('Casa da Transmissão')).not.toBeInTheDocument();
     expect(screen.queryByText(theme.tagline)).not.toBeInTheDocument();
   });

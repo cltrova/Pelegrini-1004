@@ -19,9 +19,15 @@ export function PelegriniBrandMark({
   const isSidebar = tone === 'sidebar';
   const isChevrolet = theme.key === 'chevrolet';
   const isCompactSidebar = isSidebar && compact;
-  const logoSrc = isSidebar && theme.key === 'transmissao'
-    ? '/brand/home/transmissao-transparent.png'
-    : theme.logoSrc;
+  const isCompactChevrolet = isCompactSidebar && isChevrolet;
+  const isExpandedTransmission = isSidebar && !compact && theme.key === 'transmissao';
+  const logoSrc = isCompactChevrolet
+    ? '/brand/sidebar/chevrolet-coc.png'
+    : isExpandedTransmission
+      ? '/brand/sidebar/transmissao-wordmark.png'
+      : isSidebar && theme.key === 'transmissao'
+        ? '/brand/home/transmissao-transparent.png'
+        : theme.logoSrc;
 
   return (
     <div className={cn(
@@ -34,7 +40,7 @@ export function PelegriniBrandMark({
         isCompactSidebar
           ? isChevrolet ? 'h-12 w-16' : 'h-12 w-12'
           : isSidebar
-            ? isChevrolet ? 'h-14 w-44' : 'h-16 w-24'
+            ? isChevrolet ? 'h-14 w-44' : 'h-16 w-[13rem]'
           : isChevrolet ? 'h-12 w-24' : 'h-12 w-12',
       )}>
         <img
@@ -43,10 +49,12 @@ export function PelegriniBrandMark({
           className={cn(
             'object-contain',
             isSidebar && 'pelegrini-sidebar-logo',
+            isCompactChevrolet && 'pelegrini-sidebar-logo-native',
+            isExpandedTransmission && 'pelegrini-transmissao-wordmark',
             isCompactSidebar
               ? isChevrolet ? 'pelegrini-chevrolet-logo max-h-10 max-w-16' : 'max-h-11 max-w-12'
               : isSidebar
-                ? isChevrolet ? 'pelegrini-chevrolet-logo max-h-12 max-w-44' : 'max-h-16 max-w-24'
+                ? isChevrolet ? 'pelegrini-chevrolet-logo max-h-12 max-w-44' : 'max-h-14 max-w-[13rem]'
               : isChevrolet ? 'pelegrini-chevrolet-logo max-h-9 max-w-24' : 'max-h-10 max-w-10',
           )}
         />

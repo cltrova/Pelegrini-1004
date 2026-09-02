@@ -1318,6 +1318,18 @@
     filter: brightness(0) invert(1);
   }
 
+  .pelegrini-sidebar .pelegrini-brand-mark[data-brand='chevrolet'] .pelegrini-sidebar-logo-native {
+    filter: none;
+    width: auto;
+    height: auto;
+    max-width: 3.25rem;
+    max-height: 2rem;
+  }
+
+  .pelegrini-sidebar .pelegrini-brand-mark .pelegrini-transmissao-wordmark {
+    max-width: 13rem;
+  }
+
   .pelegrini-chevrolet-logo {
     filter: brightness(0) saturate(100%) invert(20%) sepia(55%) saturate(2775%) hue-rotate(184deg) brightness(84%) contrast(101%);
     transition: filter 160ms ease, opacity 160ms ease;

@@ -46,15 +46,43 @@ describe('PelegriniModuleSidebar', () => {
     renderSidebar();
 
     const compactBrand = screen.getByTestId('sidebar-brand-compact');
+    const expandedBrand = compactBrand.nextElementSibling as HTMLElement;
     expect(compactBrand).toBeInTheDocument();
-    expect(within(compactBrand).getByRole('img', { name: 'Logo Casa da Transmissão' })).toBeInTheDocument();
+    expect(within(compactBrand).getByRole('img', { name: 'Logo Casa da Transmissão' })).toHaveAttribute(
+      'src',
+      '/brand/home/transmissao-transparent.png',
+    );
+    expect(within(expandedBrand).getByRole('img', { name: 'Logo Casa da Transmissão' })).toHaveAttribute(
+      'src',
+      '/brand/sidebar/transmissao-wordmark.png',
+    );
   });
 
-  it('keeps the Chevrolet brand empty while the sidebar is collapsed', () => {
+  it('uses the COC mark while Chevrolet is collapsed and keeps its wordmark expanded', () => {
     renderSidebar({ branch: 'chevrolet' });
 
-    expect(screen.queryByTestId('sidebar-brand-compact')).not.toBeInTheDocument();
-    expect(screen.getByRole('img', { name: 'Logo Casa do Chevrolet' })).toBeInTheDocument();
+    const compactBrand = screen.getByTestId('sidebar-brand-compact');
+    const expandedBrand = compactBrand.nextElementSibling as HTMLElement;
+
+    expect(within(compactBrand).getByRole('img', { name: 'Logo Casa do Chevrolet' })).toHaveAttribute(
+      'src',
+      '/brand/sidebar/chevrolet-coc.png',
+    );
+    expect(within(compactBrand).getByRole('img', { name: 'Logo Casa do Chevrolet' })).toHaveClass(
+      'pelegrini-sidebar-logo-native',
+    );
+    expect(within(expandedBrand).getByRole('img', { name: 'Logo Casa do Chevrolet' })).toHaveAttribute(
+      'src',
+      '/brand/casa-chevrolet-wordmark.png',
+    );
+  });
+
+  it('constrains the compact COC mark to the collapsed sidebar rail', () => {
+    const css = readFileSync(join(process.cwd(), 'src', 'index.css'), 'utf8');
+
+    expect(css).toContain("[data-brand='chevrolet'] .pelegrini-sidebar-logo-native");
+    expect(css).toContain('max-width: 3.25rem');
+    expect(css).toContain('max-height: 2rem');
   });
 
   it('swaps the sidebar brands only after the width transition has settled', () => {
@@ -72,7 +100,7 @@ describe('PelegriniModuleSidebar', () => {
     const expandedBrand = compactBrand.nextElementSibling as HTMLElement;
 
     expect(within(compactBrand).getByRole('img')).toHaveClass('max-w-12');
-    expect(within(expandedBrand).getByRole('img')).toHaveClass('max-w-24');
+    expect(within(expandedBrand).getByRole('img')).toHaveClass('max-w-[13rem]');
 
     const css = readFileSync(join(process.cwd(), 'src', 'index.css'), 'utf8');
     expect(css).toContain('left: 36px');

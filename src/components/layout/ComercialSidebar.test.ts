@@ -116,7 +116,7 @@ describe('commercial sidebar menu access', () => {
     mockCompany('1004');
     render(createElement(MemoryRouter, { initialEntries: ['/comercial/dashboard'], future: { v7_startTransition: true, v7_relativeSplatPath: true } }, createElement(ComercialSidebar)));
 
-    expect(screen.getByText('Casa da Transmissão')).toBeInTheDocument();
+    expect(screen.getAllByRole('img', { name: 'Logo Casa da Transmissão' })).toHaveLength(2);
     expect(screen.queryByText('Pelegrini - operacao automotiva integrada')).not.toBeInTheDocument();
     expect(screen.queryByText(/BI Reports/i)).not.toBeInTheDocument();
   });
