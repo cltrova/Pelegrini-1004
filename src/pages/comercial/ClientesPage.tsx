@@ -1,21 +1,16 @@
-import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { useComercialData } from '@/hooks/useComercialData';
 import { formatCurrency, formatPercent } from '@/utils/formatters';
 import { LoadingState } from '@/components/common/LoadingState';
 import { ErrorState } from '@/components/common/ErrorState';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Users,
-  Search,
   TrendingUp,
   TrendingDown,
   MapPin,
   AlertTriangle,
   Sparkles,
-  Activity,
   Target,
   Brain,
   Crown,
@@ -36,12 +31,20 @@ import {
   Cell,
 } from 'recharts';
 import { cn } from '@/lib/utils';
-import { CollapsibleFilterBar } from '@/components/common/CollapsibleFilterBar';
 import {
-  ComercialFilters,
-  getComercialFiltersSummary,
-  countActiveFilters,
-} from '@/components/comercial/ComercialFilters';
+  EnterpriseBadge,
+  EnterpriseDataPanel,
+  EnterpriseMetricCard,
+  EnterprisePageHeader,
+  EnterpriseSearchFilter,
+  EnterpriseTable,
+  EnterpriseTbody,
+  EnterpriseTd,
+  EnterpriseTh,
+  EnterpriseThead,
+  EnterpriseTr,
+} from '@/components/enterprise';
+import { EnterpriseComercialFilters } from '@/components/comercial/EnterpriseComercialFilters';
 import type { ComercialFilters as ComercialFiltersType } from '@/types/comercial';
 
 // Paleta enterprise: usa primário do sistema + neutros + status colors.
@@ -76,90 +79,6 @@ const filtrosIniciais: ComercialFiltersType = {
 };
 
 /* ------------------------------------------------------------------ */
-/* Hooks                                                               */
-/* ------------------------------------------------------------------ */
-function useCountUp(target: number, duration = 900) {
-  const [value, setValue] = useState(0);
-  const prev = useRef(0);
-  useEffect(() => {
-    const from = prev.current;
-    prev.current = target;
-    const start = performance.now();
-    let raf = 0;
-    const tick = (now: number) => {
-      const p = Math.min((now - start) / duration, 1);
-      const eased = 1 - Math.pow(1 - p, 3);
-      setValue(from + (target - from) * eased);
-      if (p < 1) raf = requestAnimationFrame(tick);
-    };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, [target, duration]);
-  return value;
-}
-
-/* ------------------------------------------------------------------ */
-/* KPI Card — enterprise clean                                         */
-/* ------------------------------------------------------------------ */
-interface KpiProps {
-  title: string;
-  value: number;
-  formatter?: (n: number) => string;
-  icon: React.ReactNode;
-  delta?: number;
-  index: number;
-  tone?: 'default' | 'success' | 'warning' | 'danger';
-}
-function KpiCard({ title, value, formatter = (n) => String(Math.round(n)), icon, delta, index, tone = 'default' }: KpiProps) {
-  const animated = useCountUp(value);
-  const toneRing = {
-    default: 'text-primary bg-primary/10 ring-primary/15',
-    success: 'text-success bg-success/10 ring-success/15',
-    warning: 'text-warning bg-warning/10 ring-warning/15',
-    danger: 'text-destructive bg-destructive/10 ring-destructive/15',
-  }[tone];
-  return (
-    <Card
-      className={cn(
-        'group relative overflow-hidden border-border/60 transition-all duration-300',
-        'hover:border-border hover:shadow-md hover:-translate-y-px',
-      )}
-      style={{ animation: `cliRise 0.4s ${0.04 + index * 0.05}s ease-out backwards` }}
-    >
-      <CardContent className="p-4">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0 flex-1">
-            <p className="text-[11px] uppercase tracking-wider font-medium text-muted-foreground mb-1.5 truncate">
-              {title}
-            </p>
-            <p className="text-2xl font-bold mono-value tracking-tight text-foreground leading-none">
-              {formatter(animated)}
-            </p>
-            {typeof delta === 'number' && (
-              <div className="mt-2 flex items-center gap-1.5">
-                <span
-                  className={cn(
-                    'inline-flex items-center gap-0.5 text-[11px] font-semibold px-1.5 py-0.5 rounded-md',
-                    delta >= 0 ? 'text-success bg-success/10' : 'text-destructive bg-destructive/10',
-                  )}
-                >
-                  {delta >= 0 ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
-                  {Math.abs(delta).toFixed(1)}%
-                </span>
-                <span className="text-[11px] text-muted-foreground">vs período anterior</span>
-              </div>
-            )}
-          </div>
-          <div className={cn('h-9 w-9 rounded-lg flex items-center justify-center ring-1 shrink-0', toneRing)}>
-            {icon}
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-/* ------------------------------------------------------------------ */
 /* Página                                                              */
 /* ------------------------------------------------------------------ */
 export default function ClientesPage() {
@@ -168,7 +87,6 @@ export default function ClientesPage() {
 
   const [pendingFilters, setPendingFilters] = useState<ComercialFiltersType>(filtrosIniciais);
   const [appliedFilters, setAppliedFilters] = useState<ComercialFiltersType>(filtrosIniciais);
-  const [filtersOpen, setFiltersOpen] = useState(false);
 
   const {
     clientesPerformance,
@@ -184,7 +102,6 @@ export default function ClientesPage() {
 
   const handleBuscar = useCallback(() => {
     setAppliedFilters(pendingFilters);
-    setFiltersOpen(false);
   }, [pendingFilters]);
 
   const handleClearFilters = useCallback(() => {
@@ -340,54 +257,40 @@ export default function ClientesPage() {
   }[t]);
 
   return (
-    <div className="p-4 md:p-6 space-y-5">
-      <CollapsibleFilterBar
-        title="Filtros"
-        summary={getComercialFiltersSummary(appliedFilters, vendedoresDisponiveis)}
-        activeFiltersCount={countActiveFilters(appliedFilters)}
-        onClear={handleClearFilters}
-        isOpen={filtersOpen}
-        onOpenChange={setFiltersOpen}
-      >
-        <ComercialFilters
-          filters={pendingFilters}
-          onFiltersChange={setPendingFilters}
-          onBuscar={handleBuscar}
-          hasChanges={hasChanges}
-          anos={ANOS_DISPONIVEIS}
-          vendedores={vendedoresDisponiveis}
-          showVendedorFilter
-        />
-      </CollapsibleFilterBar>
-
-      {/* ===== Header ===== */}
-      <div className="page-header">
-        <div>
-          <h1 className="page-title flex items-center gap-2">
-            <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 ring-1 ring-primary/15">
-              <Users className="h-4 w-4 text-primary" />
-            </span>
-            Análise de Clientes
-          </h1>
-          <p className="page-subtitle">Ranking, evolução e insights da base de clientes</p>
-        </div>
-        <div className="relative w-full md:w-72">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Buscar cliente..."
+    <div className="enterprise-page-shell">
+      <EnterprisePageHeader
+        title="Análise de Clientes"
+        subtitle="Ranking, evolução e insights da base de clientes"
+        icon={Users}
+        actions={
+          <EnterpriseSearchFilter
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-9"
+            onChange={setSearchTerm}
+            placeholder="Buscar cliente..."
+            aria-label="Buscar cliente"
           />
-        </div>
-      </div>
+        }
+      />
+
+      <EnterpriseComercialFilters
+        pendingFilters={pendingFilters}
+        appliedFilters={appliedFilters}
+        onPendingFiltersChange={setPendingFilters}
+        onApply={handleBuscar}
+        onClear={handleClearFilters}
+        hasChanges={hasChanges}
+        anos={ANOS_DISPONIVEIS}
+        vendedores={vendedoresDisponiveis}
+        showVendedorFilter
+        useNativeControls
+      />
 
       {/* ===== KPIs ===== */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <KpiCard title="Total Clientes" value={kpis.qtdClientes} icon={<Users className="h-4 w-4" />} delta={5.2} index={0} />
-        <KpiCard title="Novos (30 dias)" value={novosClientes.length} icon={<Sparkles className="h-4 w-4" />} delta={12.4} index={1} tone="success" />
-        <KpiCard title="Em Risco" value={clientesEmRisco.length} icon={<AlertTriangle className="h-4 w-4" />} delta={-3.1} index={2} tone="warning" />
-        <KpiCard title="Estados Atendidos" value={ufsUnicas.length} icon={<MapPin className="h-4 w-4" />} delta={2.0} index={3} />
+      <div className="enterprise-grid-metrics">
+        <EnterpriseMetricCard label="Total Clientes" value={kpis.qtdClientes} icon={<Users className="h-4 w-4" />} />
+        <EnterpriseMetricCard label="Novos (30 dias)" value={novosClientes.length} icon={<Sparkles className="h-4 w-4" />} tone="positive" />
+        <EnterpriseMetricCard label="Em Risco" value={clientesEmRisco.length} icon={<AlertTriangle className="h-4 w-4" />} tone="warning" />
+        <EnterpriseMetricCard label="Estados Atendidos" value={ufsUnicas.length} icon={<MapPin className="h-4 w-4" />} />
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -408,444 +311,367 @@ export default function ClientesPage() {
               {top5Clientes.map((c, i) => {
                 const isFirst = i === 0;
                 return (
-                  <Card
+                  <article
                     key={c.codigo}
                     className={cn(
-                      'group relative transition-all duration-300 hover:shadow-md hover:-translate-y-px',
-                      isFirst ? 'md:col-span-2 border-primary/30' : 'border-border/60',
+                      'min-w-0 rounded-lg border bg-card p-4 transition-colors hover:border-border',
+                      isFirst ? 'md:col-span-2 border-primary/30' : 'border-border',
                     )}
                     style={{ animation: `cliRise 0.4s ${0.08 + i * 0.06}s ease-out backwards` }}
                   >
-                    <CardContent className="p-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                          {isFirst ? (
-                            <Crown className="h-4 w-4 text-primary" />
-                          ) : (
-                            <span className="text-[11px] font-semibold italic text-muted-foreground">#{i + 1}</span>
-                          )}
-                          <span className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">
-                            {isFirst ? 'Líder' : i === 1 ? 'Vice' : `Top ${i + 1}`}
-                          </span>
-                        </div>
-                        <Badge variant="secondary" className="text-[10px] font-medium">
-                          {formatPercent(c.participacao)}
-                        </Badge>
-                      </div>
-                      <p className={cn('font-semibold truncate', isFirst ? 'text-base' : 'text-sm')}>
-                        {c.fantasia || c.razao}
-                      </p>
-                      {c.cidade && (
-                        <p className="text-[11px] text-muted-foreground truncate mb-2">
-                          {c.cidade}/{c.uf}
-                        </p>
-                      )}
-                      <p
-                        className={cn(
-                          'mono-value font-bold tracking-tight',
-                          isFirst ? 'text-xl text-primary' : 'text-base text-foreground',
+                    <div className="flex items-center justify-between gap-2 mb-2">
+                      <div className="flex min-w-0 items-center gap-2">
+                        {isFirst ? (
+                          <Crown className="h-4 w-4 shrink-0 text-primary" />
+                        ) : (
+                          <span className="shrink-0 text-[11px] font-semibold italic text-muted-foreground">#{i + 1}</span>
                         )}
-                      >
-                        {formatCurrency(c.faturamentoLiquido, !isFirst)}
-                      </p>
-                      <div className="mt-2 h-1 rounded-full bg-muted/60 overflow-hidden">
-                        <div
-                          className="h-full rounded-full bg-primary/80"
-                          style={{
-                            width: `${Math.min((c.faturamentoLiquido / (top5Clientes[0]?.faturamentoLiquido || 1)) * 100, 100)}%`,
-                            animation: `cliBar 0.7s ${0.2 + i * 0.08}s cubic-bezier(.22,.9,.32,1) backwards`,
-                            transformOrigin: 'left center',
-                          }}
-                        />
+                        <span className="truncate text-[10px] uppercase font-semibold text-muted-foreground">
+                          {isFirst ? 'Líder' : i === 1 ? 'Vice' : `Top ${i + 1}`}
+                        </span>
                       </div>
-                    </CardContent>
-                  </Card>
+                      <EnterpriseBadge tone={isFirst ? 'info' : 'neutral'}>
+                        {formatPercent(c.participacao)}
+                      </EnterpriseBadge>
+                    </div>
+                    <p className={cn('truncate font-semibold', isFirst ? 'text-base' : 'text-sm')}>
+                      {c.fantasia || c.razao}
+                    </p>
+                    {c.cidade && (
+                      <p className="mb-2 truncate text-[11px] text-muted-foreground">
+                        {c.cidade}/{c.uf}
+                      </p>
+                    )}
+                    <p
+                      className={cn(
+                        'mono-value font-bold tracking-tight',
+                        isFirst ? 'text-xl text-primary' : 'text-base text-foreground',
+                      )}
+                    >
+                      {formatCurrency(c.faturamentoLiquido, !isFirst)}
+                    </p>
+                    <div className="mt-2 h-1 rounded-full bg-muted/60 overflow-hidden">
+                      <div
+                        className="h-full rounded-full bg-primary/80"
+                        style={{
+                          width: `${Math.min((c.faturamentoLiquido / (top5Clientes[0]?.faturamentoLiquido || 1)) * 100, 100)}%`,
+                          animation: `cliBar 0.7s ${0.2 + i * 0.08}s cubic-bezier(.22,.9,.32,1) backwards`,
+                          transformOrigin: 'left center',
+                        }}
+                      />
+                    </div>
+                  </article>
                 );
               })}
             </div>
           )}
 
           {/* Concentração */}
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base flex items-center gap-2">
-                <Activity className="h-4 w-4 text-primary" />
-                Concentração Top 10 Clientes
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[300px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={top10Treemap} layout="vertical">
-                    <CartesianGrid strokeDasharray="3 3" className="stroke-border/40" horizontal={false} />
-                    <XAxis
-                      type="number"
-                      tickFormatter={(v) => formatCurrency(v, true)}
-                      tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }}
-                    />
-                    <YAxis
-                      type="category"
-                      dataKey="name"
-                      width={140}
-                      tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }}
-                    />
-                    <Tooltip
-                      cursor={{ fill: 'hsl(var(--primary) / 0.05)' }}
-                      formatter={(value: number) => formatCurrency(value)}
-                      contentStyle={{
-                        backgroundColor: 'hsl(var(--card))',
-                        border: '1px solid hsl(var(--border))',
-                        borderRadius: '8px',
-                        fontSize: 12,
-                      }}
-                    />
-                    <Bar dataKey="size" name="Faturamento" radius={[0, 4, 4, 0]} animationDuration={800}>
-                      {top10Treemap.map((_, index) => (
-                        <Cell key={`cell-${index}`} fill={RANK_COLORS[index % RANK_COLORS.length]} />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
+          <EnterpriseDataPanel title="Concentração Top 10 Clientes" density="compact">
+            <div className="h-[300px] min-w-0">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={top10Treemap} layout="vertical">
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-border/40" horizontal={false} />
+                  <XAxis
+                    type="number"
+                    tickFormatter={(v) => formatCurrency(v, true)}
+                    tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }}
+                  />
+                  <YAxis
+                    type="category"
+                    dataKey="name"
+                    width={140}
+                    tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }}
+                  />
+                  <Tooltip
+                    cursor={{ fill: 'hsl(var(--primary) / 0.05)' }}
+                    formatter={(value: number) => formatCurrency(value)}
+                    contentStyle={{
+                      backgroundColor: 'hsl(var(--card))',
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: '8px',
+                      fontSize: 12,
+                    }}
+                  />
+                  <Bar dataKey="size" name="Faturamento" radius={[0, 4, 4, 0]} animationDuration={800}>
+                    {top10Treemap.map((_, index) => (
+                      <Cell key={`cell-${index}`} fill={RANK_COLORS[index % RANK_COLORS.length]} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </EnterpriseDataPanel>
 
           {/* Tabela de ranking */}
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base">Ranking Completo</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-border/60">
-                      <th className="text-left py-3 px-2 font-medium text-muted-foreground text-[11px] uppercase tracking-wider">#</th>
-                      <th className="text-left py-3 px-2 font-medium text-muted-foreground text-[11px] uppercase tracking-wider">Cliente</th>
-                      <th className="text-left py-3 px-2 font-medium text-muted-foreground text-[11px] uppercase tracking-wider">Cidade/UF</th>
-                      <th className="text-right py-3 px-2 font-medium text-muted-foreground text-[11px] uppercase tracking-wider">Faturamento</th>
-                      <th className="text-right py-3 px-2 font-medium text-muted-foreground text-[11px] uppercase tracking-wider">Pedidos</th>
-                      <th className="text-right py-3 px-2 font-medium text-muted-foreground text-[11px] uppercase tracking-wider">Ticket</th>
-                      <th className="text-right py-3 px-2 font-medium text-muted-foreground text-[11px] uppercase tracking-wider">Part. %</th>
-                      <th className="text-right py-3 px-2 font-medium text-muted-foreground text-[11px] uppercase tracking-wider">Última Compra</th>
-                    </tr>
-                  </thead>
-                  <tbody>
+          <EnterpriseDataPanel title="Ranking Completo" density="compact" noPadding>
+            <EnterpriseTable className="rounded-none border-0">
+              <EnterpriseThead>
+                <EnterpriseTr>
+                  <EnterpriseTh numeric>#</EnterpriseTh>
+                  <EnterpriseTh>Cliente</EnterpriseTh>
+                  <EnterpriseTh>Cidade/UF</EnterpriseTh>
+                  <EnterpriseTh numeric>Faturamento</EnterpriseTh>
+                  <EnterpriseTh numeric>Pedidos</EnterpriseTh>
+                  <EnterpriseTh numeric>Ticket</EnterpriseTh>
+                  <EnterpriseTh numeric>Part. %</EnterpriseTh>
+                  <EnterpriseTh numeric>Última Compra</EnterpriseTh>
+                </EnterpriseTr>
+              </EnterpriseThead>
+              <EnterpriseTbody>
                     {clientesFiltrados.slice(0, 20).map((c, i) => (
-                      <tr key={c.codigo} className="border-b border-border/40 premium-table-row">
-                        <td className="py-3 px-2">
+                      <EnterpriseTr key={c.codigo}>
+                        <EnterpriseTd numeric>
                           {i < 3 ? (
-                            <Badge className={cn(
-                              'w-7 h-7 rounded-full p-0 flex items-center justify-center text-xs font-bold border-0',
-                              i === 0 && 'rank-1',
-                              i === 1 && 'rank-2',
-                              i === 2 && 'rank-3',
-                            )}>
+                            <EnterpriseBadge tone={i === 0 ? 'info' : 'neutral'} className="justify-center">
                               {i + 1}°
-                            </Badge>
+                            </EnterpriseBadge>
                           ) : (
                             <span className="text-muted-foreground italic">{i + 1}</span>
                           )}
-                        </td>
-                        <td className="py-3 px-2">
-                          <div>
-                            <p className="font-medium">{c.fantasia || c.razao}</p>
+                        </EnterpriseTd>
+                        <EnterpriseTd>
+                          <div className="min-w-0">
+                            <p className="truncate font-medium">{c.fantasia || c.razao}</p>
                             {c.fantasia && (
-                              <p className="text-xs text-muted-foreground">{c.razao}</p>
+                              <p className="truncate text-xs text-muted-foreground">{c.razao}</p>
                             )}
                           </div>
-                        </td>
-                        <td className="py-3 px-2 text-muted-foreground">
+                        </EnterpriseTd>
+                        <EnterpriseTd className="text-muted-foreground">
                           {c.cidade ? `${c.cidade}/${c.uf}` : c.uf || '-'}
-                        </td>
-                        <td className="py-3 px-2 text-right mono-value font-semibold">
+                        </EnterpriseTd>
+                        <EnterpriseTd numeric className="mono-value font-semibold">
                           {formatCurrency(c.faturamentoLiquido)}
-                        </td>
-                        <td className="py-3 px-2 text-right mono-value">{c.totalPedidos}</td>
-                        <td className="py-3 px-2 text-right mono-value text-muted-foreground">
+                        </EnterpriseTd>
+                        <EnterpriseTd numeric className="mono-value">{c.totalPedidos}</EnterpriseTd>
+                        <EnterpriseTd numeric className="mono-value text-muted-foreground">
                           {formatCurrency(c.ticketMedio)}
-                        </td>
-                        <td className="py-3 px-2 text-right">
+                        </EnterpriseTd>
+                        <EnterpriseTd numeric>
                           {formatPercent(c.participacao)}
-                        </td>
-                        <td className="py-3 px-2 text-right text-muted-foreground">
+                        </EnterpriseTd>
+                        <EnterpriseTd numeric className="text-muted-foreground">
                           {c.ultimaCompra
                             ? new Date(c.ultimaCompra).toLocaleDateString('pt-BR')
                             : '-'}
-                        </td>
-                      </tr>
+                        </EnterpriseTd>
+                      </EnterpriseTr>
                     ))}
-                  </tbody>
-                </table>
-              </div>
-            </CardContent>
-          </Card>
+              </EnterpriseTbody>
+            </EnterpriseTable>
+          </EnterpriseDataPanel>
         </TabsContent>
 
         {/* =================================================== EVOLUÇÃO */}
         <TabsContent value="evolucao" className="space-y-5 mt-5">
           {evolucaoStats && (
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-              <Card><CardContent className="p-4">
-                <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium mb-1">Último mês</p>
-                <p className="text-xl font-bold mono-value text-foreground">{formatCurrency(evolucaoStats.ultimo, true)}</p>
-              </CardContent></Card>
-              <Card><CardContent className="p-4">
-                <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium mb-1">Mês anterior</p>
-                <p className="text-xl font-bold mono-value text-muted-foreground">{formatCurrency(evolucaoStats.anterior, true)}</p>
-              </CardContent></Card>
-              <Card><CardContent className="p-4">
-                <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium mb-1">Variação</p>
-                <p className={cn('text-xl font-bold mono-value flex items-center gap-1', evolucaoStats.delta >= 0 ? 'text-success' : 'text-destructive')}>
-                  {evolucaoStats.delta >= 0 ? <ArrowUpRight className="h-4 w-4" /> : <ArrowDownRight className="h-4 w-4" />}
-                  {Math.abs(evolucaoStats.delta).toFixed(1)}%
-                </p>
-              </CardContent></Card>
-              <Card className="border-primary/30"><CardContent className="p-4">
-                <p className="text-[11px] uppercase tracking-wider text-primary font-medium mb-1 flex items-center gap-1"><Target className="h-3 w-3" /> Meta atingida</p>
-                <p className="text-xl font-bold mono-value text-primary">{Math.min(((evolucaoStats.ultimo / (evolucaoStats.anterior || 1)) * 100), 200).toFixed(0)}%</p>
-              </CardContent></Card>
+              <EnterpriseMetricCard label="Último mês" value={formatCurrency(evolucaoStats.ultimo, true)} />
+              <EnterpriseMetricCard label="Mês anterior" value={formatCurrency(evolucaoStats.anterior, true)} />
+              <EnterpriseMetricCard
+                label="Variação"
+                value={`${Math.abs(evolucaoStats.delta).toFixed(1)}%`}
+                icon={evolucaoStats.delta >= 0 ? <ArrowUpRight className="h-4 w-4" /> : <ArrowDownRight className="h-4 w-4" />}
+                tone={evolucaoStats.delta >= 0 ? 'positive' : 'negative'}
+              />
+              <EnterpriseMetricCard
+                label="Meta atingida"
+                value={`${Math.min(((evolucaoStats.ultimo / (evolucaoStats.anterior || 1)) * 100), 200).toFixed(0)}%`}
+                icon={<Target className="h-4 w-4" />}
+                tone="info"
+              />
             </div>
           )}
 
-          <Card>
-            <CardHeader className="pb-2">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Activity className="h-4 w-4 text-primary" />
-                  Evolução de Vendas · Top 5 Clientes
-                </CardTitle>
-                <Badge variant="secondary" className="text-[10px]">
-                  <Brain className="h-3 w-3 mr-1" /> Analisado por IA
-                </Badge>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[360px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={evolucaoTop5}>
-                    <defs>
-                      {top5Codigos.map((codigo, i) => {
-                        const color = RANK_COLORS[i % RANK_COLORS.length];
-                        return (
-                          <linearGradient key={String(codigo)} id={`area-${codigo}`} x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="0%" stopColor={color} stopOpacity={0.25} />
-                            <stop offset="100%" stopColor={color} stopOpacity={0} />
-                          </linearGradient>
-                        );
-                      })}
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" className="stroke-border/30" />
-                    <XAxis dataKey="mes" tickFormatter={formatMes} tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }} />
-                    <YAxis tickFormatter={(v) => formatCurrency(v, true)} tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }} />
-                    <Tooltip
-                      formatter={(value: number) => formatCurrency(value)}
-                      labelFormatter={formatMes}
-                      contentStyle={{
-                        backgroundColor: 'hsl(var(--card))',
-                        border: '1px solid hsl(var(--border))',
-                        borderRadius: '8px',
-                        fontSize: 12,
-                      }}
-                    />
-                    <Legend wrapperStyle={{ fontSize: 11 }} />
+          <EnterpriseDataPanel
+            title="Evolução de Vendas · Top 5 Clientes"
+            density="compact"
+            actions={<EnterpriseBadge tone="info"><Brain className="h-3 w-3" /> Analisado por IA</EnterpriseBadge>}
+          >
+            <div className="h-[360px] min-w-0">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={evolucaoTop5}>
+                  <defs>
                     {top5Codigos.map((codigo, i) => {
-                      const cliente = clientesPerformance.find(c => c.codigo === codigo);
                       const color = RANK_COLORS[i % RANK_COLORS.length];
                       return (
-                        <Area
-                          key={String(codigo)}
-                          type="monotone"
-                          dataKey={String(codigo)}
-                          name={(cliente?.fantasia || cliente?.razao || `Cliente ${codigo}`).substring(0, 22)}
-                          stroke={color}
-                          strokeWidth={2}
-                          fill={`url(#area-${codigo})`}
-                          dot={false}
-                          activeDot={{ r: 4 }}
-                          animationDuration={1000}
-                          animationEasing="ease-out"
-                        />
+                        <linearGradient key={String(codigo)} id={`area-${codigo}`} x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor={color} stopOpacity={0.25} />
+                          <stop offset="100%" stopColor={color} stopOpacity={0} />
+                        </linearGradient>
                       );
                     })}
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-border/30" />
+                  <XAxis dataKey="mes" tickFormatter={formatMes} tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }} />
+                  <YAxis tickFormatter={(v) => formatCurrency(v, true)} tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }} />
+                  <Tooltip
+                    formatter={(value: number) => formatCurrency(value)}
+                    labelFormatter={formatMes}
+                    contentStyle={{
+                      backgroundColor: 'hsl(var(--card))',
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: '8px',
+                      fontSize: 12,
+                    }}
+                  />
+                  <Legend wrapperStyle={{ fontSize: 11 }} />
+                  {top5Codigos.map((codigo, i) => {
+                    const cliente = clientesPerformance.find(c => c.codigo === codigo);
+                    const color = RANK_COLORS[i % RANK_COLORS.length];
+                    return (
+                      <Area
+                        key={String(codigo)}
+                        type="monotone"
+                        dataKey={String(codigo)}
+                        name={(cliente?.fantasia || cliente?.razao || `Cliente ${codigo}`).substring(0, 22)}
+                        stroke={color}
+                        strokeWidth={2}
+                        fill={`url(#area-${codigo})`}
+                        dot={false}
+                        activeDot={{ r: 4 }}
+                        animationDuration={1000}
+                        animationEasing="ease-out"
+                      />
+                    );
+                  })}
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </EnterpriseDataPanel>
         </TabsContent>
 
         {/* =================================================== INSIGHTS IA */}
         <TabsContent value="insights" className="space-y-5 mt-5">
           {insightsIA.length > 0 && (
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 ring-1 ring-primary/15">
-                    <Brain className="h-4 w-4 text-primary" />
-                  </span>
-                  Insights Inteligentes
-                  <Badge variant="secondary" className="ml-2 text-[10px]">
-                    {insightsIA.length} análises
-                  </Badge>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {insightsIA.map((ins, i) => (
+            <EnterpriseDataPanel
+              title="Insights Inteligentes"
+              density="compact"
+              actions={<EnterpriseBadge tone="info">{insightsIA.length} análises</EnterpriseBadge>}
+            >
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {insightsIA.map((ins, i) => (
+                  <div
+                    key={i}
+                    className="min-w-0 rounded-lg border border-border bg-muted/20 p-3.5 transition-colors hover:border-border"
+                    style={{ animation: `cliRise 0.4s ${0.08 + i * 0.06}s ease-out backwards` }}
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className={cn('h-8 w-8 rounded-md flex items-center justify-center shrink-0 ring-1', toneBg(ins.tone))}>
+                        {ins.icon}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="mb-1 truncate text-sm font-semibold">{ins.titulo}</p>
+                        <p className="text-xs text-muted-foreground leading-relaxed">{ins.descricao}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </EnterpriseDataPanel>
+          )}
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+            <EnterpriseDataPanel title="Clientes em Risco" description="Sem compras há 3+ meses" density="compact">
+              {clientesEmRisco.length === 0 ? (
+                <p className="text-muted-foreground text-sm py-4 text-center">
+                  Nenhum cliente em risco identificado
+                </p>
+              ) : (
+                <div className="space-y-1.5">
+                  {clientesEmRisco.map((c, i) => (
                     <div
-                      key={i}
-                      className="group relative rounded-lg border border-border/60 bg-card p-3.5 transition-all hover:border-border hover:shadow-sm"
-                      style={{ animation: `cliRise 0.4s ${0.08 + i * 0.06}s ease-out backwards` }}
+                      key={c.codigo}
+                      className="flex min-w-0 items-center justify-between rounded-md border border-border/60 p-2.5 transition-colors hover:bg-muted/30"
+                      style={{ animation: `cliRise 0.35s ${i * 0.03}s ease-out backwards` }}
                     >
-                      <div className="flex items-start gap-3">
-                        <div className={cn('h-9 w-9 rounded-lg flex items-center justify-center shrink-0 ring-1', toneBg(ins.tone))}>
-                          {ins.icon}
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="text-sm font-semibold mb-1">{ins.titulo}</p>
-                          <p className="text-xs text-muted-foreground leading-relaxed">{ins.descricao}</p>
-                        </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="font-medium text-sm truncate">{c.fantasia || c.razao}</p>
+                        <p className="text-xs text-muted-foreground">
+                          Última compra: {c.ultimaCompra ? new Date(c.ultimaCompra).toLocaleDateString('pt-BR') : 'Nunca'}
+                        </p>
+                      </div>
+                      <div className="text-right shrink-0 ml-3">
+                        <p className="font-semibold text-sm mono-value tabular-nums">{formatCurrency(c.faturamentoLiquido, true)}</p>
+                        <p className="text-xs text-muted-foreground">{c.totalPedidos} pedidos</p>
                       </div>
                     </div>
                   ))}
                 </div>
-              </CardContent>
-            </Card>
-          )}
+              )}
+            </EnterpriseDataPanel>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <AlertTriangle className="h-4 w-4 text-warning" />
-                  Clientes em Risco
-                  <span className="text-xs font-normal text-muted-foreground">(sem compras há 3+ meses)</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {clientesEmRisco.length === 0 ? (
-                  <p className="text-muted-foreground text-sm py-4 text-center">
-                    Nenhum cliente em risco identificado
-                  </p>
-                ) : (
-                  <div className="space-y-1.5">
-                    {clientesEmRisco.map((c, i) => (
-                      <div
-                        key={c.codigo}
-                        className="flex items-center justify-between p-2.5 rounded-md border border-border/50 hover:bg-muted/30 hover:border-border transition-all"
-                        style={{ animation: `cliRise 0.35s ${i * 0.03}s ease-out backwards` }}
-                      >
-                        <div className="min-w-0 flex-1">
-                          <p className="font-medium text-sm truncate">{c.fantasia || c.razao}</p>
-                          <p className="text-xs text-muted-foreground">
-                            Última compra: {c.ultimaCompra ? new Date(c.ultimaCompra).toLocaleDateString('pt-BR') : 'Nunca'}
-                          </p>
-                        </div>
-                        <div className="text-right shrink-0 ml-3">
-                          <p className="font-semibold text-sm mono-value">{formatCurrency(c.faturamentoLiquido, true)}</p>
-                          <p className="text-xs text-muted-foreground">{c.totalPedidos} pedidos</p>
-                        </div>
+            <EnterpriseDataPanel title="Novos Clientes" description="Último mês" density="compact">
+              {novosClientes.length === 0 ? (
+                <p className="text-muted-foreground text-sm py-4 text-center">
+                  Nenhum novo cliente no período
+                </p>
+              ) : (
+                <div className="space-y-1.5">
+                  {novosClientes.slice(0, 10).map((c, i) => (
+                    <div
+                      key={c.codigo}
+                      className="flex min-w-0 items-center justify-between rounded-md border border-border/60 p-2.5 transition-colors hover:bg-muted/30"
+                      style={{ animation: `cliRise 0.35s ${i * 0.03}s ease-out backwards` }}
+                    >
+                      <div className="min-w-0 flex-1">
+                        <p className="font-medium text-sm truncate">{c.fantasia || c.razao}</p>
+                        <p className="text-xs text-muted-foreground">
+                          Primeira compra: {c.primeiraCompra ? new Date(c.primeiraCompra).toLocaleDateString('pt-BR') : '-'}
+                        </p>
                       </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Sparkles className="h-4 w-4 text-success" />
-                  Novos Clientes
-                  <span className="text-xs font-normal text-muted-foreground">(último mês)</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {novosClientes.length === 0 ? (
-                  <p className="text-muted-foreground text-sm py-4 text-center">
-                    Nenhum novo cliente no período
-                  </p>
-                ) : (
-                  <div className="space-y-1.5">
-                    {novosClientes.slice(0, 10).map((c, i) => (
-                      <div
-                        key={c.codigo}
-                        className="flex items-center justify-between p-2.5 rounded-md border border-border/50 hover:bg-muted/30 hover:border-border transition-all"
-                        style={{ animation: `cliRise 0.35s ${i * 0.03}s ease-out backwards` }}
-                      >
-                        <div className="min-w-0 flex-1">
-                          <p className="font-medium text-sm truncate">{c.fantasia || c.razao}</p>
-                          <p className="text-xs text-muted-foreground">
-                            Primeira compra: {c.primeiraCompra ? new Date(c.primeiraCompra).toLocaleDateString('pt-BR') : '-'}
-                          </p>
-                        </div>
-                        <div className="text-right shrink-0 ml-3">
-                          <p className="font-semibold text-sm mono-value text-success">{formatCurrency(c.faturamentoLiquido, true)}</p>
-                          <p className="text-xs text-muted-foreground">{c.totalPedidos} pedidos</p>
-                        </div>
+                      <div className="text-right shrink-0 ml-3">
+                        <p className="font-semibold text-sm mono-value tabular-nums text-success">{formatCurrency(c.faturamentoLiquido, true)}</p>
+                        <p className="text-xs text-muted-foreground">{c.totalPedidos} pedidos</p>
                       </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </EnterpriseDataPanel>
           </div>
         </TabsContent>
 
         {/* =================================================== GEOGRÁFICO */}
         <TabsContent value="geografico" className="space-y-5 mt-5">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base flex items-center gap-2">
-                <MapPin className="h-4 w-4 text-primary" />
-                Top 10 Estados
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {distribuicaoPorUF.map((item, i) => {
-                  const maxPct = distribuicaoPorUF[0]?.percentual || 1;
-                  const fillPct = (item.percentual / maxPct) * 100;
-                  return (
-                    <div
-                      key={item.uf}
-                      style={{ animation: `cliRise 0.35s ${i * 0.04}s ease-out backwards` }}
-                    >
-                      <div className="flex items-center justify-between mb-1.5">
-                        <div className="flex items-center gap-3">
-                          <Badge className={cn(
-                            'w-7 h-7 rounded-full p-0 flex items-center justify-center text-xs font-bold border-0',
-                            i === 0 && 'rank-1',
-                            i === 1 && 'rank-2',
-                            i === 2 && 'rank-3',
-                            i > 2 && 'bg-muted text-muted-foreground',
-                          )}>
-                            {i + 1}
-                          </Badge>
-                          <span className="font-semibold">{item.uf}</span>
-                          <span className="text-xs text-muted-foreground">{formatPercent(item.percentual)}</span>
-                        </div>
-                        <span className="mono-value font-semibold text-foreground">
-                          {formatCurrency(item.valor, true)}
-                        </span>
+          <EnterpriseDataPanel title="Top 10 Estados" density="compact">
+            <div className="space-y-3">
+              {distribuicaoPorUF.map((item, i) => {
+                const maxPct = distribuicaoPorUF[0]?.percentual || 1;
+                const fillPct = (item.percentual / maxPct) * 100;
+                return (
+                  <div
+                    key={item.uf}
+                    style={{ animation: `cliRise 0.35s ${i * 0.04}s ease-out backwards` }}
+                  >
+                    <div className="flex items-center justify-between gap-3 mb-1.5">
+                      <div className="flex min-w-0 items-center gap-3">
+                        <EnterpriseBadge tone={i < 3 ? 'info' : 'neutral'} className="shrink-0 justify-center">
+                          {i + 1}
+                        </EnterpriseBadge>
+                        <span className="font-semibold">{item.uf}</span>
+                        <span className="text-xs text-muted-foreground">{formatPercent(item.percentual)}</span>
                       </div>
-                      <div className="h-1.5 rounded-full bg-muted/60 overflow-hidden">
-                        <div
-                          className="h-full rounded-full bg-primary/80"
-                          style={{
-                            width: `${Math.max(fillPct, 2)}%`,
-                            animation: `cliBar 0.7s ${0.15 + i * 0.05}s cubic-bezier(.22,.9,.32,1) backwards`,
-                            transformOrigin: 'left center',
-                          }}
-                        />
-                      </div>
+                      <span className="mono-value shrink-0 font-semibold tabular-nums text-foreground">
+                        {formatCurrency(item.valor, true)}
+                      </span>
                     </div>
-                  );
-                })}
-              </div>
-            </CardContent>
-          </Card>
+                    <div className="h-1.5 rounded-full bg-muted/60 overflow-hidden">
+                      <div
+                        className="h-full rounded-full bg-primary/80"
+                        style={{
+                          width: `${Math.max(fillPct, 2)}%`,
+                          animation: `cliBar 0.7s ${0.15 + i * 0.05}s cubic-bezier(.22,.9,.32,1) backwards`,
+                          transformOrigin: 'left center',
+                        }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </EnterpriseDataPanel>
         </TabsContent>
       </Tabs>
 

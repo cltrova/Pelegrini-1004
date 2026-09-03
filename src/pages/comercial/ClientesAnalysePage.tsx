@@ -1,5 +1,5 @@
-import ClientesAnalysePageLegacy from './ClientesAnalysePageLegacy';
+import ClientesPage from './ClientesPage';
 
 export default function ClientesAnalysePage() {
-  return <ClientesAnalysePageLegacy />;
+  return <ClientesPage />;
 }
