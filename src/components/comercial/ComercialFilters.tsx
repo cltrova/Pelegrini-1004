@@ -51,13 +51,15 @@ const MESES = [
   { value: '12', label: 'dezembro' },
 ];
 
+export const COMERCIAL_MESES = MESES;
+
 function normalizeMesValue(value: unknown): string | null {
   const n = Number(value);
   if (!Number.isInteger(n) || n < 1 || n > 12) return null;
   return String(n).padStart(2, '0');
 }
 
-function normalizeMeses(values: unknown[] | undefined): string[] {
+export function normalizeMeses(values: unknown[] | undefined): string[] {
   return Array.from(new Set((values || []).map(normalizeMesValue).filter((v): v is string => !!v))).sort();
 }
 
@@ -67,13 +69,13 @@ function safeParseISO(value: unknown): Date | null {
   return isValid(parsed) ? parsed : null;
 }
 
-function safeFormatISO(value: unknown, pattern: string): string | null {
+export function safeFormatISO(value: unknown, pattern: string): string | null {
   const parsed = safeParseISO(value);
   if (!parsed) return null;
   return format(parsed, pattern, { locale: ptBR });
 }
 
-function getMesLabel(value: unknown): string | null {
+export function getMesLabel(value: unknown): string | null {
   const mes = normalizeMesValue(value);
   if (!mes) return null;
   const label = MESES.find((m) => m.value === mes)?.label;
