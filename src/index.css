@@ -65,6 +65,17 @@
     --positive: 142 71% 40%;
     --negative: 0 72% 51%;
     --neutral: 220 9% 46%;
+
+    --enterprise-surface: 0 0% 100%;
+    --enterprise-surface-subtle: 214 31% 96%;
+    --enterprise-border: 214 25% 84%;
+    --enterprise-border-strong: 214 20% 72%;
+    --enterprise-text-muted: 213 13% 42%;
+    --enterprise-positive: 142 65% 36%;
+    --enterprise-negative: 0 68% 46%;
+    --enterprise-warning: 38 88% 42%;
+    --enterprise-info: 207 86% 34%;
+    --enterprise-row-hover: 214 35% 96%;
   }
 
   .dark {
@@ -125,6 +136,17 @@
     --positive: 142 71% 50%;
     --negative: 0 72% 55%;
     --neutral: 220 9% 50%;
+
+    --enterprise-surface: 222 43% 9%;
+    --enterprise-surface-subtle: 222 32% 13%;
+    --enterprise-border: 222 28% 18%;
+    --enterprise-border-strong: 222 22% 28%;
+    --enterprise-text-muted: 215 18% 62%;
+    --enterprise-positive: 142 62% 48%;
+    --enterprise-negative: 0 70% 56%;
+    --enterprise-warning: 38 90% 55%;
+    --enterprise-info: 199 89% 58%;
+    --enterprise-row-hover: 222 32% 13%;
   }
 }
 
@@ -195,6 +217,18 @@
 
   .page-subtitle {
     @apply text-sm text-muted-foreground;
+  }
+
+  .enterprise-page {
+    @apply min-w-0 max-w-full space-y-3 overflow-x-clip p-3 md:p-4;
+  }
+
+  .enterprise-grid-metrics {
+    @apply grid grid-cols-2 gap-2.5 md:grid-cols-4 xl:grid-cols-6;
+  }
+
+  .enterprise-chart-grid {
+    @apply grid min-w-0 grid-cols-1 gap-3 lg:grid-cols-12;
   }
 
   .value-positive {
