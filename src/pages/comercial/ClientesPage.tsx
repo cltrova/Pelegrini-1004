@@ -264,10 +264,10 @@ export default function ClientesPage() {
         icon={Users}
         actions={
           <EnterpriseSearchFilter
+            label="Busca"
             value={searchTerm}
             onChange={setSearchTerm}
             placeholder="Buscar cliente..."
-            aria-label="Buscar cliente"
           />
         }
       />
