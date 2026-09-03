@@ -352,7 +352,7 @@ export default function MetasDiariasPage() {
       </div>
 
       {isEmpresa1004 && (
-        <div className="rounded-2xl border border-border/60 bg-card/55 p-4 shadow-sm">
+        <div className="rounded-lg border border-border/60 bg-card/55 p-4">
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-6">
             {[
               {
@@ -398,7 +398,7 @@ export default function MetasDiariasPage() {
                 tone: 'text-amber-300',
               },
             ].map((item) => (
-              <div key={item.label} className="rounded-xl border border-border/50 bg-background/35 px-4 py-3">
+              <div key={item.label} className="rounded-lg border border-border/50 bg-background/35 px-4 py-3">
                 <div className="mb-2 flex items-center justify-between gap-2">
                   <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">{item.label}</span>
                   <item.icon className={`h-4 w-4 ${item.tone}`} />

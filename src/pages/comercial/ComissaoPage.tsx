@@ -24,7 +24,7 @@ function pad(n: number) {
 
 export default function ComissaoPage() {
   const { filialAtiva } = useFilialSelecionada();
-  const hoje = new Date();
+  const hoje = useMemo(() => new Date(), []);
 
   const [ano, setAno] = useState<number>(hoje.getFullYear());
   const [mes, setMes] = useState<number>(hoje.getMonth() + 1);
@@ -58,7 +58,7 @@ export default function ComissaoPage() {
   };
 
   const { data, isLoading, isFetching, error } = useComissaoVendedores(aplicado);
-  const todasLinhas = data ?? [];
+  const todasLinhas = useMemo(() => data ?? [], [data]);
 
   const opcoesVendedores = useMemo(() => {
     const map = new Map<string, string>();
@@ -104,8 +104,8 @@ export default function ComissaoPage() {
   return (
     <div className="p-4 md:p-6 space-y-5">
       <header className="flex items-center gap-3">
-        <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-400 flex items-center justify-center shadow-lg shadow-emerald-500/20">
-          <BadgeDollarSign className="h-5 w-5 text-primary-foreground" />
+        <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-card">
+          <BadgeDollarSign className="h-5 w-5 text-primary" />
         </div>
         <div>
           <h1 className="text-xl font-bold leading-tight">Comissão</h1>
