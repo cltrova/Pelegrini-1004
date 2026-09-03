@@ -43,6 +43,10 @@ function inferirPeriodo(linhas: LinhaPlanilha[]): { inicio: string; fim: string 
   return { inicio: format(min, 'yyyy-MM-dd'), fim: format(max, 'yyyy-MM-dd') };
 }
 
+function getErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
 const STATUS_META: Record<AutenticacaoStatus, { label: string; cls: string; icon: typeof FileCheck2 }> = {
   autenticado: { label: 'Autenticado', cls: 'bg-emerald-500/15 text-emerald-500 border-emerald-500/30', icon: FileCheck2 },
   divergente: { label: 'Divergente', cls: 'bg-amber-500/15 text-amber-500 border-amber-500/30', icon: AlertTriangle },
@@ -128,7 +132,7 @@ export default function AutenticacaoPedidosPageLegacy() {
           }
           if (!raw) return undefined;
           const s = String(raw).trim();
-          const br = s.match(/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{2,4})$/);
+          const br = s.match(/^(\d{1,2})[/.-](\d{1,2})[/.-](\d{2,4})$/);
           if (br) {
             const [, dd, mm, yyyy] = br;
             const ano = yyyy.length === 2 ? `20${yyyy}` : yyyy;
@@ -299,9 +303,9 @@ export default function AutenticacaoPedidosPageLegacy() {
         title: 'Autenticação concluída',
         description: `${totais.autenticado ?? 0} OK · ${totais.divergente ?? 0} divergentes · ${totais.nao_encontrado ?? 0} não encontrados · ${totais.extra_sistema ?? 0} extras.`,
       });
-    } catch (e: any) {
+    } catch (e) {
       console.error(e);
-      toast({ title: 'Erro na autenticação', description: e.message ?? String(e), variant: 'destructive' });
+      toast({ title: 'Erro na autenticação', description: getErrorMessage(e), variant: 'destructive' });
     } finally {
       setProcessando(false);
     }
@@ -331,7 +335,7 @@ export default function AutenticacaoPedidosPageLegacy() {
       const s = String(raw).trim();
       const iso = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
       if (iso) return `${iso[1]}-${iso[2]}-${iso[3]}`;
-      const br = s.match(/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{2,4})/);
+      const br = s.match(/^(\d{1,2})[/.-](\d{1,2})[/.-](\d{2,4})/);
       if (br) {
         const [, dd, mm, yyyy] = br;
         const ano = yyyy.length === 2 ? `20${yyyy}` : yyyy;
@@ -443,8 +447,8 @@ export default function AutenticacaoPedidosPageLegacy() {
       setStatusFiltro('todos');
       setBusca('');
       toast({ title: 'Importação carregada', description: `${comp.length} resultados.` });
-    } catch (e: any) {
-      toast({ title: 'Erro ao carregar', description: e.message ?? String(e), variant: 'destructive' });
+    } catch (e) {
+      toast({ title: 'Erro ao carregar', description: getErrorMessage(e), variant: 'destructive' });
     }
   }
 

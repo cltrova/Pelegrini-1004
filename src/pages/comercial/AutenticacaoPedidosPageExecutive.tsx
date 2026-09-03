@@ -44,6 +44,10 @@ function inferirPeriodo(linhas: LinhaPlanilha[]): { inicio: string; fim: string 
   return { inicio: format(min, 'yyyy-MM-dd'), fim: format(max, 'yyyy-MM-dd') };
 }
 
+function getErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
 export default function AutenticacaoPedidosPageExecutive() {
   const { toast } = useToast();
   const { user } = useAuth();
@@ -108,7 +112,7 @@ export default function AutenticacaoPedidosPageExecutive() {
           }
           if (!raw) return undefined;
           const s = String(raw).trim();
-          const br = s.match(/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{2,4})$/);
+          const br = s.match(/^(\d{1,2})[/.-](\d{1,2})[/.-](\d{2,4})$/);
           if (br) {
             const [, dd, mm, yyyy] = br;
             const ano = yyyy.length === 2 ? `20${yyyy}` : yyyy;
@@ -283,9 +287,9 @@ export default function AutenticacaoPedidosPageExecutive() {
         title: 'Autenticação concluída',
         description: `${totais.autenticado ?? 0} OK · ${totais.divergente ?? 0} divergentes · ${totais.nao_encontrado ?? 0} não encontrados.`,
       });
-    } catch (e: any) {
+    } catch (e) {
       console.error(e);
-      toast({ title: 'Erro na autenticação', description: e.message ?? String(e), variant: 'destructive' });
+      toast({ title: 'Erro na autenticação', description: getErrorMessage(e), variant: 'destructive' });
     } finally {
       setProcessando(false);
     }
@@ -350,8 +354,8 @@ export default function AutenticacaoPedidosPageExecutive() {
       setResultados(comp);
       setImportacaoIdAtual(id);
       toast({ title: 'Importação carregada', description: `${comp.length} resultados.` });
-    } catch (e: any) {
-      toast({ title: 'Erro ao carregar', description: e.message ?? String(e), variant: 'destructive' });
+    } catch (e) {
+      toast({ title: 'Erro ao carregar', description: getErrorMessage(e), variant: 'destructive' });
     }
   }
 
@@ -381,17 +385,17 @@ export default function AutenticacaoPedidosPageExecutive() {
             </p>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" onClick={() => exportar('xlsx')} disabled={!hasResults} className="rounded-xl">
+            <Button variant="outline" onClick={() => exportar('xlsx')} disabled={!hasResults} className="rounded-lg">
               <Download className="h-4 w-4 mr-2" /> Exportar
             </Button>
-            <Button onClick={clearFile} disabled={!hasFile && !hasResults} className="rounded-xl">
+            <Button onClick={clearFile} disabled={!hasFile && !hasResults} className="rounded-lg">
               <Sparkles className="h-4 w-4 mr-2" /> Nova autenticação
             </Button>
           </div>
         </header>
 
         <Tabs defaultValue="nova" className="space-y-6">
-          <TabsList className="rounded-xl">
+          <TabsList className="rounded-lg">
             <TabsTrigger value="nova" className="rounded-lg">Nova autenticação</TabsTrigger>
             <TabsTrigger value="historico" className="rounded-lg">
               <History className="h-4 w-4 mr-1.5" /> Histórico
@@ -433,7 +437,7 @@ export default function AutenticacaoPedidosPageExecutive() {
           </TabsContent>
 
           <TabsContent value="historico">
-            <div className="rounded-2xl border border-border/60 bg-card shadow-sm overflow-hidden">
+            <div className="rounded-lg border border-border/60 bg-card overflow-hidden">
               <div className="px-5 py-4 border-b border-border/60">
                 <h2 className="text-base font-semibold text-foreground">Importações anteriores</h2>
                 <p className="text-xs text-muted-foreground">Clique em uma importação para reabri-la.</p>
