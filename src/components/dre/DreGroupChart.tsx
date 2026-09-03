@@ -16,6 +16,12 @@ interface DreGroupChartProps {
   data: DreGroupSummary[];
 }
 
+type GroupChartTooltipPayload = {
+  payload?: {
+    total?: number;
+  };
+};
+
 export function DreGroupChart({ data }: DreGroupChartProps) {
   const chartData = useMemo(() => {
     return data.slice(0, 8).map((item) => ({
@@ -31,7 +37,7 @@ export function DreGroupChart({ data }: DreGroupChartProps) {
   };
 
   return (
-    <div className="bg-card rounded-xl border border-border p-5">
+    <div className="bg-card rounded-lg border border-border p-4">
       <h3 className="font-semibold text-foreground mb-4">Distribuição por Grupo</h3>
       <div className="h-[300px]">
         <ResponsiveContainer width="100%" height="100%">
@@ -58,8 +64,8 @@ export function DreGroupChart({ data }: DreGroupChartProps) {
               }
             />
             <Tooltip
-              formatter={(value: number, name: string, props: any) => [
-                formatCurrency(props.payload.total),
+              formatter={(_value: number, _name: string, props: GroupChartTooltipPayload) => [
+                formatCurrency(props.payload?.total ?? 0),
                 'Valor',
               ]}
               labelFormatter={(label) => label}

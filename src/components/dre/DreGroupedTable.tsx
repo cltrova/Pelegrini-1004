@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useEmpresaAtiva } from '@/hooks/useEmpresaAtiva';
 import { DreGroupedTableLegacy } from './DreGroupedTableLegacy';
 import { ChevronRight, ChevronDown, Minus, ChevronsDownUp, ChevronsUpDown } from 'lucide-react';
@@ -170,14 +170,14 @@ function DreGroupedTableRPA({ data, className }: DreGroupedTableProps) {
   }, [viewMode, anos, meses, mesesDoAno]);
 
   // Para o modo mesAno, calcula valores somando todos os anos para cada mês
-  const getValorMesAno = (valores: Record<string, number>, mes: string): number => {
+  const getValorMesAno = useCallback((valores: Record<string, number>, mes: string): number => {
     let total = 0;
     anos.forEach((ano) => {
       const key = `${ano}-${mes}`;
       total += valores[key] || 0;
     });
     return total;
-  };
+  }, [anos]);
 
   // Constrói hierarquia com valores por período
   const hierarchy = useMemo(() => {
@@ -258,7 +258,7 @@ function DreGroupedTableRPA({ data, className }: DreGroupedTableProps) {
       }
     });
     return totais;
-  }, [hierarchy, colunas, viewMode, anos]);
+  }, [hierarchy, colunas, viewMode, getValorMesAno]);
 
   // Receita total por coluna (base 100% da Análise Vertical)
   const receitaPorColuna = useMemo(() => {
@@ -274,7 +274,7 @@ function DreGroupedTableRPA({ data, className }: DreGroupedTableProps) {
       }
     });
     return receitas;
-  }, [hierarchy, colunas, viewMode, anos]);
+  }, [hierarchy, colunas, viewMode, getValorMesAno]);
 
   // Calcula % da Análise Vertical (valor / receita * 100)
   const calcularAV = (valor: number, coluna: string): number | null => {
@@ -347,7 +347,7 @@ function DreGroupedTableRPA({ data, className }: DreGroupedTableProps) {
       }
     });
     return margem;
-  }, [hierarchy, colunas, viewMode, anos]);
+  }, [hierarchy, colunas, viewMode, getValorMesAno]);
 
   // Lucro/Prejuízo = Margem de Contribuição + Despesas fixas (6) + Resultado Financeiro (7) + Outras Receitas (8)
   const lucroPrejuizoPorColuna = useMemo(() => {
@@ -360,7 +360,7 @@ function DreGroupedTableRPA({ data, className }: DreGroupedTableProps) {
       lucro[col] = (margemContribuicaoPorColuna[col] || 0) + somaOutros;
     });
     return lucro;
-  }, [hierarchy, colunas, viewMode, anos, margemContribuicaoPorColuna]);
+  }, [hierarchy, colunas, viewMode, getValorMesAno, margemContribuicaoPorColuna]);
 
   const toggleLevel = (level: 1 | 2 | 3, key: string) => {
     const setters = { 1: setExpandedLevel1, 2: setExpandedLevel2, 3: setExpandedLevel3 };

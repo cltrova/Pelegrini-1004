@@ -107,7 +107,7 @@ export function AcompanhamentoTab() {
 
   return (
     <div className="space-y-4">
-      <Card className="p-4 bg-gradient-to-br from-indigo-500/5 to-sky-500/5 border-indigo-500/20">
+      <Card className="p-4 rounded-lg border-indigo-500/20 bg-card">
         <div className="flex items-start gap-3">
           <div className="size-10 rounded-lg bg-indigo-500/15 flex items-center justify-center">
             <Inbox className="size-5 text-indigo-600 dark:text-indigo-400" />
@@ -150,7 +150,7 @@ export function AcompanhamentoTab() {
           {list.map((it) => (
             <Card
               key={it.id}
-              className="p-4 hover:shadow-md transition-shadow cursor-pointer"
+              className="p-4 cursor-pointer transition-colors hover:bg-muted/30"
               onClick={() => openItem(it)}
             >
               <div className="flex flex-wrap items-start gap-3">

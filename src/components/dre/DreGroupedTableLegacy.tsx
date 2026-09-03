@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { ChevronRight, ChevronDown, Minus, FileSpreadsheet } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -131,14 +131,14 @@ export function DreGroupedTableLegacy({ data, className }: DreGroupedTableProps)
   }, [viewMode, anos, meses, mesesDoAno]);
 
   // Para o modo mesAno, calcula valores somando todos os anos para cada mês
-  const getValorMesAno = (valores: Record<string, number>, mes: string): number => {
+  const getValorMesAno = useCallback((valores: Record<string, number>, mes: string): number => {
     let total = 0;
     anos.forEach((ano) => {
       const key = `${ano}-${mes}`;
       total += valores[key] || 0;
     });
     return total;
-  };
+  }, [anos]);
 
   // Constrói hierarquia com valores por período
   const hierarchy = useMemo(() => {
@@ -219,7 +219,7 @@ export function DreGroupedTableLegacy({ data, className }: DreGroupedTableProps)
       }
     });
     return totais;
-  }, [hierarchy, colunas, viewMode, anos]);
+  }, [hierarchy, colunas, viewMode, getValorMesAno]);
 
   // Receita total por coluna (base 100% da Análise Vertical)
   const receitaPorColuna = useMemo(() => {
@@ -235,7 +235,7 @@ export function DreGroupedTableLegacy({ data, className }: DreGroupedTableProps)
       }
     });
     return receitas;
-  }, [hierarchy, colunas, viewMode, anos]);
+  }, [hierarchy, colunas, viewMode, getValorMesAno]);
 
   // Calcula % da Análise Vertical (valor / receita * 100)
   const calcularAV = (valor: number, coluna: string): number | null => {
@@ -308,7 +308,7 @@ export function DreGroupedTableLegacy({ data, className }: DreGroupedTableProps)
       }
     });
     return margem;
-  }, [hierarchy, colunas, viewMode, anos]);
+  }, [hierarchy, colunas, viewMode, getValorMesAno]);
 
   // Resultado Líquido antes IRPJ E CSLL - soma das categorias de ordem 9 a 19
   const resultadoLiquidoPorColuna = useMemo(() => {
@@ -322,7 +322,7 @@ export function DreGroupedTableLegacy({ data, className }: DreGroupedTableProps)
       }
     });
     return res;
-  }, [hierarchy, colunas, viewMode, anos]);
+  }, [hierarchy, colunas, viewMode, getValorMesAno]);
 
   const temResultadoLiquido = useMemo(
     () => hierarchy.some((cat) => cat.ordem >= 9 && cat.ordem <= 19),
@@ -341,7 +341,7 @@ export function DreGroupedTableLegacy({ data, className }: DreGroupedTableProps)
       }
     });
     return res;
-  }, [hierarchy, colunas, viewMode, anos]);
+  }, [hierarchy, colunas, viewMode, getValorMesAno]);
 
 
 
@@ -351,7 +351,11 @@ export function DreGroupedTableLegacy({ data, className }: DreGroupedTableProps)
     const setters = { 1: setExpandedLevel1, 2: setExpandedLevel2, 3: setExpandedLevel3 };
     setters[level]((prev) => {
       const next = new Set(prev);
-      next.has(key) ? next.delete(key) : next.add(key);
+      if (next.has(key)) {
+        next.delete(key);
+      } else {
+        next.add(key);
+      }
       return next;
     });
   };

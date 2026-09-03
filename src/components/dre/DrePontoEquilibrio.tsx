@@ -259,10 +259,10 @@ export function DrePontoEquilibrio({ data, historicalData, codEmpresa }: Props) 
       {/* HERO — a pergunta central respondida em uma frase */}
       <Card
         className={cn(
-          'p-8 border-2 relative overflow-hidden',
+          'p-6 border relative overflow-hidden rounded-lg',
           atingiu
-            ? 'border-emerald-500/30 bg-gradient-to-br from-emerald-500/5 via-background to-background'
-            : 'border-amber-500/30 bg-gradient-to-br from-amber-500/5 via-background to-background',
+            ? 'border-emerald-500/30 bg-card'
+            : 'border-amber-500/30 bg-card',
         )}
       >
         <div className="absolute top-0 right-0 opacity-[0.03] pointer-events-none">
@@ -308,7 +308,7 @@ export function DrePontoEquilibrio({ data, historicalData, codEmpresa }: Props) 
                 <div
                   className={cn(
                     'h-full transition-all',
-                    atingiu ? 'bg-gradient-to-r from-emerald-500 to-emerald-400' : 'bg-gradient-to-r from-amber-500 to-amber-400',
+                    atingiu ? 'bg-emerald-500' : 'bg-amber-500',
                   )}
                   style={{ width: `${Math.min(100, percClamp)}%` }}
                 />
@@ -559,7 +559,7 @@ export function DrePontoEquilibrio({ data, historicalData, codEmpresa }: Props) 
       </Card>
 
       {/* AÇÕES / INSIGHTS */}
-      <Card className="p-6 bg-gradient-to-br from-primary/5 to-transparent border-primary/20">
+      <Card className="p-6 rounded-lg border-primary/20 bg-card">
         <div className="flex items-center gap-2 mb-4">
           <Lightbulb className="h-4 w-4 text-primary" />
           <h4 className="text-sm font-semibold">O que fazer com essa informação</h4>

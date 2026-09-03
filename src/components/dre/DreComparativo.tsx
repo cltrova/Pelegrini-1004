@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   BarChart,
   Bar,
@@ -29,6 +29,14 @@ interface DreComparativoProps {
   data: DreRecord[];
   groupSummary: DreGroupSummary[];
 }
+
+type CategoryEvolutionRow = { ano: string } & Record<string, number | string>;
+
+type ChartPayloadItem = {
+  dataKey?: string | number;
+  name?: string | number;
+  value?: number | string;
+};
 
 // Descrições das análises
 const analysisDescriptions: Record<string, string> = {
@@ -139,8 +147,7 @@ function VariationBadge({ value, showIcon = true }: { value: number; showIcon?: 
   );
 }
 
-// Card wrapper premium
-const cardCls = "relative bg-gradient-to-b from-card to-card/60 rounded-2xl border border-border/60 shadow-[0_1px_0_0_hsl(var(--border)/0.4)_inset,0_8px_24px_-12px_rgba(0,0,0,0.35)] p-5 backdrop-blur-sm";
+const cardCls = "rounded-lg border border-border bg-card p-4";
 
 // Tooltip customizado para gráficos
 const chartTooltipStyle = {
@@ -180,7 +187,7 @@ export function DreComparativo({ data, groupSummary }: DreComparativoProps) {
   }, [data]);
 
   // Inicializa seleções
-  useMemo(() => {
+  useEffect(() => {
     if (anos.length >= 2 && !selectedAno1) {
       setSelectedAno1(anos[0]);
       setSelectedAno2(anos[1]);
@@ -191,7 +198,7 @@ export function DreComparativo({ data, groupSummary }: DreComparativoProps) {
     if (grupos.length > 0 && !selectedGrupo) {
       setSelectedGrupo(grupos[0]);
     }
-  }, [anos, grupos]);
+  }, [anos, grupos, selectedAno1, selectedGrupo]);
 
   // ============= ANÁLISE YEAR-OVER-YEAR =============
   const yoyAnalysis = useMemo(() => {
@@ -443,14 +450,6 @@ export function DreComparativo({ data, groupSummary }: DreComparativoProps) {
       .sort((a, b) => Math.abs(b.valor) - Math.abs(a.valor));
   }, [data]);
 
-  if (data.length === 0) {
-    return (
-      <div className="flex items-center justify-center h-64 text-muted-foreground">
-        Nenhum dado disponível para comparação
-      </div>
-    );
-  }
-
   const varDelta = useMemo(() => {
     const a = yoyAnalysis.find(y => y.ano === selectedAno1);
     const b = yoyAnalysis.find(y => y.ano === selectedAno2);
@@ -459,15 +458,22 @@ export function DreComparativo({ data, groupSummary }: DreComparativoProps) {
     return { dr };
   }, [yoyAnalysis, selectedAno1, selectedAno2]);
 
+  if (data.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-64 text-muted-foreground">
+        Nenhum dado disponível para comparação
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-5">
       {/* Barra premium de comparação */}
-      <div className="relative overflow-hidden rounded-2xl border border-border/60 bg-gradient-to-br from-card via-card to-card/40 shadow-[0_10px_40px_-15px_rgba(0,0,0,0.4)]">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,hsl(var(--primary)/0.08),transparent_60%)] pointer-events-none" />
-        <div className="relative p-4 md:p-5 flex flex-wrap items-center gap-4 md:gap-6">
+      <div className="rounded-lg border border-border bg-card">
+        <div className="p-4 flex flex-wrap items-center gap-4 md:gap-6">
           {/* Bloco Comparar */}
           <div className="flex items-center gap-3">
-            <div className="h-9 w-9 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center">
+            <div className="h-9 w-9 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center">
               <GitCompare className="h-4 w-4 text-primary" />
             </div>
             <div className="flex flex-col">
@@ -510,7 +516,7 @@ export function DreComparativo({ data, groupSummary }: DreComparativoProps) {
 
           {/* Tabs premium de tipo de análise */}
           <Tabs value={activeAnalysis} onValueChange={(v) => setActiveAnalysis(v as typeof activeAnalysis)}>
-            <TabsList className="h-10 p-1 bg-background/50 border border-border/60 rounded-xl gap-0.5 backdrop-blur">
+            <TabsList className="h-10 p-1 bg-muted/40 border border-border/60 rounded-lg gap-0.5">
               {[
                 { v: 'yoy', label: 'Ano a Ano', Icon: GitCompare },
                 { v: 'grupos', label: 'Grupos', Icon: BarChart3 },
@@ -520,7 +526,7 @@ export function DreComparativo({ data, groupSummary }: DreComparativoProps) {
                 <TabsTrigger
                   key={v}
                   value={v}
-                  className="text-xs px-3 h-8 gap-1.5 rounded-lg font-medium text-muted-foreground data-[state=active]:bg-primary/15 data-[state=active]:text-primary data-[state=active]:shadow-[inset_0_0_0_1px_hsl(var(--primary)/0.25)] transition-all"
+                  className="text-xs px-3 h-8 gap-1.5 rounded-md font-medium text-muted-foreground data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-colors"
                 >
                   <Icon className="h-3.5 w-3.5" />
                   {label}
@@ -539,7 +545,7 @@ export function DreComparativo({ data, groupSummary }: DreComparativoProps) {
           {/* Resumo YoY */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {/* Tabela de evolução anual */}
-            <div className="bg-gradient-to-b from-card to-card/60 rounded-2xl border border-border/60 shadow-[0_1px_0_0_hsl(var(--border)/0.4)_inset,0_8px_24px_-12px_rgba(0,0,0,0.35)] p-5">
+            <div className={cardCls}>
               <CardHeader title="Evolução Anual" description={analysisDescriptions.yoy} icon={TrendingUp} />
               <div className="overflow-x-auto">
                 <Table>
@@ -574,7 +580,7 @@ export function DreComparativo({ data, groupSummary }: DreComparativoProps) {
             </div>
 
             {/* Gráfico de evolução */}
-            <div className="bg-gradient-to-b from-card to-card/60 rounded-2xl border border-border/60 shadow-[0_1px_0_0_hsl(var(--border)/0.4)_inset,0_8px_24px_-12px_rgba(0,0,0,0.35)] p-5">
+            <div className={cardCls}>
               <CardHeader title="Evolução Receitas vs Resultado" description="Comparação visual da evolução de receitas e resultado ao longo dos anos." icon={BarChart3}
                 right={
                   <div className="hidden sm:flex items-center gap-3 text-[10px] font-medium">
@@ -625,7 +631,7 @@ export function DreComparativo({ data, groupSummary }: DreComparativoProps) {
           {/* Comparativo mensal entre anos */}
           {selectedAno1 !== selectedAno2 && (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              <div className="bg-gradient-to-b from-card to-card/60 rounded-2xl border border-border/60 shadow-[0_1px_0_0_hsl(var(--border)/0.4)_inset,0_8px_24px_-12px_rgba(0,0,0,0.35)] p-5">
+              <div className={cardCls}>
                 <CardHeader title={`Comparativo Mensal: ${selectedAno1} vs ${selectedAno2}`} description={analysisDescriptions.sameMonth} icon={Calendar} />
                 <div className="h-[280px]">
                   <ResponsiveContainer width="100%" height="100%">
@@ -643,7 +649,7 @@ export function DreComparativo({ data, groupSummary }: DreComparativoProps) {
               </div>
 
               {/* Variação por grupo */}
-              <div className="bg-gradient-to-b from-card to-card/60 rounded-2xl border border-border/60 shadow-[0_1px_0_0_hsl(var(--border)/0.4)_inset,0_8px_24px_-12px_rgba(0,0,0,0.35)] p-5">
+              <div className={cardCls}>
                 <CardHeader title={`Variação por Grupo: ${selectedAno1} vs ${selectedAno2}`} description="Maiores variações absolutas entre os períodos selecionados." icon={GitCompare} />
                 <div className="h-[280px]">
                   <ResponsiveContainer width="100%" height="100%">
@@ -666,7 +672,7 @@ export function DreComparativo({ data, groupSummary }: DreComparativoProps) {
           )}
 
           {/* Tabela de variações detalhadas */}
-          <div className="bg-gradient-to-b from-card to-card/60 rounded-2xl border border-border/60 shadow-[0_1px_0_0_hsl(var(--border)/0.4)_inset,0_8px_24px_-12px_rgba(0,0,0,0.35)] p-5">
+          <div className={cardCls}>
             <CardHeader
               title="Variações Detalhadas por Grupo"
               description={analysisDescriptions.variance}
@@ -677,7 +683,7 @@ export function DreComparativo({ data, groupSummary }: DreComparativoProps) {
                 </Badge>
               }
             />
-            <div className="overflow-hidden rounded-xl border border-border/50">
+            <div className="overflow-hidden rounded-lg border border-border/50">
               <div className="overflow-auto max-h-[380px] premium-scrollbar">
                 <Table>
                   <TableHeader className="sticky top-0 z-10 bg-muted/60 backdrop-blur supports-[backdrop-filter]:bg-muted/40">
@@ -744,7 +750,7 @@ export function DreComparativo({ data, groupSummary }: DreComparativoProps) {
         <div className="space-y-5">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
             {/* Evolução do Grupo */}
-            <div className="bg-gradient-to-b from-card to-card/60 rounded-2xl border border-border/60 shadow-[0_1px_0_0_hsl(var(--border)/0.4)_inset,0_8px_24px_-12px_rgba(0,0,0,0.35)] p-5">
+            <div className={cardCls}>
               <CardHeader title="Evolução do Grupo" description={analysisDescriptions.groupTrend} icon={BarChart3} />
               <Select value={selectedGrupo} onValueChange={setSelectedGrupo}>
                 <SelectTrigger className="mb-4 h-9 bg-background/60 border-border/70 hover:border-primary/40 transition-colors text-sm font-medium">
@@ -757,7 +763,7 @@ export function DreComparativo({ data, groupSummary }: DreComparativoProps) {
                 </SelectContent>
               </Select>
               {grupoStats && (
-                <div className="flex items-center justify-between mb-3 px-3 py-2 rounded-xl bg-background/40 border border-border/40">
+                <div className="flex items-center justify-between mb-3 px-3 py-2 rounded-lg bg-background/40 border border-border/40">
                   <div className="flex flex-col">
                     <span className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground/80 font-semibold">Total no período</span>
                     <span className={cn('text-sm font-bold tabular-nums', grupoStats.total >= 0 ? 'text-emerald-400' : 'text-red-400')}>
@@ -800,7 +806,7 @@ export function DreComparativo({ data, groupSummary }: DreComparativoProps) {
             </div>
 
             {/* Ranking de grupos - executivo */}
-            <div className="bg-gradient-to-b from-card to-card/60 rounded-2xl border border-border/60 shadow-[0_1px_0_0_hsl(var(--border)/0.4)_inset,0_8px_24px_-12px_rgba(0,0,0,0.35)] p-5 lg:col-span-2">
+            <div className={cn(cardCls, "lg:col-span-2")}>
               <CardHeader
                 title="Ranking de Grupos"
                 description={analysisDescriptions.ranking}
@@ -815,12 +821,12 @@ export function DreComparativo({ data, groupSummary }: DreComparativoProps) {
                   return (
                     <div
                       key={row.grupo}
-                      className="group relative flex items-center gap-3 px-3 py-2.5 rounded-xl bg-background/30 hover:bg-primary/[0.06] border border-border/40 hover:border-primary/30 transition-all duration-200"
+                      className="group relative flex items-center gap-3 px-3 py-2.5 rounded-lg bg-background/30 hover:bg-primary/[0.06] border border-border/40 hover:border-primary/30 transition-colors"
                     >
                       <div className={cn(
                         'flex items-center justify-center h-7 w-7 rounded-lg text-[11px] font-bold tabular-nums flex-shrink-0 transition-all',
                         isTop3
-                          ? 'bg-primary/15 text-primary ring-1 ring-inset ring-primary/30 shadow-[0_0_12px_-2px_hsl(var(--primary)/0.4)]'
+                          ? 'bg-primary/15 text-primary ring-1 ring-inset ring-primary/30'
                           : 'bg-muted/40 text-muted-foreground'
                       )}>
                         {String(idx + 1).padStart(2, '0')}
@@ -837,8 +843,8 @@ export function DreComparativo({ data, groupSummary }: DreComparativoProps) {
                             className={cn(
                               'absolute inset-y-0 left-0 rounded-full transition-all duration-500',
                               positivo
-                                ? 'bg-gradient-to-r from-emerald-500/70 to-emerald-400'
-                                : 'bg-gradient-to-r from-red-500/70 to-red-400'
+                                ? 'bg-emerald-500'
+                                : 'bg-red-500'
                             )}
                             style={{ width: `${pct}%` }}
                           />
@@ -852,14 +858,14 @@ export function DreComparativo({ data, groupSummary }: DreComparativoProps) {
           </div>
 
           {/* Tabela de tendências por grupo - premium */}
-          <div className="bg-gradient-to-b from-card to-card/60 rounded-2xl border border-border/60 shadow-[0_1px_0_0_hsl(var(--border)/0.4)_inset,0_8px_24px_-12px_rgba(0,0,0,0.35)] p-5">
+          <div className={cardCls}>
             <CardHeader
               title="Tendência por Grupo"
               description="Análise da tendência de crescimento de cada grupo ao longo dos anos."
               icon={TrendingUp}
               right={<Badge variant="outline" className="text-[10px] font-medium bg-background/60 border-border/60 tabular-nums">{Math.min(15, groupAnalysis.length)} grupos · crescimento médio anual</Badge>}
             />
-            <div className="overflow-hidden rounded-xl border border-border/50">
+            <div className="overflow-hidden rounded-lg border border-border/50">
               <div className="overflow-auto max-h-[420px] premium-scrollbar">
                 <Table>
                   <TableHeader className="sticky top-0 z-10 bg-muted/60 backdrop-blur supports-[backdrop-filter]:bg-muted/40">
@@ -923,7 +929,7 @@ export function DreComparativo({ data, groupSummary }: DreComparativoProps) {
       {activeAnalysis === 'categorias' && (() => {
         const maxContribAbs = Math.max(1, ...categoryContribution.map(c => Math.abs(c.percentual)));
         const evolucaoData = anos.map(ano => {
-          const obj: Record<string, any> = { ano };
+          const obj: CategoryEvolutionRow = { ano };
           categoryAnalysis.forEach(cat => {
             const dado = cat.dados.find(d => d.ano === ano);
             obj[cat.categoria] = dado ? dado.valor : 0;
@@ -934,7 +940,7 @@ export function DreComparativo({ data, groupSummary }: DreComparativoProps) {
         <div className="space-y-5">
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-5">
             {/* Contribuição por categoria - executivo */}
-            <div className="lg:col-span-2 bg-gradient-to-b from-card to-card/60 rounded-2xl border border-border/60 shadow-[0_1px_0_0_hsl(var(--border)/0.4)_inset,0_8px_24px_-12px_rgba(0,0,0,0.35)] p-5">
+            <div className={cn(cardCls, "lg:col-span-2")}>
               <CardHeader
                 title="Contribuição por Categoria"
                 description={analysisDescriptions.contribution}
@@ -949,7 +955,7 @@ export function DreComparativo({ data, groupSummary }: DreComparativoProps) {
                   return (
                     <div
                       key={cat.categoria}
-                      className="group relative px-3 py-2.5 rounded-xl bg-background/30 hover:bg-primary/[0.06] border border-border/40 hover:border-primary/30 transition-all duration-200"
+                      className="group relative px-3 py-2.5 rounded-lg bg-background/30 hover:bg-primary/[0.06] border border-border/40 hover:border-primary/30 transition-colors"
                     >
                       <div className="flex items-center justify-between gap-3 mb-2">
                         <div className="flex items-center gap-2 min-w-0">
@@ -985,7 +991,7 @@ export function DreComparativo({ data, groupSummary }: DreComparativoProps) {
             </div>
 
             {/* Evolução por categoria */}
-            <div className="lg:col-span-3 bg-gradient-to-b from-card to-card/60 rounded-2xl border border-border/60 shadow-[0_1px_0_0_hsl(var(--border)/0.4)_inset,0_8px_24px_-12px_rgba(0,0,0,0.35)] p-5">
+            <div className={cn(cardCls, "lg:col-span-3")}>
               <CardHeader
                 title="Evolução por Categoria"
                 description="Comparação da evolução de cada categoria ao longo dos anos."
@@ -1001,7 +1007,7 @@ export function DreComparativo({ data, groupSummary }: DreComparativoProps) {
                   return (
                     <span
                       key={cat.categoria}
-                      className="group inline-flex items-center gap-2 pl-1.5 pr-2.5 py-1 rounded-full bg-background/60 border border-border/60 text-[11.5px] font-medium text-foreground/90 hover:bg-background hover:border-border transition-all hover:-translate-y-px shadow-[0_1px_0_0_hsl(var(--border)/0.3)_inset]"
+                      className="group inline-flex items-center gap-2 pl-1.5 pr-2.5 py-1 rounded-full bg-background/60 border border-border/60 text-[11.5px] font-medium text-foreground/90 hover:bg-background hover:border-border transition-colors"
                     >
                       <span className="relative flex items-center justify-center h-4 w-4 rounded-full" style={{ backgroundColor: `${c}22` }}>
                         <span
@@ -1035,21 +1041,22 @@ export function DreComparativo({ data, groupSummary }: DreComparativoProps) {
                       cursor={{ fill: 'hsl(var(--muted) / 0.3)' }}
                       content={({ active, payload, label }) => {
                         if (!active || !payload || !payload.length) return null;
-                        const rows = [...payload].reverse();
-                        const total = rows.reduce((s, r: any) => s + (r.value || 0), 0);
+                        const rows = ([...payload].reverse() as ChartPayloadItem[]);
+                        const total = rows.reduce((s, r) => s + Number(r.value || 0), 0);
                         return (
-                          <div className="rounded-xl border border-border/70 bg-popover/95 backdrop-blur-md shadow-[0_18px_50px_-14px_rgba(0,0,0,0.7)] min-w-[280px] overflow-hidden">
-                            <div className="px-3.5 py-2.5 border-b border-border/60 bg-gradient-to-r from-muted/40 to-muted/10 flex items-center justify-between">
+                          <div className="rounded-lg border border-border/70 bg-popover min-w-[280px] overflow-hidden">
+                            <div className="px-3.5 py-2.5 border-b border-border/60 bg-muted/30 flex items-center justify-between">
                               <span className="text-[10px] uppercase tracking-[0.14em] font-semibold text-muted-foreground">Ano</span>
                               <span className="text-sm font-bold tabular-nums text-foreground">{label}</span>
                             </div>
                             <div className="py-1.5">
-                              {rows.map((r: any) => {
+                              {rows.map((r) => {
                                 const catIdx = categoryAnalysis.findIndex(c => c.categoria === r.name);
                                 const solid = CHART_COLORS[(catIdx >= 0 ? catIdx : 0) % CHART_COLORS.length];
+                                const value = Number(r.value || 0);
                                 return (
                                   <div
-                                    key={r.dataKey}
+                                    key={String(r.dataKey)}
                                     className="relative flex items-center gap-3 pl-3.5 pr-3 py-1.5 hover:bg-muted/30 transition-colors"
                                   >
                                     <span
@@ -1061,14 +1068,14 @@ export function DreComparativo({ data, groupSummary }: DreComparativoProps) {
                                       style={{ backgroundColor: solid, boxShadow: `0 0 8px -1px ${solid}` }}
                                     />
                                     <span className="text-[11.5px] text-foreground/85 flex-1 truncate font-medium">{r.name}</span>
-                                    <span className={cn('text-[12.5px] font-semibold tabular-nums', r.value >= 0 ? 'text-foreground' : 'text-red-400')}>
-                                      {formatCurrency(r.value)}
+                                    <span className={cn('text-[12.5px] font-semibold tabular-nums', value >= 0 ? 'text-foreground' : 'text-red-400')}>
+                                      {formatCurrency(value)}
                                     </span>
                                   </div>
                                 );
                               })}
                             </div>
-                            <div className="px-3.5 py-2.5 border-t border-border/60 bg-gradient-to-r from-muted/30 to-muted/5 flex items-center justify-between">
+                            <div className="px-3.5 py-2.5 border-t border-border/60 bg-muted/30 flex items-center justify-between">
                               <span className="text-[10px] uppercase tracking-[0.14em] font-semibold text-muted-foreground">Total</span>
                               <span className={cn('text-sm font-bold tabular-nums', total >= 0 ? 'text-emerald-400' : 'text-red-400')}>
                                 {formatCurrency(total)}
@@ -1096,14 +1103,14 @@ export function DreComparativo({ data, groupSummary }: DreComparativoProps) {
           </div>
 
           {/* Tabela detalhada de categorias - premium */}
-          <div className="bg-gradient-to-b from-card to-card/60 rounded-2xl border border-border/60 shadow-[0_1px_0_0_hsl(var(--border)/0.4)_inset,0_8px_24px_-12px_rgba(0,0,0,0.35)] p-5">
+          <div className={cardCls}>
             <CardHeader
               title="Detalhamento por Categoria e Ano"
               description="Valores absolutos de cada categoria por ano."
               icon={Layers}
               right={<Badge variant="outline" className="text-[10px] font-medium bg-background/60 border-border/60 tabular-nums">{categoryAnalysis.length} categorias · {anos.length} anos</Badge>}
             />
-            <div className="overflow-hidden rounded-xl border border-border/50">
+            <div className="overflow-hidden rounded-lg border border-border/50">
               <div className="overflow-auto premium-scrollbar">
                 <Table>
                   <TableHeader className="sticky top-0 z-10 bg-muted/60 backdrop-blur supports-[backdrop-filter]:bg-muted/40">
@@ -1169,7 +1176,7 @@ export function DreComparativo({ data, groupSummary }: DreComparativoProps) {
         <div className="space-y-4">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {/* Padrão sazonal */}
-            <div className="bg-gradient-to-b from-card to-card/60 rounded-2xl border border-border/60 shadow-[0_1px_0_0_hsl(var(--border)/0.4)_inset,0_8px_24px_-12px_rgba(0,0,0,0.35)] p-5">
+            <div className={cardCls}>
               <CardHeader title="Padrão Sazonal (Média Mensal)" description={analysisDescriptions.seasonal} icon={Calendar} />
               <div className="h-[280px]">
                 <ResponsiveContainer width="100%" height="100%">
@@ -1187,7 +1194,7 @@ export function DreComparativo({ data, groupSummary }: DreComparativoProps) {
             </div>
 
             {/* Comparativo de meses por ano */}
-            <div className="bg-gradient-to-b from-card to-card/60 rounded-2xl border border-border/60 shadow-[0_1px_0_0_hsl(var(--border)/0.4)_inset,0_8px_24px_-12px_rgba(0,0,0,0.35)] p-5">
+            <div className={cardCls}>
               <CardHeader title="Comparativo Mensal por Ano" description="Resultado de cada mês separado por ano, para identificar padrões sazonais." icon={Calendar} />
               <div className="h-[280px]">
                 <ResponsiveContainer width="100%" height="100%">
@@ -1207,7 +1214,7 @@ export function DreComparativo({ data, groupSummary }: DreComparativoProps) {
           </div>
 
           {/* Tabela de sazonalidade */}
-          <div className="bg-gradient-to-b from-card to-card/60 rounded-2xl border border-border/60 shadow-[0_1px_0_0_hsl(var(--border)/0.4)_inset,0_8px_24px_-12px_rgba(0,0,0,0.35)] p-5">
+          <div className={cardCls}>
             <CardHeader title="Detalhamento Mensal por Ano" description="Valores de cada mês para todos os anos disponíveis." icon={Calendar} />
             <div className="overflow-x-auto">
               <Table>
