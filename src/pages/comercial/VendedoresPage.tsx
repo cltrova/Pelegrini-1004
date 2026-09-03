@@ -62,6 +62,12 @@ import {
   EnterpriseMetricCard,
   EnterprisePageHeader,
   EnterpriseSearchFilter,
+  EnterpriseTable,
+  EnterpriseTbody,
+  EnterpriseTd,
+  EnterpriseTh,
+  EnterpriseThead,
+  EnterpriseTr,
 } from '@/components/enterprise';
 import { getDefaultFiltersForEmpresa } from '@/components/comercial/ComercialFilters';
 import { EnterpriseComercialFilters } from '@/components/comercial/EnterpriseComercialFilters';
@@ -655,38 +661,37 @@ export default function VendedoresPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-border">
-                      <th className="text-left py-3 px-2 font-medium text-muted-foreground">#</th>
-                      <th className="text-left py-3 px-2 font-medium text-muted-foreground">Vendedor</th>
-                      <th className="text-right py-3 px-2 font-medium text-muted-foreground">Faturamento</th>
-                      <th className="text-right py-3 px-2 font-medium text-muted-foreground">% Atingido</th>
-                      <th className="text-right py-3 px-2 font-medium text-muted-foreground">Pendente</th>
-                      <th className="text-right py-3 px-2 font-medium text-muted-foreground">% Pendente</th>
-                      <th className="text-right py-3 px-2 font-medium text-muted-foreground">Meta</th>
-                      <th className="text-right py-3 px-2 font-medium text-muted-foreground">Falta</th>
-                      <th className="text-right py-3 px-2 font-medium text-muted-foreground">Devoluções</th>
-                      <th className="text-right py-3 px-2 font-medium text-muted-foreground">Líquido</th>
-                      <th className="text-right py-3 px-2 font-medium text-muted-foreground">Part. %</th>
-                    </tr>
-                  </thead>
-                  <tbody>
+              <EnterpriseTable>
+                <EnterpriseThead>
+                  <EnterpriseTr>
+                    <EnterpriseTh>#</EnterpriseTh>
+                    <EnterpriseTh>Vendedor</EnterpriseTh>
+                    <EnterpriseTh numeric>Faturamento</EnterpriseTh>
+                    <EnterpriseTh numeric>% Atingido</EnterpriseTh>
+                    <EnterpriseTh numeric>Pendente</EnterpriseTh>
+                    <EnterpriseTh numeric>% Pendente</EnterpriseTh>
+                    <EnterpriseTh numeric>Meta</EnterpriseTh>
+                    <EnterpriseTh numeric>Falta</EnterpriseTh>
+                    <EnterpriseTh numeric>Devoluções</EnterpriseTh>
+                    <EnterpriseTh numeric>Líquido</EnterpriseTh>
+                    <EnterpriseTh numeric>Part. %</EnterpriseTh>
+                  </EnterpriseTr>
+                </EnterpriseThead>
+                <EnterpriseTbody>
                     {vendedoresFiltrados.map((v, i) => {
                       const detalhado = rankingDetalhado.find(r => r.codigo === v.codigo);
                       if (!detalhado) return null;
                       
                       return (
-                        <tr 
+                        <EnterpriseTr
                           key={v.codigo} 
                           className={cn(
-                            'border-b border-border/50 hover:bg-muted/30 cursor-pointer transition-colors',
+                            'cursor-pointer',
                             selectedVendedor === v.codigo && 'bg-primary/5'
                           )}
                           onClick={() => setSelectedVendedor(v.codigo === selectedVendedor ? null : v.codigo)}
                         >
-                          <td className="py-3 px-2">
+                          <EnterpriseTd>
                             {i < 3 ? (
                               <Badge variant={i === 0 ? 'default' : 'secondary'} className="w-6 h-6 rounded-full p-0 flex items-center justify-center">
                                 {i + 1}
@@ -694,12 +699,12 @@ export default function VendedoresPage() {
                             ) : (
                               <span className="text-muted-foreground">{i + 1}</span>
                             )}
-                          </td>
-                          <td className="py-3 px-2 font-medium">{v.nome}</td>
-                          <td className="py-3 px-2 text-right mono-value text-success">
+                          </EnterpriseTd>
+                          <EnterpriseTd className="font-medium">{v.nome}</EnterpriseTd>
+                          <EnterpriseTd numeric className="mono-value text-success">
                             {formatCurrency(v.faturamentoLiquido)}
-                          </td>
-                          <td className="py-3 px-2 text-right">
+                          </EnterpriseTd>
+                          <EnterpriseTd numeric>
                             <span className={cn(
                               'inline-flex items-center gap-1 font-medium',
                               detalhado.percentualAtingido >= 100 ? 'text-success' : 
@@ -708,38 +713,37 @@ export default function VendedoresPage() {
                               {detalhado.percentualAtingido >= 100 && <CheckCircle className="h-3 w-3" />}
                               {formatPercent(detalhado.percentualAtingido)}
                             </span>
-                          </td>
-                          <td className="py-3 px-2 text-right mono-value text-warning">
+                          </EnterpriseTd>
+                          <EnterpriseTd numeric className="mono-value text-warning">
                             {detalhado.pendente > 0 ? formatCurrency(detalhado.pendente) : '-'}
-                          </td>
-                          <td className="py-3 px-2 text-right mono-value text-muted-foreground">
+                          </EnterpriseTd>
+                          <EnterpriseTd numeric className="mono-value text-muted-foreground">
                             {formatPercent(detalhado.percentualPendente)}
-                          </td>
-                          <td className="py-3 px-2 text-right mono-value">
+                          </EnterpriseTd>
+                          <EnterpriseTd numeric className="mono-value">
                             {formatCurrency(detalhado.meta)}
-                          </td>
-                          <td className="py-3 px-2 text-right mono-value">
+                          </EnterpriseTd>
+                          <EnterpriseTd numeric className="mono-value">
                             {detalhado.faltaMeta > 0 ? (
                               <span className="text-destructive">{formatCurrency(detalhado.faltaMeta)}</span>
                             ) : (
                               <span className="text-success">✓</span>
                             )}
-                          </td>
-                          <td className="py-3 px-2 text-right mono-value text-destructive">
+                          </EnterpriseTd>
+                          <EnterpriseTd numeric className="mono-value text-destructive">
                             {v.totalDevolucoes > 0 ? formatCurrency(v.totalDevolucoes) : '-'}
-                          </td>
-                          <td className="py-3 px-2 text-right mono-value font-medium">
+                          </EnterpriseTd>
+                          <EnterpriseTd numeric className="mono-value font-medium">
                             {formatCurrency(v.faturamentoLiquido - v.totalDevolucoes)}
-                          </td>
-                          <td className="py-3 px-2 text-right">
+                          </EnterpriseTd>
+                          <EnterpriseTd numeric>
                             {formatPercent(v.participacao)}
-                          </td>
-                        </tr>
+                          </EnterpriseTd>
+                        </EnterpriseTr>
                       );
                     })}
-                  </tbody>
-                </table>
-              </div>
+                </EnterpriseTbody>
+              </EnterpriseTable>
             </CardContent>
           </Card>
         </TabsContent>
@@ -758,30 +762,29 @@ export default function VendedoresPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-border">
-                      <th className="text-left py-3 px-2 font-medium text-muted-foreground">Vendedor</th>
-                      <th className="text-right py-3 px-2 font-medium text-muted-foreground">Atual (mês)</th>
-                      <th className="text-right py-3 px-2 font-medium text-muted-foreground">Meta Mensal</th>
-                      <th className="text-right py-3 px-2 font-medium text-muted-foreground">Projeção (ritmo)</th>
-                      <th className="text-center py-3 px-2 font-medium text-muted-foreground">Bate Meta?</th>
-                      <th className="text-right py-3 px-2 font-medium text-muted-foreground">Mês Anterior</th>
-                      <th className="text-right py-3 px-2 font-medium text-muted-foreground">Var. %</th>
-                      <th className="text-right py-3 px-2 font-medium text-muted-foreground">Mesmo Mês (ano ant.)</th>
-                      <th className="text-right py-3 px-2 font-medium text-muted-foreground">Var. %</th>
-                      <th className="text-right py-3 px-2 font-medium text-muted-foreground">Gap Meta</th>
-                    </tr>
-                  </thead>
-                  <tbody>
+              <EnterpriseTable>
+                <EnterpriseThead>
+                  <EnterpriseTr>
+                    <EnterpriseTh>Vendedor</EnterpriseTh>
+                    <EnterpriseTh numeric>Atual (mês)</EnterpriseTh>
+                    <EnterpriseTh numeric>Meta Mensal</EnterpriseTh>
+                    <EnterpriseTh numeric>Projeção (ritmo)</EnterpriseTh>
+                    <EnterpriseTh className="text-center">Bate Meta?</EnterpriseTh>
+                    <EnterpriseTh numeric>Mês Anterior</EnterpriseTh>
+                    <EnterpriseTh numeric>Var. %</EnterpriseTh>
+                    <EnterpriseTh numeric>Mesmo Mês (ano ant.)</EnterpriseTh>
+                    <EnterpriseTh numeric>Var. %</EnterpriseTh>
+                    <EnterpriseTh numeric>Gap Meta</EnterpriseTh>
+                  </EnterpriseTr>
+                </EnterpriseThead>
+                <EnterpriseTbody>
                     {projecoes.map((p, i) => (
-                      <tr key={p.codigo} className="border-b border-border/50 hover:bg-muted/30">
-                        <td className="py-3 px-2 font-medium">{p.vendedor}</td>
-                        <td className="py-3 px-2 text-right mono-value">{formatCurrency(p.faturamentoMesAtual)}</td>
-                        <td className="py-3 px-2 text-right mono-value text-muted-foreground">{formatCurrency(p.metaMensal)}</td>
-                        <td className="py-3 px-2 text-right mono-value font-medium">{formatCurrency(p.projecaoRitmoAtual)}</td>
-                        <td className="py-3 px-2 text-center">
+                      <EnterpriseTr key={p.codigo}>
+                        <EnterpriseTd className="font-medium">{p.vendedor}</EnterpriseTd>
+                        <EnterpriseTd numeric className="mono-value">{formatCurrency(p.faturamentoMesAtual)}</EnterpriseTd>
+                        <EnterpriseTd numeric className="mono-value text-muted-foreground">{formatCurrency(p.metaMensal)}</EnterpriseTd>
+                        <EnterpriseTd numeric className="mono-value font-medium">{formatCurrency(p.projecaoRitmoAtual)}</EnterpriseTd>
+                        <EnterpriseTd className="text-center">
                           {p.bateMeta ? (
                             <Badge variant="default" className="bg-success text-white">
                               <CheckCircle className="h-3 w-3 mr-1" />
@@ -793,9 +796,9 @@ export default function VendedoresPage() {
                               Não
                             </Badge>
                           )}
-                        </td>
-                        <td className="py-3 px-2 text-right mono-value">{formatCurrency(p.faturamentoMesAnterior)}</td>
-                        <td className="py-3 px-2 text-right">
+                        </EnterpriseTd>
+                        <EnterpriseTd numeric className="mono-value">{formatCurrency(p.faturamentoMesAnterior)}</EnterpriseTd>
+                        <EnterpriseTd numeric>
                           <span className={cn(
                             'inline-flex items-center gap-1',
                             p.variacaoMesAnterior >= 0 ? 'text-success' : 'text-destructive'
@@ -803,9 +806,9 @@ export default function VendedoresPage() {
                             {p.variacaoMesAnterior >= 0 ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
                             {formatPercent(Math.abs(p.variacaoMesAnterior))}
                           </span>
-                        </td>
-                        <td className="py-3 px-2 text-right mono-value">{formatCurrency(p.faturamentoAnoAnterior)}</td>
-                        <td className="py-3 px-2 text-right">
+                        </EnterpriseTd>
+                        <EnterpriseTd numeric className="mono-value">{formatCurrency(p.faturamentoAnoAnterior)}</EnterpriseTd>
+                        <EnterpriseTd numeric>
                           <span className={cn(
                             'inline-flex items-center gap-1',
                             p.variacaoAnoAnterior >= 0 ? 'text-success' : 'text-destructive'
@@ -813,19 +816,18 @@ export default function VendedoresPage() {
                             {p.variacaoAnoAnterior >= 0 ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
                             {formatPercent(Math.abs(p.variacaoAnoAnterior))}
                           </span>
-                        </td>
-                        <td className="py-3 px-2 text-right mono-value">
+                        </EnterpriseTd>
+                        <EnterpriseTd numeric className="mono-value">
                           {p.gapMeta > 0 ? (
                             <span className="text-destructive">{formatCurrency(p.gapMeta)}</span>
                           ) : (
                             <span className="text-success">+{formatCurrency(Math.abs(p.gapMeta))}</span>
                           )}
-                        </td>
-                      </tr>
+                        </EnterpriseTd>
+                      </EnterpriseTr>
                     ))}
-                  </tbody>
-                </table>
-              </div>
+                </EnterpriseTbody>
+              </EnterpriseTable>
             </CardContent>
           </Card>
 
@@ -968,46 +970,44 @@ export default function VendedoresPage() {
               </Button>
             </CardHeader>
             <CardContent>
-              <div className="overflow-x-auto">
-                <table className="w-full text-xs">
-                  <thead>
-                    <tr className="border-b border-border">
-                      <th className="text-left py-2 px-1 font-medium">#</th>
-                      <th className="text-left py-2 px-1 font-medium">Vendedor</th>
-                      <th className="text-right py-2 px-1 font-medium">Vendas</th>
-                      <th className="text-right py-2 px-1 font-medium">Devol.</th>
-                      <th className="text-right py-2 px-1 font-medium">Líquido</th>
-                      <th className="text-right py-2 px-1 font-medium">Meta</th>
-                      <th className="text-right py-2 px-1 font-medium">%</th>
-                      <th className="text-right py-2 px-1 font-medium">Gap</th>
-                      <th className="text-right py-2 px-1 font-medium">Pendente</th>
-                      <th className="text-right py-2 px-1 font-medium">Fat.</th>
-                      <th className="text-right py-2 px-1 font-medium">Pend.</th>
-                      <th className="text-right py-2 px-1 font-medium">Ticket</th>
-                      <th className="text-right py-2 px-1 font-medium">Part. %</th>
-                    </tr>
-                  </thead>
-                  <tbody>
+              <EnterpriseTable>
+                <EnterpriseThead>
+                  <EnterpriseTr>
+                    <EnterpriseTh>#</EnterpriseTh>
+                    <EnterpriseTh>Vendedor</EnterpriseTh>
+                    <EnterpriseTh numeric>Vendas</EnterpriseTh>
+                    <EnterpriseTh numeric>Devol.</EnterpriseTh>
+                    <EnterpriseTh numeric>Líquido</EnterpriseTh>
+                    <EnterpriseTh numeric>Meta</EnterpriseTh>
+                    <EnterpriseTh numeric>%</EnterpriseTh>
+                    <EnterpriseTh numeric>Gap</EnterpriseTh>
+                    <EnterpriseTh numeric>Pendente</EnterpriseTh>
+                    <EnterpriseTh numeric>Fat.</EnterpriseTh>
+                    <EnterpriseTh numeric>Pend.</EnterpriseTh>
+                    <EnterpriseTh numeric>Ticket</EnterpriseTh>
+                    <EnterpriseTh numeric>Part. %</EnterpriseTh>
+                  </EnterpriseTr>
+                </EnterpriseThead>
+                <EnterpriseTbody>
                     {rankingDetalhado.map((v, i) => (
-                      <tr key={v.codigo} className="border-b border-border/30 hover:bg-muted/20">
-                        <td className="py-2 px-1">{i + 1}</td>
-                        <td className="py-2 px-1 font-medium">{v.nome}</td>
-                        <td className="py-2 px-1 text-right mono-value">{formatCurrency(v.totalVendas, true)}</td>
-                        <td className="py-2 px-1 text-right mono-value text-destructive">{formatCurrency(v.totalDevolucoes, true)}</td>
-                        <td className="py-2 px-1 text-right mono-value font-medium">{formatCurrency(v.faturamentoLiquido, true)}</td>
-                        <td className="py-2 px-1 text-right mono-value">{formatCurrency(v.meta, true)}</td>
-                        <td className="py-2 px-1 text-right">{formatPercent(v.percentualAtingido)}</td>
-                        <td className="py-2 px-1 text-right mono-value">{formatCurrency(v.faltaMeta, true)}</td>
-                        <td className="py-2 px-1 text-right mono-value">{formatCurrency(v.pendente, true)}</td>
-                        <td className="py-2 px-1 text-right">{v.pedidosFaturados}</td>
-                        <td className="py-2 px-1 text-right">{v.pedidosPendentes}</td>
-                        <td className="py-2 px-1 text-right mono-value">{formatCurrency(v.ticketMedio, true)}</td>
-                        <td className="py-2 px-1 text-right">{formatPercent(v.participacao)}</td>
-                      </tr>
+                      <EnterpriseTr key={v.codigo}>
+                        <EnterpriseTd>{i + 1}</EnterpriseTd>
+                        <EnterpriseTd className="font-medium">{v.nome}</EnterpriseTd>
+                        <EnterpriseTd numeric className="mono-value">{formatCurrency(v.totalVendas, true)}</EnterpriseTd>
+                        <EnterpriseTd numeric className="mono-value text-destructive">{formatCurrency(v.totalDevolucoes, true)}</EnterpriseTd>
+                        <EnterpriseTd numeric className="mono-value font-medium">{formatCurrency(v.faturamentoLiquido, true)}</EnterpriseTd>
+                        <EnterpriseTd numeric className="mono-value">{formatCurrency(v.meta, true)}</EnterpriseTd>
+                        <EnterpriseTd numeric>{formatPercent(v.percentualAtingido)}</EnterpriseTd>
+                        <EnterpriseTd numeric className="mono-value">{formatCurrency(v.faltaMeta, true)}</EnterpriseTd>
+                        <EnterpriseTd numeric className="mono-value">{formatCurrency(v.pendente, true)}</EnterpriseTd>
+                        <EnterpriseTd numeric>{v.pedidosFaturados}</EnterpriseTd>
+                        <EnterpriseTd numeric>{v.pedidosPendentes}</EnterpriseTd>
+                        <EnterpriseTd numeric className="mono-value">{formatCurrency(v.ticketMedio, true)}</EnterpriseTd>
+                        <EnterpriseTd numeric>{formatPercent(v.participacao)}</EnterpriseTd>
+                      </EnterpriseTr>
                     ))}
-                  </tbody>
-                </table>
-              </div>
+                </EnterpriseTbody>
+              </EnterpriseTable>
             </CardContent>
           </Card>
         </TabsContent>
