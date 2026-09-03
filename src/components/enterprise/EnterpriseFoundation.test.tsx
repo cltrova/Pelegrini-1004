@@ -1,10 +1,14 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import {
   EnterpriseBadge,
   EnterpriseDataPanel,
+  EnterpriseFilterBar,
   EnterpriseMetricCard,
+  EnterpriseMultiSelectFilter,
   EnterprisePageHeader,
+  EnterpriseSearchFilter,
+  EnterpriseSelectFilter,
   EnterpriseTable,
   EnterpriseTbody,
   EnterpriseTd,
@@ -90,5 +94,44 @@ describe('enterprise visual foundation', () => {
     expect(screen.getByText('A vencer')).toHaveClass('rounded-md');
     expect(screen.getByText('-3,2%')).toBeInTheDocument();
     expect(screen.getByText('vs meta')).toBeInTheDocument();
+  });
+
+  it('renders a compact filter bar with active count, results, clear and apply', () => {
+    const onClear = vi.fn();
+    const onApply = vi.fn();
+    render(
+      <EnterpriseFilterBar activeCount={2} resultCount={128} onClear={onClear} onApply={onApply} summary="Junho | 2 vendedores">
+        <EnterpriseSearchFilter label="Busca" value="abc" onChange={() => undefined} />
+      </EnterpriseFilterBar>,
+    );
+
+    expect(screen.getByText('2 ativos')).toBeInTheDocument();
+    expect(screen.getByText('128 resultados')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /limpar filtros/i }));
+    fireEvent.click(screen.getByRole('button', { name: /aplicar filtros/i }));
+    expect(onClear).toHaveBeenCalledTimes(1);
+    expect(onApply).toHaveBeenCalledTimes(1);
+  });
+
+  it('renders standard select and multi-select filters with counts', () => {
+    render(
+      <div>
+        <EnterpriseSelectFilter
+          label="Status"
+          value="aberto"
+          options={[{ value: 'aberto', label: 'Aberto' }, { value: 'fechado', label: 'Fechado' }]}
+          onChange={() => undefined}
+        />
+        <EnterpriseMultiSelectFilter
+          label="Marca"
+          values={['gm', 'bosch']}
+          options={[{ value: 'gm', label: 'GM' }, { value: 'bosch', label: 'Bosch' }]}
+          onChange={() => undefined}
+        />
+      </div>,
+    );
+
+    expect(screen.getByLabelText('Status')).toBeInTheDocument();
+    expect(screen.getByText('2 selecionados')).toBeInTheDocument();
   });
 });
