@@ -14,10 +14,10 @@ import { cn } from '@/lib/utils';
 import type { EstoqueRecord, GiroRecord, ViewMode } from '@/types/estoque';
 
 import { EstoqueAttentionPanel } from './EstoqueAttentionPanel';
+import { EnterpriseEstoqueFilters } from './EnterpriseEstoqueFilters';
 import { EstoqueMovementHighlights } from './EstoqueMovementHighlights';
 import { EstoqueProductDrawer } from './EstoqueProductDrawer';
 import { EstoqueProductsTable } from './EstoqueProductsTable';
-import { EstoqueSmartFilters } from './EstoqueSmartFilters';
 import { EstoqueSummaryCards } from './EstoqueSummaryCards';
 import {
   buildStockInsights,
@@ -112,7 +112,7 @@ export function EstoqueCommandCenter({
       className="min-w-0 max-w-full space-y-4 overflow-x-clip"
     >
       <section aria-label="Barra principal do estoque" className="sticky top-0 z-20 min-w-0 max-w-full border-b border-border/70 bg-background/95 py-2 backdrop-blur supports-[backdrop-filter]:bg-background/85">
-        <EstoqueSmartFilters
+        <EnterpriseEstoqueFilters
           actions={(
             <>
               <Sheet onOpenChange={setAttentionOpen} open={attentionOpen}>
@@ -181,6 +181,7 @@ export function EstoqueCommandCenter({
           onSearchChange={setSearch}
           options={options}
           quickFilter={quickFilter}
+          resultCount={filtered.length}
           search={search}
         />
       </section>

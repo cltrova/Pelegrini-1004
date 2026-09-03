@@ -57,7 +57,7 @@ export function EnterpriseFilterBar({
           </EnterpriseBadge>
         )}
         {activeCount > 0 && onClear && (
-          <Button aria-label="Limpar filtros" className="h-8 gap-1.5 px-2 text-xs" onClick={onClear} size="sm" type="button" variant="ghost">
+          <Button aria-label="Limpar" className="h-8 gap-1.5 px-2 text-xs" onClick={onClear} size="sm" type="button" variant="ghost">
             <X aria-hidden="true" className="h-3.5 w-3.5" />
             Limpar
           </Button>

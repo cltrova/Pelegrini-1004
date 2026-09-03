@@ -12,6 +12,14 @@ import {
 } from 'lucide-react';
 
 import { PelegriniResponsiveValue } from '@/components/pelegrini';
+import {
+  EnterpriseTable,
+  EnterpriseTbody,
+  EnterpriseTd,
+  EnterpriseTh,
+  EnterpriseThead,
+  EnterpriseTr,
+} from '@/components/enterprise';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -334,42 +342,42 @@ export function EstoqueProductsTable({
           <p className="px-4 py-10 text-center text-sm text-muted-foreground">{emptyMessage}</p>
         ) : (
           <div className="max-h-[calc(100vh-20rem)] min-h-[18rem] min-w-max overflow-y-auto">
-            <table className="w-full text-left text-sm">
-              <thead aria-label="Cabecalho da tabela" className="sticky top-0 z-10 bg-muted">
-                <tr className="border-b border-border">
+            <EnterpriseTable className="rounded-none border-0">
+              <EnterpriseThead aria-label="Cabecalho da tabela">
+                <EnterpriseTr>
                   {selectedColumns.map((column) => (
-                    <th
+                    <EnterpriseTh
                       className={cn(
-                        'whitespace-nowrap px-3 py-2 text-[11px] font-semibold uppercase text-muted-foreground',
-                        column.numeric && 'text-right',
+                        'whitespace-nowrap',
                         column.key === 'product' && 'min-w-[18rem]',
                       )}
                       key={column.key}
+                      numeric={column.numeric}
                       scope="col"
                     >
                       {column.label}
-                    </th>
+                    </EnterpriseTh>
                   ))}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border/70">
+                </EnterpriseTr>
+              </EnterpriseThead>
+              <EnterpriseTbody>
                 {visibleProducts.map((product) => (
-                  <tr className="transition-colors hover:bg-primary/[0.04]" key={`${product.cod_empresa}:${product.cod_produto}`}>
+                  <EnterpriseTr key={`${product.cod_empresa}:${product.cod_produto}`}>
                     {selectedColumns.map((column) => (
-                      <td
+                      <EnterpriseTd
                         className={cn(
-                          'h-11 max-w-[18rem] px-3 py-1.5 align-middle text-foreground',
-                          column.numeric && 'text-right',
+                          'h-11 max-w-[18rem] text-foreground',
                         )}
                         key={column.key}
+                        numeric={column.numeric}
                       >
                         <ColumnValue column={column.key} product={product} onSelectProduct={onSelectProduct} />
-                      </td>
+                      </EnterpriseTd>
                     ))}
-                  </tr>
+                  </EnterpriseTr>
                 ))}
-              </tbody>
-            </table>
+              </EnterpriseTbody>
+            </EnterpriseTable>
           </div>
         )}
       </div>

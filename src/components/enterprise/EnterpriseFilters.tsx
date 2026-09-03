@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Check, ChevronDown, Search, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -27,18 +26,20 @@ export function EnterpriseSearchFilter({
   label,
   value,
   onChange,
+  onKeyDown,
   placeholder = 'Buscar...',
 }: {
   label: string;
   value: string;
   onChange: (value: string) => void;
+  onKeyDown?: React.KeyboardEventHandler<HTMLInputElement>;
   placeholder?: string;
 }) {
   return (
     <FieldShell label={label}>
       <div className="relative">
         <Search aria-hidden="true" className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-        <Input aria-label={label} className="h-8 min-w-0 pl-8 text-xs" onChange={(event) => onChange(event.target.value)} placeholder={placeholder} type="search" value={value} />
+        <Input aria-label={label} className="h-8 min-w-0 pl-8 text-xs" onChange={(event) => onChange(event.target.value)} onKeyDown={onKeyDown} placeholder={placeholder} type="search" value={value} />
       </div>
     </FieldShell>
   );
@@ -104,7 +105,7 @@ export function EnterpriseMultiSelectFilter({
       <span className="block text-[10px] font-semibold uppercase text-muted-foreground">{label}</span>
       <Popover>
         <PopoverTrigger asChild>
-          <Button aria-label={label} className="h-8 min-w-[9rem] max-w-[15rem] justify-between bg-background px-2 text-xs font-normal" type="button" variant="outline">
+          <Button aria-label={`${label}: ${display}`} className="h-8 min-w-[9rem] max-w-[15rem] justify-between bg-background px-2 text-xs font-normal" type="button" variant="outline">
             <span className="truncate">{display}</span>
             <ChevronDown aria-hidden="true" className="h-3.5 w-3.5 text-muted-foreground" />
           </Button>
@@ -130,7 +131,9 @@ export function EnterpriseMultiSelectFilter({
                   onClick={() => onChange(active ? values.filter((selectedValue) => selectedValue !== option.value) : [...values, option.value])}
                   type="button"
                 >
-                  <Checkbox checked={active} className="pointer-events-none h-4 w-4" />
+                  <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded border border-border bg-background">
+                    {active && <Check aria-hidden="true" className="h-3 w-3" />}
+                  </span>
                   <span className="min-w-0 flex-1 truncate">{option.label}</span>
                   {option.description && <span className="shrink-0 text-[10px] text-muted-foreground">{option.description}</span>}
                 </button>

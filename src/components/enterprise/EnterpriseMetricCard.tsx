@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import type { HTMLAttributes, ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 import type { EnterpriseTone } from './EnterpriseBadge';
 
@@ -10,7 +10,7 @@ const toneRail: Record<EnterpriseTone, string> = {
   info: 'bg-[hsl(var(--enterprise-info))]',
 };
 
-export interface EnterpriseMetricCardProps {
+export interface EnterpriseMetricCardProps extends HTMLAttributes<HTMLElement> {
   label: string;
   value: ReactNode;
   context?: ReactNode;
@@ -34,6 +34,7 @@ export function EnterpriseMetricCard({
   tone = 'neutral',
   onClick,
   className,
+  ...props
 }: EnterpriseMetricCardProps) {
   const Component = onClick ? 'button' : 'article';
 
@@ -48,6 +49,7 @@ export function EnterpriseMetricCard({
       data-testid="enterprise-metric-card"
       onClick={onClick}
       type={onClick ? 'button' : undefined}
+      {...props}
     >
       <span aria-hidden="true" className={cn('absolute inset-y-0 left-0 w-0.5', toneRail[tone])} />
       <div className="flex min-w-0 items-start justify-between gap-2 pl-1">
