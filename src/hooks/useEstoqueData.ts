@@ -61,23 +61,22 @@ async function fetchFromEndpoint(
         apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
       },
     });
-    clearTimeout(timeout);
     if (!response.ok) {
-      if (response.status >= 500) {
-        console.warn(`[Estoque] Endpoint indisponível (${response.status}); retornando lista vazia para manter a tela estável.`);
-        return [];
-      }
-      throw new Error(`Erro do endpoint: ${response.status}`);
+      throw new Error(response.status === 504
+        ? 'A API de estoque excedeu o tempo de resposta (HTTP 504).'
+        : `Falha na consulta de estoque (HTTP ${response.status}).`);
+    }
+    if (response.headers.get('x-proxy-upstream-error') === 'true') {
+      throw new Error('O proxy nao conseguiu consultar a API de estoque.');
     }
     return parseEstoqueRows(await response.json());
   } catch (e) {
-    clearTimeout(timeout);
-    const message = e instanceof Error ? e.message : String(e);
-    if (message.includes('500') || message.includes('502') || message.includes('503') || message.includes('504')) {
-      console.warn('[Estoque] Falha temporária no endpoint; retornando lista vazia para manter a tela estável.', e);
-      return [];
+    if (controller.signal.aborted) {
+      throw new Error('A API de estoque excedeu o tempo de resposta. Tente novamente.');
     }
     throw e;
+  } finally {
+    clearTimeout(timeout);
   }
 }
 
@@ -115,8 +114,7 @@ async function fetchEstoqueSource(
   }
 
 
-  console.warn(`[Estoque] Nenhuma fonte configurada para ${type}`);
-  return [];
+  throw new Error(`Fonte de estoque ${type} nao configurada para esta filial.`);
 }
 
 function normalizeBranchText(value: unknown): string {
@@ -217,6 +215,7 @@ export function useEstoqueData() {
     queryFn: async () => fetchEstoqueSource(empresa!, 'consolidado', estoqueCompanyCode),
     enabled: !!empresa && !!empresa.modulo_operacional,
     staleTime: 5 * 60 * 1000,
+    retry: false,
   });
 
   const detalhadoQuery = useQuery({
@@ -224,6 +223,7 @@ export function useEstoqueData() {
     queryFn: async () => fetchEstoqueSource(empresa!, 'detalhado', estoqueCompanyCode),
     enabled: !!empresa && !!empresa.modulo_operacional,
     staleTime: 5 * 60 * 1000,
+    retry: false,
   });
 
   const giroQuery = useQuery({
@@ -231,6 +231,7 @@ export function useEstoqueData() {
     queryFn: async () => fetchEstoqueSource(empresa!, 'giro', estoqueCompanyCode),
     enabled: !!empresa && !!empresa.modulo_operacional,
     staleTime: 5 * 60 * 1000,
+    retry: false,
   });
 
   const estoqueConsolidadoPrincipal = filtrarEstoqueCasaChevrolet10041(
@@ -246,12 +247,12 @@ export function useEstoqueData() {
     estoqueCompanyCode,
   ) as unknown as GiroRecord[]).filter(row => isGiroRowFromActiveBranch(row, estoqueCompanyCode));
   const estoqueFallback = buildEstoqueFallbackFromGiro(giroData, estoqueCompanyCode);
-  const consolidadoData = estoqueConsolidadoPrincipal.length > 0
-    ? estoqueConsolidadoPrincipal
-    : estoqueFallback;
-  const detalhadoData = estoqueDetalhadoPrincipal.length > 0
-    ? estoqueDetalhadoPrincipal
-    : estoqueFallback;
+  const partialSources = {
+    consolidado: consolidadoQuery.isError && !estoqueConsolidadoPrincipal.length && estoqueFallback.length > 0,
+    detalhado: detalhadoQuery.isError && !estoqueDetalhadoPrincipal.length && estoqueFallback.length > 0,
+  };
+  const consolidadoData = partialSources.consolidado ? estoqueFallback : estoqueConsolidadoPrincipal;
+  const detalhadoData = partialSources.detalhado ? estoqueFallback : estoqueDetalhadoPrincipal;
 
   const isLoading = isLoadingEmpresa || consolidadoQuery.isLoading || detalhadoQuery.isLoading || giroQuery.isLoading;
   const isError = consolidadoQuery.isError || detalhadoQuery.isError || giroQuery.isError;
@@ -262,6 +263,14 @@ export function useEstoqueData() {
     giroData,
     isLoading,
     isError,
+    sourceErrors: {
+      consolidado: consolidadoQuery.error,
+      detalhado: detalhadoQuery.error,
+      giro: giroQuery.error,
+    },
+    partialSources,
+    isFetching: consolidadoQuery.isFetching || detalhadoQuery.isFetching || giroQuery.isFetching,
+    refetch: () => Promise.all([consolidadoQuery.refetch(), detalhadoQuery.refetch(), giroQuery.refetch()]),
     empresa,
     isMasterDemo: false,
   };

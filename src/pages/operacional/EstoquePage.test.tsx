@@ -109,6 +109,53 @@ afterEach(() => {
 });
 
 describe('EstoquePage', () => {
+  it('nao apresenta totalizadores zerados quando a API falha e permite tentar novamente', () => {
+    const refetch = vi.fn();
+    testState.hookResult = createHookResult({
+      consolidadoData: [], detalhadoData: [], giroData: [], isError: true, refetch,
+      sourceErrors: { consolidado: new Error('API indisponivel (HTTP 504)'), detalhado: new Error('HTTP 504'), giro: new Error('HTTP 504') },
+    });
+    renderEstoquePage();
+    expect(screen.getByText('Estoque indisponivel')).toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: 'Resumo do estoque' })).not.toBeInTheDocument();
+    expect(screen.queryByText('0 itens · 0 movimentações')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Tentar novamente' }));
+    expect(refetch).toHaveBeenCalledOnce();
+  });
+
+  it('identifica a contingencia de giro como parcial sem esconder os produtos disponiveis', () => {
+    testState.hookResult = createHookResult({
+      isError: true,
+      sourceErrors: { consolidado: new Error('HTTP 500'), detalhado: null, giro: null },
+      partialSources: { consolidado: true, detalhado: false },
+    });
+    renderEstoquePage();
+    expect(screen.getByRole('alert')).toHaveTextContent('Estoque parcial');
+    expect(screen.getAllByText('KIT EMBREAGEM PESADA').length).toBeGreaterThan(0);
+  });
+
+  it('mantem estoque disponivel e bloqueia analises quando a consulta de giro falha', () => {
+    testState.hookResult = createHookResult({
+      giroData: [], isError: true,
+      sourceErrors: { consolidado: null, detalhado: null, giro: new Error('HTTP 504') },
+    });
+    renderEstoquePage();
+    expect(screen.getAllByText('KIT EMBREAGEM PESADA').length).toBeGreaterThan(0);
+    expect(screen.getByRole('alert')).toHaveTextContent('Nao foi possivel atualizar as movimentacoes');
+    fireEvent.click(screen.getByRole('tab', { name: 'Giro de Estoque' }));
+    expect(screen.getByText('Estoque indisponivel')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('tab', { name: 'Assistente' }));
+    expect(screen.getByText('Estoque indisponivel')).toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: 'Assistente de estoque' })).not.toBeInTheDocument();
+  });
+
+  it('preserva o estado vazio quando a API retorna uma lista vazia com sucesso', () => {
+    testState.hookResult = createHookResult({ consolidadoData: [], detalhadoData: [], giroData: [] });
+    renderEstoquePage();
+    expect(screen.getByRole('region', { name: 'Resumo do estoque' })).toBeInTheDocument();
+    expect(screen.queryByText('Estoque indisponivel')).not.toBeInTheDocument();
+  });
+
   it('abre a Central de Estoque e remove as abas legadas', () => {
     renderEstoquePage();
 

@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react';
-import { Search } from 'lucide-react';
+import { AlertTriangle, RefreshCw, Search } from 'lucide-react';
 
 import { EmptyState } from '@/components/common/EmptyState';
+import { ErrorState } from '@/components/common/ErrorState';
 import { FilterDropdownChip, MultiSelectOptions, SingleSelectOptions } from '@/components/common/FilterDropdownChip';
 import { LoadingState } from '@/components/common/LoadingState';
 import { UnifiedFilterBar } from '@/components/common/UnifiedFilterBar';
@@ -10,6 +11,8 @@ import { GiroEstoqueTab } from '@/components/operacional/GiroEstoqueTab';
 import { EstoqueCommandCenter } from '@/components/operacional/estoque/EstoqueCommandCenter';
 import { PelegriniModuleHeader, PelegriniTabs } from '@/components/pelegrini';
 import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { useFilialSelecionada } from '@/contexts/FilialSelecionadaContext';
@@ -60,7 +63,7 @@ const DEFAULT_GIRO_FILTERS: GiroFiltersState = {
 };
 
 export default function EstoquePage() {
-  const { consolidadoData, detalhadoData, giroData, isLoading, empresa } = useEstoqueData();
+  const { consolidadoData, detalhadoData, giroData, isLoading, empresa, sourceErrors, partialSources, isFetching, refetch } = useEstoqueData();
   const { codEmpresaContexto, filialAtiva } = useFilialSelecionada();
   const [activeTab, setActiveTab] = useState('central');
   const [viewMode, setViewMode] = useState<ViewMode>('consolidado');
@@ -72,6 +75,15 @@ export default function EstoquePage() {
     [consolidadoData, detalhadoData, viewMode],
   );
   const branchKey = `${codEmpresaContexto ?? empresa?.cod_empresa_bi ?? 'empresa'}:${filialAtiva ?? 'sem-filial'}`;
+  const stockError = sourceErrors?.[viewMode];
+  const movementError = sourceErrors?.giro;
+  const stockUnavailable = Boolean(stockError && estoqueData.length === 0);
+  const movementUnavailable = Boolean(movementError && giroData.length === 0);
+  const partialStock = Boolean(partialSources?.[viewMode]);
+  const activeError = activeTab === 'central'
+    ? stockUnavailable && stockError
+    : (stockUnavailable && stockError) || (movementUnavailable && movementError);
+  const hasSourceIssue = Boolean(stockError || movementError);
 
   const filterOptions = useMemo(() => ({
     empresas: [...new Set(estoqueData.map(r => r.empresa))].sort(),
@@ -125,7 +137,7 @@ export default function EstoquePage() {
     <div className="space-y-3 p-3 md:p-4">
       <PelegriniModuleHeader
         title="Gestao de Estoque"
-        subtitle={`${estoqueData.length.toLocaleString('pt-BR')} itens · ${giroData.length.toLocaleString('pt-BR')} movimentações`}
+        subtitle={hasSourceIssue ? 'Consulta de estoque com pendencias' : `${estoqueData.length.toLocaleString('pt-BR')} itens · ${giroData.length.toLocaleString('pt-BR')} movimentações`}
         moduleKey="operacional"
         compact
         className="ml-10 sm:ml-0"
@@ -144,6 +156,33 @@ export default function EstoquePage() {
           ]}
         />
 
+        {activeError ? (
+          <div role="alert">
+            <ErrorState
+              title="Estoque indisponivel"
+              message={`${activeError.message} Os dados nao puderam ser consultados; isso nao significa estoque zerado.`}
+              onRetry={isFetching ? undefined : () => { void refetch(); }}
+            />
+            {isFetching && <p role="status" className="p-3 text-center text-sm text-muted-foreground">Consultando novamente...</p>}
+          </div>
+        ) : (
+          <>
+            {hasSourceIssue && (
+              <Alert>
+                <AlertTriangle className="h-4 w-4" />
+                <AlertTitle>{partialStock ? 'Estoque parcial' : 'Dados com atualizacao pendente'}</AlertTitle>
+                <AlertDescription>
+                  {partialStock
+                    ? 'A fonte principal falhou. Exibindo apenas produtos presentes no giro do periodo, nao o estoque completo.'
+                    : movementError
+                      ? 'Nao foi possivel atualizar as movimentacoes. Indicadores que dependem do giro podem estar incompletos ou desatualizados.'
+                      : 'A consulta falhou. Os ultimos dados carregados foram preservados e podem estar desatualizados.'}
+                  <Button variant="outline" size="sm" className="ml-2 mt-2" disabled={isFetching} onClick={() => { void refetch(); }}>
+                    <RefreshCw className="mr-2 h-4 w-4" />{isFetching ? 'Consultando...' : 'Tentar novamente'}
+                  </Button>
+                </AlertDescription>
+              </Alert>
+            )}
         <TabsContent value="central">
           <EstoqueCommandCenter
             stockData={estoqueData}
@@ -198,6 +237,8 @@ export default function EstoquePage() {
         <TabsContent value="assistente">
           <EstoqueAssistantTab giroData={giroData} estoqueData={estoqueData} />
         </TabsContent>
+          </>
+        )}
       </Tabs>
     </div>
   );
