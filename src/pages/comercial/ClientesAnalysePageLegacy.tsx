@@ -60,19 +60,16 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import { cn } from '@/lib/utils';
-import type { ComercialFilters, ClientePerformance } from '@/types/comercial';
- import { BrazilMap } from '@/components/comercial/BrazilMap';
-import { ClientesPorVendedorPremium } from '@/components/comercial/ClientesPorVendedorPremium';
+import type { ComercialFilters, ClientePerformance, Pedido } from '@/types/comercial';
+import { BrazilMap } from '@/components/comercial/BrazilMap';
 import { useEmpresaAtiva } from '@/hooks/useEmpresaAtiva';
 import { useFilialSelecionada } from '@/contexts/FilialSelecionadaContext';
 import { useClientesAnalise } from '@/hooks/useComercialAgrupado';
 import { ClientesHeroSection } from '@/components/comercial/ClientesHeroSection';
 import { EvolucaoVendasHeroChart } from '@/components/comercial/EvolucaoVendasHeroChart';
-import { FaturamentoMensalHeroVisaoGeral } from '@/components/comercial/FaturamentoMensalHeroVisaoGeral';
 import { TopClientesRanking } from '@/components/comercial/TopClientesRanking';
 import { VendedoresRanking } from '@/components/comercial/VendedoresRanking';
 import { InsightsInteligentes, InsightIcons, type InsightItem } from '@/components/comercial/InsightsInteligentes';
-import { LeaderboardCommand, type LeaderboardEntry, type LeaderboardTab } from '@/components/comercial/LeaderboardCommand';
 import { aplicarPrimeiraCompraClientesApi } from '@/utils/clientesPrimeiraCompraApi';
 import { isContextoChevrolet10041, vendedorForcaP1004 } from '@/utils/vendedores1004';
 
@@ -264,7 +261,7 @@ export default function ClientesAnalysePageLegacy() {
   // Agregado diário (para gráfico do mês filtrado quando houver 1 mês)
   const evolucaoVendasDiaria = useMemo(() => {
     const map = new Map<string, number>();
-    pedidos.forEach((p: any) => {
+    pedidos.forEach((p: Pedido) => {
       if (p.tipo === 'DEVOLUCAO') return;
       const raw = p.data_pedido || p.data_faturamento;
       if (!raw) return;
@@ -337,8 +334,8 @@ export default function ClientesAnalysePageLegacy() {
         codToNome.set(String(c.vendedor_codigo), c.vendedor_nome);
       }
     });
-    pedidos.forEach(p => {
-      const nome = (p as any).vendedor_nome || codToNome.get(String((p as any).vendedor_codigo)) || 'Sem vendedor';
+    pedidos.forEach((p: Pedido) => {
+      const nome = p.vendedor_nome || codToNome.get(String(p.vendedor_codigo)) || 'Sem vendedor';
       const mes = (p.data_pedido || '').substring(0, 7);
       if (!mes) return;
       if (!perVendMes.has(nome)) perVendMes.set(nome, new Map());
@@ -557,7 +554,7 @@ export default function ClientesAnalysePageLegacy() {
       if (c.vendedor_codigo !== undefined && c.vendedor_nome) codToNome.set(String(c.vendedor_codigo), c.vendedor_nome);
     });
     pedidos.forEach(p => {
-      const nome = (p as any).vendedor_nome || codToNome.get(String((p as any).vendedor_codigo)) || 'Sem vendedor';
+      const nome = p.vendedor_nome || codToNome.get(String(p.vendedor_codigo)) || 'Sem vendedor';
       const mes = (p.data_pedido || '').substring(0, 7);
       if (!mes) return;
       if (!map.has(nome)) map.set(nome, new Map());
@@ -582,7 +579,7 @@ export default function ClientesAnalysePageLegacy() {
     return (
       <div className="mx-auto w-full max-w-[1600px] px-4 py-6 md:px-8 md:py-10 space-y-8">
         {/* Hero skeleton */}
-        <div className="rounded-2xl border border-border/60 bg-gradient-to-br from-muted/40 via-background to-background p-6 md:p-8">
+        <div className="rounded-lg border border-border/60 bg-card p-6 md:p-8">
           <div className="mb-6 space-y-2">
             <div className="h-3 w-32 animate-pulse rounded bg-muted" />
             <div className="h-6 w-56 animate-pulse rounded bg-muted" />
@@ -591,24 +588,24 @@ export default function ClientesAnalysePageLegacy() {
             {[...Array(5)].map((_, i) => (
               <div
                 key={i}
-                className="h-32 animate-pulse rounded-xl border border-border/60 bg-card"
+                className="h-32 animate-pulse rounded-lg border border-border/60 bg-card"
                 style={{ animationDelay: `${i * 60}ms` }}
               />
             ))}
           </div>
         </div>
         {/* Filtros skeleton */}
-        <div className="h-14 animate-pulse rounded-xl border border-border/60 bg-card" />
+        <div className="h-14 animate-pulse rounded-lg border border-border/60 bg-card" />
         {/* Tabs skeleton */}
         <div className="h-10 animate-pulse rounded-lg bg-muted/50" />
         {/* Hero chart skeleton */}
-        <div className="h-[520px] animate-pulse rounded-xl border border-border/60 bg-card" />
+        <div className="h-[520px] animate-pulse rounded-lg border border-border/60 bg-card" />
         {/* Grid skeleton */}
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           {[...Array(3)].map((_, i) => (
             <div
               key={i}
-              className="h-80 animate-pulse rounded-xl border border-border/60 bg-card"
+              className="h-80 animate-pulse rounded-lg border border-border/60 bg-card"
               style={{ animationDelay: `${i * 80}ms` }}
             />
           ))}
@@ -750,11 +747,6 @@ export default function ClientesAnalysePageLegacy() {
 
   return (
     <div className="relative mx-auto w-full max-w-[1600px] px-4 py-6 md:px-8 md:py-10 space-y-8 animate-fade-in">
-      {/* Background sutil */}
-      <div
-        aria-hidden
-        className="pointer-events-none fixed inset-x-0 top-0 -z-10 h-[520px] bg-[radial-gradient(ellipse_at_top,hsl(var(--primary)/0.06),transparent_60%)]"
-      />
       {/* Totalizadores (hero) */}
       {heroNode}
 
@@ -772,7 +764,7 @@ export default function ClientesAnalysePageLegacy() {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid h-11 w-full grid-cols-5 rounded-xl border border-border/60 bg-muted/40 p-1 shadow-sm [&_[data-state=active]]:bg-background [&_[data-state=active]]:shadow-sm [&_[data-state=active]]:ring-1 [&_[data-state=active]]:ring-border/60 [&_button]:rounded-lg [&_button]:transition-all">
+        <TabsList className="grid h-11 w-full grid-cols-5 rounded-lg border border-border/60 bg-muted/40 p-1 [&_[data-state=active]]:bg-primary [&_[data-state=active]]:text-primary-foreground [&_button]:rounded-md [&_button]:transition-colors">
           <TabsTrigger value="visao-geral" className="flex items-center gap-2">
             <Eye className="h-4 w-4" />
             <span className="hidden sm:inline">Visão Geral</span>
@@ -798,191 +790,22 @@ export default function ClientesAnalysePageLegacy() {
         {/* Aba Visão Geral */}
         <TabsContent value="visao-geral" className="space-y-6 animate-fade-in focus-visible:outline-none">
           {/* Protagonista: Evolução de Vendas Mensal */}
-          {false ? (
-            <FaturamentoMensalHeroVisaoGeral data={evolucaoVendasMensal} diaria={evolucaoVendasDiaria} />
-          ) : (
-            <EvolucaoVendasHeroChart data={evolucaoVendasMensal} />
-          )}
-
-          {false && (
-            <Card className="group overflow-hidden border-emerald-500/25 bg-gradient-to-br from-emerald-500/[0.08] via-card to-card shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-emerald-500/40 hover:shadow-[0_18px_42px_-22px_hsl(160_84%_40%/0.45)]">
-              <CardContent className="p-5 md:p-6">
-                <div className="grid gap-5 xl:grid-cols-[minmax(0,0.95fr)_minmax(420px,1.05fr)]">
-                  <div className="space-y-5">
-                    <div className="flex items-start justify-between gap-4">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-500/12 text-emerald-400 ring-1 ring-emerald-500/25">
-                            <UserPlus className="h-4 w-4" />
-                          </div>
-                          <div>
-                            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-emerald-400">
-                              Novos clientes
-                            </p>
-                            <h3 className="text-lg font-bold tracking-tight text-foreground">
-                              Primeira compra no periodo filtrado
-                            </h3>
-                          </div>
-                        </div>
-                        <p className="mt-2 text-sm text-muted-foreground">
-                          {formatarDataBr(periodoNovos.inicio)} a {formatarDataBr(periodoNovos.fim)}
-                        </p>
-                      </div>
-                      <Badge className="border-emerald-500/30 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/10">
-                        {resumoNovosClientes.quantidade.toLocaleString('pt-BR')} cliente(s)
-                      </Badge>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-                      <div className="rounded-xl border border-border/60 bg-background/45 p-3">
-                        <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">Quantidade</p>
-                        <p className="mono-value mt-2 text-2xl font-black text-foreground">
-                          {resumoNovosClientes.quantidade.toLocaleString('pt-BR')}
-                        </p>
-                      </div>
-                      <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/[0.07] p-3">
-                        <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">Volume</p>
-                        <p className="mono-value mt-2 text-xl font-black text-emerald-400">
-                          {formatCurrency(resumoNovosClientes.volume)}
-                        </p>
-                      </div>
-                      <div className="rounded-xl border border-border/60 bg-background/45 p-3">
-                        <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">Pedidos</p>
-                        <p className="mono-value mt-2 text-2xl font-black text-foreground">
-                          {resumoNovosClientes.pedidos.toLocaleString('pt-BR')}
-                        </p>
-                      </div>
-                      <div className="rounded-xl border border-border/60 bg-background/45 p-3">
-                        <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">Partic.</p>
-                        <p className="mono-value mt-2 text-2xl font-black text-foreground">
-                          {formatPercent(resumoNovosClientes.participacao)}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="rounded-xl border border-border/60 bg-background/45 p-4">
-                    <div className="mb-3 flex items-center justify-between gap-3">
-                      <p className="text-sm font-semibold text-foreground">Principais novos clientes</p>
-                      <p className="text-xs text-muted-foreground">
-                        Ticket medio: <span className="font-semibold text-foreground">{formatCurrency(resumoNovosClientes.ticketMedio)}</span>
-                      </p>
-                    </div>
-                    <div className="space-y-2">
-                      {resumoNovosClientes.topClientes.map((cliente, index) => (
-                        <div key={String(cliente.codigo)} className="flex items-center justify-between gap-3 rounded-lg border border-border/50 bg-card/70 px-3 py-2">
-                          <div className="flex min-w-0 items-center gap-3">
-                            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-500/10 text-xs font-black text-emerald-400 ring-1 ring-emerald-500/20">
-                              {index + 1}
-                            </div>
-                            <div className="min-w-0">
-                              <p className="truncate text-sm font-semibold text-foreground">{cliente.fantasia || cliente.razao}</p>
-                              <p className="truncate text-xs text-muted-foreground">
-                                1a compra: {formatarDataBr(cliente.primeiraCompra)}
-                                {cliente.vendedor_nome ? ` · ${cliente.vendedor_nome}` : ''}
-                              </p>
-                            </div>
-                          </div>
-                          <div className="text-right">
-                            <p className="mono-value text-sm font-bold text-emerald-400">{formatCurrency(cliente.faturamentoLiquido)}</p>
-                            <p className="text-[11px] text-muted-foreground">{cliente.totalPedidos} pedido(s)</p>
-                          </div>
-                        </div>
-                      ))}
-                      {!resumoNovosClientes.topClientes.length && (
-                        <div className="rounded-lg border border-dashed border-border/70 px-4 py-8 text-center">
-                          <p className="text-sm font-medium text-foreground">Nenhum novo cliente no periodo</p>
-                          <p className="mt-1 text-xs text-muted-foreground">Ajuste os filtros para analisar outra janela.</p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
+          <EvolucaoVendasHeroChart data={evolucaoVendasMensal} />
 
           {/* Insights Inteligentes */}
           {insightsItems.length > 0 && <InsightsInteligentes items={insightsItems} />}
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+            <TopClientesRanking
+              clientes={clientesPerformance.slice(0, 10)}
+              variacoesPorCodigo={variacoesTop10}
+              totalGeral={clientesPerformance.reduce((s, c) => s + c.faturamentoLiquido, 0)}
+            />
 
-          {false ? (
-            (() => {
-              const novosOrdenados = [...novosClientes].sort((a, b) => b.faturamentoLiquido - a.faturamentoLiquido);
-              const totalFatNovos = resumoNovosClientes.volume;
-              const clienteEntries: LeaderboardEntry[] = novosOrdenados.slice(0, 10).map((c, i) => {
-                const evo = getEvolucaoCliente(c.codigo).slice(-6);
-                return {
-                  id: String(c.codigo),
-                  rank: i + 1,
-                  title: c.fantasia || c.razao,
-                  subtitle: `Novo cliente${c.cidade || c.uf ? ` - ${[c.cidade, c.uf].filter(Boolean).join(' / ')}` : ''}`,
-                  initials: initialsFromName(c.fantasia || c.razao),
-                  primaryValue: c.faturamentoLiquido,
-                  primaryFormat: 'currency' as const,
-                  share: totalFatNovos > 0 ? (c.faturamentoLiquido / totalFatNovos) * 100 : 0,
-                  delta: variacoesTop10.get(String(c.codigo)) ?? null,
-                  sparkline: evo,
-                  meta: [
-                    ...(c.primeiraCompra ? [{ icon: 'user' as const, text: `1a compra ${formatarDataBr(c.primeiraCompra)}` }] : []),
-                    ...(c.cidade || c.uf ? [{ icon: 'map' as const, text: c.cidade ? `${c.cidade}${c.uf ? '/' + c.uf : ''}` : (c.uf || '') }] : []),
-                    ...(c.vendedor_nome ? [{ icon: 'building' as const, text: c.vendedor_nome }] : []),
-                  ],
-                  extraStats: [
-                    { label: 'Ticket medio', value: formatCurrency(c.ticketMedio || 0), icon: 'money' as const },
-                    { label: 'Pedidos', value: (c.totalPedidos || 0).toLocaleString('pt-BR'), icon: 'orders' as const },
-                    { label: 'Primeira compra', value: formatarDataBr(c.primeiraCompra), icon: 'calendar' as const },
-                    { label: 'Participacao', value: formatPercent(totalFatNovos > 0 ? (c.faturamentoLiquido / totalFatNovos) * 100 : 0), icon: 'clock' as const },
-                  ],
-                };
-              });
-
-              const tabs: LeaderboardTab[] = [
-                {
-                  key: 'novos-clientes',
-                  label: 'Novos clientes',
-                  icon: Trophy,
-                  entries: clienteEntries,
-                  primaryLabel: 'Volume de novos clientes',
-                  emptyMsg: 'Nenhum novo cliente encontrado no periodo filtrado.',
-                  seeAllLabel: 'Ver analise de novos clientes',
-                  onSeeAll: () => setActiveTab('insights'),
-                },
-              ];
-
-              return (
-                <LeaderboardCommand
-                  title="Ranking de Novos Clientes"
-                  subtitle="Clientes com primeira compra dentro do periodo filtrado"
-                  headerAction={
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="outline"
-                      onClick={() => setRelatorioNovosOpen(true)}
-                      className="h-8 border-primary/30 bg-primary/10 px-3 text-xs font-semibold text-primary hover:bg-primary/15"
-                    >
-                      <FileText className="h-3.5 w-3.5" />
-                      Gerar relatorio
-                    </Button>
-                  }
-                  tabs={tabs}
-                />
-              );
-            })()
-          ) : (
-            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-              <TopClientesRanking
-                clientes={clientesPerformance.slice(0, 10)}
-                variacoesPorCodigo={variacoesTop10}
-                totalGeral={clientesPerformance.reduce((s, c) => s + c.faturamentoLiquido, 0)}
-              />
-
-              <VendedoresRanking
-                vendedores={clientesPorVendedor}
-                variacoesPorNome={variacoesVendedores}
-              />
-            </div>
-          )}
+            <VendedoresRanking
+              vendedores={clientesPorVendedor}
+              variacoesPorNome={variacoesVendedores}
+            />
+          </div>
         </TabsContent>
 
         {/* Aba Top Clientes */}
@@ -1016,125 +839,43 @@ export default function ClientesAnalysePageLegacy() {
 
         {/* Aba Por Vendedor */}
         <TabsContent value="por-vendedor" className="space-y-6 animate-fade-in focus-visible:outline-none">
-          {false ? (
-            <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1.05fr)_minmax(380px,0.95fr)]">
-              <Card className="group relative overflow-hidden border-border/60 bg-card shadow-sm transition-all duration-300 ease-out hover:-translate-y-1 hover:scale-[1.01] hover:border-border hover:shadow-[0_18px_42px_-18px_hsl(var(--foreground)/0.24)]">
-                <div
-                  aria-hidden
-                  className="pointer-events-none absolute inset-x-0 -top-28 h-48 bg-[radial-gradient(ellipse_at_center,hsl(var(--primary)/0.10),transparent_62%)] opacity-0 transition-opacity duration-500 group-hover:opacity-100"
-                />
-                <CardHeader className="relative border-b border-border/60 px-5 py-4 md:px-6">
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-2.5">
-                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 ring-1 ring-primary/20 transition-transform duration-300 group-hover:scale-110">
-                        <LineChart className="h-4 w-4 text-primary" />
-                      </div>
-                      <div>
-                        <CardTitle className="text-sm font-semibold text-foreground/90">Vendas por Vendedor</CardTitle>
-                        <p className="text-xs text-muted-foreground">Comparativo premium por faturamento líquido</p>
-                      </div>
-                    </div>
-                    <Badge variant="secondary" className="text-[11px] font-medium tabular-nums">
-                      {isEmpresa1004 ? `${vendedoresChartData.length} vendedores` : `Top ${Math.min(vendedoresChartData.length, 12)}`}
-                    </Badge>
-                  </div>
-                </CardHeader>
-                <CardContent className="relative p-4 md:p-6">
-                  <div className="h-[430px]">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={vendedoresChartData} margin={{ top: 12, right: 16, left: 8, bottom: 76 }}>
-                        <defs>
-                          <linearGradient id="colorVendedorPelegrini" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.92}/>
-                            <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0.46}/>
-                          </linearGradient>
-                        </defs>
-                        <CartesianGrid vertical={false} strokeDasharray="3 3" className="stroke-border/60" />
-                        <XAxis
-                          dataKey="nome"
-                          tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
-                          angle={-42}
-                          textAnchor="end"
-                          height={78}
-                          interval={0}
-                          tickLine={false}
-                          axisLine={false}
-                        />
-                        <YAxis
-                          tickFormatter={(v) => `${(v / 1000000).toFixed(1)}M`}
-                          tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
-                          tickLine={false}
-                          axisLine={false}
-                        />
-                        <Tooltip
-                          cursor={{ fill: 'hsl(var(--primary) / 0.06)' }}
-                          formatter={(value: number) => [formatCurrency(value), 'Faturamento']}
-                          labelStyle={{ color: 'hsl(var(--foreground))', fontWeight: 600 }}
-                          contentStyle={{
-                            backgroundColor: 'hsl(var(--popover))',
-                            border: '1px solid hsl(var(--border))',
-                            borderRadius: '12px',
-                            boxShadow: '0 14px 34px hsl(var(--foreground) / 0.12)',
-                          }}
-                        />
-                        <Bar
-                          dataKey="valor"
-                          fill="url(#colorVendedorPelegrini)"
-                          radius={[8, 8, 0, 0]}
-                          barSize={30}
-                          animationDuration={900}
-                          animationEasing="ease-out"
-                        />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <VendedoresRanking
-                vendedores={clientesPorVendedor}
-                variacoesPorNome={variacoesVendedores}
-              />
-            </div>
-          ) : (
-            <Card>
-              <CardHeader>
-                <CardTitle>Valor Total de Vendas por Vendedor</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="h-96">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={vendedoresChartData}>
-                      <defs>
-                        <linearGradient id="colorVendedor" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="hsl(var(--chart-2))" stopOpacity={0.4}/>
-                          <stop offset="95%" stopColor="hsl(var(--chart-2))" stopOpacity={0}/>
-                        </linearGradient>
-                      </defs>
-                      <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-                      <XAxis dataKey="nome" tick={{ fontSize: 10 }} angle={-45} textAnchor="end" height={80} />
-                      <YAxis tickFormatter={(v) => `${(v / 1000000).toFixed(1)}M`} tick={{ fontSize: 11 }} />
-                      <Tooltip
-                        formatter={(value: number) => [formatCurrency(value), 'Faturamento']}
-                        contentStyle={{
-                          backgroundColor: 'hsl(var(--card))',
-                          border: '1px solid hsl(var(--border))',
-                          borderRadius: '8px',
-                        }}
-                      />
-                      <Area
-                        type="monotone"
-                        dataKey="valor"
-                        stroke="hsl(var(--chart-2))"
-                        fill="url(#colorVendedor)"
-                        strokeWidth={2}
-                      />
-                    </AreaChart>
-                  </ResponsiveContainer>
-                </div>
-              </CardContent>
-            </Card>
-          )}
+          <Card>
+            <CardHeader>
+              <CardTitle>Valor Total de Vendas por Vendedor</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="h-96">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={vendedoresChartData}>
+                    <defs>
+                      <linearGradient id="colorVendedor" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="hsl(var(--chart-2))" stopOpacity={0.4}/>
+                        <stop offset="95%" stopColor="hsl(var(--chart-2))" stopOpacity={0}/>
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                    <XAxis dataKey="nome" tick={{ fontSize: 10 }} angle={-45} textAnchor="end" height={80} />
+                    <YAxis tickFormatter={(v) => `${(v / 1000000).toFixed(1)}M`} tick={{ fontSize: 11 }} />
+                    <Tooltip
+                      formatter={(value: number) => [formatCurrency(value), 'Faturamento']}
+                      contentStyle={{
+                        backgroundColor: 'hsl(var(--card))',
+                        border: '1px solid hsl(var(--border))',
+                        borderRadius: '8px',
+                      }}
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="valor"
+                      stroke="hsl(var(--chart-2))"
+                      fill="url(#colorVendedor)"
+                      strokeWidth={2}
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         {/* Aba Insights */}
@@ -1310,25 +1051,25 @@ export default function ClientesAnalysePageLegacy() {
             </div>
 
             <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-              <div className="rounded-xl border border-border/60 bg-card/70 p-3">
+              <div className="rounded-lg border border-border/60 bg-card/70 p-3">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">Clientes</p>
                 <p className="mono-value mt-2 text-2xl font-black text-foreground">{resumoRelatorioNovos.quantidade.toLocaleString('pt-BR')}</p>
               </div>
-              <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/[0.07] p-3">
+              <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/[0.07] p-3">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">Volume</p>
                 <p className="mono-value mt-2 text-xl font-black text-emerald-400">{formatCurrency(resumoRelatorioNovos.volume)}</p>
               </div>
-              <div className="rounded-xl border border-border/60 bg-card/70 p-3">
+              <div className="rounded-lg border border-border/60 bg-card/70 p-3">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">Vendas</p>
                 <p className="mono-value mt-2 text-2xl font-black text-foreground">{resumoRelatorioNovos.pedidos.toLocaleString('pt-BR')}</p>
               </div>
-              <div className="rounded-xl border border-border/60 bg-card/70 p-3">
+              <div className="rounded-lg border border-border/60 bg-card/70 p-3">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">Ticket medio</p>
                 <p className="mono-value mt-2 text-xl font-black text-foreground">{formatCurrency(resumoRelatorioNovos.ticketMedio)}</p>
               </div>
             </div>
 
-            <div className="overflow-hidden rounded-2xl border border-border/60">
+            <div className="overflow-hidden rounded-lg border border-border/60">
               <div className="grid grid-cols-[minmax(220px,1.7fr)_minmax(130px,0.9fr)_110px_130px_120px] gap-3 border-b border-border/60 bg-muted/30 px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
                 <span>Cliente</span>
                 <span>Vendedor</span>
