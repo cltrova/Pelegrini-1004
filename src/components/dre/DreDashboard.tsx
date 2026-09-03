@@ -39,6 +39,12 @@ interface DreDashboardProps {
   onExcludedContasDespVarChange: (contas: Set<string>) => void;
 }
 
+type TopGrupoTooltipProps = {
+  payload?: {
+    valor?: number;
+  };
+};
+
 // Descrições das análises
 const analysisDescriptions: Record<string, string> = {
   grupoRaiz: 'Agrupa os lançamentos contábeis em categorias principais: Lucro Bruto, Resultado Financeiro, Despesas Operacionais e Administrativas. Valores calculados a partir dos grupos do DRE.',
@@ -646,7 +652,7 @@ function DreDashboardRPA({
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                 <XAxis type="number" tickFormatter={(v) => formatCompactNumber(v)} stroke="hsl(var(--muted-foreground))" fontSize={10} />
                 <YAxis type="category" dataKey="grupo" width={90} stroke="hsl(var(--muted-foreground))" fontSize={9} />
-                <Tooltip formatter={(value: number, name: string, props: any) => [formatCurrency(props.payload.valor), 'Valor']} contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px' }} />
+                <Tooltip formatter={(_value: number, _name: string, props: TopGrupoTooltipProps) => [formatCurrency(props.payload?.valor ?? 0), 'Valor']} contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px' }} />
                 <Bar dataKey="absValor" radius={[0, 3, 3, 0]}>
                   {topGrupos.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={getBarColor(entry.valor)} />

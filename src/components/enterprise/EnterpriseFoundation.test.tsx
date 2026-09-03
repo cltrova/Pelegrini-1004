@@ -107,7 +107,7 @@ describe('enterprise visual foundation', () => {
 
     expect(screen.getByText('2 ativos')).toBeInTheDocument();
     expect(screen.getByText('128 resultados')).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: /limpar filtros/i }));
+    fireEvent.click(screen.getByRole('button', { name: /^limpar$/i }));
     fireEvent.click(screen.getByRole('button', { name: /aplicar filtros/i }));
     expect(onClear).toHaveBeenCalledTimes(1);
     expect(onApply).toHaveBeenCalledTimes(1);

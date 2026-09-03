@@ -45,7 +45,7 @@ describe('EstoqueSummaryCards', () => {
     );
 
     const grid = screen.getByLabelText('Resumo do estoque');
-    expect(grid).toHaveClass('grid-cols-2', 'lg:grid-cols-4', 'min-w-0');
+    expect(grid).toHaveClass('enterprise-grid-metrics');
     expect(container.querySelectorAll('[data-stock-summary]')).toHaveLength(4);
     container.querySelectorAll('[data-stock-summary]').forEach((card) => {
       expect(card).toHaveClass('min-w-0');

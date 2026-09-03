@@ -12,7 +12,8 @@ import {
 } from 'lucide-react';
 import { EnterprisePageHeader } from '@/components/enterprise';
 import { VendedorDetailsDialog } from '@/components/comercial/VendedorDetailsDialog';
-import { getDiasUteisNoMes, getDiasUteisDecorridos, type ComercialFilters as ComercialFiltersType } from '@/types/comercial';
+import { getDiasUteisNoMes, getDiasUteisDecorridos, type ComercialFilters as ComercialFiltersType, type Pedido } from '@/types/comercial';
+import type { ProdutoItem } from '@/types/comercialProdutos';
 import { formatCurrency, formatPercent, formatCompactNumber, formatPeriodShort } from '@/utils/formatters';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -58,6 +59,22 @@ import {
 } from '@/utils/vendedores1004';
 import { invalidarConsultasComerciais } from '@/utils/comercialQueryInvalidation';
 import { resolverContagemTotalizadorPelegrini } from '@/utils/comercialKpiFallback';
+
+type VendedorDetalheRow = {
+  codigo: string | number;
+  nome: string;
+  metaMensal: number;
+  faturamentoMesAtual: number;
+  valorPendente: number;
+  valorTotal: number;
+  percentualMetaFaturado: number;
+  percentualMetaTotal: number;
+  diferenca: number;
+  status: 'acima' | 'proximo' | 'abaixo';
+  metaDiaria: number;
+  metaEsperada: number;
+  ticketMedio?: number;
+};
 
 // Metas fixas de fallback para empresas que não possuem MetaVendedor no JSON
 const METAS_VENDEDORES: Record<string | number, number> = {
@@ -150,7 +167,7 @@ export default function MetasVendedoresPage() {
     keepPreviousData: !isPelegriniPage,
   });
   const [chartView, setChartView] = useState<'mensal' | 'diario'>('diario');
-  const [vendedorDetalhe, setVendedorDetalhe] = useState<{ row: any; ranking: number } | null>(null);
+  const [vendedorDetalhe, setVendedorDetalhe] = useState<{ row: VendedorDetalheRow; ranking: number } | null>(null);
   const [receitaDetalheOpen, setReceitaDetalheOpen] = useState(false);
   const {
     produtos: produtos1004,
@@ -365,9 +382,9 @@ export default function MetasVendedoresPage() {
       // Pelegrini: base de receita é `ValorLiquidoFinal` (bruto com desconto) - valor_devolucao.
       const faturamentoMesAtual = usaRegraReceitaPelegrini
         ? pedidosVendedor.reduce((acc, p) => {
-            if (p.tipo === 'DEVOLUCAO') return acc - Math.abs((p as any).valor_devolucao_real || p.valor_real || 0);
-            const base = Math.abs(Number((p as any).valor_liquido_final ?? Math.max(0, Math.abs(p.valor_bruto || 0) - Math.abs(p.valor_desconto || 0))));
-            const devolucao = Math.abs(Number((p as any).valor_devolucao_real || 0));
+            if (p.tipo === 'DEVOLUCAO') return acc - Math.abs(p.valor_devolucao_real || p.valor_real || 0);
+            const base = Math.abs(Number(p.valor_liquido_final ?? Math.max(0, Math.abs(p.valor_bruto || 0) - Math.abs(p.valor_desconto || 0))));
+            const devolucao = Math.abs(Number(p.valor_devolucao_real || 0));
             return acc + base - devolucao;
           }, 0)
         : pedidosVendedor.reduce((acc, p) => acc + (p.valor_liquido || 0), 0);
@@ -473,9 +490,9 @@ export default function MetasVendedoresPage() {
       data_faturamento: item.data_faturamento,
       data_pedido: item.data_pedido,
       cliente_codigo: item.cliente_codigo,
-      valor_liquido_final: Number((item as any).valor_liquido_final_item ?? item.valor_total ?? 0),
-      valor_liquido: Number((item as any).valor_liquido_final_item ?? item.valor_total ?? 0),
-      valor_real: Number((item as any).valor_liquido_final_item ?? item.valor_total ?? 0),
+      valor_liquido_final: Number(item.valor_liquido_final_item ?? item.valor_total ?? 0),
+      valor_liquido: Number(item.valor_liquido_final_item ?? item.valor_total ?? 0),
+      valor_real: Number(item.valor_liquido_final_item ?? item.valor_total ?? 0),
       valor_bruto: Number(item.valor_venda_item ?? item.valor_bruto_item ?? 0),
       valor_desconto: Number(item.valor_desconto ?? 0),
       valor_devolucao_real: Number(item.valor_devolucao_item ?? 0),
@@ -631,7 +648,7 @@ export default function MetasVendedoresPage() {
     && (!receita1004PorVendedor || receita1004PorVendedor.size === 0)
       ? []
       : vendedoresComMetaFonteFinal;
-  const pedidosDetalheVisual: any[] = isPelegriniPage ? pedidosFonteFinal : pedidos;
+  const pedidosDetalheVisual: Array<Pedido | ProdutoItem> = isPelegriniPage ? pedidosFonteFinal : pedidos;
   const semVendedores = !vendedoresBaseVisual.length;
   const isCampanhas1004Ativa = isPelegriniPage && activeTab === 'campanhas';
   const tabTriggerClass = cn(

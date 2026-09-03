@@ -53,8 +53,8 @@ export function ResumoDuplicatasTable({ duplicatas }: Props) {
   const sorted = useMemo(() => {
     const arr = [...duplicatas];
     arr.sort((a, b) => {
-      let va: any = a[sortKey as keyof DuplicataAgregada];
-      let vb: any = b[sortKey as keyof DuplicataAgregada];
+      let va: string | number = a[sortKey as keyof DuplicataAgregada] as string | number;
+      let vb: string | number = b[sortKey as keyof DuplicataAgregada] as string | number;
       if (sortKey === 'dataVencimento') {
         va = a.dataVencimento ? new Date(a.dataVencimento).getTime() : 0;
         vb = b.dataVencimento ? new Date(b.dataVencimento).getTime() : 0;
