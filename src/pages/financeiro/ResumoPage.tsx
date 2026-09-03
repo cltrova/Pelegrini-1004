@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Activity, RefreshCw, AlertCircle } from 'lucide-react';
+import { AlertCircle, RefreshCw, Wallet } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -20,10 +20,9 @@ import { AcompanhamentoTab } from '@/components/resumo/AcompanhamentoTab';
 import { PedidosAbertosTable } from '@/components/resumo/PedidosAbertosTable';
 import { useEmpresaAtiva } from '@/hooks/useEmpresaAtiva';
 import { useCobrancaIntervencoes } from '@/hooks/useCobrancaIntervencoes';
-import { Badge } from '@/components/ui/badge';
+import { EnterpriseBadge, EnterprisePageHeader } from '@/components/enterprise';
 import { FinanceiroSearchPrompt } from '@/components/financeiro/FinanceiroSearchPrompt';
 import { useFinanceiroSearch } from '@/contexts/FinanceiroSearchContext';
-import { PelegriniModuleHeader } from '@/components/pelegrini';
 
 
 const initialFilters: ResumoFilters = {
@@ -71,14 +70,13 @@ export default function ResumoPage() {
   ), [duplicatas]);
 
   return (
-    <div className="p-4 md:p-6 space-y-5 max-w-[1600px] mx-auto">
-      <PelegriniModuleHeader
+    <div className="enterprise-page-shell max-w-[1600px]">
+      <EnterprisePageHeader
         title="Resumo Financeiro"
         subtitle="Monitoramento de liquidez e contas a receber"
-        moduleKey="financeiro"
-      />
-      <div className="flex flex-wrap items-center justify-end gap-3">
-        <div className="flex items-center gap-2">
+        icon={Wallet}
+        actions={
+          <div className="flex min-w-0 flex-wrap items-center justify-end gap-2">
           {hasSearched && !isLoading && hasSource && !error && alertas.length > 0 && (
             <AlertasCriticosBanner alertas={alertas} />
           )}
@@ -92,8 +90,9 @@ export default function ResumoPage() {
             <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
             Atualizar
           </Button>
-        </div>
-      </div>
+          </div>
+        }
+      />
 
       {hasSearched && !hasSource && (
         <Alert>
@@ -155,7 +154,7 @@ export default function ResumoPage() {
               <TabsTrigger value="acompanhamento" className="relative">
                 📥 Acompanhamento
                 {pendentes.length > 0 && (
-                  <Badge variant="destructive" className="ml-1 h-5 px-1.5">{pendentes.length}</Badge>
+                  <EnterpriseBadge tone="negative" className="ml-1 h-5 px-1.5">{pendentes.length}</EnterpriseBadge>
                 )}
               </TabsTrigger>
             </TabsList>
