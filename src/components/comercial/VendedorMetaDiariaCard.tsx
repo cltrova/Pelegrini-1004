@@ -16,37 +16,31 @@ const STATUS = {
     icon: TrendingUp,
     text: 'text-success',
     ring: 'hsl(var(--success))',
-    glow: 'hsl(var(--success) / 0.35)',
     chipBg: 'bg-success/10 border-success/30',
-    barFrom: 'hsl(var(--success) / 0.6)',
-    barTo: 'hsl(var(--success))',
+    bar: 'bg-success',
   },
   proximo: {
     label: 'Próximo',
     icon: Minus,
     text: 'text-warning',
     ring: 'hsl(var(--warning))',
-    glow: 'hsl(var(--warning) / 0.35)',
     chipBg: 'bg-warning/10 border-warning/30',
-    barFrom: 'hsl(var(--warning) / 0.6)',
-    barTo: 'hsl(var(--warning))',
+    bar: 'bg-warning',
   },
   abaixo: {
     label: 'Abaixo',
     icon: TrendingDown,
     text: 'text-destructive',
     ring: 'hsl(var(--destructive))',
-    glow: 'hsl(var(--destructive) / 0.35)',
     chipBg: 'bg-destructive/10 border-destructive/30',
-    barFrom: 'hsl(var(--destructive) / 0.6)',
-    barTo: 'hsl(var(--destructive))',
+    bar: 'bg-destructive',
   },
 } as const;
 
-const RANK_BADGES: Record<number, { Icon: typeof Crown; bg: string; glow: string; label: string }> = {
-  1: { Icon: Crown, bg: 'linear-gradient(135deg, hsl(45 95% 65%), hsl(38 95% 50%))', glow: 'hsl(45 95% 55% / 0.6)', label: 'Ouro' },
-  2: { Icon: Medal, bg: 'linear-gradient(135deg, hsl(220 12% 85%), hsl(220 8% 65%))', glow: 'hsl(220 10% 75% / 0.5)', label: 'Prata' },
-  3: { Icon: Award, bg: 'linear-gradient(135deg, hsl(25 80% 60%), hsl(20 70% 42%))', glow: 'hsl(25 75% 50% / 0.55)', label: 'Bronze' },
+const RANK_BADGES: Record<number, { Icon: typeof Crown; bg: string; text: string; label: string }> = {
+  1: { Icon: Crown, bg: 'bg-amber-500/15 border-amber-500/30', text: 'text-amber-500', label: 'Ouro' },
+  2: { Icon: Medal, bg: 'bg-slate-500/15 border-slate-500/30', text: 'text-slate-500', label: 'Prata' },
+  3: { Icon: Award, bg: 'bg-orange-500/15 border-orange-500/30', text: 'text-orange-500', label: 'Bronze' },
 };
 
 interface MetricProps {
@@ -62,13 +56,8 @@ function Metric({ icon: Icon, label, value, tone = 'default', accent }: MetricPr
     tone === 'positive' ? 'text-success' : tone === 'negative' ? 'text-destructive' : 'text-foreground';
   return (
     <div
-      className="group/m relative overflow-hidden rounded-xl border border-border/40 bg-card/40 backdrop-blur-md px-3 py-2.5 transition-all duration-300 hover:border-border hover:-translate-y-0.5"
-      style={{ boxShadow: `inset 0 1px 0 0 hsl(var(--foreground) / 0.04)` }}
+      className="relative overflow-hidden rounded-lg border border-border/40 bg-card/40 px-3 py-2.5 transition-colors hover:border-border"
     >
-      <div
-        className="absolute inset-0 opacity-0 group-hover/m:opacity-100 transition-opacity duration-500 pointer-events-none"
-        style={{ background: `radial-gradient(circle at 30% 0%, ${accent}26, transparent 70%)` }}
-      />
       <div className="relative flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-muted-foreground/80 mb-1">
         <Icon className="h-3 w-3" style={{ color: accent }} />
         <span className="font-semibold">{label}</span>
@@ -104,10 +93,10 @@ export function VendedorMetaDiariaCard({ vendedor, className, compact1004 = fals
           : 'border-red-400/25 bg-red-400/10 text-red-300';
     const barClass =
       vendedor.status === 'acima'
-        ? 'from-emerald-500 to-sky-400'
+        ? 'bg-emerald-500'
         : vendedor.status === 'proximo'
-          ? 'from-amber-500 to-sky-400'
-          : 'from-red-500 to-sky-400';
+          ? 'bg-amber-500'
+          : 'bg-red-500';
 
     const metricasPrincipais = [
       { label: 'Realizado', value: formatCurrency(vendedor.metaReal), tone: 'text-foreground' },
@@ -129,15 +118,14 @@ export function VendedorMetaDiariaCard({ vendedor, className, compact1004 = fals
     return (
       <div
         className={cn(
-          'group rounded-2xl border border-border/55 bg-card/55 p-4 shadow-sm transition-all duration-300',
-          'hover:-translate-y-0.5 hover:border-sky-400/35 hover:bg-card/70 hover:shadow-md',
+          'rounded-lg border border-border/55 bg-card/55 p-4 transition-colors hover:border-sky-400/35 hover:bg-card/70',
           className,
         )}
       >
         <div className="grid gap-4 xl:grid-cols-[minmax(220px,0.85fr)_minmax(520px,2fr)_minmax(210px,0.85fr)] xl:items-center">
           <div className="flex items-center gap-3">
             <div className="relative shrink-0">
-              <div className="h-12 w-12 overflow-hidden rounded-2xl border border-border/60 bg-background/60">
+              <div className="h-12 w-12 overflow-hidden rounded-lg border border-border/60 bg-background/60">
                 {avatarUrl ? (
                   <img src={avatarUrl} alt={vendedor.nome} className="h-full w-full object-cover" />
                 ) : (
@@ -148,11 +136,10 @@ export function VendedorMetaDiariaCard({ vendedor, className, compact1004 = fals
               </div>
               {rankBadge ? (
                 <div
-                  className="absolute -bottom-1.5 -right-1.5 flex h-6 w-6 items-center justify-center rounded-full"
-                  style={{ background: rankBadge.bg, boxShadow: `0 0 10px ${rankBadge.glow}` }}
+                  className={cn('absolute -bottom-1.5 -right-1.5 flex h-6 w-6 items-center justify-center rounded-full border bg-background', rankBadge.bg)}
                   title={rankBadge.label}
                 >
-                  <rankBadge.Icon className="h-3 w-3 text-background" strokeWidth={2.5} />
+                  <rankBadge.Icon className={cn('h-3 w-3', rankBadge.text)} strokeWidth={2.5} />
                 </div>
               ) : (
                 <div className="absolute -bottom-1.5 -right-1.5 flex h-6 min-w-6 items-center justify-center rounded-full border border-border bg-background px-1.5 text-[10px] font-bold text-muted-foreground">
@@ -175,7 +162,7 @@ export function VendedorMetaDiariaCard({ vendedor, className, compact1004 = fals
 
           <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
             {metricasPrincipais.map((metrica) => (
-              <div key={metrica.label} className="rounded-xl border border-border/45 bg-background/35 px-3 py-2.5">
+              <div key={metrica.label} className="rounded-lg border border-border/45 bg-background/35 px-3 py-2.5">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-muted-foreground">{metrica.label}</p>
                 <p className={cn('mono-value mt-1 truncate text-sm font-bold tabular-nums', metrica.tone)}>
                   {metrica.value}
@@ -193,7 +180,7 @@ export function VendedorMetaDiariaCard({ vendedor, className, compact1004 = fals
             </div>
             <div className="h-2.5 overflow-hidden rounded-full bg-background/70">
               <div
-                className={cn('h-full rounded-full bg-gradient-to-r transition-all duration-700', barClass)}
+                className={cn('h-full rounded-full transition-all duration-700', barClass)}
                 style={{ width: `${pct}%` }}
               />
             </div>
@@ -214,26 +201,14 @@ export function VendedorMetaDiariaCard({ vendedor, className, compact1004 = fals
   return (
     <div
       className={cn(
-        'group relative rounded-2xl border border-border/50 bg-card/60 backdrop-blur-xl overflow-hidden',
-        'transition-all duration-500 hover:border-border hover:-translate-y-0.5',
+        'relative overflow-hidden rounded-lg border border-border/50 bg-card/60',
+        'transition-colors hover:border-border',
         'animate-fade-in',
         className,
       )}
-      style={{
-        boxShadow: `inset 0 1px 0 0 hsl(var(--foreground) / 0.06), 0 8px 30px -12px ${cfg.glow}`,
-      }}
     >
       {/* Status accent bar (left edge) */}
-      <div
-        className="absolute inset-y-0 left-0 w-[3px] transition-all duration-500 group-hover:w-[5px]"
-        style={{ background: `linear-gradient(180deg, ${cfg.barFrom}, ${cfg.barTo})`, boxShadow: `0 0 12px ${cfg.glow}` }}
-      />
-
-      {/* Hover spotlight */}
-      <div
-        className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none"
-        style={{ background: `radial-gradient(600px circle at 20% 0%, ${cfg.glow}, transparent 50%)` }}
-      />
+      <div className={cn('absolute inset-y-0 left-0 w-[3px]', cfg.bar)} />
 
       <div className="relative p-4 md:p-5">
         <div className="flex flex-col md:flex-row md:items-center gap-4">
@@ -241,11 +216,10 @@ export function VendedorMetaDiariaCard({ vendedor, className, compact1004 = fals
           <div className="flex items-center gap-3 md:w-56 flex-shrink-0">
             <div className="relative shrink-0">
               <div
-                className="w-14 h-14 rounded-full overflow-hidden ring-2 ring-border/60 transition-all duration-500 group-hover:ring-primary/60"
-                style={{ boxShadow: `0 0 0 4px hsl(var(--background)), 0 6px 18px -6px ${cfg.glow}` }}
+                className="w-14 h-14 rounded-lg overflow-hidden border border-border/60 bg-background"
               >
                 {avatarUrl ? (
-                  <img src={avatarUrl} alt={vendedor.nome} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
+                  <img src={avatarUrl} alt={vendedor.nome} className="w-full h-full object-cover" />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center bg-muted">
                     <User className="w-6 h-6 text-muted-foreground" />
@@ -255,11 +229,10 @@ export function VendedorMetaDiariaCard({ vendedor, className, compact1004 = fals
               {/* Rank badge */}
               {rankBadge ? (
                 <div
-                  className="absolute -bottom-1.5 -right-1.5 w-7 h-7 rounded-full flex items-center justify-center transition-transform duration-300 group-hover:scale-110 group-hover:rotate-[-6deg]"
-                  style={{ background: rankBadge.bg, boxShadow: `0 0 12px ${rankBadge.glow}, inset 0 1px 0 hsl(0 0% 100% / 0.4)` }}
+                  className={cn('absolute -bottom-1.5 -right-1.5 flex h-7 w-7 items-center justify-center rounded-full border bg-background', rankBadge.bg)}
                   title={rankBadge.label}
                 >
-                  <rankBadge.Icon className="w-3.5 h-3.5 text-background" strokeWidth={2.5} />
+                  <rankBadge.Icon className={cn('w-3.5 h-3.5', rankBadge.text)} strokeWidth={2.5} />
                 </div>
               ) : (
                 <div className="absolute -bottom-1.5 -right-1.5 min-w-7 h-7 px-1.5 rounded-full flex items-center justify-center text-[11px] font-bold border-2 border-background bg-muted text-muted-foreground tabular-nums">
@@ -296,10 +269,9 @@ export function VendedorMetaDiariaCard({ vendedor, className, compact1004 = fals
           {/* STATUS RING (desktop) */}
           <div
             className={cn(
-              'hidden md:flex relative items-center justify-center w-24 h-24 rounded-2xl border backdrop-blur-md transition-all duration-500 group-hover:scale-105',
+              'hidden md:flex relative items-center justify-center w-24 h-24 rounded-lg border transition-colors',
               cfg.chipBg,
             )}
-            style={{ boxShadow: `inset 0 1px 0 hsl(var(--foreground) / 0.05), 0 0 24px -8px ${cfg.glow}` }}
           >
             <svg width="80" height="80" viewBox="0 0 80 80" className="absolute inset-0 m-auto -rotate-90">
               <circle cx="40" cy="40" r={RADIUS} stroke="hsl(var(--muted) / 0.35)" strokeWidth="5" fill="none" />
@@ -312,7 +284,7 @@ export function VendedorMetaDiariaCard({ vendedor, className, compact1004 = fals
                 strokeLinecap="round"
                 fill="none"
                 strokeDasharray={`${dash} ${CIRC}`}
-                style={{ filter: `drop-shadow(0 0 4px ${cfg.glow})`, transition: 'stroke-dasharray 900ms cubic-bezier(0.22, 0.9, 0.32, 1)' }}
+                style={{ transition: 'stroke-dasharray 900ms cubic-bezier(0.22, 0.9, 0.32, 1)' }}
               />
             </svg>
             <div className="relative flex flex-col items-center justify-center">
@@ -340,14 +312,11 @@ export function VendedorMetaDiariaCard({ vendedor, className, compact1004 = fals
           </div>
           <div className="relative h-2 w-full rounded-full bg-muted/40 overflow-hidden">
             <div
-              className="vmd-bar relative h-full rounded-full"
+              className={cn('vmd-bar relative h-full rounded-full', cfg.bar)}
               style={{
                 width: `${pct}%`,
-                background: `linear-gradient(90deg, ${cfg.barFrom}, ${cfg.barTo})`,
-                boxShadow: `0 0 12px ${cfg.glow}`,
               }}
             >
-              <span className="vmd-shine absolute inset-y-0 -left-1/3 w-1/3" />
             </div>
             {/* 100% marker */}
             {pct < 100 && (
@@ -359,17 +328,7 @@ export function VendedorMetaDiariaCard({ vendedor, className, compact1004 = fals
 
       <style>{`
         @keyframes vmdFill { from { transform: scaleX(0); } to { transform: scaleX(1); } }
-        @keyframes vmdShine {
-          0% { transform: translateX(-120%); opacity: 0; }
-          30% { opacity: 0.45; }
-          70% { opacity: 0.25; }
-          100% { transform: translateX(420%); opacity: 0; }
-        }
         .vmd-bar { transform-origin: left center; animation: vmdFill 800ms cubic-bezier(0.22, 0.9, 0.32, 1) backwards; }
-        .vmd-shine {
-          background: linear-gradient(90deg, transparent, hsl(0 0% 100% / 0.4), transparent);
-          animation: vmdShine 3.6s ease-in-out infinite;
-        }
       `}</style>
     </div>
   );
