@@ -146,12 +146,12 @@ export function EnterpriseComercialFilters({
         />
       )}
       {showClienteFilter && (
-        <EnterpriseMultiSelectFilter
+        <EnterpriseSelectFilter
           allLabel="Todos os clientes"
           label="Cliente"
-          onChange={(values) => update({ cliente: values[0] })}
+          onChange={(value) => update({ cliente: value })}
           options={toOptions(clientes)}
-          values={pendingFilters.cliente ? [String(pendingFilters.cliente)] : []}
+          value={pendingFilters.cliente ? String(pendingFilters.cliente) : undefined}
         />
       )}
       {showMarcaFilter && (
@@ -181,4 +181,3 @@ export function EnterpriseComercialFilters({
     </EnterpriseFilterBar>
   );
 }
-
