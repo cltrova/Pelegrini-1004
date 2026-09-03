@@ -6,7 +6,6 @@ import { LoadingState } from '@/components/common/LoadingState';
 import { ErrorState } from '@/components/common/ErrorState';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
@@ -14,7 +13,6 @@ import {
   UserCheck, 
   Trophy,
   Medal,
-  Search,
   TrendingUp,
   TrendingDown,
   Target,
@@ -60,13 +58,13 @@ import {
   Pie,
 } from 'recharts';
 import { cn } from '@/lib/utils';
-import { CollapsibleFilterBar } from '@/components/common/CollapsibleFilterBar';
-import { 
-  ComercialFilters, 
-  getDefaultFiltersForEmpresa, 
-  getComercialFiltersSummary, 
-  countActiveFilters 
-} from '@/components/comercial/ComercialFilters';
+import {
+  EnterpriseMetricCard,
+  EnterprisePageHeader,
+  EnterpriseSearchFilter,
+} from '@/components/enterprise';
+import { getDefaultFiltersForEmpresa } from '@/components/comercial/ComercialFilters';
+import { EnterpriseComercialFilters } from '@/components/comercial/EnterpriseComercialFilters';
 import type { ComercialFilters as ComercialFiltersType } from '@/types/comercial';
 
 // Metas simuladas por vendedor (em produção viriam do backend)
@@ -113,7 +111,6 @@ export default function VendedoresPage() {
   // Filtros - estado pendente e aplicado
   const [pendingFilters, setPendingFilters] = useState<ComercialFiltersType>(() => getDefaultFiltersForEmpresa(codEmpresaAtiva));
   const [appliedFilters, setAppliedFilters] = useState<ComercialFiltersType>(() => getDefaultFiltersForEmpresa(codEmpresaAtiva));
-  const [filtersOpen, setFiltersOpen] = useState(false);
   
   const { 
     vendedoresPerformance, 
@@ -143,7 +140,6 @@ export default function VendedoresPage() {
   // Aplicar filtros
   const handleBuscar = useCallback(() => {
     setAppliedFilters(pendingFilters);
-    setFiltersOpen(false);
   }, [pendingFilters]);
 
   // Limpar filtros
@@ -371,51 +367,36 @@ export default function VendedoresPage() {
   if (error) return <ErrorState message="Erro ao carregar vendedores" />;
 
   return (
-    <div className="p-4 md:p-6 space-y-6">
-      {/* Barra de Filtros */}
-      <CollapsibleFilterBar
-        title="Filtros"
-        summary={getComercialFiltersSummary(appliedFilters, vendedoresDisponiveis)}
-        activeFiltersCount={countActiveFilters(appliedFilters)}
-        onClear={handleClearFilters}
-        isOpen={filtersOpen}
-        onOpenChange={setFiltersOpen}
-      >
-        <ComercialFilters
-          filters={pendingFilters}
-          onFiltersChange={setPendingFilters}
-          onBuscar={handleBuscar}
-          hasChanges={hasChanges}
-          anos={ANOS_DISPONIVEIS}
-          vendedores={vendedoresDisponiveis}
-          showVendedorFilter
-        />
-      </CollapsibleFilterBar>
-
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-2">
-            <UserCheck className="h-7 w-7 text-primary" />
-            Painel de Vendedores
-          </h1>
-          <p className="text-muted-foreground">Performance, metas, ranking e inteligência comercial</p>
-        </div>
-        <div className="flex gap-2">
-          <div className="relative w-full md:w-64">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
+    <div className="enterprise-page">
+      <EnterprisePageHeader
+        title="Painel de Vendedores"
+        subtitle="Performance, metas, ranking e inteligência comercial"
+        metadata={`${vendedoresFiltrados.length.toLocaleString('pt-BR')} vendedores visíveis`}
+        actions={
+          <div className="flex min-w-0 items-end gap-2">
+            <EnterpriseSearchFilter
+              label="Busca"
+              onChange={setSearchTerm}
               placeholder="Buscar vendedor..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-9"
             />
           </div>
-          <Button variant="outline" size="icon">
-            <Download className="h-4 w-4" />
-          </Button>
-        </div>
-      </div>
+        }
+      />
+
+      <EnterpriseComercialFilters
+        pendingFilters={pendingFilters}
+        appliedFilters={appliedFilters}
+        onPendingFiltersChange={setPendingFilters}
+        onApply={handleBuscar}
+        onClear={handleClearFilters}
+        hasChanges={hasChanges}
+        anos={ANOS_DISPONIVEIS}
+        vendedores={vendedoresDisponiveis}
+        resultCount={vendedoresPerformance.length}
+        showVendedorFilter
+        useNativeControls
+      />
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
@@ -429,90 +410,13 @@ export default function VendedoresPage() {
         {/* TAB: Visão Geral */}
         <TabsContent value="visao-geral" className="space-y-6">
           {/* KPIs Principais */}
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-            <Card className="bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-lg bg-primary/20 flex items-center justify-center">
-                    <Target className="h-5 w-5 text-primary" />
-                  </div>
-                  <div>
-                    <p className="text-lg font-bold mono-value">{formatCurrency(vendedoresKPIs.totalMeta, true)}</p>
-                    <p className="text-xs text-muted-foreground">Meta Total</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card className="bg-gradient-to-br from-success/10 to-success/5 border-success/20">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-lg bg-success/20 flex items-center justify-center">
-                    <DollarSign className="h-5 w-5 text-success" />
-                  </div>
-                  <div>
-                    <p className="text-lg font-bold mono-value text-success">{formatCurrency(vendedoresKPIs.totalFaturado, true)}</p>
-                    <p className="text-xs text-muted-foreground">Faturado</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card className="bg-gradient-to-br from-destructive/10 to-destructive/5 border-destructive/20">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-lg bg-destructive/20 flex items-center justify-center">
-                    <TrendingDown className="h-5 w-5 text-destructive" />
-                  </div>
-                  <div>
-                    <p className="text-lg font-bold mono-value text-destructive">{formatCurrency(vendedoresKPIs.totalDevolucoes, true)}</p>
-                    <p className="text-xs text-muted-foreground">Devoluções</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-lg bg-accent/10 flex items-center justify-center">
-                    <Users className="h-5 w-5 text-accent-foreground" />
-                  </div>
-                  <div>
-                    <p className="text-lg font-bold mono-value">{vendedoresKPIs.clientesAtendidos}</p>
-                    <p className="text-xs text-muted-foreground">Clientes Atendidos</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-lg bg-secondary flex items-center justify-center">
-                    <Sparkles className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <p className="text-lg font-bold mono-value">{vendedoresKPIs.clientesAtivos}</p>
-                    <p className="text-xs text-muted-foreground">Clientes Ativos</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center">
-                    <UserCheck className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <p className="text-lg font-bold mono-value">{vendedoresKPIs.qtdVendedores}</p>
-                    <p className="text-xs text-muted-foreground">Vendedores</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+          <div className="enterprise-grid-metrics">
+            <EnterpriseMetricCard label="Meta total" value={formatCurrency(vendedoresKPIs.totalMeta, true)} context="Meta acumulada dos vendedores" target={`${formatPercent(vendedoresKPIs.percentualMeta)} atingido`} icon={<Target className="h-4 w-4" />} tone="info" />
+            <EnterpriseMetricCard label="Faturado" value={formatCurrency(vendedoresKPIs.totalFaturado, true)} context="Faturamento líquido no período" target={`${formatCurrency(vendedoresKPIs.faltaMeta, true)} para a meta`} icon={<DollarSign className="h-4 w-4" />} tone="positive" />
+            <EnterpriseMetricCard label="Devoluções" value={formatCurrency(vendedoresKPIs.totalDevolucoes, true)} context="Valor devolvido no período" icon={<TrendingDown className="h-4 w-4" />} tone="negative" />
+            <EnterpriseMetricCard label="Clientes atendidos" value={formatNumber(vendedoresKPIs.clientesAtendidos)} context={`${formatNumber(vendedoresKPIs.clientesAtivos)} ativos nos últimos 3 meses`} icon={<Users className="h-4 w-4" />} tone="neutral" />
+            <EnterpriseMetricCard label="Clientes ativos" value={formatNumber(vendedoresKPIs.clientesAtivos)} context="Carteira com compra recente" icon={<Sparkles className="h-4 w-4" />} tone="info" />
+            <EnterpriseMetricCard label="Vendedores" value={formatNumber(vendedoresKPIs.qtdVendedores)} context="Vendedores no período" icon={<UserCheck className="h-4 w-4" />} tone="neutral" />
           </div>
 
           {/* Barra de Progresso da Meta */}
@@ -547,8 +451,8 @@ export default function VendedoresPage() {
               <Card 
                 key={v.codigo}
                 className={cn(
-                  'cursor-pointer transition-all hover:shadow-lg',
-                  i === 0 && 'md:order-2 ring-2 ring-yellow-500/50 bg-gradient-to-br from-yellow-500/10 to-amber-500/5',
+                  'cursor-pointer transition-colors hover:bg-muted/30',
+                  i === 0 && 'md:order-2 ring-2 ring-yellow-500/50 bg-muted/20',
                   i === 1 && 'md:order-1 ring-1 ring-gray-400/30',
                   i === 2 && 'md:order-3 ring-1 ring-orange-400/30',
                   selectedVendedor === v.codigo && 'ring-2 ring-primary'
@@ -557,11 +461,11 @@ export default function VendedoresPage() {
               >
                 <CardContent className="p-5">
                   <div className="flex items-start justify-between mb-4">
-                    <div className={cn(
-                      'h-12 w-12 rounded-full flex items-center justify-center',
-                      i === 0 && 'bg-gradient-to-br from-yellow-400 to-amber-500',
-                      i === 1 && 'bg-gradient-to-br from-gray-300 to-gray-400',
-                      i === 2 && 'bg-gradient-to-br from-orange-400 to-amber-600'
+                  <div className={cn(
+                    'h-12 w-12 rounded-full flex items-center justify-center',
+                      i === 0 && 'bg-yellow-500',
+                      i === 1 && 'bg-slate-400',
+                      i === 2 && 'bg-orange-500'
                     )}>
                       {i === 0 ? (
                         <Trophy className="h-6 w-6 text-white" />
@@ -1197,7 +1101,7 @@ export default function VendedoresPage() {
                 </CardContent>
               </Card>
 
-              <Card className="bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20">
+              <Card className="border-primary/20 bg-muted/20">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-base flex items-center gap-2">
                     <AlertCircle className="h-4 w-4 text-primary" />
