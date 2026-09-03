@@ -44,13 +44,33 @@ interface Row {
   status: 'novo' | 'inativo' | 'ascensao' | 'queda' | 'estavel';
 }
 
+interface MetaResumo {
+  periodoAnterior: { inicio: string; fim: string; dias: number };
+  periodoAtual: { inicio: string; fim: string; dias: number };
+  totalColaboradores: number;
+  cresceram: number;
+  mediaEvolucao: number;
+  maiorEvolucao?: Row;
+  maiorQueda?: Row;
+}
+
+function getOptionalString(source: Record<string, unknown>, key: string): string {
+  const value = source[key];
+  return value == null ? '' : String(value);
+}
+
+function getOptionalNumber(source: Record<string, unknown>, key: string): number | undefined {
+  const value = source[key];
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : undefined;
+}
+
 function dateKey(p: Pedido): string {
   return (p.data_faturamento || p.data_pedido || '').toString().slice(0, 10);
 }
 
 function devolucaoDateKey(d: Devolucao): string {
-  // tenta os campos mais comuns
-  const candidato = (d as any).data_devolucao || (d as any).data || (d as any).data_pedido || '';
+  const candidato = getOptionalString(d, 'data_devolucao') || d.data || getOptionalString(d, 'data_pedido');
   return candidato.toString().slice(0, 10);
 }
 
@@ -108,7 +128,7 @@ export function ComparativoColaboradoresTable({ pedidos, devolucoes, onSelectVen
 
   const { rows, metaResumo } = useMemo(() => {
     if (!pedidos.length) {
-      return { rows: [] as Row[], metaResumo: null as any };
+      return { rows: [] as Row[], metaResumo: null as MetaResumo | null };
     }
 
     // Detecta janela do período: min/max de datas presentes em pedidos
@@ -155,8 +175,8 @@ export function ComparativoColaboradoresTable({ pedidos, devolucoes, onSelectVen
     const devAnterior: Record<string, number> = {};
     devolucoes.forEach(d => {
       const dt = devolucaoDateKey(d);
-      const cod = String((d as any).vendedor_codigo ?? (d as any).vendedor_nome ?? '—');
-      const valor = Number((d as any).valor_liquido ?? (d as any).valor ?? 0) || 0;
+      const cod = String(d.vendedor_codigo ?? d.vendedor_nome ?? '—');
+      const valor = getOptionalNumber(d, 'valor_liquido') ?? getOptionalNumber(d, 'valor') ?? 0;
       if (!dt) return;
       const target = dt >= inicioAtual ? devAtual : (dt <= fimAnterior ? devAnterior : devAtual);
       target[cod] = (target[cod] || 0) + valor;
@@ -231,7 +251,7 @@ export function ComparativoColaboradoresTable({ pedidos, devolucoes, onSelectVen
     const top = [...built].sort((a, b) => b.deltaPct - a.deltaPct)[0];
     const bottom = [...built].sort((a, b) => a.deltaPct - b.deltaPct)[0];
 
-    const metaResumo = {
+    const metaResumo: MetaResumo = {
       periodoAnterior: { inicio: inicioAnterior, fim: fimAnterior, dias: metade },
       periodoAtual: { inicio: inicioAtual, fim: fimAtual, dias: totalDias - metade },
       totalColaboradores: ativos.length,
@@ -296,11 +316,10 @@ export function ComparativoColaboradoresTable({ pedidos, devolucoes, onSelectVen
   );
 
   return (
-    <Card className="relative overflow-hidden rounded-3xl border border-border/40 bg-card/40 backdrop-blur-xl shadow-2xl shadow-black/30">
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-primary/[0.06] via-transparent to-chart-3/[0.05]" />
+    <Card className="relative overflow-hidden border border-border/60 bg-card">
       <CardHeader className="relative pb-3 flex flex-row items-start justify-between gap-3 flex-wrap">
         <div className="flex items-start gap-3">
-          <div className="p-2 rounded-xl bg-primary/10 border border-primary/20 shrink-0">
+          <div className="p-2 rounded-lg bg-primary/10 border border-primary/20 shrink-0">
             <Users className="h-4 w-4 text-primary" />
           </div>
           <div>
@@ -327,7 +346,7 @@ export function ComparativoColaboradoresTable({ pedidos, devolucoes, onSelectVen
               className="h-8 pl-7 text-xs w-48 bg-background/40 border-border/40"
             />
           </div>
-          <div className="flex items-center gap-1 rounded-xl border border-border/40 bg-background/40 backdrop-blur-md p-1">
+          <div className="flex items-center gap-1 rounded-lg border border-border/60 bg-muted/40 p-1">
             {([
               { id: 'todos', label: 'Todos' },
               { id: 'cresceu', label: 'Cresceram' },
@@ -340,7 +359,7 @@ export function ComparativoColaboradoresTable({ pedidos, devolucoes, onSelectVen
                 className={cn(
                   'px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all',
                   filter === opt.id
-                    ? 'bg-primary text-primary-foreground shadow-md shadow-primary/30'
+                    ? 'bg-primary text-primary-foreground'
                     : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
                 )}
               >
@@ -357,10 +376,9 @@ export function ComparativoColaboradoresTable({ pedidos, devolucoes, onSelectVen
           </div>
         ) : (
           <>
-            {/* Banner de insights */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mb-4">
               {metaResumo.maiorEvolucao && metaResumo.maiorEvolucao.deltaPct > 0 && (
-                <div className="rounded-xl border border-emerald-500/30 bg-gradient-to-br from-emerald-500/10 to-transparent px-3 py-2">
+                <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2">
                   <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
                     <Trophy className="h-3 w-3 text-emerald-500" /> Maior evolução
                   </div>
@@ -373,7 +391,7 @@ export function ComparativoColaboradoresTable({ pedidos, devolucoes, onSelectVen
                 </div>
               )}
               {metaResumo.maiorQueda && metaResumo.maiorQueda.deltaPct < 0 && (
-                <div className="rounded-xl border border-rose-500/30 bg-gradient-to-br from-rose-500/10 to-transparent px-3 py-2">
+                <div className="rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-2">
                   <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
                     <TrendingDown className="h-3 w-3 text-rose-500" /> Maior queda
                   </div>
@@ -385,7 +403,7 @@ export function ComparativoColaboradoresTable({ pedidos, devolucoes, onSelectVen
                   </div>
                 </div>
               )}
-              <div className="rounded-xl border border-primary/30 bg-gradient-to-br from-primary/10 to-transparent px-3 py-2">
+              <div className="rounded-lg border border-primary/30 bg-primary/10 px-3 py-2">
                 <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
                   <Users className="h-3 w-3 text-primary" /> Resumo do time
                 </div>
@@ -401,11 +419,10 @@ export function ComparativoColaboradoresTable({ pedidos, devolucoes, onSelectVen
               </div>
             </div>
 
-            {/* Tabela */}
-            <div className="rounded-xl border border-border/40 bg-background/20 overflow-hidden">
+            <div className="rounded-lg border border-border/60 bg-background/20 overflow-hidden">
               <div className="overflow-x-auto overflow-y-auto max-h-[520px]">
                 <table className="w-full text-sm">
-                  <thead className="bg-muted/30 sticky top-0 backdrop-blur-md z-10">
+                  <thead className="bg-muted sticky top-0 z-10">
                     <tr className="border-b border-border/40">
                       <SortHeader k="rank">#</SortHeader>
                       <SortHeader k="nome">Colaborador</SortHeader>
@@ -434,7 +451,6 @@ export function ComparativoColaboradoresTable({ pedidos, devolucoes, onSelectVen
                             idx % 2 === 0 && 'bg-background/10'
                           )}
                         >
-                          {/* Rank */}
                           <td className="px-3 py-2.5">
                             <div className="flex items-center gap-1.5">
                               <span className="text-xs font-bold tabular-nums w-5 text-right">{r.rankAtual || '—'}</span>
@@ -449,10 +465,9 @@ export function ComparativoColaboradoresTable({ pedidos, devolucoes, onSelectVen
                               )}
                             </div>
                           </td>
-                          {/* Colaborador */}
                           <td className="px-3 py-2.5">
                             <div className="flex items-center gap-2">
-                              <div className="h-7 w-7 rounded-full bg-gradient-to-br from-primary/30 to-chart-3/30 border border-border/30 flex items-center justify-center shrink-0">
+                              <div className="h-7 w-7 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
                                 <span className="text-[10px] font-bold">{r.nome.slice(0, 2).toUpperCase()}</span>
                               </div>
                               <div className="min-w-0">
@@ -461,15 +476,12 @@ export function ComparativoColaboradoresTable({ pedidos, devolucoes, onSelectVen
                               </div>
                             </div>
                           </td>
-                          {/* Faturamento atual */}
                           <td className="px-3 py-2.5 text-right tabular-nums">
                             <div className="text-xs font-bold">{formatCurrency(r.faturamentoAtual, true)}</div>
                           </td>
-                          {/* Anterior */}
                           <td className="px-3 py-2.5 text-right tabular-nums">
                             <div className="text-xs text-muted-foreground">{formatCurrency(r.faturamentoAnterior, true)}</div>
                           </td>
-                          {/* Δ Faturamento */}
                           <td className="px-3 py-2.5 text-right">
                             <div className="flex flex-col items-end gap-0.5">
                               <DeltaCell value={r.deltaPct} />
@@ -478,28 +490,24 @@ export function ComparativoColaboradoresTable({ pedidos, devolucoes, onSelectVen
                               </span>
                             </div>
                           </td>
-                          {/* Pedidos */}
                           <td className="px-3 py-2.5 text-right">
                             <div className="flex flex-col items-end gap-0.5">
                               <span className="text-xs font-semibold tabular-nums">{formatInteger(r.pedidosAtual)}</span>
                               <DeltaCell value={r.deltaPedidosPct} />
                             </div>
                           </td>
-                          {/* Ticket médio */}
                           <td className="px-3 py-2.5 text-right">
                             <div className="flex flex-col items-end gap-0.5">
                               <span className="text-xs font-semibold tabular-nums">{formatCurrency(r.ticketAtual, true)}</span>
                               <DeltaCell value={r.deltaTicketPct} />
                             </div>
                           </td>
-                          {/* Devoluções */}
                           <td className="px-3 py-2.5 text-right">
                             <div className="flex flex-col items-end gap-0.5">
                               <span className="text-xs font-semibold tabular-nums">{formatCurrency(r.devolucoesAtual, true)}</span>
                               <DeltaCell value={r.deltaDevolucoesPct} invert />
                             </div>
                           </td>
-                          {/* Status */}
                           <td className="px-3 py-2.5 text-center">
                             <StatusBadge status={r.status} />
                           </td>
