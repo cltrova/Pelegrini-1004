@@ -10,6 +10,7 @@ import {
   Users, FileText, ReceiptText, Trophy, AlertTriangle,
   Sparkles, ChevronUp, ChevronDown, Minus, Crown, Medal, Award, User, Eye
 } from 'lucide-react';
+import { EnterprisePageHeader } from '@/components/enterprise';
 import { VendedorDetailsDialog } from '@/components/comercial/VendedorDetailsDialog';
 import { getDiasUteisNoMes, getDiasUteisDecorridos, type ComercialFilters as ComercialFiltersType } from '@/types/comercial';
 import { formatCurrency, formatPercent, formatCompactNumber, formatPeriodShort } from '@/utils/formatters';
@@ -24,13 +25,10 @@ import {
 } from 'recharts';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { CollapsibleFilterBar } from '@/components/common/CollapsibleFilterBar';
 import { 
-  ComercialFilters, 
   getDefaultFiltersForEmpresa, 
-  getComercialFiltersSummary, 
-  countActiveFilters 
 } from '@/components/comercial/ComercialFilters';
+import { EnterpriseComercialFilters } from '@/components/comercial/EnterpriseComercialFilters';
 import { LayoutAlternativoComercial } from '@/components/comercial/LayoutAlternativoComercial';
 import { getVendedorAvatar } from '@/config/vendedorAvatars';
 import { getFeriadosComerciaisMeta } from '@/utils/feriadosComerciais';
@@ -102,7 +100,7 @@ export default function MetasVendedoresPage() {
    // Filtros - inicializar como undefined para NÃO filtrar até periodoDisponivel estar disponível
    const [pendingFilters, setPendingFilters] = useState<ComercialFiltersType | undefined>(undefined);
    const [appliedFilters, setAppliedFilters] = useState<ComercialFiltersType | undefined>(undefined);
-  const [filtersOpen, setFiltersOpen] = useState(false);
+  const filtersOpen = true;
 
   const aplicarFiltroPadraoPelegrini = useCallback((filters: ComercialFiltersType | undefined) => {
     return aplicarEquipeContextualPelegrini1004AoFiltro(
@@ -258,7 +256,6 @@ export default function MetasVendedoresPage() {
   const handleBuscar = useCallback(() => {
     setAppliedFilters(aplicarFiltroPadraoPelegrini(pendingFilters));
     invalidarConsultasComerciais(queryClient);
-    setFiltersOpen(false);
   }, [aplicarFiltroPadraoPelegrini, pendingFilters, queryClient]);
 
   const handlePendingFiltersChange = useCallback((filters: ComercialFiltersType) => {
@@ -637,7 +634,6 @@ export default function MetasVendedoresPage() {
   const pedidosDetalheVisual: any[] = isPelegriniPage ? pedidosFonteFinal : pedidos;
   const semVendedores = !vendedoresBaseVisual.length;
   const isCampanhas1004Ativa = isPelegriniPage && activeTab === 'campanhas';
-  const filtersResumo = pendingFilters ? (aplicarFiltroPadraoPelegrini(pendingFilters) ?? pendingFilters) : undefined;
   const tabTriggerClass = cn(
     'flex-none whitespace-nowrap px-4 text-sm',
     isPelegriniPage
@@ -664,35 +660,29 @@ export default function MetasVendedoresPage() {
 
   return (
     <div className={cn(
-      'p-4 md:p-6 space-y-4',
+      'enterprise-page',
       isPelegriniPage && 'min-h-screen bg-background text-foreground',
     )}>
-      {/* Barra de Filtros */}
+      <EnterprisePageHeader
+        title="Dashboard Comercial"
+        subtitle="Faturamento, margem, devoluções e ranking"
+        metadata={`${kpis.qtdPedidos.toLocaleString('pt-BR')} pedidos | ${kpis.qtdClientes.toLocaleString('pt-BR')} clientes`}
+      />
+
       {!isCampanhas1004Ativa && (
-        <CollapsibleFilterBar
-          title="Filtros"
-           summary={filtersResumo ? getComercialFiltersSummary(filtersResumo, vendedoresParaFiltro1004) : []}
-           activeFiltersCount={filtersResumo ? countActiveFilters(filtersResumo) : 0}
+        <EnterpriseComercialFilters
+          pendingFilters={pendingFilters || getDefaultFiltersForEmpresa(codEmpresaAtiva)}
+          appliedFilters={appliedFilters || getDefaultFiltersForEmpresa(codEmpresaAtiva)}
+          onPendingFiltersChange={handlePendingFiltersChange}
+          onApply={handleBuscar}
           onClear={handleClearFilters}
-          isOpen={filtersOpen}
-          onOpenChange={setFiltersOpen}
-          className={isPelegriniPage ? '[&_>div]:border-border/60 [&_>div]:bg-card [&_>div]:shadow-none [&_>div>button]:text-foreground [&_>div>button:hover]:bg-muted/40' : undefined}
-        >
-          <ComercialFilters
-             filters={pendingFilters || getDefaultFiltersForEmpresa(codEmpresaAtiva)}
-            onFiltersChange={handlePendingFiltersChange}
-            onBuscar={handleBuscar}
-            hasChanges={hasChanges}
-            anos={ANOS_DISPONIVEIS}
-            vendedores={vendedoresParaFiltro1004}
-            showVendedorFilter
-          />
-        </CollapsibleFilterBar>
+          hasChanges={hasChanges}
+          anos={ANOS_DISPONIVEIS}
+          vendedores={vendedoresParaFiltro1004}
+          resultCount={pedidosFonteFinal.length}
+          showVendedorFilter
+        />
       )}
-
-
-
-
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v); try { sessionStorage.setItem('comercial:metas:tab', v); } catch { /* storage pode estar bloqueado pelo navegador */ } }} className="space-y-6">
