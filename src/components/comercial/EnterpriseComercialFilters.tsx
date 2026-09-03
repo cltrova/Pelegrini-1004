@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import {
   EnterpriseFilterBar,
   EnterpriseMultiSelectFilter,
@@ -7,6 +8,7 @@ import {
 import type { ComercialFilters as ComercialFiltersType } from '@/types/comercial';
 import {
   COMERCIAL_MESES,
+  ComercialFilters,
   computeFimPeriodo,
   countActiveFilters,
   getComercialFiltersSummary,
@@ -24,10 +26,16 @@ interface EnterpriseComercialFiltersProps {
   vendedores?: { codigo: string | number; nome: string }[];
   clientes?: { codigo: string | number; nome: string }[];
   marcas?: string[];
+  empresas?: string[];
   resultCount?: number;
   showVendedorFilter?: boolean;
   showClienteFilter?: boolean;
   showMarcaFilter?: boolean;
+  vendedorFilterVariant1004?: 'default' | 'campanhas';
+  vendedorFilterEquipe1004?: 'transmissao' | 'chevrolet';
+  monthOnly?: boolean;
+  extraFields?: ReactNode;
+  useNativeControls?: boolean;
 }
 
 const toOptions = (
@@ -82,10 +90,16 @@ export function EnterpriseComercialFilters({
   vendedores = [],
   clientes = [],
   marcas = [],
+  empresas = [],
   resultCount,
   showVendedorFilter = false,
   showClienteFilter = false,
   showMarcaFilter = false,
+  vendedorFilterVariant1004 = 'default',
+  vendedorFilterEquipe1004 = 'transmissao',
+  monthOnly = false,
+  extraFields,
+  useNativeControls = false,
 }: EnterpriseComercialFiltersProps) {
   const summary = getComercialFiltersSummary(appliedFilters, vendedores, clientes)
     .map((item) => `${item.label}: ${item.value}`)
@@ -105,6 +119,42 @@ export function EnterpriseComercialFilters({
   const pendingMarcas = (
     pendingFilters.marcas || (pendingFilters.marca ? [pendingFilters.marca] : [])
   ).map(String);
+
+  if (useNativeControls) {
+    return (
+      <EnterpriseFilterBar
+        activeCount={activeCount}
+        applyLabel={hasChanges ? 'Aplicar alteracoes' : 'Aplicar filtros'}
+        onApply={onApply}
+        onClear={onClear}
+        resultCount={resultCount}
+        summary={summary}
+      >
+        <div className="basis-full min-w-0">
+          <ComercialFilters
+            anos={anos}
+            clientes={clientes}
+            collapsible={false}
+            embedded
+            empresas={empresas}
+            extraFields={extraFields}
+            filters={pendingFilters}
+            hasChanges={hasChanges}
+            hideActions
+            marcas={marcas}
+            monthOnly={monthOnly}
+            onFiltersChange={onPendingFiltersChange}
+            showClienteFilter={showClienteFilter}
+            showMarcaFilter={showMarcaFilter}
+            showVendedorFilter={showVendedorFilter}
+            vendedorFilterEquipe1004={vendedorFilterEquipe1004}
+            vendedorFilterVariant1004={vendedorFilterVariant1004}
+            vendedores={vendedores}
+          />
+        </div>
+      </EnterpriseFilterBar>
+    );
+  }
 
   return (
     <EnterpriseFilterBar

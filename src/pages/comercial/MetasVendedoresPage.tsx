@@ -681,6 +681,7 @@ export default function MetasVendedoresPage() {
           vendedores={vendedoresParaFiltro1004}
           resultCount={pedidosFonteFinal.length}
           showVendedorFilter
+          useNativeControls
         />
       )}
 

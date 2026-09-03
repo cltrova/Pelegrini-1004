@@ -277,6 +277,10 @@ interface ComercialFiltersProps {
   monthOnly?: boolean;
   /** Campos adicionais renderizados dentro do grid de filtros. */
   extraFields?: React.ReactNode;
+  /** Renderiza apenas os campos, para uso dentro de uma superfície visual externa. */
+  embedded?: boolean;
+  /** Oculta a linha interna de ações quando a superfície externa já fornece Aplicar/Limpar. */
+  hideActions?: boolean;
 }
 
 // Helper: obter mês atual no formato "01", "02", etc.
@@ -384,6 +388,8 @@ export function ComercialFilters({
   collapsible = false,
   monthOnly = false,
   extraFields,
+  embedded = false,
+  hideActions = false,
 }: ComercialFiltersProps) {
   const { isMaster } = useAuth();
   const { codEmpresaAtiva, empresa } = useEmpresaAtiva();
@@ -525,7 +531,13 @@ export function ComercialFilters({
 
   return (
     <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
-      <div className="rounded-xl border border-border/60 bg-card/50 backdrop-blur-sm p-4 shadow-sm">
+      <div
+        className={cn(
+          embedded
+            ? 'min-w-0 p-0'
+            : 'rounded-xl border border-border/60 bg-card/50 backdrop-blur-sm p-4 shadow-sm',
+        )}
+      >
         {/* Header com toggle */}
         <CollapsibleTrigger asChild>
           <div className={cn(
@@ -552,7 +564,7 @@ export function ComercialFilters({
 
         <CollapsibleContent className="space-y-4">
           {/* Grid de filtros */}
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+          <div className="grid min-w-0 grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
             {/* Ano — multi-select */}
             <div className="space-y-1.5">
               <FieldLabel icon={Calendar}>Ano</FieldLabel>
@@ -964,6 +976,7 @@ export function ComercialFilters({
           </div>
 
           {/* Ações */}
+          {!hideActions && (
           <div className="mt-4 flex items-center justify-end gap-2 border-t border-border/40 pt-3">
             <Button
               variant="ghost"
@@ -985,6 +998,7 @@ export function ComercialFilters({
               </Button>
             )}
           </div>
+          )}
         </CollapsibleContent>
       </div>
     </Collapsible>
