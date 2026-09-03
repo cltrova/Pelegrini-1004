@@ -8,6 +8,7 @@ import {
   Clock, Target, UserX, Calendar, ArrowUpRight, ArrowDownRight,
   Minus, Sparkles, Zap, Trophy, Search, DollarSign, Activity, Flame
 } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { formatCurrency, formatInteger, formatPercent } from '@/utils/formatters';
 import { useComercialData } from '@/hooks/useComercialData';
 import { LoadingState } from '@/components/common/LoadingState';
@@ -45,16 +46,32 @@ function Sparkline({ values, color = 'hsl(var(--primary))', height = 28 }: { val
 }
 
 // =============== Premium Tooltip ===============
-function PremiumTooltip({ active, payload, label, isCurrency = true }: any) {
+type PremiumTooltipEntry = {
+  color?: string;
+  fill?: string;
+  value?: number | string;
+};
+
+function PremiumTooltip({
+  active,
+  payload,
+  label,
+  isCurrency = true,
+}: {
+  active?: boolean;
+  payload?: PremiumTooltipEntry[];
+  label?: string;
+  isCurrency?: boolean;
+}) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="rounded-xl border border-border/60 bg-card/95 backdrop-blur-xl px-3 py-2 shadow-2xl shadow-primary/10">
+    <div className="rounded-lg border border-border/60 bg-card/95 px-3 py-2">
       <p className="text-[11px] font-semibold text-muted-foreground mb-1 uppercase tracking-wider">{label}</p>
-      {payload.map((e: any, i: number) => (
+      {payload.map((e, i) => (
         <div key={i} className="flex items-center gap-2 text-xs">
           <span className="h-2 w-2 rounded-full" style={{ background: e.color || e.fill }} />
           <span className="tabular-nums font-semibold">
-            {isCurrency ? formatCurrency(e.value) : formatInteger(e.value)}
+            {isCurrency ? formatCurrency(Number(e.value ?? 0)) : formatInteger(Number(e.value ?? 0))}
           </span>
         </div>
       ))}
@@ -64,10 +81,10 @@ function PremiumTooltip({ active, payload, label, isCurrency = true }: any) {
 
 // =============== Premium KPI Card ===============
 function PremiumKPI({
-  icon: Icon, label, value, sub, trend, gradient, sparkValues, color = 'hsl(var(--primary))'
+  icon: Icon, label, value, sub, trend, sparkValues, color = 'hsl(var(--primary))'
 }: {
-  icon: any; label: string; value: string; sub?: string; trend?: number;
-  gradient: string; sparkValues?: number[]; color?: string;
+  icon: LucideIcon; label: string; value: string; sub?: string; trend?: number;
+  sparkValues?: number[]; color?: string;
 }) {
   const trendIcon = trend === undefined ? null
     : trend > 0 ? <ArrowUpRight className="h-3.5 w-3.5" />
@@ -76,13 +93,11 @@ function PremiumKPI({
   const trendColor = trend === undefined ? '' : trend > 0 ? 'text-emerald-400' : trend < 0 ? 'text-red-400' : 'text-muted-foreground';
 
   return (
-    <div className="premium-hover-card group relative overflow-hidden rounded-2xl border border-border/50 bg-card/40 backdrop-blur-xl transition-all duration-500 hover:border-primary/40 hover:shadow-2xl hover:shadow-primary/10 hover:-translate-y-0.5">
-      <div className={cn("absolute inset-0 opacity-30 transition-opacity duration-500 group-hover:opacity-60", gradient)} />
-      <div className="absolute -top-12 -right-12 h-32 w-32 rounded-full blur-3xl opacity-20 transition-all duration-700 group-hover:opacity-40" style={{ background: color }} />
+    <div className="relative overflow-hidden rounded-lg border border-border/50 bg-card/40 transition-colors hover:border-primary/40">
       <div className="relative p-5">
         <div className="flex items-center justify-between mb-3">
           <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{label}</span>
-          <div className="h-8 w-8 rounded-xl flex items-center justify-center bg-background/60 border border-border/60">
+          <div className="h-8 w-8 rounded-lg flex items-center justify-center bg-background/60 border border-border/60">
             <Icon className="h-4 w-4" style={{ color }} />
           </div>
         </div>
@@ -209,7 +224,7 @@ export function AnaliseDiariaLayoutPremium() {
   // ---- Performance de vendedores ----
   const performanceVendedores = useMemo(() => {
     const ph = pedidos.filter(p => p.data_pedido?.startsWith(hojeStr) || p.data_faturamento?.startsWith(hojeStr));
-    const por: Record<string, { codigo: any; nome: string; faturamento: number; pedidos: number; clientes: Set<any> }> = {};
+    const por: Record<string, { codigo: string | number | null | undefined; nome: string; faturamento: number; pedidos: number; clientes: Set<string | number | null | undefined> }> = {};
     ph.forEach(p => {
       const c = String(p.vendedor_codigo);
       if (!por[c]) por[c] = { codigo: p.vendedor_codigo, nome: p.vendedor_nome || `Vendedor ${c}`, faturamento: 0, pedidos: 0, clientes: new Set() };
@@ -301,13 +316,11 @@ export function AnaliseDiariaLayoutPremium() {
   return (
     <div className="p-4 md:p-6 space-y-6">
       {/* Header Premium */}
-      <div className="premium-hover-card relative overflow-hidden rounded-2xl border border-border/60 bg-gradient-to-br from-primary/10 via-card to-card p-6">
-        <div className="absolute -top-20 -right-20 h-64 w-64 rounded-full bg-primary/20 blur-3xl" />
-        <div className="absolute -bottom-20 -left-20 h-64 w-64 rounded-full bg-purple-500/10 blur-3xl" />
+      <div className="relative overflow-hidden rounded-lg border border-border/60 bg-card p-6">
         <div className="relative flex items-center justify-between flex-wrap gap-4">
           <div>
             <h1 className="text-3xl font-bold flex items-center gap-3 tracking-tight">
-              <div className="h-11 w-11 rounded-2xl flex items-center justify-center bg-primary/15 border border-primary/30">
+              <div className="h-11 w-11 rounded-lg flex items-center justify-center bg-primary/15 border border-primary/30">
                 <Calendar className="h-5 w-5 text-primary" />
               </div>
               Análise Diária Premium
@@ -317,14 +330,14 @@ export function AnaliseDiariaLayoutPremium() {
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <Badge variant="outline" className="text-xs px-3 py-1.5 backdrop-blur bg-background/40 border-emerald-500/30 text-emerald-400">
+            <Badge variant="outline" className="text-xs px-3 py-1.5 bg-background/40 border-emerald-500/30 text-emerald-400">
               <span className="relative flex h-2 w-2 mr-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
               </span>
               Ao vivo
             </Badge>
-            <Badge variant="outline" className="text-xs px-3 py-1.5 backdrop-blur bg-background/40">
+            <Badge variant="outline" className="text-xs px-3 py-1.5 bg-background/40">
               <Clock className="h-3 w-3 mr-1.5" />
               {hoje.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
             </Badge>
@@ -333,14 +346,14 @@ export function AnaliseDiariaLayoutPremium() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3 h-12 p-1 bg-muted/40 backdrop-blur rounded-xl border border-border/40">
-          <TabsTrigger value="resumo" className="data-[state=active]:bg-card data-[state=active]:shadow-lg gap-2 rounded-lg">
+        <TabsList className="grid w-full grid-cols-3 h-12 p-1 bg-muted/40 rounded-lg border border-border/40">
+          <TabsTrigger value="resumo" className="data-[state=active]:bg-card gap-2 rounded-lg">
             <Sparkles className="h-4 w-4" /> Resumo do Dia
           </TabsTrigger>
-          <TabsTrigger value="vendedores" className="data-[state=active]:bg-card data-[state=active]:shadow-lg gap-2 rounded-lg">
+          <TabsTrigger value="vendedores" className="data-[state=active]:bg-card gap-2 rounded-lg">
             <Users className="h-4 w-4" /> Vendedores
           </TabsTrigger>
-          <TabsTrigger value="alertas" className="data-[state=active]:bg-card data-[state=active]:shadow-lg gap-2 rounded-lg">
+          <TabsTrigger value="alertas" className="data-[state=active]:bg-card gap-2 rounded-lg">
             <AlertTriangle className="h-4 w-4" /> Alertas
           </TabsTrigger>
         </TabsList>
@@ -354,7 +367,6 @@ export function AnaliseDiariaLayoutPremium() {
               value={formatCurrency(analiseHoje.faturamentoHoje)}
               sub={`${formatPercent(analiseHoje.variacaoFaturamento, true)} vs ontem`}
               trend={analiseHoje.variacaoFaturamento}
-              gradient="bg-gradient-to-br from-primary/15 to-transparent"
               sparkValues={sparklines.fat}
               color="hsl(var(--primary))"
             />
@@ -364,7 +376,6 @@ export function AnaliseDiariaLayoutPremium() {
               value={formatInteger(analiseHoje.pedidosHoje)}
               sub={`${analiseHoje.pedidosOntem} ontem`}
               trend={analiseHoje.variacaoPedidos}
-              gradient="bg-gradient-to-br from-emerald-500/15 to-transparent"
               sparkValues={sparklines.ped}
               color="hsl(160 70% 50%)"
             />
@@ -374,7 +385,6 @@ export function AnaliseDiariaLayoutPremium() {
               value={formatInteger(analiseHoje.clientesHoje)}
               sub={`${analiseHoje.clientesOntem} ontem`}
               trend={analiseHoje.clientesHoje - analiseHoje.clientesOntem}
-              gradient="bg-gradient-to-br from-blue-500/15 to-transparent"
               sparkValues={sparklines.cli}
               color="hsl(210 90% 60%)"
             />
@@ -383,7 +393,6 @@ export function AnaliseDiariaLayoutPremium() {
               label="Ticket Médio"
               value={formatCurrency(analiseHoje.ticketMedioHoje)}
               sub="média por pedido"
-              gradient="bg-gradient-to-br from-amber-500/15 to-transparent"
               sparkValues={sparklines.tic}
               color="hsl(38 92% 55%)"
             />
@@ -391,8 +400,7 @@ export function AnaliseDiariaLayoutPremium() {
 
           {/* Comparativo + Radial */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-            <Card className="premium-hover-card lg:col-span-2 relative overflow-hidden border-border/50 bg-card/60 backdrop-blur-xl">
-              <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent" />
+            <Card className="lg:col-span-2 relative overflow-hidden border-border/50 bg-card/60">
               <CardHeader className="relative pb-2">
                 <CardTitle className="text-base flex items-center gap-2">
                   <TrendingUp className="h-5 w-5 text-primary" />
@@ -401,16 +409,16 @@ export function AnaliseDiariaLayoutPremium() {
               </CardHeader>
               <CardContent className="relative space-y-4">
                 <div className="grid grid-cols-3 gap-3">
-                  <div className="rounded-xl border border-border/40 bg-background/40 p-3 text-center">
+                  <div className="rounded-lg border border-border/40 bg-background/40 p-3 text-center">
                     <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Média (mês)</p>
                     <p className="text-lg font-bold tabular-nums">{formatCurrency(mediaDiaria.media)}</p>
                   </div>
-                  <div className="rounded-xl border border-primary/30 bg-primary/5 p-3 text-center">
+                  <div className="rounded-lg border border-primary/30 bg-primary/5 p-3 text-center">
                     <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Hoje</p>
                     <p className="text-lg font-bold tabular-nums text-primary">{formatCurrency(analiseHoje.faturamentoHoje)}</p>
                   </div>
                   <div className={cn(
-                    "rounded-xl border p-3 text-center",
+                    "rounded-lg border p-3 text-center",
                     acimaMedia ? "border-emerald-500/30 bg-emerald-500/5" : "border-amber-500/30 bg-amber-500/5"
                   )}>
                     <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Diferença</p>
@@ -427,13 +435,11 @@ export function AnaliseDiariaLayoutPremium() {
                   <div className="h-3 rounded-full bg-muted/60 overflow-hidden border border-border/40">
                     <div
                       className={cn(
-                        "h-full rounded-full transition-all duration-700 relative overflow-hidden",
-                        acimaMedia ? "bg-gradient-to-r from-emerald-500 to-emerald-400" : "bg-gradient-to-r from-amber-500 to-amber-400"
+                        "h-full rounded-full transition-all duration-700",
+                        acimaMedia ? "bg-emerald-500" : "bg-amber-500"
                       )}
                       style={{ width: `${progresso}%` }}
-                    >
-                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-pulse" />
-                    </div>
+                    />
                   </div>
                 </div>
               </CardContent>
@@ -444,17 +450,16 @@ export function AnaliseDiariaLayoutPremium() {
               const fillPct = Math.max(0, Math.min(CAP, progresso));
               const fillHeight = (fillPct / CAP) * 100;
               const zona = progresso >= 110
-                ? { label: 'Excelente', text: 'text-cyan-300', bg: 'bg-cyan-500/15', border: 'border-cyan-400/40', dot: 'bg-cyan-400', glow: 'shadow-[0_0_24px_hsl(190_90%_55%/0.55)]' }
+                ? { label: 'Excelente', text: 'text-cyan-300', bg: 'bg-cyan-500/15', border: 'border-cyan-400/40', dot: 'bg-cyan-400', bar: 'bg-cyan-500' }
                 : progresso >= 80
-                ? { label: 'Bom', text: 'text-emerald-300', bg: 'bg-emerald-500/15', border: 'border-emerald-400/40', dot: 'bg-emerald-400', glow: 'shadow-[0_0_24px_hsl(160_70%_50%/0.5)]' }
+                ? { label: 'Bom', text: 'text-emerald-300', bg: 'bg-emerald-500/15', border: 'border-emerald-400/40', dot: 'bg-emerald-400', bar: 'bg-emerald-500' }
                 : progresso >= 50
-                ? { label: 'Atenção', text: 'text-amber-300', bg: 'bg-amber-500/15', border: 'border-amber-400/40', dot: 'bg-amber-400', glow: 'shadow-[0_0_22px_hsl(38_92%_55%/0.5)]' }
-                : { label: 'Crítico', text: 'text-red-300', bg: 'bg-red-500/15', border: 'border-red-400/40', dot: 'bg-red-400', glow: 'shadow-[0_0_22px_hsl(0_85%_60%/0.5)]' };
+                ? { label: 'Atenção', text: 'text-amber-300', bg: 'bg-amber-500/15', border: 'border-amber-400/40', dot: 'bg-amber-400', bar: 'bg-amber-500' }
+                : { label: 'Crítico', text: 'text-red-300', bg: 'bg-red-500/15', border: 'border-red-400/40', dot: 'bg-red-400', bar: 'bg-red-500' };
               const delta = analiseHoje.faturamentoHoje - mediaDiaria.media;
               const marks = [110, 100, 80, 50];
               return (
-                <Card className="premium-hover-card relative overflow-hidden border-border/50 bg-card/60 backdrop-blur-xl">
-                  <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 via-transparent to-transparent pointer-events-none" />
+                <Card className="relative overflow-hidden border-border/50 bg-card/60">
                   <CardHeader className="relative pb-2">
                     <div className="flex items-center justify-between gap-2">
                       <CardTitle className="text-base flex items-center gap-2">
@@ -474,7 +479,7 @@ export function AnaliseDiariaLayoutPremium() {
                       {/* Termômetro + marcadores (alinhados) */}
                       <div className="relative h-full flex items-stretch gap-2 flex-shrink-0">
                         {/* Coluna do termômetro */}
-                        <div className="relative w-10 h-full rounded-full border border-border/50 bg-background/60 backdrop-blur-sm overflow-hidden">
+                        <div className="relative w-10 h-full rounded-full border border-border/50 bg-background/60 overflow-hidden">
                           {/* Zonas de fundo (tênues) — proporcionais ao CAP=130 */}
                           <div className="absolute inset-x-0 bottom-0 h-[38.46%] bg-red-500/10" />
                           <div className="absolute inset-x-0 bottom-[38.46%] h-[23.08%] bg-amber-500/10" />
@@ -483,17 +488,11 @@ export function AnaliseDiariaLayoutPremium() {
                           {/* Preenchimento */}
                           <div
                             className={cn(
-                              'absolute inset-x-0 bottom-0 rounded-full transition-[height] duration-1000 ease-out bg-gradient-to-t',
-                              progresso >= 110 ? 'from-cyan-500 via-emerald-400 to-cyan-300'
-                                : progresso >= 80 ? 'from-emerald-600 via-emerald-400 to-emerald-300'
-                                : progresso >= 50 ? 'from-amber-600 via-amber-400 to-amber-300'
-                                : 'from-red-600 via-red-500 to-red-400',
-                              zona.glow
+                              'absolute inset-x-0 bottom-0 rounded-full transition-[height] duration-1000 ease-out',
+                              zona.bar
                             )}
                             style={{ height: `${fillHeight}%` }}
-                          >
-                            <div className="absolute inset-0 bg-gradient-to-t from-transparent via-white/20 to-transparent animate-pulse rounded-full" />
-                          </div>
+                          />
                           {/* Indicador pulsante */}
                           {fillHeight > 2 && (
                             <div
@@ -613,8 +612,7 @@ export function AnaliseDiariaLayoutPremium() {
             </Card>
 
             <div className="space-y-4">
-              <div className="premium-hover-card relative overflow-hidden rounded-2xl border border-emerald-500/30 bg-gradient-to-br from-emerald-500/10 to-transparent p-5">
-                <div className="absolute -top-8 -right-8 h-24 w-24 rounded-full bg-emerald-500/20 blur-2xl" />
+              <div className="relative overflow-hidden rounded-lg border border-emerald-500/30 bg-card p-5">
                 <div className="relative">
                   <div className="flex items-center gap-2 mb-3">
                     <Zap className="h-5 w-5 text-emerald-400" />
@@ -624,8 +622,7 @@ export function AnaliseDiariaLayoutPremium() {
                   <p className="text-xs text-muted-foreground mt-1">realizaram ao menos 1 venda</p>
                 </div>
               </div>
-              <div className="premium-hover-card relative overflow-hidden rounded-2xl border border-amber-500/30 bg-gradient-to-br from-amber-500/10 to-transparent p-5">
-                <div className="absolute -top-8 -right-8 h-24 w-24 rounded-full bg-amber-500/20 blur-2xl" />
+              <div className="relative overflow-hidden rounded-lg border border-amber-500/30 bg-card p-5">
                 <div className="relative">
                   <div className="flex items-center gap-2 mb-3">
                     <UserX className="h-5 w-5 text-amber-400" />
@@ -643,11 +640,10 @@ export function AnaliseDiariaLayoutPremium() {
         <TabsContent value="vendedores" className="space-y-6">
           {/* Top vendedor destaque */}
           {topVendedor && (
-            <div className="premium-hover-card relative overflow-hidden rounded-2xl border border-amber-500/30 bg-gradient-to-br from-amber-500/10 via-card to-card p-5">
-              <div className="absolute -top-12 -right-12 h-40 w-40 rounded-full bg-amber-500/20 blur-3xl" />
+            <div className="relative overflow-hidden rounded-lg border border-amber-500/30 bg-card p-5">
               <div className="relative flex items-center justify-between flex-wrap gap-4">
                 <div className="flex items-center gap-4">
-                  <div className="h-14 w-14 rounded-2xl flex items-center justify-center bg-amber-500/20 border border-amber-500/40">
+                  <div className="h-14 w-14 rounded-lg flex items-center justify-center bg-amber-500/20 border border-amber-500/40">
                     <Trophy className="h-7 w-7 text-amber-400" />
                   </div>
                   <div>
@@ -668,7 +664,7 @@ export function AnaliseDiariaLayoutPremium() {
             </div>
           )}
 
-          <Card className="premium-hover-card border-border/50 bg-card/60 backdrop-blur-xl">
+          <Card className="border-border/50 bg-card/60">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between flex-wrap gap-3">
                 <CardTitle className="text-base flex items-center gap-2">
@@ -700,12 +696,12 @@ export function AnaliseDiariaLayoutPremium() {
                     return (
                       <div
                         key={String(v.codigo)}
-                        className="premium-hover-card group relative overflow-hidden rounded-xl border border-border/40 bg-background/30 hover:bg-background/60 transition-all duration-300 hover:border-primary/40 hover:shadow-lg"
+                        className="relative overflow-hidden rounded-lg border border-border/40 bg-background/30 transition-colors hover:border-primary/40 hover:bg-background/60"
                       >
                         <div className="p-3 grid grid-cols-12 gap-3 items-center">
                           <div className="col-span-12 md:col-span-4 flex items-center gap-3">
                             <div className={cn(
-                              "h-9 w-9 rounded-xl flex items-center justify-center font-bold text-sm tabular-nums shrink-0",
+                              "h-9 w-9 rounded-lg flex items-center justify-center font-bold text-sm tabular-nums shrink-0",
                               i === 0 ? "bg-amber-500/20 text-amber-400 border border-amber-500/30" :
                               i === 1 ? "bg-zinc-400/20 text-zinc-300 border border-zinc-400/30" :
                               i === 2 ? "bg-orange-500/20 text-orange-400 border border-orange-500/30" :
@@ -744,9 +740,9 @@ export function AnaliseDiariaLayoutPremium() {
                               <div
                                 className={cn(
                                   "h-full rounded-full transition-all duration-700",
-                                  cor === 'emerald' && "bg-gradient-to-r from-emerald-500 to-emerald-400",
-                                  cor === 'amber' && "bg-gradient-to-r from-amber-500 to-amber-400",
-                                  cor === 'red' && "bg-gradient-to-r from-red-500 to-red-400"
+                                  cor === 'emerald' && "bg-emerald-500",
+                                  cor === 'amber' && "bg-amber-500",
+                                  cor === 'red' && "bg-red-500"
                                 )}
                                 style={{ width: `${(ating / 150) * 100}%` }}
                               />
@@ -767,12 +763,12 @@ export function AnaliseDiariaLayoutPremium() {
             const recentes = vendedoresSemVendaHoje.filter(v => v.diasParado < 3);
             const fatPerdido = vendedoresSemVendaHoje.reduce((a, v) => a + v.fatMes, 0);
             const colunas = [
-              { key: 'critico', label: 'Crítico', sub: '7+ dias parado', items: criticos, color: 'red', dot: 'bg-red-500', text: 'text-red-400', border: 'border-red-500/30', bg: 'from-red-500/10' },
-              { key: 'atencao', label: 'Atenção', sub: '3 a 6 dias', items: atencao, color: 'amber', dot: 'bg-amber-500', text: 'text-amber-400', border: 'border-amber-500/30', bg: 'from-amber-500/10' },
-              { key: 'recente', label: 'Recente', sub: 'até 2 dias', items: recentes, color: 'sky', dot: 'bg-sky-500', text: 'text-sky-400', border: 'border-sky-500/30', bg: 'from-sky-500/10' },
+              { key: 'critico', label: 'Crítico', sub: '7+ dias parado', items: criticos, dot: 'bg-red-500', text: 'text-red-400', border: 'border-red-500/30', bg: 'bg-red-500/5' },
+              { key: 'atencao', label: 'Atenção', sub: '3 a 6 dias', items: atencao, dot: 'bg-amber-500', text: 'text-amber-400', border: 'border-amber-500/30', bg: 'bg-amber-500/5' },
+              { key: 'recente', label: 'Recente', sub: 'até 2 dias', items: recentes, dot: 'bg-sky-500', text: 'text-sky-400', border: 'border-sky-500/30', bg: 'bg-sky-500/5' },
             ];
             return (
-              <Card className="premium-hover-card relative overflow-hidden border-border/60 bg-card/40 backdrop-blur-xl">
+              <Card className="relative overflow-hidden border-border/60 bg-card/40">
                 <CardHeader className="pb-4 border-b border-border/40">
                   <div className="flex items-start justify-between gap-4 flex-wrap">
                     <div>
@@ -798,7 +794,7 @@ export function AnaliseDiariaLayoutPremium() {
                 <CardContent className="p-4">
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     {colunas.map(col => (
-                      <div key={col.key} className={cn("rounded-xl border bg-gradient-to-b to-transparent p-3 space-y-2", col.border, col.bg)}>
+                      <div key={col.key} className={cn("rounded-lg border p-3 space-y-2", col.border, col.bg)}>
                         <div className="flex items-center justify-between mb-1 px-1">
                           <div className="flex items-center gap-2">
                             <span className={cn("h-2 w-2 rounded-full", col.dot)} />
@@ -815,7 +811,7 @@ export function AnaliseDiariaLayoutPremium() {
                               return (
                                 <div
                                   key={v.codigo}
-                                  className="premium-hover-card group flex items-center gap-2.5 rounded-lg bg-background/40 hover:bg-background/70 border border-border/30 px-2.5 py-2 transition-all"
+                                  className="flex items-center gap-2.5 rounded-lg bg-background/40 hover:bg-background/70 border border-border/30 px-2.5 py-2 transition-colors"
                                 >
                                   <span className={cn("h-8 w-8 shrink-0 rounded-full flex items-center justify-center text-[11px] font-bold border", col.border, col.text, "bg-background/60")}>
                                     {initials || '?'}
@@ -848,18 +844,14 @@ export function AnaliseDiariaLayoutPremium() {
           {/* Banner de status geral */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className={cn(
-              "premium-hover-card relative overflow-hidden rounded-2xl border p-5 transition-all hover:shadow-2xl",
+              "relative overflow-hidden rounded-lg border p-5 transition-colors",
               acimaMedia
-                ? "border-emerald-500/30 bg-gradient-to-br from-emerald-500/10 to-card hover:shadow-emerald-500/10"
-                : "border-red-500/30 bg-gradient-to-br from-red-500/10 to-card hover:shadow-red-500/10"
+                ? "border-emerald-500/30 bg-card"
+                : "border-red-500/30 bg-card"
             )}>
-              <div className={cn(
-                "absolute -top-12 -right-12 h-40 w-40 rounded-full blur-3xl",
-                acimaMedia ? "bg-emerald-500/20" : "bg-red-500/20"
-              )} />
               <div className="relative flex items-start gap-4">
                 <div className={cn(
-                  "h-12 w-12 rounded-2xl flex items-center justify-center border shrink-0",
+                  "h-12 w-12 rounded-lg flex items-center justify-center border shrink-0",
                   acimaMedia ? "bg-emerald-500/20 border-emerald-500/40" : "bg-red-500/20 border-red-500/40"
                 )}>
                   {acimaMedia ? <TrendingUp className="h-6 w-6 text-emerald-400" /> : <TrendingDown className="h-6 w-6 text-red-400" />}
@@ -878,18 +870,14 @@ export function AnaliseDiariaLayoutPremium() {
             </div>
 
             <div className={cn(
-              "premium-hover-card relative overflow-hidden rounded-2xl border p-5 transition-all hover:shadow-2xl",
+              "relative overflow-hidden rounded-lg border p-5 transition-colors",
               vendedoresSemVendaHoje.length > 0
-                ? "border-amber-500/30 bg-gradient-to-br from-amber-500/10 to-card hover:shadow-amber-500/10"
-                : "border-emerald-500/30 bg-gradient-to-br from-emerald-500/10 to-card hover:shadow-emerald-500/10"
+                ? "border-amber-500/30 bg-card"
+                : "border-emerald-500/30 bg-card"
             )}>
-              <div className={cn(
-                "absolute -top-12 -right-12 h-40 w-40 rounded-full blur-3xl",
-                vendedoresSemVendaHoje.length > 0 ? "bg-amber-500/20" : "bg-emerald-500/20"
-              )} />
               <div className="relative flex items-start gap-4">
                 <div className={cn(
-                  "h-12 w-12 rounded-2xl flex items-center justify-center border shrink-0",
+                  "h-12 w-12 rounded-lg flex items-center justify-center border shrink-0",
                   vendedoresSemVendaHoje.length > 0 ? "bg-amber-500/20 border-amber-500/40" : "bg-emerald-500/20 border-emerald-500/40"
                 )}>
                   <UserX className={cn("h-6 w-6", vendedoresSemVendaHoje.length > 0 ? "text-amber-400" : "text-emerald-400")} />
@@ -910,8 +898,7 @@ export function AnaliseDiariaLayoutPremium() {
             </div>
           </div>
 
-          <Card className="premium-hover-card relative overflow-hidden border-orange-500/30 bg-gradient-to-br from-orange-500/5 to-card backdrop-blur-xl">
-            <div className="absolute -top-20 -right-20 h-48 w-48 rounded-full bg-orange-500/10 blur-3xl" />
+          <Card className="relative overflow-hidden border-orange-500/30 bg-card">
             <CardHeader className="relative">
               <CardTitle className="text-base flex items-center gap-2">
                 <AlertTriangle className="h-5 w-5 text-orange-400" />
@@ -937,7 +924,7 @@ export function AnaliseDiariaLayoutPremium() {
                   {clientesInativosHoje.map((c, i) => (
                     <div
                       key={c.codigo}
-                      className="premium-hover-card group flex items-center gap-3 p-3 rounded-xl border border-border/40 bg-background/30 hover:bg-background/60 hover:border-orange-500/30 transition-all"
+                      className="flex items-center gap-3 rounded-lg border border-border/40 bg-background/30 p-3 transition-colors hover:border-orange-500/30 hover:bg-background/60"
                     >
                       <div className="h-8 w-8 rounded-lg flex items-center justify-center bg-orange-500/15 border border-orange-500/30 text-orange-400 font-bold text-xs tabular-nums shrink-0">
                         {i + 1}
