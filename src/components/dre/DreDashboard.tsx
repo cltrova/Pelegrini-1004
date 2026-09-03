@@ -20,9 +20,8 @@ import {
 } from 'recharts';
 import { DreRecord, DreGroupSummary } from '@/types/dre';
 import { formatCurrency, formatCompactNumber, formatPercent } from '@/utils/formatters';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Tooltip as UITooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Info, Settings2 } from 'lucide-react';
+import { EnterpriseDataPanel, EnterpriseMetricCard } from '@/components/enterprise';
+import { Settings2 } from 'lucide-react';
 import { DespesasVariaveisDialog } from './DespesasVariaveisDialog';
 import { DespesasFixasDialog } from './DespesasFixasDialog';
 import { getEffectiveFixedAccountCodes, getEffectiveVariableAccountCodes, isGrupoFixoDre, isGrupoVariavelDre } from '@/utils/dreExpenseAccounts';
@@ -141,27 +140,6 @@ const DEFAULT_CONTAS_DESP_FIXAS = [
   '3.1.2.03.02.00003','3.1.2.03.02.00004','3.1.2.03.02.00005','3.1.2.03.02.00006',
   '3.1.2.01.03.00001','3.1.2.03.01.00003','3.1.2.04.02.00002',
 ];
-
-// Componente de header com tooltip de informação
-function CardHeader({ title, description }: { title: string; description: string }) {
-  return (
-    <div className="flex items-center justify-between mb-3">
-      <h3 className="font-semibold text-foreground text-sm">{title}</h3>
-      <TooltipProvider>
-        <UITooltip>
-          <TooltipTrigger asChild>
-            <button className="text-muted-foreground hover:text-foreground transition-colors">
-              <Info className="h-4 w-4" />
-            </button>
-          </TooltipTrigger>
-          <TooltipContent side="left" className="max-w-xs">
-            <p className="text-xs">{description}</p>
-          </TooltipContent>
-        </UITooltip>
-      </TooltipProvider>
-    </div>
-  );
-}
 
 export function DreDashboard(props: DreDashboardProps) {
   const { codEmpresaAtiva } = useEmpresaAtiva();
@@ -428,18 +406,17 @@ function DreDashboardRPA({
     label: string;
     value: string;
     hint?: string;
-    accent: string;
     trend?: 'up' | 'down' | 'neutral';
   };
   const kpis: Kpi[] = [
-    { label: 'Receita Bruta', value: formatCurrency(receitaBruta), hint: 'Faturamento total', accent: 'hsl(210, 70%, 50%)', trend: 'up' },
-    { label: 'Receita Líquida', value: formatCurrency(receitaLiquida), hint: `Deduções ${formatCurrency(deducoes)}`, accent: 'hsl(190, 75%, 45%)', trend: 'up' },
-    { label: 'CMV', value: formatCurrency(cmv), hint: 'Custo de mercadoria vendida', accent: 'hsl(30, 90%, 50%)', trend: 'down' },
-    { label: 'Despesa Variável', value: formatCurrency(despVar), hint: 'Vinculada à venda', accent: 'hsl(20, 80%, 55%)', trend: 'down' },
-    { label: 'Despesa Fixa', value: formatCurrency(despFix), hint: 'Estrutura mensal', accent: 'hsl(180, 75%, 40%)', trend: 'down' },
-    { label: 'Margem de Contribuição', value: formatCurrency(margemContrib), hint: `${margemContribPct.toFixed(1)}% da Rec. Líquida`, accent: 'hsl(50, 85%, 50%)', trend: margemContrib >= 0 ? 'up' : 'down' },
-    { label: 'Ponto de Equilíbrio', value: formatCurrency(pontoEquilibrio), hint: `Cobertura ${coberturaPE.toFixed(0)}%`, accent: 'hsl(260, 70%, 55%)', trend: coberturaPE >= 100 ? 'up' : 'down' },
-    { label: 'Resultado Líquido', value: formatCurrency(resultadoLiq), hint: `Margem ${margemLiqPct.toFixed(1)}%`, accent: resultadoLiq >= 0 ? 'hsl(140, 80%, 35%)' : 'hsl(0, 75%, 50%)', trend: resultadoLiq >= 0 ? 'up' : 'down' },
+    { label: 'Receita Bruta', value: formatCurrency(receitaBruta), hint: 'Faturamento total', trend: 'up' },
+    { label: 'Receita Líquida', value: formatCurrency(receitaLiquida), hint: `Deduções ${formatCurrency(deducoes)}`, trend: 'up' },
+    { label: 'CMV', value: formatCurrency(cmv), hint: 'Custo de mercadoria vendida', trend: 'down' },
+    { label: 'Despesa Variável', value: formatCurrency(despVar), hint: 'Vinculada à venda', trend: 'down' },
+    { label: 'Despesa Fixa', value: formatCurrency(despFix), hint: 'Estrutura mensal', trend: 'down' },
+    { label: 'Margem de Contribuição', value: formatCurrency(margemContrib), hint: `${margemContribPct.toFixed(1)}% da Rec. Líquida`, trend: margemContrib >= 0 ? 'up' : 'down' },
+    { label: 'Ponto de Equilíbrio', value: formatCurrency(pontoEquilibrio), hint: `Cobertura ${coberturaPE.toFixed(0)}%`, trend: coberturaPE >= 100 ? 'up' : 'down' },
+    { label: 'Resultado Líquido', value: formatCurrency(resultadoLiq), hint: `Margem ${margemLiqPct.toFixed(1)}%`, trend: resultadoLiq >= 0 ? 'up' : 'down' },
   ];
 
   // Composição da receita líquida (barra horizontal segmentada)
@@ -454,51 +431,36 @@ function DreDashboardRPA({
   return (
     <div className="space-y-4">
       {/* KPIs de leitura rápida */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="enterprise-grid-metrics">
         {kpis.map((k) => (
-          <div
+          <EnterpriseMetricCard
             key={k.label}
-            className="relative bg-card rounded-xl border border-border p-4 overflow-hidden group hover:shadow-md transition-all"
-          >
-            <div
-              className="absolute inset-x-0 top-0 h-1"
-              style={{ backgroundColor: k.accent }}
-            />
-            <div
-              className="absolute -right-8 -bottom-8 w-24 h-24 rounded-full opacity-[0.08] group-hover:opacity-[0.14] transition-opacity"
-              style={{ backgroundColor: k.accent }}
-            />
-            <p className="text-[11px] uppercase tracking-wide font-medium text-muted-foreground mb-1">
-              {k.label}
-            </p>
-            <p className="text-lg lg:text-xl font-bold text-foreground tabular-nums leading-tight">
-              {k.value}
-            </p>
-            {k.hint && (
-              <p className="text-[11px] text-muted-foreground mt-1 truncate">{k.hint}</p>
-            )}
-          </div>
+            label={k.label}
+            value={k.value}
+            context={k.hint}
+            tone={k.trend === 'up' ? 'positive' : k.trend === 'down' ? 'negative' : 'neutral'}
+          />
         ))}
       </div>
 
       {/* Linha 1: Composição da Receita + Distribuição de Despesas + Indicadores rápidos */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Composição */}
-        <div className="bg-card rounded-xl border border-border p-4 lg:col-span-2">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h3 className="font-semibold text-foreground text-sm">Composição da Receita Líquida</h3>
-              <p className="text-xs text-muted-foreground mt-0.5">Para onde vai cada real faturado</p>
-            </div>
-            <div className="flex items-center gap-1">
+        <EnterpriseDataPanel
+          className="lg:col-span-2"
+          title="Composição da Receita Líquida"
+          description="Para onde vai cada real faturado"
+          actions={
+            <>
               <button onClick={() => setShowDespVarDialog(true)} className="text-xs text-muted-foreground hover:text-primary transition-colors px-2 py-1 rounded-md hover:bg-muted flex items-center gap-1" title="Gerenciar despesas variáveis">
                 <Settings2 className="h-3 w-3" /> Variáveis
               </button>
               <button onClick={() => setShowDespFixasDialog(true)} className="text-xs text-muted-foreground hover:text-primary transition-colors px-2 py-1 rounded-md hover:bg-muted flex items-center gap-1" title="Gerenciar despesas fixas">
                 <Settings2 className="h-3 w-3" /> Fixas
               </button>
-            </div>
-          </div>
+            </>
+          }
+        >
 
           <div className="w-full h-6 rounded-full overflow-hidden flex bg-muted/50">
             {composicao.map((c) => {
@@ -559,11 +521,10 @@ function DreDashboardRPA({
               </p>
             </div>
           </div>
-        </div>
+        </EnterpriseDataPanel>
 
         {/* Distribuição de Despesas (Fixas x Variáveis) */}
-        <div className="bg-card rounded-xl border border-border p-4 flex flex-col">
-          <CardHeader title="Fixas x Variáveis" description="Proporção entre Despesas Fixas e Variáveis no total de despesas" />
+        <EnterpriseDataPanel className="flex flex-col" title="Fixas x Variáveis" description="Proporção entre Despesas Fixas e Variáveis no total de despesas">
           <div className="flex-1 flex flex-col items-center justify-center min-h-0">
             <div className="h-[180px] w-full">
               <ResponsiveContainer width="100%" height="100%">
@@ -598,13 +559,12 @@ function DreDashboardRPA({
               ))}
             </div>
           </div>
-        </div>
+        </EnterpriseDataPanel>
       </div>
 
       {/* Linha 2: Evolução Mensal + Margem */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div className="bg-card rounded-xl border border-border p-4 lg:col-span-2">
-          <CardHeader title="Evolução Mensal do Resultado" description={analysisDescriptions.evolucaoMensal} />
+        <EnterpriseDataPanel className="lg:col-span-2" title="Evolução Mensal do Resultado" description={analysisDescriptions.evolucaoMensal}>
           <div className="h-[220px]">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={evolucaoMensal} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
@@ -625,10 +585,9 @@ function DreDashboardRPA({
               </AreaChart>
             </ResponsiveContainer>
           </div>
-        </div>
+        </EnterpriseDataPanel>
 
-        <div className="bg-card rounded-xl border border-border p-4">
-          <CardHeader title="Margem Líquida (%)" description={analysisDescriptions.margemLiquida} />
+        <EnterpriseDataPanel title="Margem Líquida (%)" description={analysisDescriptions.margemLiquida}>
           <div className="h-[220px]">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={margemMensal} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
@@ -640,13 +599,12 @@ function DreDashboardRPA({
               </LineChart>
             </ResponsiveContainer>
           </div>
-        </div>
+        </EnterpriseDataPanel>
       </div>
 
       {/* Linha 3: Receitas vs Custos + Evolução Anual + Top Grupos */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div className="bg-card rounded-xl border border-border p-4">
-          <CardHeader title="Receitas vs Custos vs Despesas" description={analysisDescriptions.receitasCustos} />
+        <EnterpriseDataPanel title="Receitas vs Custos vs Despesas" description={analysisDescriptions.receitasCustos}>
           <div className="h-[220px]">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={evolucaoMensal} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
@@ -661,11 +619,10 @@ function DreDashboardRPA({
               </BarChart>
             </ResponsiveContainer>
           </div>
-        </div>
+        </EnterpriseDataPanel>
 
         {evolucaoAnual.length > 1 && (
-          <div className="bg-card rounded-xl border border-border p-4">
-            <CardHeader title="Evolução Anual" description={analysisDescriptions.evolucaoAnual} />
+          <EnterpriseDataPanel title="Evolução Anual" description={analysisDescriptions.evolucaoAnual}>
             <div className="h-[220px]">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={evolucaoAnual} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
@@ -679,11 +636,10 @@ function DreDashboardRPA({
                 </BarChart>
               </ResponsiveContainer>
             </div>
-          </div>
+          </EnterpriseDataPanel>
         )}
 
-        <div className={`bg-card rounded-xl border border-border p-4 ${evolucaoAnual.length <= 1 ? 'lg:col-span-2' : ''}`}>
-          <CardHeader title="Top 10 Grupos" description={analysisDescriptions.topGrupos} />
+        <EnterpriseDataPanel className={evolucaoAnual.length <= 1 ? 'lg:col-span-2' : ''} title="Top 10 Grupos" description={analysisDescriptions.topGrupos}>
           <div className="h-[220px]">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={topGrupos} layout="vertical" margin={{ top: 5, right: 20, left: 5, bottom: 5 }}>
@@ -699,7 +655,7 @@ function DreDashboardRPA({
               </BarChart>
             </ResponsiveContainer>
           </div>
-        </div>
+        </EnterpriseDataPanel>
       </div>
       {/* Dialog de gerenciamento de contas */}
       <DespesasVariaveisDialog
