@@ -11,7 +11,6 @@ interface Props {
   limit?: number;
 }
 
-/** Hook simples de count-up animado */
 function useCountUp(value: number, duration = 900) {
   const [display, setDisplay] = useState(0);
   const startRef = useRef<number | null>(null);
@@ -36,34 +35,30 @@ function useCountUp(value: number, duration = 900) {
   return display;
 }
 
-/** Medalhas Top 3 */
-const MEDAL_CONFIG: Record<number, { icon: typeof Crown; gradient: string; glow: string; ring: string; label: string; textGradient: string }> = {
+const MEDAL_CONFIG: Record<number, { icon: typeof Crown; bg: string; text: string; border: string; ring: string; label: string }> = {
   1: {
     icon: Crown,
-    // Ouro
-    gradient: 'linear-gradient(135deg, hsl(45 95% 65%), hsl(38 90% 50%))',
-    glow: '0 0 24px hsl(45 95% 55% / 0.55), 0 8px 24px hsl(38 90% 45% / 0.35)',
+    bg: 'bg-amber-500/12',
+    text: 'text-amber-500',
+    border: 'border-amber-500/25',
     ring: 'hsl(45 95% 55%)',
     label: 'Líder',
-    textGradient: 'linear-gradient(90deg, hsl(48 100% 70%), hsl(38 95% 55%))',
   },
   2: {
     icon: Medal,
-    // Prata
-    gradient: 'linear-gradient(135deg, hsl(220 10% 85%), hsl(220 8% 65%))',
-    glow: '0 0 20px hsl(220 10% 75% / 0.45), 0 8px 20px hsl(220 8% 55% / 0.3)',
+    bg: 'bg-slate-500/12',
+    text: 'text-slate-300',
+    border: 'border-slate-400/25',
     ring: 'hsl(220 10% 75%)',
     label: '2º Lugar',
-    textGradient: 'linear-gradient(90deg, hsl(220 15% 90%), hsl(220 10% 70%))',
   },
   3: {
     icon: Award,
-    // Bronze
-    gradient: 'linear-gradient(135deg, hsl(25 75% 55%), hsl(20 70% 40%))',
-    glow: '0 0 18px hsl(25 75% 50% / 0.45), 0 8px 18px hsl(20 70% 35% / 0.3)',
+    bg: 'bg-orange-500/12',
+    text: 'text-orange-400',
+    border: 'border-orange-500/25',
     ring: 'hsl(25 75% 50%)',
     label: '3º Lugar',
-    textGradient: 'linear-gradient(90deg, hsl(28 80% 60%), hsl(20 70% 42%))',
   },
 };
 
@@ -121,14 +116,6 @@ export function RankingVendedoresPremium({ vendedores, pedidos, limit = 12 }: Pr
 
   return (
     <section className="relative space-y-6">
-      {/* Background gradient radial premium */}
-      <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden rounded-3xl">
-        <div className="absolute -top-32 -left-32 h-96 w-96 rounded-full bg-[hsl(var(--primary)/0.18)] blur-3xl" />
-        <div className="absolute -bottom-32 -right-32 h-96 w-96 rounded-full bg-[hsl(var(--accent)/0.15)] blur-3xl" />
-        <div className="absolute top-1/3 left-1/2 h-72 w-72 -translate-x-1/2 rounded-full bg-[hsl(var(--primary)/0.08)] blur-3xl" />
-      </div>
-
-      {/* === Insights bar === */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         <InsightCard
           icon={Activity}
@@ -157,7 +144,6 @@ export function RankingVendedoresPremium({ vendedores, pedidos, limit = 12 }: Pr
         />
       </div>
 
-      {/* === Pódio Top 3 === */}
       {data.length >= 3 && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {[1, 0, 2].map((idx, displayPos) => {
@@ -172,33 +158,25 @@ export function RankingVendedoresPremium({ vendedores, pedidos, limit = 12 }: Pr
               <div
                 key={String(v.codigo)}
                 className={cn(
-                  'premium-hover-card group relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-background/60 to-background/30 backdrop-blur-xl',
-                  'transition-all duration-500 ease-out',
+                  'group relative overflow-hidden rounded-lg border bg-card',
+                  'transition-colors duration-300 hover:border-primary/30',
+                  config.border,
                   isCenter && 'md:scale-105 md:-mt-2'
                 )}
                 style={{
-                  boxShadow: `inset 0 1px 0 hsl(0 0% 100% / 0.06), 0 12px 40px -12px hsl(220 50% 5% / 0.6)`,
                   animation: `slideUpFade 0.6s ${displayPos * 100}ms ease-out backwards`,
                 }}
               >
-                {/* Borda glow no hover */}
-                <div
-                  className="pointer-events-none absolute inset-0 rounded-2xl opacity-0 transition-opacity duration-500 group-hover:opacity-100"
-                  style={{ boxShadow: `inset 0 0 0 1px ${config.ring}`, background: `radial-gradient(120% 60% at 50% 0%, ${config.ring}1f, transparent 60%)` }}
-                />
-                {/* Glow externo permanente sutil */}
-                <div
-                  className="pointer-events-none absolute -inset-px rounded-2xl opacity-40"
-                  style={{ boxShadow: config.glow }}
-                />
-
                 <div className="relative p-5 space-y-4">
-                  {/* Medalha + label */}
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <div
-                        className="relative h-12 w-12 rounded-full flex items-center justify-center text-background"
-                        style={{ background: config.gradient, boxShadow: config.glow }}
+                        className={cn(
+                          'relative h-12 w-12 rounded-full flex items-center justify-center border',
+                          config.bg,
+                          config.text,
+                          config.border
+                        )}
                       >
                         <Icon className="h-6 w-6" strokeWidth={2.5} fill="currentColor" />
                       </div>
@@ -212,7 +190,6 @@ export function RankingVendedoresPremium({ vendedores, pedidos, limit = 12 }: Pr
                     <RankTrend atingimento={v.atingimentoMeta} />
                   </div>
 
-                  {/* Nome */}
                   <div>
                     <h3 className="text-base font-semibold tracking-tight truncate" title={v.nome}>
                       {v.nome}
@@ -222,12 +199,8 @@ export function RankingVendedoresPremium({ vendedores, pedidos, limit = 12 }: Pr
                     </p>
                   </div>
 
-                  {/* Valor */}
                   <div>
-                    <div
-                      className="text-2xl font-bold tabular-nums tracking-tight bg-clip-text text-transparent"
-                      style={{ backgroundImage: config.textGradient }}
-                    >
+                    <div className={cn('text-2xl font-bold tabular-nums tracking-tight', config.text)}>
                       {formatCurrency(v.faturamentoLiquido)}
                     </div>
                     <div className="text-[11px] text-muted-foreground mt-1 flex items-center gap-2">
@@ -237,7 +210,6 @@ export function RankingVendedoresPremium({ vendedores, pedidos, limit = 12 }: Pr
                     </div>
                   </div>
 
-                  {/* Sparkline */}
                   {sparkline.length > 1 && (
                     <div className="h-12 -mx-1 opacity-80 group-hover:opacity-100 transition-opacity">
                       <ResponsiveContainer width="100%" height="100%">
@@ -266,10 +238,7 @@ export function RankingVendedoresPremium({ vendedores, pedidos, limit = 12 }: Pr
         </div>
       )}
 
-      {/* === Leaderboard premium === */}
-      <div className="premium-hover-card relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-background/70 to-background/40 backdrop-blur-xl transition-all duration-500 ease-out">
-        <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(80%_50%_at_50%_0%,hsl(var(--primary)/0.06),transparent_60%)]" />
-
+      <div className="relative overflow-hidden rounded-lg border border-border/60 bg-card transition-colors duration-300">
         <div className="relative px-6 pt-6 pb-2 flex items-center justify-between">
           <div>
             <h2 className="text-base font-semibold tracking-tight">Ranking completo</h2>
@@ -290,26 +259,19 @@ export function RankingVendedoresPremium({ vendedores, pedidos, limit = 12 }: Pr
             return (
               <div
                 key={String(v.codigo)}
-                className="group relative rounded-xl px-3 py-2.5 transition-all duration-300 hover:bg-white/[0.03] hover:scale-[1.005]"
+                className="group relative rounded-lg px-3 py-2.5 transition-colors duration-200 hover:bg-muted/40"
                 style={{ animation: `slideUpFade 0.5s ${idxInPage * 35}ms ease-out backwards` }}
               >
                 <div className="flex items-center gap-3 mb-1.5">
-                  {/* Rank */}
                   <div
                     className={cn(
                       'h-7 w-7 rounded-full flex items-center justify-center text-[11px] font-bold tabular-nums flex-shrink-0',
-                      isTop3 ? 'text-background' : 'bg-white/[0.04] text-muted-foreground border border-white/5'
+                      isTop3 && config ? [config.bg, config.text, config.border, 'border'] : 'bg-muted/50 text-muted-foreground border border-border/60'
                     )}
-                    style={
-                      config
-                        ? { background: config.gradient, boxShadow: config.glow }
-                        : undefined
-                    }
                   >
                     {isTop3 && config ? <config.icon className="h-3.5 w-3.5" strokeWidth={2.5} fill="currentColor" /> : i + 1}
                   </div>
 
-                  {/* Nome + meta */}
                   <div className="flex-1 min-w-0 flex items-center gap-2">
                     <span className="font-medium text-sm truncate" title={v.nome}>{v.nome}</span>
                     <span className="text-[10px] text-muted-foreground hidden md:inline">
@@ -317,7 +279,6 @@ export function RankingVendedoresPremium({ vendedores, pedidos, limit = 12 }: Pr
                     </span>
                   </div>
 
-                  {/* Mini sparkline */}
                   {sparkline.length > 1 && (
                     <div className="hidden lg:block h-7 w-20 opacity-60 group-hover:opacity-100 transition-opacity">
                       <ResponsiveContainer width="100%" height="100%">
@@ -334,37 +295,28 @@ export function RankingVendedoresPremium({ vendedores, pedidos, limit = 12 }: Pr
                     </div>
                   )}
 
-                  {/* Tendência */}
                   <RankTrend atingimento={v.atingimentoMeta} compact />
 
-                  {/* Valor */}
                   <div className="text-right tabular-nums">
-                    <div className="font-bold text-sm bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+                    <div className="font-bold text-sm text-foreground">
                       {formatCurrency(v.faturamentoLiquido)}
                     </div>
                   </div>
                 </div>
 
-                {/* Barra com glow */}
-                <div className="relative h-1.5 w-full rounded-full bg-white/[0.04] overflow-hidden">
+                <div className="relative h-1.5 w-full rounded-full bg-muted overflow-hidden">
                   <div
-                    className="relative h-full rounded-full transition-all duration-1000 ease-out"
+                    className="relative h-full rounded-full bg-primary transition-all duration-1000 ease-out"
                     style={{
                       width: `${pct}%`,
-                      background: 'linear-gradient(90deg, hsl(var(--primary)), hsl(var(--accent)))',
-                      boxShadow: '0 0 12px hsl(var(--primary) / 0.55), 0 0 4px hsl(var(--accent) / 0.6)',
                     }}
-                  >
-                    {/* Sheen no hover */}
-                    <div className="absolute inset-0 rounded-full bg-gradient-to-r from-transparent via-white/30 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-out" />
-                  </div>
+                  />
                 </div>
               </div>
             );
           })}
         </div>
 
-        {/* Paginação */}
         {totalPages > 1 && (
           <div className="relative flex items-center justify-between gap-3 px-6 py-4 border-t border-white/5">
             <div className="text-[11px] text-muted-foreground tabular-nums">
@@ -385,17 +337,9 @@ export function RankingVendedoresPremium({ vendedores, pedidos, limit = 12 }: Pr
                   className={cn(
                     'h-8 min-w-8 px-2 rounded-lg text-xs font-semibold tabular-nums border transition',
                     p === currentPage
-                      ? 'border-transparent text-background'
+                      ? 'border-primary bg-primary text-primary-foreground'
                       : 'border-white/10 bg-white/[0.03] hover:bg-white/[0.06] text-muted-foreground'
                   )}
-                  style={
-                    p === currentPage
-                      ? {
-                          background: 'linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent)))',
-                          boxShadow: '0 0 12px hsl(var(--primary) / 0.45)',
-                        }
-                      : undefined
-                  }
                 >
                   {p + 1}
                 </button>
@@ -422,8 +366,6 @@ export function RankingVendedoresPremium({ vendedores, pedidos, limit = 12 }: Pr
   );
 }
 
-// === Subcomponentes ===
-
 interface InsightCardProps {
   icon: typeof Crown;
   label: string;
@@ -447,16 +389,11 @@ function InsightCard({ icon: Icon, label, value, sub, accent, trend, delay = 0, 
   const a = ACCENT_MAP[accent];
   return (
     <div
-      className="premium-hover-card group relative overflow-hidden rounded-xl border border-white/10 bg-gradient-to-br from-background/60 to-background/30 backdrop-blur-xl p-4 transition-all duration-300"
+      className="group relative overflow-hidden rounded-lg border border-border/60 bg-card p-4 transition-colors duration-200 hover:border-primary/30"
       style={{
-        boxShadow: 'inset 0 1px 0 hsl(0 0% 100% / 0.05), 0 8px 24px -12px hsl(220 50% 5% / 0.5)',
         animation: `slideUpFade 0.5s ${delay}ms ease-out backwards`,
       }}
     >
-      <div
-        className="pointer-events-none absolute -top-10 -right-10 h-28 w-28 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-2xl"
-        style={{ background: a.ring }}
-      />
       <div className="relative flex items-start justify-between gap-2 mb-3">
         <div
           className="h-9 w-9 rounded-lg flex items-center justify-center"
@@ -505,7 +442,6 @@ const tooltipStyle: React.CSSProperties = {
   background: 'hsl(220 30% 8% / 0.95)',
   border: '1px solid hsl(0 0% 100% / 0.1)',
   borderRadius: 8,
-  boxShadow: '0 8px 24px -8px hsl(0 0% 0% / 0.5)',
   fontSize: 11,
   padding: '6px 10px',
   color: 'hsl(0 0% 95%)',
