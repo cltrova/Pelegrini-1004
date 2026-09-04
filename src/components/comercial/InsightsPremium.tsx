@@ -37,23 +37,14 @@ export function InsightsPremium({ insights }: Props) {
   if (!insights.length) return null;
 
   return (
-    <Card className="premium-card border-border/60 overflow-hidden stagger-5">
+    <Card className="border-border/60 bg-card overflow-hidden stagger-5">
       {/* Hero header */}
-      <div
-        className="relative overflow-hidden p-4 border-b border-border/40"
-        style={{
-          background:
-            'linear-gradient(135deg, hsl(var(--primary) / 0.12) 0%, transparent 50%, hsl(280 65% 60% / 0.10) 100%)',
-        }}
-      >
-        <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full blur-3xl opacity-30 bg-primary animate-pulse" />
+      <div className="relative overflow-hidden p-4 border-b border-border/40 bg-card">
         <div className="relative flex items-center gap-3">
           <div
-            className="h-10 w-10 rounded-xl flex items-center justify-center shadow-lg"
+            className="h-10 w-10 rounded-lg flex items-center justify-center bg-primary/10 ring-1 ring-primary/25"
             style={{
-              background: 'linear-gradient(135deg, hsl(var(--primary) / 0.35), hsl(var(--primary) / 0.10))',
               color: 'hsl(var(--primary))',
-              boxShadow: '0 0 20px hsl(var(--primary) / 0.35)',
             }}
           >
             <Sparkles className="h-5 w-5" />
@@ -83,36 +74,23 @@ export function InsightsPremium({ insights }: Props) {
                 key={i}
                 onClick={() => setExpandedIdx(isExpanded ? null : i)}
                 className={cn(
-                  'group relative text-left rounded-xl p-3.5 border backdrop-blur-md',
-                  'transition-all duration-300 cursor-pointer overflow-hidden',
-                  'hover:scale-[1.03] hover:-translate-y-1 hover:shadow-2xl',
-                  isExpanded && 'sm:col-span-2 lg:col-span-2 scale-[1.02] shadow-2xl ring-2'
+                  'group relative text-left rounded-lg p-3.5 border bg-card',
+                  'transition-colors duration-300 cursor-pointer overflow-hidden hover:bg-muted/30',
+                  isExpanded && 'sm:col-span-2 lg:col-span-2 ring-2'
                 )}
                 style={{
-                  background: `linear-gradient(135deg, ${cfg.color}15, ${cfg.color}05)`,
                   borderColor: `${cfg.color}40`,
-                  boxShadow: isExpanded
-                    ? `0 0 30px ${cfg.color}40, inset 0 1px 0 ${cfg.color}30`
-                    : `inset 0 1px 0 ${cfg.color}20`,
                 }}
               >
-                {/* Glow orb */}
-                <div
-                  className="absolute -top-8 -right-8 w-24 h-24 rounded-full blur-2xl opacity-30 group-hover:opacity-60 transition-opacity duration-500"
-                  style={{ background: cfg.color }}
-                />
-
                 <div className="relative">
                   <div className="flex items-start justify-between mb-2">
                     <div
                       className={cn(
-                        'h-9 w-9 rounded-lg flex items-center justify-center shrink-0',
-                        'transition-transform duration-300 group-hover:scale-110 group-hover:rotate-[-8deg]'
+                        'h-9 w-9 rounded-lg flex items-center justify-center shrink-0'
                       )}
                       style={{
                         background: `${cfg.color}25`,
                         color: cfg.color,
-                        boxShadow: `0 0 12px ${cfg.color}40`,
                       }}
                     >
                       <Icon className={cn('h-4.5 w-4.5', insight.tipo === 'alerta' && 'animate-pulse')} />
