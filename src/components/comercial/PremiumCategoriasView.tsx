@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import {
   Search, Layers, TrendingUp, Trophy, Sparkles, Lightbulb,
   AlertTriangle, Target, Loader2, RefreshCw, X, Crown, Package,
-  ChevronRight,
+  ChevronRight, LucideIcon,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { formatCurrency, formatNumber } from '@/utils/formatters';
@@ -172,7 +172,7 @@ export function PremiumCategoriasView({
       } else {
         throw new Error('Resposta vazia');
       }
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error('categorias-insights error', e);
       setAiInsights(buildFallbackInsights());
       setAiUsedFallback(true);
@@ -392,9 +392,8 @@ export function PremiumCategoriasView({
                       <div className="relative h-1.5 rounded-full bg-muted overflow-hidden mt-1.5">
                         <div
                           className={cn(
-                            'h-full rounded-full transition-all duration-500',
-                            'bg-gradient-to-r from-primary via-primary to-primary/70',
-                            isSelected && 'shadow-[0_0_12px_hsl(var(--primary)/0.6)]',
+                            'h-full rounded-full bg-primary transition-[width] duration-500',
+                            isSelected && 'bg-primary',
                           )}
                           style={{ width: `${Math.min(100, c.barraRel)}%` }}
                         />
@@ -502,16 +501,16 @@ export function PremiumCategoriasView({
 
 function RankBadge({ rank, large }: { rank: number; large?: boolean }) {
   const cfg = rank === 1
-    ? { bg: 'bg-gradient-to-br from-yellow-400 to-yellow-600', text: 'text-yellow-50', icon: <Crown className="h-3 w-3" /> }
+    ? { bg: 'bg-amber-500/10 border-amber-500/35', text: 'text-amber-600', icon: <Crown className="h-3 w-3" /> }
     : rank === 2
-    ? { bg: 'bg-gradient-to-br from-slate-300 to-slate-500', text: 'text-slate-50', icon: null }
+    ? { bg: 'bg-slate-500/10 border-slate-500/30', text: 'text-slate-500', icon: null }
     : rank === 3
-    ? { bg: 'bg-gradient-to-br from-amber-700 to-amber-900', text: 'text-amber-50', icon: null }
-    : { bg: 'bg-muted', text: 'text-muted-foreground', icon: null };
+    ? { bg: 'bg-orange-500/10 border-orange-500/35', text: 'text-orange-600', icon: null }
+    : { bg: 'bg-muted border-border/60', text: 'text-muted-foreground', icon: null };
 
   return (
     <div className={cn(
-      'rounded-md flex items-center justify-center font-bold tabular-nums shrink-0 shadow-sm',
+      'rounded-md border flex items-center justify-center font-bold tabular-nums shrink-0',
       large ? 'h-12 w-12 text-base' : 'h-9 w-9 text-sm',
       cfg.bg, cfg.text,
     )}>
@@ -526,7 +525,7 @@ function KpiCard({
   label: string;
   value: string;
   sub?: string;
-  icon: any;
+  icon: LucideIcon;
   color: 'primary' | 'success' | 'warning' | 'destructive';
 }) {
   const colorMap = {
@@ -558,13 +557,13 @@ function DetalheKPI({
   label, value, color,
 }: { label: string; value: string; color: 'primary' | 'success' | 'warning' | 'destructive' }) {
   const cls = {
-    primary: 'text-primary border-primary/30 from-primary/10',
-    success: 'text-success border-success/30 from-success/10',
-    warning: 'text-warning border-warning/30 from-warning/10',
-    destructive: 'text-destructive border-destructive/30 from-destructive/10',
+    primary: 'text-primary border-primary/30',
+    success: 'text-success border-success/30',
+    warning: 'text-warning border-warning/30',
+    destructive: 'text-destructive border-destructive/30',
   }[color];
   return (
-    <div className={cn('p-2.5 rounded-lg border bg-gradient-to-br to-transparent', cls)}>
+    <div className={cn('p-2.5 rounded-lg border bg-card', cls)}>
       <div className="text-[10px] uppercase font-semibold text-muted-foreground tracking-wide">{label}</div>
       <div className={cn('text-base font-bold tabular-nums truncate', cls.split(' ')[0])}>{value}</div>
     </div>
@@ -573,25 +572,25 @@ function DetalheKPI({
 
 function InsightCard({ insight, onClick }: { insight: AIInsight; onClick?: () => void }) {
   const cfg = {
-    oportunidade: { icon: Lightbulb, grad: 'from-primary/20 via-primary/10 to-transparent', iconBg: 'bg-primary/15 text-primary', border: 'border-primary/30', label: 'Oportunidade' },
-    destaque:     { icon: Trophy,    grad: 'from-success/20 via-success/10 to-transparent', iconBg: 'bg-success/15 text-success', border: 'border-success/30', label: 'Destaque' },
-    alerta:       { icon: AlertTriangle, grad: 'from-warning/20 via-warning/10 to-transparent', iconBg: 'bg-warning/15 text-warning', border: 'border-warning/30', label: 'Alerta' },
-    risco:        { icon: Target,    grad: 'from-destructive/20 via-destructive/10 to-transparent', iconBg: 'bg-destructive/15 text-destructive', border: 'border-destructive/30', label: 'Risco' },
-  }[insight.type] ?? { icon: Sparkles, grad: 'from-primary/20 via-primary/10 to-transparent', iconBg: 'bg-primary/15 text-primary', border: 'border-primary/30', label: 'Insight' };
+    oportunidade: { icon: Lightbulb, iconBg: 'bg-primary/10 text-primary border-primary/30', border: 'border-primary/30', label: 'Oportunidade' },
+    destaque:     { icon: Trophy,    iconBg: 'bg-success/10 text-success border-success/30', border: 'border-success/30', label: 'Destaque' },
+    alerta:       { icon: AlertTriangle, iconBg: 'bg-warning/10 text-warning border-warning/30', border: 'border-warning/30', label: 'Alerta' },
+    risco:        { icon: Target,    iconBg: 'bg-destructive/10 text-destructive border-destructive/30', border: 'border-destructive/30', label: 'Risco' },
+  }[insight.type] ?? { icon: Sparkles, iconBg: 'bg-primary/10 text-primary border-primary/30', border: 'border-primary/30', label: 'Insight' };
   const Icon = cfg.icon;
   return (
     <Card
       onClick={onClick}
       className={cn(
-        'overflow-hidden relative bg-gradient-to-br shadow-md transition-shadow',
-        cfg.grad, cfg.border,
-        onClick && insight.categoria ? 'cursor-pointer hover:shadow-lg' : '',
+        'overflow-hidden relative bg-card transition-colors',
+        cfg.border,
+        onClick && insight.categoria ? 'cursor-pointer hover:bg-muted/30' : '',
       )}
     >
       <CardContent className="p-4 relative z-10 flex flex-col gap-2 h-full">
         <div className="flex items-start justify-between gap-2">
           <div className="flex items-center gap-2 min-w-0">
-            <div className={cn('h-9 w-9 rounded-lg flex items-center justify-center shrink-0 shadow-sm', cfg.iconBg)}>
+            <div className={cn('h-9 w-9 rounded-lg border flex items-center justify-center shrink-0', cfg.iconBg)}>
               <Icon className="h-4 w-4" />
             </div>
             <div className="min-w-0">
