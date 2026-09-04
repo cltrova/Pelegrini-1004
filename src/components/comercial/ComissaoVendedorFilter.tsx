@@ -95,7 +95,7 @@ export function ComissaoVendedorFilter({ vendedores, selecionados, onChange }: P
                 }
                 className={cn(
                   'inline-flex items-center justify-center gap-1 px-1.5 py-1 rounded text-[10px] font-semibold transition-colors',
-                  modo === m ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground',
+                  modo === m ? 'bg-background text-foreground' : 'text-muted-foreground hover:text-foreground',
                 )}
               >
                 {Icon && <Icon className="h-3 w-3" />} {txt}

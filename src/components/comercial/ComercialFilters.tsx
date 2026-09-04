@@ -535,7 +535,7 @@ export function ComercialFilters({
         className={cn(
           embedded
             ? 'min-w-0 p-0'
-            : 'rounded-xl border border-border/60 bg-card/50 backdrop-blur-sm p-4 shadow-sm',
+            : 'rounded-lg border border-border/60 bg-card p-4',
         )}
       >
         {/* Header com toggle */}
@@ -991,7 +991,7 @@ export function ComercialFilters({
               <Button
                 onClick={onBuscar}
                 size="sm"
-                className={cn('shadow-sm', hasChanges && 'animate-pulse ring-2 ring-primary/30')}
+                className={cn(hasChanges && 'animate-pulse ring-2 ring-primary/30')}
               >
                 <Search className="h-4 w-4 mr-2" />
                 Buscar
