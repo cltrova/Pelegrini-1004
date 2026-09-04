@@ -177,6 +177,7 @@ describe('EstoquePage', () => {
       sourceErrors: { consolidado: new Error('API indisponivel (HTTP 504)'), detalhado: new Error('HTTP 504'), giro: new Error('HTTP 504') },
     });
     renderEstoquePage();
+    expect(screen.getByLabelText(/Estado da fonte de estoque: Estoque indisponivel/i)).toHaveAttribute('data-issue', 'true');
     expect(screen.getByText('Estoque indisponivel')).toBeInTheDocument();
     expect(screen.queryByRole('region', { name: 'Resumo do estoque' })).not.toBeInTheDocument();
     expect(screen.queryByText('0 itens · 0 movimentações')).not.toBeInTheDocument();

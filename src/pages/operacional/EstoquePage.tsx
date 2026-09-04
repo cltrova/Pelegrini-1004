@@ -107,7 +107,9 @@ export default function EstoquePage() {
   const stockSourceState = sourceStatus?.[viewMode];
   const sourceStateLabel = isFetching
     ? recoveringStock ? 'Recuperando estoque completo' : 'Atualizando dados'
-    : movementError
+    : stockUnavailable
+      ? 'Estoque indisponivel'
+      : movementError
       ? 'Estoque atualizado, giro pendente'
       : recoveredStock
         ? 'Estoque recuperado'
