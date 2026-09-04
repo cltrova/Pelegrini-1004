@@ -76,7 +76,7 @@ export function EstoqueDataViewport({
   return (
     <section
       aria-label={ariaLabel}
-      className={cn('min-h-0 min-w-0 flex-1 overflow-auto', className)}
+      className={cn('flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden', className)}
       {...props}
     >
       {children}

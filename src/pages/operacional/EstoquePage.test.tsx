@@ -138,12 +138,26 @@ describe('EstoquePage', () => {
     expect(refetch).toHaveBeenCalledOnce();
   });
 
-  it('mantem tabela e paginacao dentro do unico viewport de dados da Central', () => {
+  it('mantem aviso, contagem e paginacao fixos fora do unico scroller de dados da Central', () => {
+    testState.hookResult = createHookResult({
+      sourceErrors: { consolidado: new Error('HTTP 500'), detalhado: null, giro: null },
+      partialSources: { consolidado: true, detalhado: false },
+    });
     renderEstoquePage();
 
     const viewport = screen.getByRole('region', { name: 'Dados do estoque' });
-    expect(within(viewport).getByRole('table')).toBeInTheDocument();
-    expect(within(viewport).getByLabelText('Paginacao dos produtos')).toBeInTheDocument();
+    const dataScroller = within(viewport).getByRole('region', { name: 'Rolagem dos produtos do estoque' });
+    expect(viewport).toHaveClass('overflow-hidden');
+    expect(within(dataScroller).getByRole('table')).toBeInTheDocument();
+    expect(within(dataScroller).getByRole('rowgroup', { name: 'Cabecalho da tabela' })).toHaveClass('sticky', 'top-0');
+    expect(within(dataScroller).queryByText('Estoque parcial')).not.toBeInTheDocument();
+    expect(within(dataScroller).queryByRole('group', { name: 'Contagem e ordenacao dos produtos' })).not.toBeInTheDocument();
+    expect(within(dataScroller).queryByLabelText('Paginacao dos produtos')).not.toBeInTheDocument();
+    const sourceNotice = within(viewport).getByText('Estoque parcial').closest('[role="status"]');
+    expect(sourceNotice).toBeInTheDocument();
+    expect(sourceNotice?.parentElement).toHaveClass('shrink-0');
+    expect(within(viewport).getByRole('group', { name: 'Contagem e ordenacao dos produtos' })).toHaveClass('shrink-0');
+    expect(within(viewport).getByLabelText('Paginacao dos produtos')).toHaveClass('shrink-0');
   });
 
   it('desabilita a atualizacao e mostra feedback enquanto consulta', () => {
@@ -259,12 +273,13 @@ describe('EstoquePage', () => {
     expect(screen.getByText(/Movimentacoes indisponiveis/i)).toBeInTheDocument();
   });
 
-  it('nao cria scroller vertical adicional nos paineis legados de Giro e Assistente', () => {
+  it('preserva acesso temporario aos paineis legados sem duplicar o scroller desktop do Giro', () => {
     renderEstoquePage();
     fireEvent.click(screen.getByRole('tab', { name: 'Giro de Estoque' }));
-    expect(screen.getByRole('tabpanel', { name: 'Giro de Estoque' })).not.toHaveClass('overflow-auto', 'overflow-y-auto');
+    expect(screen.getByRole('tabpanel', { name: 'Giro de Estoque' })).toHaveClass('overflow-y-auto', 'md:overflow-hidden');
     fireEvent.click(screen.getByRole('tab', { name: 'Assistente' }));
-    expect(screen.getByRole('tabpanel', { name: 'Assistente' })).not.toHaveClass('overflow-auto', 'overflow-y-auto');
+    expect(screen.getByRole('tabpanel', { name: 'Assistente' })).toHaveClass('overflow-y-auto');
+    expect(screen.getByRole('tabpanel', { name: 'Assistente' })).not.toHaveClass('md:overflow-hidden');
   });
 
   it('remove o alerta parcial quando o estoque operacional foi recuperado pelo historico', () => {

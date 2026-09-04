@@ -298,7 +298,7 @@ export default function EstoquePage() {
           )}
         </TabsContent>
 
-        <TabsContent className="m-0 min-h-0 flex-1 p-3" aria-labelledby="pelegrini-tab-giro" id="pelegrini-tabpanel-giro" value="giro">
+        <TabsContent className="m-0 min-h-0 flex-1 overflow-y-auto p-3 md:overflow-hidden" aria-labelledby="pelegrini-tab-giro" id="pelegrini-tabpanel-giro" value="giro">
           <div className="mb-3 space-y-2">
             <div className="flex min-w-0 flex-wrap items-center gap-2">
               <div className="relative min-w-[200px] flex-1 max-w-md">
@@ -344,7 +344,7 @@ export default function EstoquePage() {
           />
         </TabsContent>
 
-        <TabsContent className="m-0 min-h-0 flex-1 p-3" aria-labelledby="pelegrini-tab-assistente" id="pelegrini-tabpanel-assistente" value="assistente">
+        <TabsContent className="m-0 min-h-0 flex-1 overflow-y-auto p-3" aria-labelledby="pelegrini-tab-assistente" id="pelegrini-tabpanel-assistente" value="assistente">
           <EstoqueAssistantTab giroData={giroData} estoqueData={estoqueData} onProductAction={openProductFromAssistant} />
         </TabsContent>
           </>

@@ -229,10 +229,10 @@ export function EstoqueCommandCenter({
       />
 
       <EstoqueDataViewport>
-        {sourceNotice}
+        {sourceNotice && <div className="shrink-0">{sourceNotice}</div>}
         {viewMode === 'detalhado' && stockData.length > 0 && detailedGranularity === 'product' && (
           <p
-            className="border-b border-primary/20 bg-primary/[0.04] px-3 py-2 text-xs text-muted-foreground"
+            className="shrink-0 border-b border-primary/20 bg-primary/[0.04] px-3 py-2 text-xs text-muted-foreground"
             role="status"
           >
             A fonte atual nao fornece filial ou localizacao para detalhar estes produtos.

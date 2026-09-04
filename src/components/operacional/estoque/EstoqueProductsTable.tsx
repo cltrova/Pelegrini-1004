@@ -299,8 +299,12 @@ export function EstoqueProductsTable({
   };
 
   return (
-    <section aria-label="Produtos do estoque" className="min-w-0 max-w-full border border-border/80 bg-background">
-      <div className="flex min-w-0 flex-wrap items-center justify-between gap-2 border-b border-border/80 px-3 py-1.5">
+    <section aria-label="Produtos do estoque" className="flex h-full min-h-0 min-w-0 max-w-full flex-1 flex-col overflow-hidden border border-border/80 bg-background">
+      <div
+        aria-label="Contagem e ordenacao dos produtos"
+        className="flex min-w-0 shrink-0 flex-wrap items-center justify-between gap-2 border-b border-border/80 px-3 py-1.5"
+        role="group"
+      >
         <p className="min-w-0 text-sm text-muted-foreground">
           <span className="font-semibold tabular-nums text-foreground">{products.length}</span>{' '}
           {products.length === 1 ? 'produto' : 'produtos'}
@@ -351,15 +355,20 @@ export function EstoqueProductsTable({
       </div>
 
       <div
-        aria-label="Tabela de produtos do estoque"
-        className="hidden min-w-0 max-w-full md:block"
+        aria-label="Rolagem dos produtos do estoque"
+        className="min-h-0 min-w-0 flex-1 overflow-auto"
+        role="region"
       >
-        {products.length === 0 ? (
-          <p className="px-4 py-10 text-center text-sm text-muted-foreground">{emptyMessage}</p>
-        ) : (
-          <div className="min-h-full min-w-max">
-            <table className="w-full text-left text-sm">
-              <thead aria-label="Cabecalho da tabela" className="sticky top-0 z-10 bg-muted">
+        <div
+          aria-label="Tabela de produtos do estoque"
+          className="hidden min-w-0 max-w-full md:block"
+        >
+          {products.length === 0 ? (
+            <p className="px-4 py-10 text-center text-sm text-muted-foreground">{emptyMessage}</p>
+          ) : (
+            <div className="min-h-full min-w-max">
+              <table className="w-full text-left text-sm">
+                <thead aria-label="Cabecalho da tabela" className="sticky top-0 z-10 bg-muted">
                 <tr className="border-b border-border">
                   {selectedColumns.map((column) => (
                     <th
@@ -375,8 +384,8 @@ export function EstoqueProductsTable({
                     </th>
                   ))}
                 </tr>
-              </thead>
-              <tbody className="divide-y divide-border/70">
+                </thead>
+                <tbody className="divide-y divide-border/70">
                 {visibleProducts.map((product) => (
                   <tr className="transition-colors hover:bg-primary/[0.04]" key={stockTableRowKey(product, viewMode)}>
                     {selectedColumns.map((column) => (
@@ -392,17 +401,17 @@ export function EstoqueProductsTable({
                     ))}
                   </tr>
                 ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
 
-      <div aria-label="Lista compacta de produtos" className="min-w-0 divide-y divide-border/70 md:hidden">
-        {products.length === 0 ? (
-          <p className="px-4 py-10 text-center text-sm text-muted-foreground">{emptyMessage}</p>
-        ) : (
-          visibleProducts.map((product) => (
+        <div aria-label="Lista compacta de produtos" className="min-w-0 divide-y divide-border/70 md:hidden">
+          {products.length === 0 ? (
+            <p className="px-4 py-10 text-center text-sm text-muted-foreground">{emptyMessage}</p>
+          ) : (
+            visibleProducts.map((product) => (
             <article className="min-w-0 p-3" data-testid={`stock-mobile-item-${product.cod_produto}`} key={stockTableRowKey(product, viewMode)}>
               <div className="flex min-w-0 items-start justify-between gap-3">
                 <div className="min-w-0 flex-1">
@@ -460,14 +469,15 @@ export function EstoqueProductsTable({
                 </Button>
               </div>
             </article>
-          ))
-        )}
+            ))
+          )}
+        </div>
       </div>
 
       {products.length > 0 && (
         <nav
           aria-label="Paginacao dos produtos"
-          className="sticky bottom-0 z-10 flex items-center justify-between gap-3 border-t border-border bg-background px-3 py-2"
+          className="flex shrink-0 items-center justify-between gap-3 border-t border-border bg-background px-3 py-2"
         >
           <Button
             aria-label="Pagina anterior"

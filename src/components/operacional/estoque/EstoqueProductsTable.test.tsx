@@ -231,11 +231,14 @@ describe('EstoqueProductsTable', () => {
   it('mostra as colunas consolidadas em tabela contida com cabecalho fixo', () => {
     render(<EstoqueProductsTable {...baseProps} />);
 
+    const products = screen.getByRole('region', { name: 'Produtos do estoque' });
+    const dataScroller = screen.getByRole('region', { name: 'Rolagem dos produtos do estoque' });
     const desktop = screen.getByLabelText('Tabela de produtos do estoque');
+    expect(products).toHaveClass('flex', 'h-full', 'min-h-0', 'flex-col', 'overflow-hidden');
+    expect(dataScroller).toHaveClass('min-h-0', 'flex-1', 'overflow-auto');
     expect(desktop).toHaveClass('hidden', 'md:block', 'min-w-0');
     expect(desktop).not.toHaveClass('overflow-x-auto', 'overflow-auto');
-    expect(screen.getByRole('region', { name: 'Produtos do estoque' })).not.toHaveClass('overflow-hidden');
-    expect(within(desktop).getByRole('rowgroup', { name: 'Cabecalho da tabela' })).toHaveClass('sticky', 'top-0');
+    expect(within(dataScroller).getByRole('rowgroup', { name: 'Cabecalho da tabela' })).toHaveClass('sticky', 'top-0');
 
     expect(within(desktop).getAllByRole('columnheader').map((header) => header.textContent)).toEqual([
       'Produto',
@@ -249,10 +252,19 @@ describe('EstoqueProductsTable', () => {
     expect(desktop.querySelector('.overflow-y-auto')).not.toBeInTheDocument();
   });
 
-  it('mantem a paginacao fixa no rodape do viewport sem criar outro scroller vertical', () => {
+  it('mantem contagem e paginacao fora do unico scroller de dados', () => {
     render(<EstoqueProductsTable {...baseProps} />);
 
-    expect(screen.getByLabelText('Paginacao dos produtos')).toHaveClass('sticky', 'bottom-0');
+    const products = screen.getByRole('region', { name: 'Produtos do estoque' });
+    const dataScroller = screen.getByRole('region', { name: 'Rolagem dos produtos do estoque' });
+    const controls = screen.getByRole('group', { name: 'Contagem e ordenacao dos produtos' });
+    const pagination = screen.getByLabelText('Paginacao dos produtos');
+
+    expect(controls).toHaveClass('shrink-0');
+    expect(pagination).toHaveClass('shrink-0');
+    expect(within(dataScroller).queryByRole('group', { name: 'Contagem e ordenacao dos produtos' })).not.toBeInTheDocument();
+    expect(within(dataScroller).queryByLabelText('Paginacao dos produtos')).not.toBeInTheDocument();
+    expect(products.contains(dataScroller)).toBe(true);
     expect(screen.getByLabelText('Tabela de produtos do estoque').firstElementChild).toHaveClass('min-h-full');
   });
 
