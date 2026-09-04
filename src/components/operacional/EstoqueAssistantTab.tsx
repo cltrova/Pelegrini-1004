@@ -451,6 +451,7 @@ function ChatTab({ estoqueData, giroData, now, customPrompt, codEmpresaBi, credi
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const isActiveRef = useRef(true);
 
   useEffect(() => {
     if (messages.length > 0 && scrollRef.current) {
@@ -461,6 +462,7 @@ function ChatTab({ estoqueData, giroData, now, customPrompt, codEmpresaBi, credi
   // Cleanup on unmount
   useEffect(() => {
     return () => {
+      isActiveRef.current = false;
       if (timerRef.current) clearInterval(timerRef.current);
       if (mediaRecorderRef.current?.state === 'recording') {
         mediaRecorderRef.current.stop();
@@ -584,6 +586,7 @@ function ChatTab({ estoqueData, giroData, now, customPrompt, codEmpresaBi, credi
         throw new Error(errData.error || `Erro: ${response.status}`);
       }
       const result = await response.json();
+      if (!isActiveRef.current) return;
       setMessages(prev => [...prev, { 
         role: 'assistant', 
         content: result.response,
@@ -593,6 +596,7 @@ function ChatTab({ estoqueData, giroData, now, customPrompt, codEmpresaBi, credi
       }]);
 
     } catch (error: unknown) {
+      if (!isActiveRef.current) return;
       console.error('Erro ao enviar mensagem:', error);
       setFailedConversation(conversation);
       setIsLoading(false);
@@ -978,6 +982,10 @@ export function EstoqueAssistantTab({ giroData, estoqueData, now, onProductActio
 
   // Load custom prompt + credits
   useEffect(() => {
+    let cancelled = false;
+    setCustomPrompt('');
+    setCredits({ used: 0, limit: 5000 });
+
     async function load() {
       if (!codEmpresaBi) return;
 
@@ -986,6 +994,7 @@ export function EstoqueAssistantTab({ giroData, estoqueData, now, onProductActio
         supabase.from('estoque_assistant_credits').select('credits_used, credits_limit').eq('cod_empresa_bi', codEmpresaBi).maybeSingle(),
       ]);
 
+      if (cancelled) return;
       if (configRes.data?.custom_prompt) {
         setCustomPrompt(configRes.data.custom_prompt);
       }
@@ -994,6 +1003,9 @@ export function EstoqueAssistantTab({ giroData, estoqueData, now, onProductActio
       }
     }
     load();
+    return () => {
+      cancelled = true;
+    };
   }, [codEmpresaBi]);
 
   const refreshCredits = useCallback(async () => {
@@ -1034,7 +1046,7 @@ export function EstoqueAssistantTab({ giroData, estoqueData, now, onProductActio
 
         <EstoqueDataViewport aria-label="Conteudo do assistente de estoque">
           <TabsContent className="m-0 min-h-0 flex-1 overflow-hidden data-[state=active]:flex data-[state=active]:flex-col data-[state=inactive]:hidden" forceMount value="chat">
-            <ChatTab estoqueData={estoqueData} giroData={giroData} now={now} customPrompt={customPrompt} codEmpresaBi={codEmpresaBi} credits={credits} onCreditUsed={refreshCredits} />
+            <ChatTab key={codEmpresaBi} estoqueData={estoqueData} giroData={giroData} now={now} customPrompt={customPrompt} codEmpresaBi={codEmpresaBi} credits={credits} onCreditUsed={refreshCredits} />
           </TabsContent>
           <TabsContent className="m-0 min-h-0 flex-1 overflow-y-auto px-3 py-2 data-[state=inactive]:hidden" forceMount value="insights">
             <EstoqueInsights data={estoqueData} giroData={giroData} now={now} onProductAction={onProductAction} />

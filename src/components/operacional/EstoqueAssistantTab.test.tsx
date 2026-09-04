@@ -153,6 +153,51 @@ describe('EstoqueAssistantTab', () => {
     expect(queriedCompanies.every(code => code === '10041')).toBe(true);
   });
 
+  it('isola conversa, resposta pendente, prompt e creditos ao trocar de filial', async () => {
+    let resolveOldChat: (value: unknown) => void = () => undefined;
+    let resolveChevroletConfig: (value: unknown) => void = () => undefined;
+    let resolveChevroletCredits: (value: unknown) => void = () => undefined;
+
+    mockMaybeSingle
+      .mockResolvedValueOnce({ data: { custom_prompt: 'Prompt CT' } })
+      .mockResolvedValueOnce({ data: { credits_used: 7, credits_limit: 10 } })
+      .mockImplementationOnce(() => new Promise(resolve => { resolveChevroletConfig = resolve; }))
+      .mockImplementationOnce(() => new Promise(resolve => { resolveChevroletCredits = resolve; }));
+
+    const fetchMock = vi.fn()
+      .mockImplementationOnce(() => new Promise(resolve => { resolveOldChat = resolve; }))
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ response: 'Resposta CCH' }) });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const { rerender } = render(<EstoqueAssistantTab estoqueData={estoqueFixture} giroData={giroFixture} />);
+    await screen.findByLabelText('7 de 10 creditos usados');
+
+    fireEvent.change(screen.getByPlaceholderText('Pergunte sobre seu estoque...'), { target: { value: 'Pergunta CT' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Enviar pergunta' }));
+    expect(await screen.findByText('Pergunta CT')).toBeInTheDocument();
+
+    activeBranch.value = 'chevrolet';
+    rerender(<EstoqueAssistantTab estoqueData={estoqueFixture} giroData={giroFixture} />);
+
+    expect(screen.queryByText('Pergunta CT')).not.toBeInTheDocument();
+    expect(screen.getByLabelText('0 de 5000 creditos usados')).toBeInTheDocument();
+
+    resolveOldChat({ ok: true, json: async () => ({ response: 'Resposta antiga CT' }) });
+    resolveChevroletConfig({ data: { custom_prompt: 'Prompt CCH' } });
+    resolveChevroletCredits({ data: { credits_used: 2, credits_limit: 20 } });
+
+    await screen.findByLabelText('2 de 20 creditos usados');
+    expect(screen.queryByText('Resposta antiga CT')).not.toBeInTheDocument();
+
+    fireEvent.change(screen.getByPlaceholderText('Pergunte sobre seu estoque...'), { target: { value: 'Pergunta CCH' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Enviar pergunta' }));
+    expect(await screen.findByText('Resposta CCH')).toBeInTheDocument();
+
+    const cchRequest = JSON.parse(String(fetchMock.mock.calls[1][1]?.body));
+    expect(cchRequest.customPrompt).toBe('Prompt CCH');
+    expect(cchRequest.messages).toEqual([{ role: 'user', content: 'Pergunta CCH' }]);
+  });
+
   it('trata ultima venda ausente como desconhecida no contexto', async () => {
     const fetchMock = vi.fn(async () => ({ ok: true, json: async () => ({ response: 'OK' }) }));
     vi.stubGlobal('fetch', fetchMock);
