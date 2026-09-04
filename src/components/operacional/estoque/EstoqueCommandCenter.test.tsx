@@ -355,7 +355,7 @@ describe('EstoqueCommandCenter', () => {
     expect(within(viewport).getByLabelText('Paginacao dos produtos')).toBeInTheDocument();
   });
 
-  it('preserva filtros de marca, grupo e linha ao trocar de modo', () => {
+  it('preserva filtros no Sheet ao trocar de modo sem criar uma segunda linha na toolbar', () => {
     const onExport = vi.fn();
 
     function Harness() {
@@ -381,10 +381,8 @@ describe('EstoqueCommandCenter', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Close' }));
     fireEvent.click(screen.getByRole('button', { name: 'Detalhado' }));
 
-    const activeFilters = screen.getByLabelText('Filtros ativos');
-    expect(within(activeFilters).getByText('Marca: ZF')).toBeInTheDocument();
-    expect(within(activeFilters).getByText('Grupo: EMBREAGEM')).toBeInTheDocument();
-    expect(within(activeFilters).getByText('Linha: Linha pesada')).toBeInTheDocument();
+    expect(screen.queryByLabelText('Filtros ativos')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Filtros, 3 ativos' })).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Exportar visao atual' }));
     expect(onExport).toHaveBeenCalledWith([

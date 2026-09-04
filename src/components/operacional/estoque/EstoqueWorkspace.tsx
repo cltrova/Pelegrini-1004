@@ -56,7 +56,7 @@ export function EstoqueToolbar({
     <div
       aria-label={ariaLabel}
       className={cn(
-        'flex h-11 min-w-0 shrink-0 items-center gap-2 border-b border-border/70 bg-background px-3',
+        'flex h-11 min-w-0 shrink-0 flex-nowrap items-center gap-2 overflow-x-auto overscroll-x-contain border-b border-border/70 bg-background px-3',
         className,
       )}
       role="toolbar"

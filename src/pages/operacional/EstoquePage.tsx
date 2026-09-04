@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { AlertTriangle, RefreshCw, Search, X } from 'lucide-react';
 
 import { EmptyState } from '@/components/common/EmptyState';
@@ -96,7 +96,7 @@ export default function EstoquePage() {
   const activeError = activeTab === 'central'
     ? stockUnavailable && stockError && !recoveringStock
     : (stockUnavailable && stockError) || (movementUnavailable && movementError);
-  const hasSourceIssue = Boolean(stockError || movementError);
+  const sourceHasActiveIssue = Boolean(movementError || (stockError && !recoveredStock));
   const branchName = filialAtiva === 'chevrolet' ? 'Casa do Chevrolet' : 'Casa da Transmissao';
   const activeSourceUpdate = activeTab === 'central'
     ? sourceLastUpdated?.[viewMode]
@@ -108,8 +108,10 @@ export default function EstoquePage() {
   const stockSourceState = sourceStatus?.[viewMode];
   const sourceStateLabel = isFetching
     ? recoveringStock ? 'Recuperando estoque completo' : 'Atualizando dados'
-    : recoveredStock
-      ? 'Estoque recuperado'
+    : movementError
+      ? 'Estoque atualizado, giro pendente'
+      : recoveredStock
+        ? 'Estoque recuperado'
     : partialStock
       ? 'Fonte parcial'
       : stockError
@@ -162,8 +164,16 @@ export default function EstoquePage() {
     setActiveTab('central');
   };
 
-  const sourceNotice = hasSourceIssue && !recoveredStock && !sourceNoticeDismissed ? (
-    <Alert className="sticky top-0 z-30 rounded-none border-x-0 border-t-0 py-1.5" role="status">
+  const sourceNoticeFingerprint = sourceHasActiveIssue
+    ? [branchKey, viewMode, partialStock, recoveringStock, stockError?.message, movementError?.message].join('|')
+    : `healthy:${branchKey}:${viewMode}`;
+
+  useEffect(() => {
+    setSourceNoticeDismissed(false);
+  }, [sourceNoticeFingerprint]);
+
+  const sourceNotice = sourceHasActiveIssue && !sourceNoticeDismissed ? (
+    <Alert className="rounded-none border-x-0 border-t-0 py-1.5" role="status">
       <AlertTriangle className="h-4 w-4" />
       <AlertTitle className="pr-10 text-xs">
         {recoveringStock ? 'Recuperando estoque completo' : partialStock ? 'Estoque parcial' : 'Dados com atualizacao pendente'}
@@ -228,7 +238,7 @@ export default function EstoquePage() {
           <span
             aria-label={`Estado da fonte de estoque: ${sourceStateLabel}`}
             className="h-2.5 w-2.5 shrink-0 rounded-full bg-emerald-500 data-[issue=true]:bg-amber-500"
-            data-issue={(hasSourceIssue && !recoveredStock) || undefined}
+            data-issue={sourceHasActiveIssue || undefined}
             role="status"
             title={sourceStateLabel}
           />
@@ -288,7 +298,7 @@ export default function EstoquePage() {
           )}
         </TabsContent>
 
-        <TabsContent className="m-0 min-h-0 flex-1 overflow-auto p-3" aria-labelledby="pelegrini-tab-giro" id="pelegrini-tabpanel-giro" value="giro">
+        <TabsContent className="m-0 min-h-0 flex-1 p-3" aria-labelledby="pelegrini-tab-giro" id="pelegrini-tabpanel-giro" value="giro">
           <div className="mb-3 space-y-2">
             <div className="flex min-w-0 flex-wrap items-center gap-2">
               <div className="relative min-w-[200px] flex-1 max-w-md">
@@ -334,7 +344,7 @@ export default function EstoquePage() {
           />
         </TabsContent>
 
-        <TabsContent className="m-0 min-h-0 flex-1 overflow-auto p-3" aria-labelledby="pelegrini-tab-assistente" id="pelegrini-tabpanel-assistente" value="assistente">
+        <TabsContent className="m-0 min-h-0 flex-1 p-3" aria-labelledby="pelegrini-tab-assistente" id="pelegrini-tabpanel-assistente" value="assistente">
           <EstoqueAssistantTab giroData={giroData} estoqueData={estoqueData} onProductAction={openProductFromAssistant} />
         </TabsContent>
           </>

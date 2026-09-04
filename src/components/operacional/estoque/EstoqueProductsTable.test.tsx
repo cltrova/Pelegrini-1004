@@ -232,7 +232,9 @@ describe('EstoqueProductsTable', () => {
     render(<EstoqueProductsTable {...baseProps} />);
 
     const desktop = screen.getByLabelText('Tabela de produtos do estoque');
-    expect(desktop).toHaveClass('hidden', 'md:block', 'min-w-0', 'overflow-x-auto');
+    expect(desktop).toHaveClass('hidden', 'md:block', 'min-w-0');
+    expect(desktop).not.toHaveClass('overflow-x-auto', 'overflow-auto');
+    expect(screen.getByRole('region', { name: 'Produtos do estoque' })).not.toHaveClass('overflow-hidden');
     expect(within(desktop).getByRole('rowgroup', { name: 'Cabecalho da tabela' })).toHaveClass('sticky', 'top-0');
 
     expect(within(desktop).getAllByRole('columnheader').map((header) => header.textContent)).toEqual([

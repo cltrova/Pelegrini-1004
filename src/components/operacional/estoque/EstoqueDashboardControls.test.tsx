@@ -312,6 +312,28 @@ describe('EstoqueSmartFilters', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Limpar todos os filtros' }));
     expect(onClearAll).toHaveBeenCalledTimes(1);
   });
+
+  it('mantem uma unica linha no modo compacto e conserva contagem e limpeza no Sheet', () => {
+    const onClearAll = vi.fn();
+    render(
+      <EstoqueSmartFilters
+        {...defaultProps}
+        brands={['ZF']}
+        compact
+        onClearAll={onClearAll}
+        search="kit"
+      />,
+    );
+
+    const filters = screen.getByRole('region', { name: 'Busca e filtros do estoque' });
+    expect(filters).toHaveClass('flex', 'flex-nowrap', 'min-w-max');
+    expect(screen.queryByLabelText('Filtros ativos')).not.toBeInTheDocument();
+    expect(screen.getByRole('searchbox', { name: 'Buscar no estoque' })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Filtros, 1 ativos' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Limpar todos os filtros' }));
+    expect(onClearAll).toHaveBeenCalledOnce();
+  });
 });
 
 describe('EstoqueMovementHighlights', () => {

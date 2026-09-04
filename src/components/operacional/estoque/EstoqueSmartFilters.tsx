@@ -4,6 +4,7 @@ import type { ReactNode } from 'react';
 import { FilterDropdownChip, MultiSelectOptions } from '@/components/common/FilterDropdownChip';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { cn } from '@/lib/utils';
 import {
   Sheet,
   SheetContent,
@@ -36,6 +37,7 @@ interface EstoqueSmartFiltersProps {
   onClearAll: () => void;
   leading?: ReactNode;
   actions?: ReactNode;
+  compact?: boolean;
 }
 
 const quickFilterLabels: Record<StockQuickFilter, string> = {
@@ -87,13 +89,20 @@ export function EstoqueSmartFilters({
   onClearAll,
   leading,
   actions,
+  compact = false,
 }: EstoqueSmartFiltersProps) {
   const hasFilters = Boolean(search || quickFilter !== 'all' || brands.length || groups.length || lines.length);
   const activeCount = Number(quickFilter !== 'all') + brands.length + groups.length + lines.length;
 
   return (
-    <section className="min-w-0 space-y-2" aria-label="Busca e filtros do estoque">
-      <div className="flex min-w-0 flex-wrap items-center gap-2">
+    <section
+      className={cn(
+        'min-w-0',
+        compact ? 'flex min-w-max flex-1 flex-nowrap items-center' : 'space-y-2',
+      )}
+      aria-label="Busca e filtros do estoque"
+    >
+      <div className={cn('flex min-w-0 items-center gap-2', compact ? 'flex-nowrap' : 'flex-wrap')}>
         {leading}
         <div className="relative min-w-[12rem] flex-1">
           <Search aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -207,7 +216,7 @@ export function EstoqueSmartFilters({
         {actions}
       </div>
 
-      {hasFilters && (
+      {hasFilters && !compact && (
         <div aria-label="Filtros ativos" className="flex min-w-0 flex-wrap gap-2">
           {search && <ActiveChip label={`Busca: ${search}`} onRemove={() => onSearchChange('')} removeLabel={`Remover busca ${search}`} />}
           {quickFilter !== 'all' && (

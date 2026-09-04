@@ -200,10 +200,71 @@ describe('EstoquePage', () => {
       partialSources: { consolidado: true, detalhado: false },
     });
     renderEstoquePage();
-    expect(screen.getByText('Estoque parcial').closest('[role="status"]')).toBeInTheDocument();
+    const notice = screen.getByText('Estoque parcial').closest('[role="status"]');
+    expect(notice).toBeInTheDocument();
+    expect(notice).not.toHaveClass('sticky', 'top-0');
+    expect(screen.getByRole('rowgroup', { name: 'Cabecalho da tabela' })).toHaveClass('sticky', 'top-0');
     expect(screen.getAllByText('KIT EMBREAGEM PESADA').length).toBeGreaterThan(0);
     fireEvent.click(screen.getByRole('button', { name: 'Fechar aviso da fonte' }));
     expect(screen.queryByText('Estoque parcial')).not.toBeInTheDocument();
+  });
+
+  it('reabre o aviso quando a origem da falha muda e depois de um estado saudavel', async () => {
+    testState.hookResult = createHookResult({
+      sourceErrors: { consolidado: new Error('Falha A'), detalhado: null, giro: null },
+      partialSources: { consolidado: true, detalhado: false },
+    });
+    const { rerender } = renderEstoquePage();
+    fireEvent.click(screen.getByRole('button', { name: 'Fechar aviso da fonte' }));
+    expect(screen.queryByText('Estoque parcial')).not.toBeInTheDocument();
+
+    testState.hookResult = createHookResult({
+      sourceErrors: { consolidado: new Error('Falha B'), detalhado: null, giro: null },
+      partialSources: { consolidado: true, detalhado: false },
+    });
+    rerender(
+      <QueryClientProvider client={new QueryClient()}>
+        <AuthProvider><EmpresaSelecionadaProvider><FilialSelecionadaProvider><EstoquePage /></FilialSelecionadaProvider></EmpresaSelecionadaProvider></AuthProvider>
+      </QueryClientProvider>,
+    );
+    await waitFor(() => expect(screen.getByText('Estoque parcial')).toBeInTheDocument());
+
+    fireEvent.click(screen.getByRole('button', { name: 'Fechar aviso da fonte' }));
+    testState.hookResult = createHookResult();
+    rerender(
+      <QueryClientProvider client={new QueryClient()}>
+        <AuthProvider><EmpresaSelecionadaProvider><FilialSelecionadaProvider><EstoquePage /></FilialSelecionadaProvider></EmpresaSelecionadaProvider></AuthProvider>
+      </QueryClientProvider>,
+    );
+    testState.hookResult = createHookResult({
+      sourceErrors: { consolidado: new Error('Falha B'), detalhado: null, giro: null },
+      partialSources: { consolidado: true, detalhado: false },
+    });
+    rerender(
+      <QueryClientProvider client={new QueryClient()}>
+        <AuthProvider><EmpresaSelecionadaProvider><FilialSelecionadaProvider><EstoquePage /></FilialSelecionadaProvider></EmpresaSelecionadaProvider></AuthProvider>
+      </QueryClientProvider>,
+    );
+    await waitFor(() => expect(screen.getByText('Estoque parcial')).toBeInTheDocument());
+  });
+
+  it('mantem alerta amarelo quando o estoque foi recuperado mas o giro falhou', () => {
+    testState.hookResult = createHookResult({
+      recoveredSources: { consolidado: true, detalhado: false },
+      sourceErrors: { consolidado: new Error('Fonte recuperada'), detalhado: null, giro: new Error('Giro indisponivel') },
+    });
+    renderEstoquePage();
+
+    expect(screen.getByLabelText(/Estado da fonte de estoque: Estoque atualizado, giro pendente/i)).toHaveAttribute('data-issue', 'true');
+    expect(screen.getByText(/Movimentacoes indisponiveis/i)).toBeInTheDocument();
+  });
+
+  it('nao cria scroller vertical adicional nos paineis legados de Giro e Assistente', () => {
+    renderEstoquePage();
+    fireEvent.click(screen.getByRole('tab', { name: 'Giro de Estoque' }));
+    expect(screen.getByRole('tabpanel', { name: 'Giro de Estoque' })).not.toHaveClass('overflow-auto', 'overflow-y-auto');
+    fireEvent.click(screen.getByRole('tab', { name: 'Assistente' }));
+    expect(screen.getByRole('tabpanel', { name: 'Assistente' })).not.toHaveClass('overflow-auto', 'overflow-y-auto');
   });
 
   it('remove o alerta parcial quando o estoque operacional foi recuperado pelo historico', () => {

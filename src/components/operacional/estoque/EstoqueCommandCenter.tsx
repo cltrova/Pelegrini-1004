@@ -148,6 +148,7 @@ export function EstoqueCommandCenter({
     >
       <EstoqueToolbar>
         <EstoqueSmartFilters
+          compact
           actions={(
             <>
               <Sheet onOpenChange={setAttentionOpen} open={attentionOpen}>

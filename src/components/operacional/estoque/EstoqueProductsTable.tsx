@@ -299,7 +299,7 @@ export function EstoqueProductsTable({
   };
 
   return (
-    <section aria-label="Produtos do estoque" className="min-w-0 max-w-full overflow-hidden border border-border/80 bg-background">
+    <section aria-label="Produtos do estoque" className="min-w-0 max-w-full border border-border/80 bg-background">
       <div className="flex min-w-0 flex-wrap items-center justify-between gap-2 border-b border-border/80 px-3 py-1.5">
         <p className="min-w-0 text-sm text-muted-foreground">
           <span className="font-semibold tabular-nums text-foreground">{products.length}</span>{' '}
@@ -352,7 +352,7 @@ export function EstoqueProductsTable({
 
       <div
         aria-label="Tabela de produtos do estoque"
-        className="hidden min-w-0 max-w-full overflow-x-auto overscroll-x-contain md:block"
+        className="hidden min-w-0 max-w-full md:block"
       >
         {products.length === 0 ? (
           <p className="px-4 py-10 text-center text-sm text-muted-foreground">{emptyMessage}</p>
