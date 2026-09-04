@@ -101,8 +101,8 @@ export default function QuedaClientesPage({ periodo }: Props) {
   const isLoading = isEmpresa1003 ? (loadingAtual || loadingAnterior) : isLoadingLocal;
 
   return (
-    <div className="space-y-6">
-      <Card className="border-primary/30 bg-primary/5">
+    <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden">
+      <Card className="shrink-0 border-primary/30 bg-primary/5">
         <CardContent className="p-4 space-y-3">
           <div className="flex items-start gap-3">
             <Info className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
@@ -139,26 +139,28 @@ export default function QuedaClientesPage({ periodo }: Props) {
         </CardContent>
       </Card>
 
-      <QuedaKPIs clientes={clientes} isLoading={isLoading} />
-      <QuedaGraficos
-        clientes={clientes}
-        labelAtual={labelAtual}
-        labelAnterior={labelAnterior}
-        isLoading={isLoading}
-        clienteSelecionado={clienteFoco}
-        onSelectCliente={setClienteFoco}
-        situacaoSelecionada={situacaoFoco}
-        onSelectSituacao={setSituacaoFoco}
-      />
-      <QuedaBlocosAnaliticos
-        clientes={clientes}
-        labelAtual={labelAtual}
-        labelAnterior={labelAnterior}
-        situacaoExterna={situacaoFoco}
-        onSituacaoExterna={setSituacaoFoco}
-        clienteFoco={clienteFoco}
-        onLimparClienteFoco={() => setClienteFoco(null)}
-      />
+      <div className="min-h-0 flex-1 space-y-3 overflow-auto pr-1">
+        <QuedaKPIs clientes={clientes} isLoading={isLoading} />
+        <QuedaGraficos
+          clientes={clientes}
+          labelAtual={labelAtual}
+          labelAnterior={labelAnterior}
+          isLoading={isLoading}
+          clienteSelecionado={clienteFoco}
+          onSelectCliente={setClienteFoco}
+          situacaoSelecionada={situacaoFoco}
+          onSelectSituacao={setSituacaoFoco}
+        />
+        <QuedaBlocosAnaliticos
+          clientes={clientes}
+          labelAtual={labelAtual}
+          labelAnterior={labelAnterior}
+          situacaoExterna={situacaoFoco}
+          onSituacaoExterna={setSituacaoFoco}
+          clienteFoco={clienteFoco}
+          onLimparClienteFoco={() => setClienteFoco(null)}
+        />
+      </div>
     </div>
   );
 }

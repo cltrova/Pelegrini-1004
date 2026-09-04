@@ -21,6 +21,7 @@ import {
 import { AnaliseDiariaLayout } from '@/components/comercial/AnaliseDiariaLayout';
 import { formatCurrency, formatPercent } from '@/utils/formatters';
 import { getFeriadosComerciaisMeta } from '@/utils/feriadosComerciais';
+import { cn } from '@/lib/utils';
 
 // Metas fixas de fallback para empresas que não possuem MetaVendedor no JSON
 const METAS_VENDEDORES: Record<string | number, number> = {
@@ -272,7 +273,7 @@ export default function MetasDiariasPage() {
 
   if (isLoading && !vendedoresPerformance.length) {
     return (
-      <div className="p-6 flex flex-col items-center justify-center h-[60vh]">
+      <div className="enterprise-page-shell items-center justify-center">
         <RefreshCw className="h-12 w-12 text-primary animate-spin mb-4" />
         <p className="text-lg text-muted-foreground">Carregando dados reais...</p>
       </div>
@@ -281,7 +282,7 @@ export default function MetasDiariasPage() {
 
   if (error) {
     return (
-      <div className="p-6">
+      <div className="enterprise-page-shell">
         <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-6 text-center max-w-md mx-auto">
           <Target className="h-12 w-12 text-destructive mx-auto mb-4" />
           <h2 className="text-lg font-semibold text-destructive mb-2">Erro ao carregar dados</h2>
@@ -299,7 +300,7 @@ export default function MetasDiariasPage() {
 
   if (!rankingVendedores.length) {
     return (
-      <div className="flex flex-col items-center justify-center h-[60vh] text-center p-6">
+      <div className="enterprise-page-shell items-center justify-center text-center">
         <Target className="h-16 w-16 text-muted-foreground mb-4" />
         <h2 className="text-xl font-semibold mb-2">Nenhum dado encontrado para o período</h2>
         <p className="text-muted-foreground">Selecione um período diferente ou verifique os filtros.</p>
@@ -308,7 +309,7 @@ export default function MetasDiariasPage() {
   }
 
   return (
-    <div className="p-4 md:p-6 space-y-6">
+    <div className="enterprise-page-shell">
       {/* Barra de Filtros */}
       <CollapsibleFilterBar
         title="Filtros"
@@ -330,7 +331,7 @@ export default function MetasDiariasPage() {
       </CollapsibleFilterBar>
 
       {/* Header */}
-      <div className="page-header">
+      <div className="page-header shrink-0">
         <div>
           <h1 className="page-title flex items-center gap-2">
             <BarChart3 className="h-7 w-7 text-primary" />
@@ -412,7 +413,7 @@ export default function MetasDiariasPage() {
       )}
 
       {/* Lista de Cards */}
-      <div className={isEmpresa1004 ? 'space-y-2.5' : 'space-y-3'}>
+      <div className={cn('min-h-0 flex-1 overflow-auto pr-1', isEmpresa1004 ? 'space-y-2.5' : 'space-y-3')}>
         {rankingVendedores.map((vendedor) => (
           <VendedorMetaDiariaCard
             key={String(vendedor.codigo)}

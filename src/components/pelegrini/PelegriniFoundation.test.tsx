@@ -97,7 +97,7 @@ describe('Pelegrini visual foundation', () => {
 
     expect(shell).toHaveClass('h-screen', 'overflow-hidden');
     expect(shell).not.toHaveClass('min-h-screen');
-    expect(main).toHaveClass('flex', 'flex-col', 'overflow-hidden');
+    expect(main).toHaveClass('flex', 'flex-col', 'overflow-x-clip', 'overflow-y-hidden');
     expect(content).toHaveClass('flex', 'min-h-0', 'flex-1', 'flex-col', 'overflow-hidden');
   });
 
@@ -245,5 +245,15 @@ describe('Pelegrini visual foundation', () => {
 
     expect(filterCountRadius).toBeGreaterThan(0);
     expect(filterCountRadius).toBeLessThanOrEqual(8);
+  });
+
+  it('defines a compact desktop density layer for legacy module screens', () => {
+    const css = readFileSync(join(process.cwd(), 'src/index.css'), 'utf8');
+
+    expect(css).toContain('body');
+    expect(css).toContain('overflow: hidden');
+    expect(css).toContain('.pelegrini-page-surface :where([class~=\'space-y-6\'])');
+    expect(css).toContain('.pelegrini-page-surface :where([class~=\'p-6\'])');
+    expect(css).toContain('.pelegrini-page-surface :where([class*=\'h-[640px]\'])');
   });
 });

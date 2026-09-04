@@ -172,7 +172,7 @@ export default function DrePage() {
   // Versão Mobile
   if (isMobile) {
     return (
-      <div className="flex flex-col min-h-screen bg-background pb-20">
+      <div className="flex h-screen flex-col overflow-hidden bg-background pb-20">
         {/* Header Mobile */}
         <MobileHeader
           title="DRE"

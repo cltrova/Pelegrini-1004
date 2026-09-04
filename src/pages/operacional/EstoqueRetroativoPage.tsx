@@ -238,8 +238,8 @@ export default function EstoqueRetroativoPage() {
   }, [filtered, valorExcel]);
 
   return (
-    <div className="mx-auto w-full min-w-0 max-w-[1600px] space-y-5 px-4 py-5 sm:px-6 lg:py-6">
-      <header className="ml-10 flex flex-col gap-1 sm:ml-0 sm:flex-row sm:items-end sm:justify-between">
+    <div className="enterprise-page-shell max-w-[1600px]">
+      <header className="ml-10 flex shrink-0 flex-col gap-1 sm:ml-0 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="text-xl font-semibold sm:text-2xl">Estoque Retroativo</h1>
           <p className="text-sm text-muted-foreground">Consulte o saldo registrado em uma data específica.</p>
@@ -247,7 +247,7 @@ export default function EstoqueRetroativoPage() {
         {codEmpresaBi ? <span className="text-xs text-muted-foreground">Empresa {codEmpresaBi}</span> : null}
       </header>
 
-      <section aria-label="Consulta retroativa" className="flex flex-col gap-3 rounded-md border bg-card p-3 sm:flex-row sm:items-end">
+      <section aria-label="Consulta retroativa" className="flex shrink-0 flex-col gap-3 rounded-md border bg-card p-3 sm:flex-row sm:items-end">
         <div className="w-full sm:w-auto">
           <Label htmlFor="data_estoque" className="text-xs">Data do estoque</Label>
           <div className="relative mt-1.5">
@@ -262,15 +262,15 @@ export default function EstoqueRetroativoPage() {
       </section>
 
       {!ultimaData ? (
-        <div className="flex min-h-32 items-center justify-center rounded-md border border-dashed px-4 text-center text-sm text-muted-foreground">
+        <div className="flex min-h-0 flex-1 items-center justify-center rounded-md border border-dashed px-4 text-center text-sm text-muted-foreground">
           Selecione uma data para consultar a posição do estoque.
         </div>
       ) : rows.length === 0 ? (
-        <div className="flex min-h-32 items-center justify-center rounded-md border border-dashed px-4 text-center text-sm text-muted-foreground">
+        <div className="flex min-h-0 flex-1 items-center justify-center rounded-md border border-dashed px-4 text-center text-sm text-muted-foreground">
           Nenhum item encontrado para a data consultada.
         </div>
       ) : (
-        <>
+        <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden">
           <section aria-label="Resumo da consulta" className="grid grid-cols-2 gap-2 lg:grid-cols-4">
             {[
               { icon: Package, label: 'Produtos', value: `${filtered.length} ${filtered.length === 1 ? 'produto' : 'produtos'}` },
@@ -301,7 +301,7 @@ export default function EstoqueRetroativoPage() {
             <Button onClick={gerarExcel} variant="outline" className="gap-2"><FileSpreadsheet className="h-4 w-4" /> Exportar</Button>
           </section>
 
-          <Card className="overflow-hidden">
+          <Card className="flex min-h-0 flex-1 flex-col overflow-hidden">
             <div className="divide-y md:hidden">
               {filtered.slice(0, 500).map((row, index) => (
                 <article key={`${getFilialKey(row)}-${row.cod_produto}-${index}`} className="space-y-3 p-4">
@@ -313,7 +313,7 @@ export default function EstoqueRetroativoPage() {
                 </article>
               ))}
             </div>
-            <div className="hidden max-h-[65vh] overflow-auto md:block">
+            <div className="hidden min-h-0 flex-1 overflow-auto md:block">
               <Table>
                 <TableHeader className="sticky top-0 bg-background z-10">
                   <TableRow>
@@ -357,7 +357,7 @@ export default function EstoqueRetroativoPage() {
             </div>
             {filtered.length > 500 ? <div className="border-t p-3 text-center text-xs text-muted-foreground">Exibindo os primeiros 500 registros. Refine os filtros ou exporte para consultar todos.</div> : null}
           </Card>
-        </>
+        </div>
       )}
     </div>
   );

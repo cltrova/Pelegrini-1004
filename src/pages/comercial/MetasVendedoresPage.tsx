@@ -678,7 +678,7 @@ export default function MetasVendedoresPage() {
   return (
     <div className={cn(
       'enterprise-page',
-      isPelegriniPage && 'min-h-screen bg-background text-foreground',
+      isPelegriniPage && 'bg-background text-foreground',
     )}>
       <EnterprisePageHeader
         title="Dashboard Comercial"
@@ -703,8 +703,8 @@ export default function MetasVendedoresPage() {
       )}
 
       {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v); try { sessionStorage.setItem('comercial:metas:tab', v); } catch { /* storage pode estar bloqueado pelo navegador */ } }} className="space-y-6">
-        <div className="w-full overflow-x-auto overscroll-x-contain rounded-md [scrollbar-width:thin]">
+      <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v); try { sessionStorage.setItem('comercial:metas:tab', v); } catch { /* storage pode estar bloqueado pelo navegador */ } }} className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden">
+        <div className="w-full shrink-0 overflow-x-auto overscroll-x-contain rounded-md [scrollbar-width:thin]">
         <TabsList className={cn(
           'flex h-12 w-max min-w-full justify-start',
           isPelegriniPage && 'border border-border/60 bg-muted/40 p-1 text-muted-foreground shadow-none [&_button:hover]:text-foreground [&_button[data-state=active]]:bg-primary [&_button[data-state=active]]:text-primary-foreground [&_button[data-state=active]]:shadow-sm',
@@ -725,7 +725,7 @@ export default function MetasVendedoresPage() {
 
 
         {/* ==================== ABA: VISÃO GERAL ==================== */}
-        <TabsContent value="visao-geral" className="space-y-6">
+        <TabsContent value="visao-geral" className="mt-0 min-h-0 flex-1 space-y-3 overflow-auto">
           {isLayoutPremium ? (
             <VisaoGeralRapida1004
               vendedoresComMeta={vendedoresComMetaFonteFinal}
@@ -756,7 +756,7 @@ export default function MetasVendedoresPage() {
 
         {/* ==================== ABA: DETALHES (antiga Visão Geral 1004) ==================== */}
         {isPelegriniPage && (
-          <TabsContent value="detalhes" className="space-y-6">
+          <TabsContent value="detalhes" className="mt-0 min-h-0 flex-1 space-y-3 overflow-auto">
             <PremiumMetasView
               vendedoresComMeta={vendedoresComMetaFonteFinal}
               pedidos={pedidosFonteFinal}
@@ -769,7 +769,7 @@ export default function MetasVendedoresPage() {
         )}
 
         {/* ==================== ABA: METAS DIÁRIAS ==================== */}
-        <TabsContent value="metas-diarias" className="space-y-6">
+        <TabsContent value="metas-diarias" className="mt-0 min-h-0 flex-1 space-y-3 overflow-auto">
           <MetasDiariasPage />
         </TabsContent>
 
@@ -777,7 +777,7 @@ export default function MetasVendedoresPage() {
 
 
         {/* ==================== ABA: RANKING ==================== */}
-        <TabsContent value="ranking" className="space-y-6">
+        <TabsContent value="ranking" className="mt-0 min-h-0 flex-1 space-y-3 overflow-auto">
           <PremiumSectionCard
             title="Ranking de Vendedores"
             subtitle="Performance por vendedor ordenada por valor líquido"
@@ -879,7 +879,7 @@ export default function MetasVendedoresPage() {
         </TabsContent>
 
         {/* ==================== ABA: COMPARATIVOS ==================== */}
-        <TabsContent value="comparativos" className="space-y-6">
+        <TabsContent value="comparativos" className="mt-0 min-h-0 flex-1 space-y-3 overflow-auto">
           <>
           {/* KPIs Comparativos — padrão premium1004 */}
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
@@ -1149,14 +1149,14 @@ export default function MetasVendedoresPage() {
         </TabsContent>
 
         {/* ==================== ABA: INSIGHTS IA ==================== */}
-        <TabsContent value="insights" className="space-y-6">
+        <TabsContent value="insights" className="mt-0 min-h-0 flex-1 space-y-3 overflow-auto">
           <InsightsIATab vendedores={vendedoresBaseVisual} kpis={kpisGerais} />
         </TabsContent>
 
 
         {/* ==================== ABA: CAMPANHAS ==================== */}
         {isPelegriniPage && (
-          <TabsContent value="campanhas" className="space-y-6">
+          <TabsContent value="campanhas" className="mt-0 min-h-0 flex-1 space-y-3 overflow-auto">
             <CampanhasTab periodoFiltro={periodoCampanhas} />
           </TabsContent>
         )}

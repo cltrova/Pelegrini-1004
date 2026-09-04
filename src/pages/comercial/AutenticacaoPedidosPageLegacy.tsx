@@ -488,8 +488,8 @@ export default function AutenticacaoPedidosPageLegacy() {
 
 
   return (
-    <div className="p-4 md:p-6 space-y-6 max-w-[1600px] mx-auto">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+    <div className="enterprise-page-shell max-w-[1600px]">
+      <div className="flex shrink-0 flex-col md:flex-row md:items-center md:justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Auditoria de Pedidos</h1>
           <p className="text-sm text-muted-foreground">
@@ -498,13 +498,13 @@ export default function AutenticacaoPedidosPageLegacy() {
         </div>
       </div>
 
-      <Tabs defaultValue="novo" className="space-y-4">
-        <TabsList>
+      <Tabs defaultValue="novo" className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden">
+        <TabsList className="shrink-0">
           <TabsTrigger value="novo"><Upload className="h-4 w-4 mr-2" />Nova auditoria</TabsTrigger>
           <TabsTrigger value="historico"><History className="h-4 w-4 mr-2" />Histórico</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="novo" className="space-y-4">
+        <TabsContent value="novo" className="mt-0 min-h-0 flex-1 space-y-3 overflow-auto">
           {/* Upload */}
           <Card>
             <CardHeader>
@@ -674,7 +674,7 @@ export default function AutenticacaoPedidosPageLegacy() {
           )}
         </TabsContent>
 
-        <TabsContent value="historico">
+        <TabsContent value="historico" className="mt-0 min-h-0 flex-1 overflow-auto">
           <Card>
             <CardHeader>
               <CardTitle className="text-base">Importações anteriores</CardTitle>

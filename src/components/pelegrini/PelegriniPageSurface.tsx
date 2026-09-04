@@ -20,7 +20,7 @@ export function PelegriniPageSurface({ children, moduleKey = 'comercial', classN
       data-theme={theme.key}
       data-module={moduleKey}
       data-pattern={theme.surfacePattern}
-      className={cn('pelegrini-page-surface relative min-h-full overflow-hidden', className)}
+      className={cn('pelegrini-page-surface relative flex h-full min-h-0 min-w-0 flex-col overflow-x-clip overflow-y-hidden', className)}
       style={{
         '--pelegrini-primary': theme.primary,
         '--pelegrini-secondary': theme.secondary,
@@ -28,7 +28,7 @@ export function PelegriniPageSurface({ children, moduleKey = 'comercial', classN
       } as CSSProperties}
     >
       <div className="pelegrini-surface-pattern" aria-hidden="true" />
-      <div className="relative z-[1]">{children}</div>
+      <div className="relative z-[1] flex min-h-0 flex-1 flex-col overflow-hidden">{children}</div>
     </section>
   );
 }

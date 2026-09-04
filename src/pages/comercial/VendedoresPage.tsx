@@ -405,8 +405,8 @@ export default function VendedoresPage() {
       />
 
       {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:inline-grid">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden">
+        <TabsList className="grid w-full shrink-0 grid-cols-4 lg:w-auto lg:inline-grid">
           <TabsTrigger value="visao-geral">Visão Geral</TabsTrigger>
           <TabsTrigger value="ranking">Ranking</TabsTrigger>
           <TabsTrigger value="comparativo">Comparativo</TabsTrigger>
@@ -414,7 +414,7 @@ export default function VendedoresPage() {
         </TabsList>
 
         {/* TAB: Visão Geral */}
-        <TabsContent value="visao-geral" className="space-y-6">
+        <TabsContent value="visao-geral" className="mt-0 min-h-0 flex-1 space-y-3 overflow-auto">
           {/* KPIs Principais */}
           <div className="enterprise-grid-metrics">
             <EnterpriseMetricCard label="Meta total" value={formatCurrency(vendedoresKPIs.totalMeta, true)} context="Meta acumulada dos vendedores" target={`${formatPercent(vendedoresKPIs.percentualMeta)} atingido`} icon={<Target className="h-4 w-4" />} tone="info" />
@@ -649,7 +649,7 @@ export default function VendedoresPage() {
         </TabsContent>
 
         {/* TAB: Ranking */}
-        <TabsContent value="ranking" className="space-y-6">
+        <TabsContent value="ranking" className="mt-0 min-h-0 flex-1 space-y-3 overflow-auto">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -749,7 +749,7 @@ export default function VendedoresPage() {
         </TabsContent>
 
         {/* TAB: Comparativo */}
-        <TabsContent value="comparativo" className="space-y-6">
+        <TabsContent value="comparativo" className="mt-0 min-h-0 flex-1 space-y-3 overflow-auto">
           {/* Projeções por Cenário */}
           <Card>
             <CardHeader>
@@ -1013,10 +1013,10 @@ export default function VendedoresPage() {
         </TabsContent>
 
         {/* TAB: Assistente IA */}
-        <TabsContent value="ia" className="space-y-6">
+        <TabsContent value="ia" className="mt-0 min-h-0 flex-1 space-y-3 overflow-auto">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2">
-              <Card className="h-[600px] flex flex-col">
+              <Card className="h-[min(400px,calc(100dvh-18rem))] flex flex-col">
                 <CardHeader className="border-b">
                   <CardTitle className="flex items-center gap-2">
                     <Bot className="h-5 w-5 text-primary" />

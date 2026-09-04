@@ -613,7 +613,7 @@ export default function AssistenteIAPage() {
   // Mobile version
   if (isMobile) {
     return (
-      <div className="flex flex-col min-h-screen bg-background">
+      <div className="flex h-screen flex-col overflow-hidden bg-background">
         <MobileHeader
           title="Assistente"
           subtitle="Análise Financeira"
@@ -665,7 +665,7 @@ export default function AssistenteIAPage() {
 
   // Desktop version
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden">
       <Header
         actions={
           messages.length > 0 ? (
@@ -685,7 +685,7 @@ export default function AssistenteIAPage() {
               <WelcomeState />
             </ScrollArea>
           ) : (
-            <ScrollArea className="flex-1 p-6" ref={scrollRef}>
+            <ScrollArea className="flex-1 p-4" ref={scrollRef}>
               <div className="max-w-3xl mx-auto space-y-4 pb-4">
                 {messages.map((message) => (
                   <MessageBubble key={message.id} message={message} onCopy={handleCopyMessage} onSendMessage={handleSendMessage} dreData={filteredDreData} allMessages={messages.map(m => ({ role: m.role, content: m.content }))} />

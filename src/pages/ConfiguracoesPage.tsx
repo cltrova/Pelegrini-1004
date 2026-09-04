@@ -209,10 +209,10 @@ function ConfiguracoesPageContent() {
   const totalMasters = stats?.masters ?? 0;
 
   return (
-    <PelegriniPageSurface moduleKey="financeiro" className="min-h-screen">
+    <PelegriniPageSurface moduleKey="financeiro">
       {/* Top bar */}
-      <header className="sticky top-0 z-10 border-b border-border/60 bg-background/80 backdrop-blur-xl">
-        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center gap-4">
+      <header className="shrink-0 border-b border-border/60 bg-background/80 backdrop-blur-xl">
+        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center gap-4">
           <Button
             variant="ghost"
             size="sm"
@@ -243,14 +243,15 @@ function ConfiguracoesPageContent() {
         </div>
       </header>
 
-      <div className="max-w-6xl mx-auto px-6 py-10 space-y-10">
+      <div className="min-h-0 flex-1 overflow-auto px-4 py-4">
+      <div className="max-w-6xl mx-auto space-y-4">
         {/* Hero */}
         <div className="space-y-3">
-          <h2 className="text-3xl font-semibold tracking-tight text-foreground flex items-center gap-3">
+          <h2 className="text-2xl font-semibold tracking-tight text-foreground flex items-center gap-3">
             <Settings className="h-7 w-7 text-primary" />
             Administração
           </h2>
-          <p className="text-muted-foreground max-w-2xl text-[15px] leading-relaxed">
+          <p className="text-muted-foreground max-w-2xl text-sm leading-relaxed">
             Gerencie empresas, usuários, permissões e configurações globais da plataforma em um único centro de governança.
             {!isMaster && ' Alguns módulos requerem perfil master.'}
           </p>
@@ -334,6 +335,7 @@ function ConfiguracoesPageContent() {
           <Lock className="inline h-3 w-3 mr-1.5 -mt-0.5" />
           Apenas usuários com perfil master podem acessar esta área
         </div>
+      </div>
       </div>
     </PelegriniPageSurface>
   );

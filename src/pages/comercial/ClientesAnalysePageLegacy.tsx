@@ -577,7 +577,7 @@ export default function ClientesAnalysePageLegacy() {
 
   if (isLoading || (isEmpresaPelegrini && isLoadingClientesAnaliseApi)) {
     return (
-      <div className="mx-auto w-full max-w-[1600px] px-4 py-6 md:px-8 md:py-10 space-y-8">
+      <div className="enterprise-page-shell max-w-[1600px]">
         {/* Hero skeleton */}
         <div className="rounded-lg border border-border/60 bg-card p-6 md:p-8">
           <div className="mb-6 space-y-2">
@@ -599,7 +599,7 @@ export default function ClientesAnalysePageLegacy() {
         {/* Tabs skeleton */}
         <div className="h-10 animate-pulse rounded-lg bg-muted/50" />
         {/* Hero chart skeleton */}
-        <div className="h-[520px] animate-pulse rounded-lg border border-border/60 bg-card" />
+        <div className="min-h-0 flex-1 animate-pulse rounded-lg border border-border/60 bg-card" />
         {/* Grid skeleton */}
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           {[...Array(3)].map((_, i) => (
@@ -619,7 +619,7 @@ export default function ClientesAnalysePageLegacy() {
 
   if (!clientesPerformance.length) {
     return (
-      <div className="flex flex-col items-center justify-center h-[60vh] text-center p-6">
+      <div className="enterprise-page-shell items-center justify-center text-center">
         <Target className="h-16 w-16 text-muted-foreground mb-4" />
         <h2 className="text-xl font-semibold mb-2">Nenhum dado disponível</h2>
         <p className="text-muted-foreground">Selecione um período para visualizar os dados de clientes.</p>
@@ -746,7 +746,7 @@ export default function ClientesAnalysePageLegacy() {
   );
 
   return (
-    <div className="relative mx-auto w-full max-w-[1600px] px-4 py-6 md:px-8 md:py-10 space-y-8 animate-fade-in">
+    <div className="enterprise-page-shell relative max-w-[1600px] animate-fade-in">
       {/* Totalizadores (hero) */}
       {heroNode}
 
@@ -763,8 +763,8 @@ export default function ClientesAnalysePageLegacy() {
       />
 
       {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid h-11 w-full grid-cols-5 rounded-lg border border-border/60 bg-muted/40 p-1 [&_[data-state=active]]:bg-primary [&_[data-state=active]]:text-primary-foreground [&_button]:rounded-md [&_button]:transition-colors">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden">
+        <TabsList className="grid h-11 w-full shrink-0 grid-cols-5 rounded-lg border border-border/60 bg-muted/40 p-1 [&_[data-state=active]]:bg-primary [&_[data-state=active]]:text-primary-foreground [&_button]:rounded-md [&_button]:transition-colors">
           <TabsTrigger value="visao-geral" className="flex items-center gap-2">
             <Eye className="h-4 w-4" />
             <span className="hidden sm:inline">Visão Geral</span>
@@ -788,7 +788,7 @@ export default function ClientesAnalysePageLegacy() {
         </TabsList>
 
         {/* Aba Visão Geral */}
-        <TabsContent value="visao-geral" className="space-y-6 animate-fade-in focus-visible:outline-none">
+        <TabsContent value="visao-geral" className="mt-0 min-h-0 flex-1 space-y-3 overflow-auto animate-fade-in focus-visible:outline-none">
           {/* Protagonista: Evolução de Vendas Mensal */}
           <EvolucaoVendasHeroChart data={evolucaoVendasMensal} />
 
@@ -809,7 +809,7 @@ export default function ClientesAnalysePageLegacy() {
         </TabsContent>
 
         {/* Aba Top Clientes */}
-        <TabsContent value="top-clientes" className="space-y-4 animate-fade-in focus-visible:outline-none">
+        <TabsContent value="top-clientes" className="mt-0 min-h-0 flex-1 space-y-3 overflow-auto animate-fade-in focus-visible:outline-none">
           <>
             <div className="relative w-full md:w-80">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -821,7 +821,7 @@ export default function ClientesAnalysePageLegacy() {
               />
             </div>
             <Card>
-              <ScrollArea className="h-[600px]">
+              <ScrollArea className="h-[min(420px,calc(100dvh-17rem))]">
                 <div className="divide-y divide-border">
                   {clientesFiltrados.map((cliente, index) => (
                     <ClienteExpandableRow
@@ -838,7 +838,7 @@ export default function ClientesAnalysePageLegacy() {
         </TabsContent>
 
         {/* Aba Por Vendedor */}
-        <TabsContent value="por-vendedor" className="space-y-6 animate-fade-in focus-visible:outline-none">
+        <TabsContent value="por-vendedor" className="mt-0 min-h-0 flex-1 space-y-3 overflow-auto animate-fade-in focus-visible:outline-none">
           <Card>
             <CardHeader>
               <CardTitle>Valor Total de Vendas por Vendedor</CardTitle>
@@ -879,7 +879,7 @@ export default function ClientesAnalysePageLegacy() {
         </TabsContent>
 
         {/* Aba Insights */}
-        <TabsContent value="insights" className="space-y-6 animate-fade-in focus-visible:outline-none">
+        <TabsContent value="insights" className="mt-0 min-h-0 flex-1 space-y-3 overflow-auto animate-fade-in focus-visible:outline-none">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Clientes em Risco */}
             <Card className="border-warning/30">
@@ -990,7 +990,7 @@ export default function ClientesAnalysePageLegacy() {
         </TabsContent>
 
         {/* Aba Geográfico */}
-        <TabsContent value="geografico" className="space-y-4 animate-fade-in focus-visible:outline-none">
+        <TabsContent value="geografico" className="mt-0 min-h-0 flex-1 space-y-3 overflow-auto animate-fade-in focus-visible:outline-none">
            <BrazilMap data={distribuicaoPorUF} />
         </TabsContent>
 

@@ -128,7 +128,7 @@ export default function ProdutosPage() {
 
   if (!hasSource) {
     return (
-      <div className="p-6 max-w-3xl mx-auto">
+      <div className="enterprise-page-shell max-w-3xl">
         <Card className="border-warning/40">
           <CardContent className="p-8 text-center">
             <AlertTriangle className="h-10 w-10 text-warning mx-auto mb-3" />
@@ -145,7 +145,7 @@ export default function ProdutosPage() {
   if (isLoading || loadingBase) return <LoadingState message="Carregando produtos..." />;
 
   return (
-    <div className="p-4 md:p-6 space-y-5">
+    <div className="enterprise-page-shell">
       {/* Filtros */}
       <CollapsibleFilterBar
         title="Filtros"
@@ -242,8 +242,8 @@ export default function ProdutosPage() {
       </div>
 
       {/* Tabs principais */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid grid-cols-5 w-full lg:w-fit">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden">
+        <TabsList className="grid shrink-0 grid-cols-5 w-full lg:w-fit">
           <TabsTrigger value="marcas" className="gap-1.5"><Award className="h-3.5 w-3.5" /> Marcas</TabsTrigger>
           <TabsTrigger value="top" className="gap-1.5"><TrendingUp className="h-3.5 w-3.5" /> Top Produtos</TabsTrigger>
           <TabsTrigger value="categoria" className="gap-1.5"><Tag className="h-3.5 w-3.5" /> Categorias</TabsTrigger>
@@ -254,7 +254,7 @@ export default function ProdutosPage() {
         </TabsList>
 
         {/* MARCAS */}
-        <TabsContent value="marcas" className="space-y-4">
+        <TabsContent value="marcas" className="mt-0 min-h-0 flex-1 space-y-3 overflow-auto">
           {isLayoutPremium ? (
             <PremiumMarcasView
               porMarca={porMarca}
@@ -272,7 +272,7 @@ export default function ProdutosPage() {
         </TabsContent>
 
         {/* TOP PRODUTOS */}
-        <TabsContent value="top">
+        <TabsContent value="top" className="mt-0 min-h-0 flex-1 overflow-auto">
           {isLayoutPremium ? (
             <PremiumTopProdutos
               produtos={topFiltrado}
@@ -291,7 +291,7 @@ export default function ProdutosPage() {
         </TabsContent>
 
         {/* CATEGORIAS */}
-        <TabsContent value="categoria">
+        <TabsContent value="categoria" className="mt-0 min-h-0 flex-1 overflow-auto">
           {isLayoutPremium ? (
             <PremiumCategoriasView
               porCategoria={porCategoria}
@@ -309,7 +309,7 @@ export default function ProdutosPage() {
         </TabsContent>
 
         {/* SEM GIRO */}
-        <TabsContent value="sem-giro">
+        <TabsContent value="sem-giro" className="mt-0 min-h-0 flex-1 overflow-auto">
           <Card className="premium-card">
             <CardHeader className="pb-2">
               <CardTitle className="text-base flex items-center gap-2">
@@ -321,7 +321,7 @@ export default function ProdutosPage() {
               {produtosSemGiro.length === 0 ? (
                 <p className="text-sm text-muted-foreground py-8 text-center">Todos os produtos do catálogo movimentaram no período. 🎯</p>
               ) : (
-                <div className="overflow-y-auto max-h-[600px] rounded-md border border-border">
+                <div className="overflow-y-auto max-h-[min(320px,calc(100dvh-21rem))] rounded-md border border-border">
                   <table className="w-full text-sm">
                     <thead className="sticky top-0 bg-muted z-10">
                       <tr className="text-left text-xs text-muted-foreground">
@@ -365,7 +365,7 @@ export default function ProdutosPage() {
         </TabsContent>
 
         {/* RESUMO POR NF (linha-a-linha estilo Power BI) */}
-        <TabsContent value="resumo">
+        <TabsContent value="resumo" className="mt-0 min-h-0 flex-1 overflow-auto">
           <Card className="premium-card">
             <CardHeader className="pb-2">
               <CardTitle className="text-base flex items-center gap-2">

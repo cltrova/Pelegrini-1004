@@ -1449,6 +1449,58 @@
     letter-spacing: 0;
   }
 
+  .pelegrini-page-surface :where([class~='space-y-6']) > :not([hidden]) ~ :not([hidden]),
+  .pelegrini-page-surface :where([class~='space-y-5']) > :not([hidden]) ~ :not([hidden]) {
+    --tw-space-y-reverse: 0;
+    margin-top: calc(0.75rem * calc(1 - var(--tw-space-y-reverse))) !important;
+    margin-bottom: calc(0.75rem * var(--tw-space-y-reverse)) !important;
+  }
+
+  .pelegrini-page-surface :where([class~='space-y-4']) > :not([hidden]) ~ :not([hidden]) {
+    --tw-space-y-reverse: 0;
+    margin-top: calc(0.625rem * calc(1 - var(--tw-space-y-reverse))) !important;
+    margin-bottom: calc(0.625rem * var(--tw-space-y-reverse)) !important;
+  }
+
+  .pelegrini-page-surface :where([class~='gap-6']) { gap: 0.75rem !important; }
+  .pelegrini-page-surface :where([class~='gap-5']) { gap: 0.625rem !important; }
+  .pelegrini-page-surface :where([class~='p-6']) { padding: 1rem !important; }
+  .pelegrini-page-surface :where([class~='p-5']) { padding: 0.875rem !important; }
+  .pelegrini-page-surface :where([class~='py-10']) {
+    padding-top: 1rem !important;
+    padding-bottom: 1rem !important;
+  }
+
+  .pelegrini-page-surface :where([class~='px-8']) {
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+  }
+
+  .pelegrini-page-surface :where([class~='py-8'], [class~='py-6'], [class~='py-5']) {
+    padding-top: 0.875rem !important;
+    padding-bottom: 0.875rem !important;
+  }
+
+  .pelegrini-page-surface :where([class*='h-[640px]']) {
+    height: min(440px, calc(100dvh - 14rem)) !important;
+  }
+
+  .pelegrini-page-surface :where([class*='h-[600px]'], [class*='h-[520px]']) {
+    height: min(400px, calc(100dvh - 15rem)) !important;
+  }
+
+  .pelegrini-page-surface :where([class*='h-[440px]'], [class*='h-[400px]'], [class*='h-[380px]'], [class*='h-[360px]'], [class*='h-[350px]']) {
+    height: min(300px, calc(100dvh - 18rem)) !important;
+  }
+
+  .pelegrini-page-surface :where([class*='h-[340px]'], [class*='h-[320px]'], [class*='h-[300px]'], [class*='h-[280px]']) {
+    height: min(240px, calc(100dvh - 20rem)) !important;
+  }
+
+  .pelegrini-page-surface :where(.recharts-responsive-container) {
+    min-height: 0 !important;
+  }
+
   .kpi-fluid-value {
     max-width: 100%;
     min-width: 0;

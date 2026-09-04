@@ -189,8 +189,8 @@ export default function VendasPerdidasPage() {
     : 'Erro ao carregar motivos das perdas';
 
   return (
-    <div className="space-y-4 p-4 sm:p-6">
-      <header className="flex flex-col gap-3 border-b border-border pb-4 sm:flex-row sm:items-end sm:justify-between">
+    <div className="enterprise-page-shell">
+      <header className="flex shrink-0 flex-col gap-2 border-b border-border pb-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="text-xl font-semibold tracking-normal">Vendas perdidas</h1>
           <p className="mt-1 text-sm text-muted-foreground">Análise das perdas e registro dos motivos no período selecionado.</p>
@@ -237,26 +237,28 @@ export default function VendasPerdidasPage() {
 
       <CotacoesGestorPanel mode="perdidas" rows={filteredRows} motivos={filteredReasons} onSelectCotacao={setDetailQuote} />
 
-      {!consulta ? (
-        <EmptyState
-          title="Consulta ainda não realizada"
-          message="Aplique os filtros para consultar as vendas perdidas."
-          className="min-h-72 border border-border px-4"
-        />
-      ) : hasError ? (
-        <ErrorState
-          title={errorTitle}
-          message={error instanceof Error ? error.message : 'Não foi possível carregar as vendas perdidas.'}
-          onRetry={retryQueries}
-        />
-      ) : isLoading ? (
-        <CotacoesLoading />
-      ) : (
-        <>
-          <CotacoesKpis mode="perdidas" kpis={kpis} />
-          <CotacoesTable mode="perdidas" rows={filteredRows} motivos={filteredReasons} onEditMotivo={setSelectedQuote} onSelectCotacao={setDetailQuote} />
-        </>
-      )}
+      <div className="min-h-0 flex-1 overflow-auto pr-1">
+        {!consulta ? (
+          <EmptyState
+            title="Consulta ainda não realizada"
+            message="Aplique os filtros para consultar as vendas perdidas."
+            className="min-h-72 border border-border px-4"
+          />
+        ) : hasError ? (
+          <ErrorState
+            title={errorTitle}
+            message={error instanceof Error ? error.message : 'Não foi possível carregar as vendas perdidas.'}
+            onRetry={retryQueries}
+          />
+        ) : isLoading ? (
+          <CotacoesLoading />
+        ) : (
+          <div className="space-y-3">
+            <CotacoesKpis mode="perdidas" kpis={kpis} />
+            <CotacoesTable mode="perdidas" rows={filteredRows} motivos={filteredReasons} onEditMotivo={setSelectedQuote} onSelectCotacao={setDetailQuote} />
+          </div>
+        )}
+      </div>
 
       <CotacaoDetailDrawer
         open={detailQuote !== null}

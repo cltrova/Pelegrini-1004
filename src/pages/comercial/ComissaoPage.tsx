@@ -104,8 +104,8 @@ export default function ComissaoPage() {
   const td = 'py-2.5 px-3 text-right tabular-nums whitespace-nowrap border-l border-border/40';
 
   return (
-    <div className="p-4 md:p-6 space-y-5">
-      <header className="flex items-center gap-3">
+    <div className="enterprise-page-shell">
+      <header className="flex shrink-0 items-center gap-3">
         <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-card">
           <BadgeDollarSign className="h-5 w-5 text-primary" />
         </div>
@@ -117,7 +117,7 @@ export default function ComissaoPage() {
         </div>
       </header>
 
-      <Card>
+      <Card className="shrink-0">
         <CardHeader className="pb-3">
           <CardTitle className="text-sm">Filtros</CardTitle>
         </CardHeader>
@@ -193,7 +193,7 @@ export default function ComissaoPage() {
         </Card>
       )}
 
-      <Card>
+      <Card className="flex min-h-0 flex-1 flex-col overflow-hidden">
         <CardHeader className="pb-3">
           <CardTitle className="text-sm">
             Comissão por vendedor {linhas.length > 0 && <span className="text-muted-foreground font-normal">({linhas.length})</span>}
@@ -204,7 +204,7 @@ export default function ComissaoPage() {
             </p>
           )}
         </CardHeader>
-        <CardContent>
+        <CardContent className="min-h-0 flex-1 overflow-hidden">
           {isLoading ? (
             <div className="space-y-2">
               {Array.from({ length: 8 }).map((_, i) => <Skeleton key={i} className="h-9 w-full" />)}
@@ -216,7 +216,7 @@ export default function ComissaoPage() {
           ) : linhas.length === 0 ? (
             <p className="py-10 text-center text-sm text-muted-foreground">Nenhum registro encontrado no período.</p>
           ) : (
-            <div className="overflow-x-auto rounded-lg border border-border">
+            <div className="max-h-full overflow-auto rounded-lg border border-border">
               <table className="w-full text-sm border-collapse">
                 <thead className="sticky top-0 z-10">
                   <tr className="bg-muted text-[11px] uppercase tracking-wide text-muted-foreground">

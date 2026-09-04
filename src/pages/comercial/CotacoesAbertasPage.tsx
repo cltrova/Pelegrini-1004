@@ -143,8 +143,8 @@ export default function CotacoesAbertasPage() {
   };
 
   return (
-    <div className="space-y-4 p-4 sm:p-6">
-      <header className="flex flex-col gap-3 border-b border-border pb-4 sm:flex-row sm:items-end sm:justify-between">
+    <div className="enterprise-page-shell">
+      <header className="flex shrink-0 flex-col gap-2 border-b border-border pb-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="text-xl font-semibold tracking-normal">Cotacoes abertas</h1>
           <p className="mt-1 text-sm text-muted-foreground">Acompanhe as cotacoes pendentes no periodo selecionado.</p>
@@ -191,28 +191,30 @@ export default function CotacoesAbertasPage() {
 
       <CotacoesGestorPanel mode="abertas" rows={filteredRows} motivos={emptyMotivos} onSelectCotacao={setSelectedQuote} />
 
-      {!consulta ? (
-        <EmptyState
-          title="Consulta ainda não realizada"
-          message="Aplique os filtros para consultar as cotacoes abertas."
-          className="min-h-72 border border-border px-4"
-        />
-      ) : isError ? (
-        <ErrorState
-          title={(error as { kind?: string } | null)?.kind === 'configuration'
-            ? 'Configuracao da integracao necessaria'
-            : 'Erro ao carregar cotacoes abertas'}
-          message={error instanceof Error ? error.message : 'Nao foi possivel carregar as cotacoes abertas.'}
-          onRetry={() => refetch()}
-        />
-      ) : isLoading ? (
-        <CotacoesLoading />
-      ) : (
-        <>
-          <CotacoesKpis mode="abertas" kpis={kpis} />
-          <CotacoesTable mode="abertas" rows={filteredRows} motivos={emptyMotivos} onSelectCotacao={setSelectedQuote} />
-        </>
-      )}
+      <div className="min-h-0 flex-1 overflow-auto pr-1">
+        {!consulta ? (
+          <EmptyState
+            title="Consulta ainda não realizada"
+            message="Aplique os filtros para consultar as cotacoes abertas."
+            className="min-h-72 border border-border px-4"
+          />
+        ) : isError ? (
+          <ErrorState
+            title={(error as { kind?: string } | null)?.kind === 'configuration'
+              ? 'Configuracao da integracao necessaria'
+              : 'Erro ao carregar cotacoes abertas'}
+            message={error instanceof Error ? error.message : 'Nao foi possivel carregar as cotacoes abertas.'}
+            onRetry={() => refetch()}
+          />
+        ) : isLoading ? (
+          <CotacoesLoading />
+        ) : (
+          <div className="space-y-3">
+            <CotacoesKpis mode="abertas" kpis={kpis} />
+            <CotacoesTable mode="abertas" rows={filteredRows} motivos={emptyMotivos} onSelectCotacao={setSelectedQuote} />
+          </div>
+        )}
+      </div>
 
       <CotacaoDetailDrawer
         open={selectedQuote !== null}
