@@ -15,20 +15,12 @@ interface PremiumStatCardProps {
   className?: string;
 }
 
-const TONE_ACCENT: Record<Premium1004Tone, string> = {
-  azul: 'from-primary/25 via-primary/5 to-transparent',
-  verde: 'from-emerald-500/25 via-emerald-500/5 to-transparent',
-  amarelo: 'from-amber-500/25 via-amber-500/5 to-transparent',
-  vermelho: 'from-destructive/25 via-destructive/5 to-transparent',
-  roxo: 'from-violet-500/25 via-violet-500/5 to-transparent',
-};
-
-const TONE_RING: Record<Premium1004Tone, string> = {
-  azul: 'hover:ring-primary/40',
-  verde: 'hover:ring-emerald-500/40',
-  amarelo: 'hover:ring-amber-500/40',
-  vermelho: 'hover:ring-destructive/40',
-  roxo: 'hover:ring-violet-500/40',
+const TONE_BORDER: Record<Premium1004Tone, string> = {
+  azul: 'hover:border-primary/35',
+  verde: 'hover:border-emerald-500/35',
+  amarelo: 'hover:border-amber-500/35',
+  vermelho: 'hover:border-destructive/35',
+  roxo: 'hover:border-violet-500/35',
 };
 
 const TONE_ICON: Record<Premium1004Tone, string> = {
@@ -49,9 +41,8 @@ const TONE_BAR: Record<Premium1004Tone, string> = {
 
 /**
  * Card de totalizador padrão do Comercial 1004.
- * Mesmo layout dos cards de topo da aba "Visão Geral"
- * (VisaoGeralRapida1004): gradient sutil, ícone em pill, valor mono
- * grande, hint discreto e barra de progresso opcional.
+ * Mantém ícone, valor mono, hint discreto e barra opcional em um
+ * contêiner neutro alinhado ao padrão visual empresarial.
  */
 export function PremiumStatCard({
   label,
@@ -80,20 +71,13 @@ export function PremiumStatCard({
           : undefined
       }
       className={cn(
-        'group relative overflow-hidden border-border/60 transition-all duration-300 h-full',
-        'hover:-translate-y-0.5 hover:shadow-lg hover:ring-1',
+        'group relative overflow-hidden rounded-lg border-border/60 bg-card transition-colors duration-300 h-full',
+        'hover:bg-muted/30',
         clickable && 'cursor-pointer',
-        TONE_RING[tone],
+        TONE_BORDER[tone],
         className,
       )}
     >
-      <div
-        className={cn(
-          'absolute inset-0 bg-gradient-to-br opacity-70 pointer-events-none',
-          TONE_ACCENT[tone],
-        )}
-      />
-      <div className="absolute -right-6 -top-6 h-24 w-24 rounded-full bg-gradient-to-br from-white/5 to-transparent blur-2xl opacity-0 group-hover:opacity-100 transition-opacity" />
       <CardContent className="relative p-4 flex flex-col h-full">
         <div className="flex items-center justify-between mb-2">
           <span className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground font-medium">
@@ -101,8 +85,7 @@ export function PremiumStatCard({
           </span>
           <div
             className={cn(
-              'h-7 w-7 rounded-md flex items-center justify-center bg-background/60 backdrop-blur-sm ring-1 ring-border/50',
-              'transition-transform group-hover:scale-110 group-hover:rotate-[-4deg]',
+              'h-7 w-7 rounded-md flex items-center justify-center bg-muted/40 ring-1 ring-border/60',
             )}
           >
             <Icon className={cn('h-3.5 w-3.5', TONE_ICON[tone])} />
@@ -120,7 +103,7 @@ export function PremiumStatCard({
           <div className="mt-auto pt-2 h-1 rounded-full bg-muted/60 overflow-hidden">
             <div
               className={cn(
-                'h-full rounded-full transition-all duration-700',
+                'h-full rounded-full transition-[width] duration-700',
                 TONE_BAR[tone],
               )}
               style={{ width: `${Math.min(100, Math.max(0, bar))}%` }}
