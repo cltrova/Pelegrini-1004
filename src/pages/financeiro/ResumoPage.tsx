@@ -140,8 +140,8 @@ export default function ResumoPage() {
 
           
 
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full max-w-[1200px] grid-cols-6">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="flex min-h-0 w-full flex-1 flex-col overflow-hidden">
+            <TabsList className="grid w-full max-w-[1200px] shrink-0 grid-cols-6">
               <TabsTrigger value="diagnostico">Diagnóstico</TabsTrigger>
               <TabsTrigger value="clientes">Análise de Cliente</TabsTrigger>
               <TabsTrigger value="duplicatas">
@@ -159,7 +159,7 @@ export default function ResumoPage() {
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="diagnostico" className="space-y-4 mt-4">
+            <TabsContent value="diagnostico" className="mt-3 min-h-0 flex-1 overflow-auto">
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
                 <div className="lg:col-span-7 space-y-4">
                   <ProjecaoRecebimentosChart buckets={projecao} />
@@ -172,11 +172,11 @@ export default function ResumoPage() {
               </div>
             </TabsContent>
 
-            <TabsContent value="clientes" className="mt-4">
+            <TabsContent value="clientes" className="mt-3 min-h-0 flex-1 overflow-auto">
               <AnaliseClienteTab clientes={clientesAnalytics} duplicatas={duplicatas} pedidos={pedidos} empresas={empresasDisponiveis} />
             </TabsContent>
 
-            <TabsContent value="duplicatas" className="space-y-4 mt-4">
+            <TabsContent value="duplicatas" className="mt-3 min-h-0 flex-1 space-y-3 overflow-auto">
               <ResumoFiltersBar
                 filters={filters}
                 onChange={setFilters}
@@ -186,15 +186,15 @@ export default function ResumoPage() {
               <ResumoDuplicatasTable duplicatas={filtradas} />
             </TabsContent>
 
-            <TabsContent value="pedidos" className="mt-4">
+            <TabsContent value="pedidos" className="mt-3 min-h-0 flex-1 overflow-auto">
               <PedidosAbertosTable pedidos={pedidos} />
             </TabsContent>
 
-            <TabsContent value="agente" className="mt-4">
+            <TabsContent value="agente" className="mt-3 min-h-0 flex-1 overflow-auto">
               <AgenteCobrancaTab duplicatas={duplicatas} />
             </TabsContent>
 
-            <TabsContent value="acompanhamento" className="mt-4">
+            <TabsContent value="acompanhamento" className="mt-3 min-h-0 flex-1 overflow-auto">
               <AcompanhamentoTab />
             </TabsContent>
           </Tabs>

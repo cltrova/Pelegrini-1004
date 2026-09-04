@@ -293,8 +293,8 @@ export default function ClientesPage() {
         <EnterpriseMetricCard label="Estados Atendidos" value={ufsUnicas.length} icon={<MapPin className="h-4 w-4" />} />
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="flex min-h-0 flex-1 flex-col overflow-hidden">
+        <TabsList className="shrink-0">
           <TabsTrigger value="ranking">Ranking</TabsTrigger>
           <TabsTrigger value="evolucao">Evolução</TabsTrigger>
           <TabsTrigger value="insights">
@@ -304,7 +304,7 @@ export default function ClientesPage() {
         </TabsList>
 
         {/* =================================================== RANKING */}
-        <TabsContent value="ranking" className="space-y-5 mt-5">
+        <TabsContent value="ranking" className="mt-3 min-h-0 flex-1 space-y-3 overflow-auto">
           {/* Podium Top 5 */}
           {top5Clientes.length > 0 && (
             <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
@@ -464,7 +464,7 @@ export default function ClientesPage() {
         </TabsContent>
 
         {/* =================================================== EVOLUÇÃO */}
-        <TabsContent value="evolucao" className="space-y-5 mt-5">
+        <TabsContent value="evolucao" className="mt-3 min-h-0 flex-1 space-y-3 overflow-auto">
           {evolucaoStats && (
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
               <EnterpriseMetricCard label="Último mês" value={formatCurrency(evolucaoStats.ultimo, true)} />
@@ -543,7 +543,7 @@ export default function ClientesPage() {
         </TabsContent>
 
         {/* =================================================== INSIGHTS IA */}
-        <TabsContent value="insights" className="space-y-5 mt-5">
+        <TabsContent value="insights" className="mt-3 min-h-0 flex-1 space-y-3 overflow-auto">
           {insightsIA.length > 0 && (
             <EnterpriseDataPanel
               title="Insights Inteligentes"
@@ -634,7 +634,7 @@ export default function ClientesPage() {
         </TabsContent>
 
         {/* =================================================== GEOGRÁFICO */}
-        <TabsContent value="geografico" className="space-y-5 mt-5">
+        <TabsContent value="geografico" className="mt-3 min-h-0 flex-1 space-y-3 overflow-auto">
           <EnterpriseDataPanel title="Top 10 Estados" density="compact">
             <div className="space-y-3">
               {distribuicaoPorUF.map((item, i) => {

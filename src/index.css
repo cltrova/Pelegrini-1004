@@ -155,9 +155,16 @@
     @apply border-border;
   }
 
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
   body {
     @apply bg-background text-foreground font-sans antialiased;
     font-family: 'Inter', system-ui, sans-serif;
+    overflow: hidden;
   }
 
   h1, h2, h3, h4, h5, h6 {
@@ -219,16 +226,33 @@
     @apply text-sm text-muted-foreground;
   }
 
-  .enterprise-page {
-    @apply min-w-0 max-w-full space-y-3 overflow-x-clip p-3 md:p-4;
+  .enterprise-page,
+  .enterprise-page-shell {
+    @apply mx-auto flex h-full min-h-0 w-full min-w-0 max-w-full flex-1 flex-col overflow-hidden p-3 md:p-4;
+    gap: 0.75rem;
   }
 
   .enterprise-grid-metrics {
-    @apply grid grid-cols-2 gap-2.5 md:grid-cols-4 xl:grid-cols-6;
+    @apply grid shrink-0 grid-cols-2 gap-2.5 md:grid-cols-4 xl:grid-cols-6;
   }
 
   .enterprise-chart-grid {
-    @apply grid min-w-0 grid-cols-1 gap-3 lg:grid-cols-12;
+    @apply grid min-h-0 min-w-0 flex-1 grid-cols-1 gap-3 overflow-hidden lg:grid-cols-12;
+  }
+
+  .enterprise-page > *,
+  .enterprise-page-shell > * {
+    @apply min-w-0 shrink-0;
+  }
+
+  .enterprise-page > :where([data-radix-tabs-root], .tabs-viewport, [role='tabpanel']),
+  .enterprise-page-shell > :where([data-radix-tabs-root], .tabs-viewport, [role='tabpanel']) {
+    @apply min-h-0 flex-1 overflow-hidden;
+  }
+
+  .enterprise-page :where([data-state='active'][role='tabpanel']),
+  .enterprise-page-shell :where([data-state='active'][role='tabpanel']) {
+    @apply min-h-0 overflow-auto;
   }
 
   .value-positive {
@@ -1791,6 +1815,9 @@
   --home-surface: hsl(var(--card));
   --home-border: color-mix(in srgb, var(--pelegrini-primary) 22%, hsl(var(--border)));
   position: relative;
+  min-height: 100dvh;
+  max-height: 100dvh;
+  overflow: hidden;
   color: hsl(var(--foreground));
   isolation: isolate;
 }
@@ -1807,7 +1834,7 @@
 .pelegrini-home-header-inner {
   display: flex;
   width: min(100% - 2rem, 1540px);
-  min-height: 76px;
+  min-height: clamp(58px, 8dvh, 70px);
   margin: 0 auto;
   align-items: center;
   justify-content: space-between;
@@ -1859,7 +1886,7 @@
 .pelegrini-home-backdrop {
   position: fixed;
   z-index: -1;
-  inset: 76px 0 0;
+  inset: clamp(58px, 8dvh, 70px) 0 0;
   overflow: hidden;
   pointer-events: none;
 }
@@ -1941,19 +1968,19 @@
   z-index: 1;
   width: min(100% - 2rem, 980px);
   margin: 0 auto;
-  padding: 46px 0 70px;
+  padding: clamp(18px, 3dvh, 34px) 0 clamp(18px, 4dvh, 44px);
 }
-.pelegrini-home-selection h1 { margin: 0 0 30px; text-align: center; font-size: 1.9rem; font-weight: 780; letter-spacing: 0; }
-.pelegrini-home-branch-grid { display: grid; width: min(760px, 100%); margin: 0 auto; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px; }
+.pelegrini-home-selection h1 { margin: 0 0 clamp(16px, 2.6dvh, 26px); text-align: center; font-size: clamp(1.45rem, 2.4dvh, 1.75rem); font-weight: 780; letter-spacing: 0; }
+.pelegrini-home-branch-grid { display: grid; width: min(720px, 100%); margin: 0 auto; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(16px, 2.8dvh, 24px); }
 .pelegrini-home-branch-card {
   display: flex;
   min-width: 0;
-  min-height: 488px;
+  min-height: clamp(300px, calc(100dvh - 220px), 438px);
   aspect-ratio: 3 / 4;
   flex-direction: column;
   align-items: center;
   justify-content: space-between;
-  padding: 32px 24px 26px;
+  padding: clamp(20px, 3dvh, 28px) 22px clamp(18px, 2.6dvh, 24px);
   overflow: hidden;
   border: 1px solid var(--home-border);
   border-radius: 8px;
@@ -1967,11 +1994,11 @@
 .pelegrini-home-branch-logo-stage { display: grid; width: 100%; flex: 1; place-items: center; }
 .pelegrini-home-branch-card:hover .pelegrini-home-logo-stack { transform: scale(1.035); }
 .pelegrini-home-branch-card .pelegrini-home-logo-stack { transition: transform 520ms cubic-bezier(.22,.7,.18,1); }
-.pelegrini-home-branch-name { display: flex; width: 100%; align-items: center; justify-content: center; gap: 0.6rem; padding-top: 22px; border-top: 1px solid hsl(var(--border)); font-size: 1rem; font-weight: 750; }
+.pelegrini-home-branch-name { display: flex; width: 100%; align-items: center; justify-content: center; gap: 0.6rem; padding-top: clamp(14px, 2dvh, 20px); border-top: 1px solid hsl(var(--border)); font-size: 1rem; font-weight: 750; }
 .pelegrini-home-branch-name svg { width: 17px; height: 17px; color: #1779db; transition: transform 300ms ease; }
 .pelegrini-home-branch-card:hover .pelegrini-home-branch-name svg { transform: translateX(3px); }
 
-.pelegrini-home-modules-shell { width: min(100% - 2rem, 1540px); margin: 0 auto; padding: 26px 0 46px; }
+.pelegrini-home-modules-shell { width: min(100% - 2rem, 1540px); margin: 0 auto; padding: clamp(14px, 2.4dvh, 22px) 0 clamp(18px, 3dvh, 34px); }
 .pelegrini-home-modules-toolbar { display: flex; min-height: 44px; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 14px; }
 .pelegrini-home-modules-toolbar > span { color: hsl(var(--muted-foreground)); font-size: 0.75rem; }
 .pelegrini-home-back-button { display: inline-flex; min-height: 40px; align-items: center; gap: 0.5rem; padding: 0 0.85rem; border: 1px solid hsl(var(--border)); border-radius: 6px; font-size: 0.84rem; font-weight: 650; transition: border-color 260ms ease, color 260ms ease, background-color 260ms ease; }
@@ -1981,7 +2008,7 @@
 .pelegrini-home-carousel {
   position: relative;
   display: grid;
-  min-height: 258px;
+  min-height: clamp(190px, 31dvh, 250px);
   overflow: hidden;
   grid-template-columns: 55% 45%;
   border: 1px solid var(--home-border);
@@ -1990,14 +2017,14 @@
   color: white;
   box-shadow: 0 18px 44px -34px rgb(5 45 88 / 0.7);
 }
-.pelegrini-home-carousel-copy { position: relative; z-index: 2; display: flex; flex-direction: column; justify-content: center; padding: 34px 38px; background: var(--pelegrini-primary); }
+.pelegrini-home-carousel-copy { position: relative; z-index: 2; display: flex; flex-direction: column; justify-content: center; padding: clamp(22px, 3.2dvh, 32px) 34px; background: var(--pelegrini-primary); }
 .pelegrini-home-carousel-copy > span { font-size: 0.68rem; font-weight: 750; text-transform: uppercase; }
 .pelegrini-home-carousel-copy h1 { max-width: 680px; margin: 0.45rem 0 0; font-size: 1.7rem; line-height: 1.15; }
 .pelegrini-home-carousel-copy p { max-width: 680px; margin: 0.75rem 0 0; color: rgb(255 255 255 / 0.78); font-size: 0.82rem; line-height: 1.6; }
 .pelegrini-home-carousel-meta { display: flex; flex-wrap: wrap; gap: 1rem; margin-top: 1rem; }
 .pelegrini-home-carousel-meta span { display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.68rem; font-weight: 650; }
 .pelegrini-home-carousel-meta svg { width: 16px; height: 16px; }
-.pelegrini-home-carousel-photos { position: relative; min-height: 258px; overflow: hidden; }
+.pelegrini-home-carousel-photos { position: relative; min-height: clamp(190px, 31dvh, 250px); overflow: hidden; }
 .pelegrini-home-carousel-photos::after { content: ''; position: absolute; inset: 0; z-index: 1; box-shadow: inset 18px 0 24px -20px rgb(2 25 50 / 0.8); }
 .pelegrini-home-carousel-photos > img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transform: scale(1.035); transition: opacity 1300ms cubic-bezier(.22,.7,.18,1), transform 6s ease-out; }
 .pelegrini-home-carousel-photos > img[data-active='true'] { opacity: 1; transform: scale(1); }
@@ -2005,14 +2032,14 @@
 .pelegrini-home-carousel-dots span { width: 7px; height: 7px; border: 1px solid rgb(255 255 255 / 0.65); border-radius: 50%; background: transparent; transition: background-color 500ms ease, transform 500ms ease; }
 .pelegrini-home-carousel-dots span[data-active='true'] { background: white; transform: scale(1.18); }
 
-.pelegrini-home-modules { margin-top: 24px; }
+.pelegrini-home-modules { margin-top: clamp(14px, 2.4dvh, 22px); }
 .pelegrini-home-modules > h2 { margin: 0 0 14px; font-size: 1.22rem; font-weight: 760; }
 .pelegrini-home-module-grid { display: flex; flex-wrap: wrap; justify-content: center; gap: 14px; }
 .pelegrini-home-module-card {
   position: relative;
   display: flex;
   min-width: 0;
-  min-height: 205px;
+  min-height: clamp(154px, 24dvh, 194px);
   flex: 1 1 280px;
   max-width: calc((100% - 28px) / 3);
   flex-direction: column;
@@ -2047,6 +2074,7 @@
 }
 
 @media (max-width: 680px) {
+  .pelegrini-home { max-height: none; overflow-y: auto; }
   .pelegrini-home-header-inner { width: min(100% - 1rem, 1540px); min-height: 66px; }
   .pelegrini-home-brand > div > span, .pelegrini-home-account > span { display: none; }
   .pelegrini-home-brand p { max-width: 132px; overflow: hidden; font-size: 0.82rem; text-overflow: ellipsis; white-space: nowrap; }

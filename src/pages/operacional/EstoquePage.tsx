@@ -177,8 +177,8 @@ export default function EstoquePage() {
   }
 
   return (
-    <div className="min-w-0 max-w-full space-y-3 overflow-x-clip p-3 md:p-4">
-      <div className="relative min-w-0">
+    <div className="enterprise-page">
+      <div className="relative min-w-0 shrink-0">
         <PelegriniModuleHeader
           title="Gestao de Estoque"
           subtitle={`${branchName} · ${lastUpdateLabel}`}
@@ -205,7 +205,7 @@ export default function EstoquePage() {
         </div>
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-3">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden">
         <PelegriniTabs
           ariaLabel="Visões do estoque"
           className="estoque-tabs"
@@ -251,7 +251,7 @@ export default function EstoquePage() {
                 </AlertDescription>
               </Alert>
             )}
-        <TabsContent aria-labelledby="pelegrini-tab-central" id="pelegrini-tabpanel-central" value="central">
+        <TabsContent aria-labelledby="pelegrini-tab-central" className="mt-0 min-h-0 flex-1 overflow-auto" id="pelegrini-tabpanel-central" value="central">
           {recoveringStock && estoqueData.length === 0 ? (
             <div
               aria-label="Recuperando dados completos do estoque"
@@ -275,8 +275,8 @@ export default function EstoquePage() {
           )}
         </TabsContent>
 
-        <TabsContent aria-labelledby="pelegrini-tab-giro" id="pelegrini-tabpanel-giro" value="giro">
-          <div className="mb-3 space-y-2">
+        <TabsContent aria-labelledby="pelegrini-tab-giro" className="mt-0 flex min-h-0 flex-1 flex-col overflow-hidden" id="pelegrini-tabpanel-giro" value="giro">
+          <div className="mb-3 shrink-0 space-y-2">
             <EnterpriseFilterBar
               activeCount={giroActiveCount}
               applyLabel="Aplicar"
@@ -349,16 +349,18 @@ export default function EstoquePage() {
               )}
             </EnterpriseFilterBar>
           </div>
-          <GiroEstoqueTab
-            activeCompanyCode={codEmpresaContexto ?? empresa?.cod_empresa_bi}
-            giroData={giroData}
-            estoqueData={estoqueData}
-            filters={giroFilters}
-            onStatusFilterChange={applyGiroStatusFilter}
-          />
+          <div className="min-h-0 flex-1 overflow-auto">
+            <GiroEstoqueTab
+              activeCompanyCode={codEmpresaContexto ?? empresa?.cod_empresa_bi}
+              giroData={giroData}
+              estoqueData={estoqueData}
+              filters={giroFilters}
+              onStatusFilterChange={applyGiroStatusFilter}
+            />
+          </div>
         </TabsContent>
 
-        <TabsContent aria-labelledby="pelegrini-tab-assistente" id="pelegrini-tabpanel-assistente" value="assistente">
+        <TabsContent aria-labelledby="pelegrini-tab-assistente" className="mt-0 min-h-0 flex-1 overflow-auto" id="pelegrini-tabpanel-assistente" value="assistente">
           <EstoqueAssistantTab giroData={giroData} estoqueData={estoqueData} onProductAction={openProductFromAssistant} />
         </TabsContent>
           </>

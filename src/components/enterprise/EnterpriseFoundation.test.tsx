@@ -56,7 +56,7 @@ describe('enterprise visual foundation', () => {
     render(<EnterpriseDataPanel title="Evolucao"><div>Grafico</div></EnterpriseDataPanel>);
 
     const panel = screen.getByTestId('enterprise-data-panel');
-    expect(panel).toHaveClass('min-w-0', 'rounded-lg', 'border');
+    expect(panel).toHaveClass('flex', 'min-h-0', 'flex-col', 'rounded-lg', 'border');
     expect(panel).not.toHaveClass('premium-card');
     expect(screen.getByText('Grafico')).toBeInTheDocument();
   });
@@ -79,6 +79,8 @@ describe('enterprise visual foundation', () => {
       </EnterpriseTable>,
     );
 
+    const tableRegion = screen.getByText('Cliente A').closest('[data-enterprise-table]');
+    expect(tableRegion).toHaveClass('max-h-full', 'overflow-auto');
     expect(screen.getByText('Valor')).toHaveClass('text-right', 'tabular-nums');
     expect(screen.getByText('R$ 1.200,00')).toHaveClass('text-right', 'tabular-nums');
   });

@@ -3,7 +3,7 @@ import { cn } from '@/lib/utils';
 
 export function EnterpriseTable({ className, children, ...props }: HTMLAttributes<HTMLDivElement> & { children: ReactNode }) {
   return (
-    <div className={cn('min-w-0 overflow-x-auto rounded-lg border border-border', className)} {...props}>
+    <div className={cn('min-w-0 max-h-full overflow-auto rounded-lg border border-border', className)} data-enterprise-table {...props}>
       <table className="w-full min-w-max border-collapse text-xs">{children}</table>
     </div>
   );

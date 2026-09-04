@@ -26,7 +26,7 @@ export function PelegriniModuleShell({
   return (
     <div
       className={cn(
-        'min-h-screen flex w-full bg-background',
+        'flex h-screen w-full overflow-hidden bg-background',
         usesHeader && 'flex-col',
         className,
       )}
@@ -38,15 +38,15 @@ export function PelegriniModuleShell({
         '--pelegrini-surface': theme.surface,
       } as CSSProperties}
     >
-      <div>{sidebar}</div>
+      <div className="shrink-0">{sidebar}</div>
       <main
-        className={cn('pelegrini-page-surface relative min-w-0 flex-1 overflow-x-clip', !usesHeader && 'md:ml-[72px]')}
+        className={cn('pelegrini-page-surface relative flex min-w-0 flex-1 flex-col overflow-hidden', !usesHeader && 'md:ml-[72px]')}
         data-theme={theme.key}
         data-module={moduleKey}
         data-pattern={theme.surfacePattern}
       >
         <div className="pelegrini-surface-pattern" aria-hidden="true" />
-        <div className="relative z-[1] min-w-0">{children}</div>
+        <div className="relative z-[1] flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">{children}</div>
       </main>
     </div>
   );

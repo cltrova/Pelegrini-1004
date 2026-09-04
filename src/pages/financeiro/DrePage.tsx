@@ -273,7 +273,7 @@ export default function DrePage() {
 
   // Versão Desktop
   return (
-    <div className="min-h-screen bg-background">
+    <div className="flex h-full min-h-0 flex-1 overflow-hidden bg-background">
       <div className="enterprise-page-shell max-w-[1600px]">
         <EnterprisePageHeader
           title="DRE"
@@ -316,8 +316,8 @@ export default function DrePage() {
                 <DreIndicators indicators={indicators} />
 
                 {/* Tabs de visualização */}
-                <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'dashboard' | 'comparativo' | 'detalhe' | 'assistente')}>
-                  <TabsList className="mb-5 h-10 gap-1 rounded-lg border border-border/60 bg-muted/40 p-1">
+                <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'dashboard' | 'comparativo' | 'detalhe' | 'assistente')} className="flex min-h-0 flex-1 flex-col overflow-hidden">
+                  <TabsList className="mb-3 h-10 shrink-0 gap-1 rounded-lg border border-border/60 bg-muted/40 p-1">
                     <TabsTrigger
                       value="dashboard"
                       className="gap-2 h-8 px-3 data-[state=active]:bg-background data-[state=active]:text-foreground text-muted-foreground"
@@ -349,7 +349,7 @@ export default function DrePage() {
                   </TabsList>
 
 
-                  <TabsContent value="dashboard" className="mt-0">
+                  <TabsContent value="dashboard" className="mt-0 min-h-0 flex-1 overflow-auto">
                     <DreDashboard
                       data={filteredData}
                       groupSummary={groupSummary}
@@ -366,15 +366,15 @@ export default function DrePage() {
 
 
 
-                  <TabsContent value="comparativo" className="mt-0">
+                  <TabsContent value="comparativo" className="mt-0 min-h-0 flex-1 overflow-auto">
                     <DreComparativo data={filteredData} groupSummary={groupSummary} />
                   </TabsContent>
 
-                  <TabsContent value="detalhe" className="mt-0">
+                  <TabsContent value="detalhe" className="mt-0 min-h-0 flex-1 overflow-auto">
                     <DreGroupedTable data={filteredData} />
                   </TabsContent>
 
-                  <TabsContent value="assistente" className="mt-0">
+                  <TabsContent value="assistente" className="mt-0 min-h-0 flex-1 overflow-auto">
                     <DreAssistant dreData={filteredData} indicators={indicators} contasDespVar={contasDespVar} contasDespFixas={contasDespFixas} onUpdateDespVar={setContasDespVar} onUpdateDespFixas={setContasDespFixas} />
                   </TabsContent>
                 </Tabs>

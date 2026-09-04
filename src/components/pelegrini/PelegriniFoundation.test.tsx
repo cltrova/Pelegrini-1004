@@ -8,6 +8,7 @@ import HomePage from '@/pages/HomePage';
 import HomeMobilePage from '@/pages/HomeMobilePage';
 import { PelegriniDataPanel } from './PelegriniDataPanel';
 import { PelegriniFilterBar } from './PelegriniFilterBar';
+import { PelegriniModuleShell } from './PelegriniModuleShell';
 import { PelegriniOperationalCard } from './PelegriniOperationalCard';
 import { PelegriniPageHeader } from './PelegriniPageHeader';
 
@@ -81,6 +82,23 @@ describe('Pelegrini visual foundation', () => {
     expect(screen.getByRole('heading', { name: 'Estoque' })).toBeInTheDocument();
     expect(screen.getByText('Operacao tecnica')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Atualizar' })).toBeInTheDocument();
+  });
+
+  it('constrains desktop module pages to the viewport with internal content flow', () => {
+    const { container } = render(
+      <PelegriniModuleShell sidebar={<aside>Menu</aside>} moduleKey="comercial">
+        <div>Conteudo operacional</div>
+      </PelegriniModuleShell>,
+    );
+
+    const shell = container.firstElementChild as HTMLElement;
+    const main = container.querySelector('main') as HTMLElement;
+    const content = screen.getByText('Conteudo operacional').parentElement as HTMLElement;
+
+    expect(shell).toHaveClass('h-screen', 'overflow-hidden');
+    expect(shell).not.toHaveClass('min-h-screen');
+    expect(main).toHaveClass('flex', 'flex-col', 'overflow-hidden');
+    expect(content).toHaveClass('flex', 'min-h-0', 'flex-1', 'flex-col', 'overflow-hidden');
   });
 
   it('lays out filters and actions without introducing a panel inside a panel', () => {
