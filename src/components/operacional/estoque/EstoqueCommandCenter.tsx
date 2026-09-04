@@ -1,5 +1,5 @@
 import { BellRing, Download, Layers3, ListTree } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -19,6 +19,7 @@ import { EstoqueProductDrawer } from './EstoqueProductDrawer';
 import { EstoqueProductsTable } from './EstoqueProductsTable';
 import { EstoqueSmartFilters } from './EstoqueSmartFilters';
 import { EstoqueSummaryCards } from './EstoqueSummaryCards';
+import { EstoqueDataViewport, EstoqueToolbar } from './EstoqueWorkspace';
 import {
   buildStockInsights,
   consolidateStockRecords,
@@ -40,6 +41,7 @@ export interface EstoqueCommandCenterProps {
   movementAvailable?: boolean;
   requestedProductCode?: number | string | null;
   onRequestedProductHandled?: () => void;
+  sourceNotice?: ReactNode;
 }
 
 function uniqueOptions(values: Array<string | null>): string[] {
@@ -57,6 +59,7 @@ export function EstoqueCommandCenter({
   movementAvailable = true,
   requestedProductCode,
   onRequestedProductHandled,
+  sourceNotice,
 }: EstoqueCommandCenterProps) {
   const [search, setSearch] = useState('');
   const [quickFilter, setQuickFilter] = useState<StockQuickFilter>('all');
@@ -141,9 +144,9 @@ export function EstoqueCommandCenter({
   return (
     <section
       aria-label="Central de estoque"
-      className="min-w-0 max-w-full space-y-4 overflow-x-clip"
+      className="flex h-full min-h-0 min-w-0 max-w-full flex-col overflow-hidden"
     >
-      <section aria-label="Barra principal do estoque" className="sticky top-0 z-20 min-w-0 max-w-full border-b border-border/70 bg-background/95 py-2 backdrop-blur supports-[backdrop-filter]:bg-background/85">
+      <EstoqueToolbar>
         <EstoqueSmartFilters
           actions={(
             <>
@@ -215,7 +218,7 @@ export function EstoqueCommandCenter({
           quickFilter={quickFilter}
           search={search}
         />
-      </section>
+      </EstoqueToolbar>
 
       <EstoqueSummaryCards
         activeFilter={quickFilter}
@@ -224,24 +227,27 @@ export function EstoqueCommandCenter({
         products={insights}
       />
 
-      {viewMode === 'detalhado' && stockData.length > 0 && detailedGranularity === 'product' && (
-        <p
-          className="rounded-md border border-primary/20 bg-primary/[0.04] px-3 py-2 text-xs text-muted-foreground"
-          role="status"
-        >
-          A fonte atual nao fornece filial ou localizacao para detalhar estes produtos.
-        </p>
-      )}
+      <EstoqueDataViewport>
+        {sourceNotice}
+        {viewMode === 'detalhado' && stockData.length > 0 && detailedGranularity === 'product' && (
+          <p
+            className="border-b border-primary/20 bg-primary/[0.04] px-3 py-2 text-xs text-muted-foreground"
+            role="status"
+          >
+            A fonte atual nao fornece filial ou localizacao para detalhar estes produtos.
+          </p>
+        )}
 
-      <EstoqueProductsTable
-        branchKey={branchKey}
-        onSelectProduct={selectProduct}
-        onSortChange={setSortMode}
-        products={filtered}
-        sortMode={sortMode}
-        sourceEmpty={stockData.length === 0}
-        viewMode={viewMode}
-      />
+        <EstoqueProductsTable
+          branchKey={branchKey}
+          onSelectProduct={selectProduct}
+          onSortChange={setSortMode}
+          products={filtered}
+          sortMode={sortMode}
+          sourceEmpty={stockData.length === 0}
+          viewMode={viewMode}
+        />
+      </EstoqueDataViewport>
 
       <EstoqueProductDrawer
         onOpenChange={(open) => {

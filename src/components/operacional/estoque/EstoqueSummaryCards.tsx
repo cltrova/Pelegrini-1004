@@ -1,17 +1,6 @@
-import {
-  CircleDollarSign,
-  CircleOff,
-  Gauge,
-  Info,
-  Package,
-  PackageMinus,
-  TriangleAlert,
-  type LucideIcon,
-} from 'lucide-react';
+import { CircleDollarSign, CircleOff, Gauge, Package, PackageMinus, TriangleAlert } from 'lucide-react';
 
-import { PelegriniResponsiveValue } from '@/components/pelegrini';
-import { cn } from '@/lib/utils';
-
+import { EstoqueMetricStrip, type EstoqueMetric } from './EstoqueMetricStrip';
 import { isStockExcess, type StockProductInsight, type StockQuickFilter } from './estoqueIntelligence';
 
 interface EstoqueSummaryCardsProps {
@@ -19,18 +8,6 @@ interface EstoqueSummaryCardsProps {
   activeFilter: StockQuickFilter;
   movementAvailable?: boolean;
   onFilterChange: (filter: StockQuickFilter) => void;
-}
-
-type SummaryKey = StockQuickFilter | 'value';
-
-interface SummaryItem {
-  key: SummaryKey;
-  label: string;
-  value: string;
-  icon: LucideIcon;
-  tone: 'neutral' | 'information' | 'attention' | 'danger';
-  description: string;
-  interactive: boolean;
 }
 
 const currencyFormatter = new Intl.NumberFormat('pt-BR', {
@@ -48,7 +25,7 @@ export function EstoqueSummaryCards({
   const excessCapital = products
     .filter(isStockExcess)
     .reduce((total, item) => total + item.valor_estoque, 0);
-  const summaries: SummaryItem[] = [
+  const summaries: EstoqueMetric[] = [
     {
       key: 'all',
       label: 'Produtos',
@@ -105,90 +82,18 @@ export function EstoqueSummaryCards({
     },
   ];
 
+  const handleMetricClick = (key: string) => {
+    const filter = key as StockQuickFilter;
+    onFilterChange(activeFilter === filter ? 'all' : filter);
+  };
+
   return (
-    <section
-      aria-label="Resumo do estoque"
-      className="grid min-w-0 grid-cols-1 gap-2 min-[480px]:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6"
-    >
-      {summaries.map((summary) => {
-        const Icon = summary.icon;
-        const active = summary.interactive && activeFilter === summary.key;
-        const tooltipId = `estoque-summary-tooltip-${summary.key}`;
-        const content = (
-          <>
-            <span aria-hidden="true" className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-border/70 bg-muted/40 text-muted-foreground">
-              <Icon className="h-4 w-4" />
-            </span>
-            <span className="min-w-0 flex-1">
-              <span className="flex min-w-0 items-center gap-1">
-                <span className="block break-words text-[9px] font-semibold uppercase leading-tight text-muted-foreground">
-                  {summary.label}
-                </span>
-                <Info aria-hidden="true" className="h-3 w-3 shrink-0 text-muted-foreground" />
-              </span>
-              <PelegriniResponsiveValue
-                className="mt-1 block min-w-0 max-w-full break-words font-semibold tabular-nums text-foreground"
-                size="md"
-              >
-                {summary.value}
-              </PelegriniResponsiveValue>
-            </span>
-            <span
-              aria-hidden="true"
-              className={cn('absolute inset-y-0 left-0 w-1', active ? 'bg-current' : 'bg-transparent')}
-            />
-          </>
-        );
-        const className = cn(
-          'pelegrini-metric-card relative flex min-h-16 min-w-0 max-w-full items-center gap-2 rounded-md border border-border/70 bg-card px-2.5 py-2 text-left shadow-sm',
-          'transition-[border-color,background-color,box-shadow] duration-150',
-          active
-            ? 'border-primary/45 text-primary shadow-[inset_0_0_0_1px_hsl(var(--primary)/0.18)]'
-            : 'text-foreground',
-        );
-
-        const card = summary.interactive ? (
-          <button
-            aria-describedby={tooltipId}
-            aria-label={`${summary.label}: ${summary.value}`}
-            aria-pressed={active}
-            className={cn(
-              className,
-              'h-full w-full hover:border-primary/30 hover:bg-muted/30 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
-            )}
-            data-stock-summary
-            data-tone={summary.tone}
-            onClick={() => onFilterChange(active ? 'all' : summary.key as StockQuickFilter)}
-            type="button"
-          >
-            {content}
-          </button>
-        ) : (
-          <article
-            aria-describedby={tooltipId}
-            aria-label={`${summary.label}: ${summary.value}`}
-            className={cn(className, 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2')}
-            data-stock-summary
-            data-tone={summary.tone}
-            tabIndex={0}
-          >
-            {content}
-          </article>
-        );
-
-        return (
-          <div key={summary.key} className="group relative h-full min-w-0 overflow-visible">
-            {card}
-            <span
-              id={tooltipId}
-              role="tooltip"
-              className="pointer-events-none absolute inset-x-2 top-full z-30 mt-1 hidden whitespace-normal break-words rounded-md border border-border bg-popover px-3 py-2 text-xs leading-5 text-popover-foreground shadow-md group-hover:block group-focus-within:block"
-            >
-              {summary.description}
-            </span>
-          </div>
-        );
-      })}
+    <section aria-label="Resumo do estoque" className="min-w-0 shrink-0">
+      <EstoqueMetricStrip
+        activeKey={activeFilter}
+        metrics={summaries}
+        onMetricClick={handleMetricClick}
+      />
     </section>
   );
 }

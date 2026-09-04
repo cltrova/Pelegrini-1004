@@ -123,7 +123,7 @@ afterEach(() => {
 });
 
 describe('EstoquePage', () => {
-  it('mostra filial, ultima atualizacao, estado da fonte e permite atualizar', () => {
+  it('mostra filial, ultima atualizacao e estado da fonte no cabecalho compacto', () => {
     const refetch = vi.fn();
     testState.hookResult = createHookResult({ refetch });
 
@@ -131,9 +131,19 @@ describe('EstoquePage', () => {
 
     expect(screen.getByText(/Casa da Transmissao/i)).toBeInTheDocument();
     expect(screen.getByText(/Atualizado.*13:45/i)).toBeInTheDocument();
-    expect(screen.getByText('Dados atualizados')).toBeInTheDocument();
+    expect(screen.getByLabelText(/Estado da fonte de estoque: Dados atualizados/i)).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Gestao de Estoque' })).not.toBeInTheDocument();
+    expect(screen.queryByText('Dados atualizados')).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Atualizar dados do estoque' }));
     expect(refetch).toHaveBeenCalledOnce();
+  });
+
+  it('mantem tabela e paginacao dentro do unico viewport de dados da Central', () => {
+    renderEstoquePage();
+
+    const viewport = screen.getByRole('region', { name: 'Dados do estoque' });
+    expect(within(viewport).getByRole('table')).toBeInTheDocument();
+    expect(within(viewport).getByLabelText('Paginacao dos produtos')).toBeInTheDocument();
   });
 
   it('desabilita a atualizacao e mostra feedback enquanto consulta', () => {
@@ -177,7 +187,7 @@ describe('EstoquePage', () => {
 
     renderEstoquePage();
 
-    expect(screen.getByRole('alert')).toHaveTextContent('Recuperando estoque completo');
+    expect(screen.getByRole('status', { name: 'Recuperando dados completos do estoque' })).toHaveTextContent('Recuperando estoque completo');
     expect(screen.queryByText('Estoque indisponivel')).not.toBeInTheDocument();
     expect(screen.queryByRole('region', { name: 'Resumo do estoque' })).not.toBeInTheDocument();
     expect(screen.getByRole('status', { name: 'Recuperando dados completos do estoque' })).toBeInTheDocument();
@@ -190,8 +200,10 @@ describe('EstoquePage', () => {
       partialSources: { consolidado: true, detalhado: false },
     });
     renderEstoquePage();
-    expect(screen.getByRole('alert')).toHaveTextContent('Estoque parcial');
+    expect(screen.getByText('Estoque parcial').closest('[role="status"]')).toBeInTheDocument();
     expect(screen.getAllByText('KIT EMBREAGEM PESADA').length).toBeGreaterThan(0);
+    fireEvent.click(screen.getByRole('button', { name: 'Fechar aviso da fonte' }));
+    expect(screen.queryByText('Estoque parcial')).not.toBeInTheDocument();
   });
 
   it('remove o alerta parcial quando o estoque operacional foi recuperado pelo historico', () => {
@@ -204,7 +216,7 @@ describe('EstoquePage', () => {
 
     renderEstoquePage();
 
-    expect(screen.getByText('Estoque recuperado')).toBeInTheDocument();
+    expect(screen.getByLabelText(/Estado da fonte de estoque: Estoque recuperado/i)).not.toHaveAttribute('data-issue');
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
 
@@ -215,7 +227,7 @@ describe('EstoquePage', () => {
     });
     renderEstoquePage();
     expect(screen.getAllByText('KIT EMBREAGEM PESADA').length).toBeGreaterThan(0);
-    expect(screen.getByRole('alert')).toHaveTextContent('Nao foi possivel atualizar as movimentacoes');
+    expect(screen.getByText(/Movimentacoes indisponiveis/i).closest('[role="status"]')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('tab', { name: 'Giro de Estoque' }));
     expect(screen.getByText('Estoque indisponivel')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('tab', { name: 'Assistente' }));
@@ -254,7 +266,7 @@ describe('EstoquePage', () => {
     const excess = screen.getByText('Capital em excesso').closest('[data-stock-summary]') as HTMLElement;
     expect(within(excess).getByText('Dados insuficientes')).toBeInTheDocument();
     expect(excess.tagName).toBe('ARTICLE');
-    expect(screen.getByRole('alert')).toHaveTextContent('Nao foi possivel atualizar as movimentacoes');
+    expect(screen.getByText(/Movimentacoes indisponiveis/i).closest('[role="status"]')).toBeInTheDocument();
   });
 
   it('preserva o estado vazio quando a API retorna uma lista vazia com sucesso', () => {

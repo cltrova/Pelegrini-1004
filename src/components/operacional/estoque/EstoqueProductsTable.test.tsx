@@ -244,6 +244,14 @@ describe('EstoqueProductsTable', () => {
       'Ultima movimentacao',
       'Situacao',
     ]);
+    expect(desktop.querySelector('.overflow-y-auto')).not.toBeInTheDocument();
+  });
+
+  it('mantem a paginacao fixa no rodape do viewport sem criar outro scroller vertical', () => {
+    render(<EstoqueProductsTable {...baseProps} />);
+
+    expect(screen.getByLabelText('Paginacao dos produtos')).toHaveClass('sticky', 'bottom-0');
+    expect(screen.getByLabelText('Tabela de produtos do estoque').firstElementChild).toHaveClass('min-h-full');
   });
 
   it('renderiza cabecalhos e dados reais especificos do modo detalhado', () => {

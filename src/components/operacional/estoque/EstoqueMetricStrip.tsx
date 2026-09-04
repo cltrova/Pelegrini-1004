@@ -84,6 +84,7 @@ function MetricItem({ active, metric, onMetricClick }: MetricItemProps) {
           aria-pressed={active}
           className={commonClassName}
           data-active={active || undefined}
+          data-stock-summary
           data-tone={metric.tone}
           onClick={() => onMetricClick?.(metric.key)}
           style={{ minWidth: metricMinWidth }}
@@ -101,6 +102,7 @@ function MetricItem({ active, metric, onMetricClick }: MetricItemProps) {
           aria-label={`${metric.label}: ${metric.value}`}
           className={commonClassName}
           data-tone={metric.tone}
+          data-stock-summary
           style={{ minWidth: metricMinWidth }}
           tabIndex={0}
         >

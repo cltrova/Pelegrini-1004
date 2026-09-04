@@ -39,27 +39,19 @@ const insightsFixture: StockProductInsight[] = [
 ];
 
 describe('EstoqueSummaryCards', () => {
-  it('renderiza seis indicadores compactos em uma grade responsiva', () => {
+  it('renderiza seis indicadores compactos em uma faixa horizontal', () => {
     const { container } = render(
       <EstoqueSummaryCards products={insightsFixture} activeFilter="all" onFilterChange={vi.fn()} />,
     );
 
-    const grid = screen.getByLabelText('Resumo do estoque');
-    expect(grid).toHaveClass(
-      'grid-cols-1',
-      'min-[480px]:grid-cols-2',
-      'lg:grid-cols-3',
-      'xl:grid-cols-6',
-      'min-w-0',
-      'gap-2',
-    );
+    expect(screen.getByLabelText('Resumo do estoque')).toHaveClass('min-w-0', 'shrink-0');
+    expect(screen.getByLabelText('Indicadores de estoque')).toHaveClass('h-[52px]', 'overflow-x-auto');
     expect(container.querySelectorAll('[data-stock-summary]')).toHaveLength(6);
     ['Produtos', 'Valor do estoque', 'Sem estoque', 'Estoque baixo', 'Criticos', 'Capital em excesso'].forEach((label) => {
       expect(screen.getByText(label)).toBeInTheDocument();
     });
     container.querySelectorAll('[data-stock-summary]').forEach((card) => {
-      expect(card).toHaveClass('min-w-0', 'min-h-16', 'rounded-md', 'border', 'bg-card');
-      expect(card.querySelector('.pelegrini-responsive-value')).toHaveAttribute('data-size', 'md');
+      expect(card).toHaveClass('h-full', 'min-w-[9rem]', 'border-r');
     });
   });
 
@@ -111,15 +103,15 @@ describe('EstoqueSummaryCards', () => {
     const tooltipId = card.getAttribute('aria-describedby');
     expect(tooltipId).toBeTruthy();
 
-    const tooltip = document.getElementById(tooltipId!);
-    expect(tooltip).toHaveAttribute('role', 'tooltip');
+    const description = document.getElementById(tooltipId!);
+    expect(description).toHaveTextContent(source);
+    expect(description).toHaveTextContent(period);
+    expect(description).toHaveTextContent(rule);
+    fireEvent.focus(card);
+    const tooltip = screen.getByRole('tooltip');
     expect(tooltip).toHaveTextContent(source);
     expect(tooltip).toHaveTextContent(period);
     expect(tooltip).toHaveTextContent(rule);
-    expect(tooltip).toHaveClass('hidden', 'group-hover:block', 'group-focus-within:block');
-    expect(tooltip).toHaveClass('inset-x-2', 'whitespace-normal', 'break-words');
-    expect(tooltip).not.toHaveClass('w-max');
-    expect(tooltip?.parentElement).toHaveClass('group', 'relative', 'min-w-0', 'overflow-visible');
   });
 
   it('mantem valor monetario longo dentro de um container responsivo', () => {
@@ -127,10 +119,10 @@ describe('EstoqueSummaryCards', () => {
     render(<EstoqueSummaryCards products={products} activeFilter="all" onFilterChange={vi.fn()} />);
 
     const value = screen.getByText('Valor do estoque').closest('[data-stock-summary]');
-    expect(value).toHaveClass('min-w-0');
+    expect(value).toHaveClass('min-w-[9rem]');
     expect(value).not.toHaveClass('overflow-hidden');
     const amount = within(value as HTMLElement).getByText(/9\.876\.543\.210\.987,65/);
-    expect(amount).toHaveClass('tabular-nums', 'break-words');
+    expect(amount).toHaveClass('whitespace-nowrap', 'max-w-full');
     expect(amount).not.toHaveClass('truncate', 'overflow-hidden');
   });
 

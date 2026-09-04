@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { AlertTriangle, RefreshCw, Search } from 'lucide-react';
+import { AlertTriangle, RefreshCw, Search, X } from 'lucide-react';
 
 import { EmptyState } from '@/components/common/EmptyState';
 import { ErrorState } from '@/components/common/ErrorState';
@@ -9,7 +9,12 @@ import { UnifiedFilterBar } from '@/components/common/UnifiedFilterBar';
 import { EstoqueAssistantTab } from '@/components/operacional/EstoqueAssistantTab';
 import { GiroEstoqueTab } from '@/components/operacional/GiroEstoqueTab';
 import { EstoqueCommandCenter } from '@/components/operacional/estoque/EstoqueCommandCenter';
-import { PelegriniModuleHeader, PelegriniTabs } from '@/components/pelegrini';
+import {
+  EstoqueDataViewport,
+  EstoqueWorkspace,
+  EstoqueWorkspaceHeader,
+} from '@/components/operacional/estoque/EstoqueWorkspace';
+import { PelegriniTabs } from '@/components/pelegrini';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -70,6 +75,7 @@ export default function EstoquePage() {
   const [giroFilters, setGiroFilters] = useState<GiroFiltersState>(DEFAULT_GIRO_FILTERS);
   const [pendingGiro, setPendingGiro] = useState<GiroFiltersState>(DEFAULT_GIRO_FILTERS);
   const [requestedProductCode, setRequestedProductCode] = useState<string | null>(null);
+  const [sourceNoticeDismissed, setSourceNoticeDismissed] = useState(false);
 
   const estoqueData = useMemo(
     () => viewMode === 'consolidado' ? consolidadoData : detalhadoData,
@@ -156,12 +162,42 @@ export default function EstoquePage() {
     setActiveTab('central');
   };
 
+  const sourceNotice = hasSourceIssue && !recoveredStock && !sourceNoticeDismissed ? (
+    <Alert className="sticky top-0 z-30 rounded-none border-x-0 border-t-0 py-1.5" role="status">
+      <AlertTriangle className="h-4 w-4" />
+      <AlertTitle className="pr-10 text-xs">
+        {recoveringStock ? 'Recuperando estoque completo' : partialStock ? 'Estoque parcial' : 'Dados com atualizacao pendente'}
+      </AlertTitle>
+      <AlertDescription className="pr-10 text-xs">
+        {recoveringStock
+          ? 'Reconstruindo o estoque pelo historico completo de movimentacoes.'
+          : partialStock
+          ? 'Exibindo produtos presentes no giro do periodo enquanto a fonte principal e recuperada.'
+          : movementError
+            ? 'Movimentacoes indisponiveis; indicadores de giro podem estar incompletos.'
+            : 'Os ultimos dados carregados foram preservados e podem estar desatualizados.'}
+        <Button variant="ghost" size="sm" className="ml-2 h-7" disabled={isFetching} onClick={() => { void refetch(); }}>
+          <RefreshCw className="mr-1 h-3.5 w-3.5" />{isFetching ? 'Consultando...' : 'Tentar novamente'}
+        </Button>
+      </AlertDescription>
+      <Button
+        aria-label="Fechar aviso da fonte"
+        className="absolute right-2 top-1.5 h-7 w-7"
+        onClick={() => setSourceNoticeDismissed(true)}
+        size="icon"
+        type="button"
+        variant="ghost"
+      >
+        <X aria-hidden="true" className="h-3.5 w-3.5" />
+      </Button>
+    </Alert>
+  ) : null;
+
   if (isLoading) {
     return (
-      <div className="p-4">
-        <PelegriniModuleHeader title="Gestao de Estoque" subtitle="Carregando dados..." moduleKey="operacional" compact className="ml-10 sm:ml-0" />
-        <LoadingState />
-      </div>
+      <EstoqueWorkspace>
+        <EstoqueDataViewport className="p-4"><LoadingState /></EstoqueDataViewport>
+      </EstoqueWorkspace>
     );
   }
 
@@ -174,19 +210,29 @@ export default function EstoquePage() {
   }
 
   return (
-    <div className="min-w-0 max-w-full space-y-3 overflow-x-clip p-3 md:p-4">
-      <div className="relative min-w-0">
-        <PelegriniModuleHeader
-          title="Gestao de Estoque"
-          subtitle={`${branchName} · ${lastUpdateLabel}`}
-          moduleKey="operacional"
-          compact
-          className="ml-10 sm:ml-0"
-        />
-        <div className="flex min-w-0 items-center justify-between gap-3 border-b border-border/70 bg-card px-4 py-2">
-          <span className="min-w-0 truncate text-xs font-medium text-muted-foreground" role="status">
-            {sourceStateLabel}
-          </span>
+    <EstoqueWorkspace className="bg-background">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="contents">
+        <EstoqueWorkspaceHeader className="gap-3">
+          <span className="hidden shrink-0 text-xs font-semibold text-foreground lg:inline">{branchName}</span>
+          <PelegriniTabs
+            ariaLabel="Visões do estoque"
+            className="estoque-tabs min-w-0 flex-1"
+            value={activeTab}
+            onValueChange={setActiveTab}
+            items={[
+              { value: 'central', label: 'Central de Estoque' },
+              { value: 'giro', label: 'Giro de Estoque' },
+              { value: 'assistente', label: 'Assistente' },
+            ]}
+          />
+          <span
+            aria-label={`Estado da fonte de estoque: ${sourceStateLabel}`}
+            className="h-2.5 w-2.5 shrink-0 rounded-full bg-emerald-500 data-[issue=true]:bg-amber-500"
+            data-issue={(hasSourceIssue && !recoveredStock) || undefined}
+            role="status"
+            title={sourceStateLabel}
+          />
+          <span className="hidden shrink-0 text-xs tabular-nums text-muted-foreground sm:inline">{lastUpdateLabel}</span>
           <Button
             aria-label={isFetching ? 'Atualizando dados do estoque' : 'Atualizar dados do estoque'}
             className="h-8 w-8 shrink-0"
@@ -199,64 +245,33 @@ export default function EstoquePage() {
           >
             <RefreshCw aria-hidden="true" className={`h-4 w-4 ${isFetching ? 'animate-spin' : ''}`} />
           </Button>
-        </div>
-      </div>
-
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-3">
-        <PelegriniTabs
-          ariaLabel="Visões do estoque"
-          className="estoque-tabs"
-          value={activeTab}
-          onValueChange={setActiveTab}
-          items={[
-            { value: 'central', label: 'Central de Estoque' },
-            { value: 'giro', label: 'Giro de Estoque' },
-            { value: 'assistente', label: 'Assistente' },
-          ]}
-        />
+        </EstoqueWorkspaceHeader>
 
         {movementLoading ? (
-          <div className="border border-border bg-card p-4" role="status" aria-label="Carregando movimentacoes do estoque">
+          <EstoqueDataViewport className="p-4" role="status" aria-label="Carregando movimentacoes do estoque">
             <LoadingState />
-          </div>
+          </EstoqueDataViewport>
         ) : activeError ? (
-          <div role="alert">
+          <EstoqueDataViewport className="p-4" role="alert">
             <ErrorState
               title="Estoque indisponivel"
               message={`${activeError.message} Os dados nao puderam ser consultados; isso nao significa estoque zerado.`}
               onRetry={isFetching ? undefined : () => { void refetch(); }}
             />
             {isFetching && <p role="status" className="p-3 text-center text-sm text-muted-foreground">Consultando novamente...</p>}
-          </div>
+          </EstoqueDataViewport>
         ) : (
           <>
-            {hasSourceIssue && !recoveredStock && (
-              <Alert>
-                <AlertTriangle className="h-4 w-4" />
-                <AlertTitle>{recoveringStock ? 'Recuperando estoque completo' : partialStock ? 'Estoque parcial' : 'Dados com atualizacao pendente'}</AlertTitle>
-                <AlertDescription>
-                  {recoveringStock
-                    ? 'A fonte consolidada falhou. O sistema esta reconstruindo o estoque pelo historico completo de movimentacoes.'
-                    : partialStock
-                    ? 'A fonte principal falhou. Exibindo apenas produtos presentes no giro do periodo, nao o estoque completo.'
-                    : movementError
-                      ? 'Nao foi possivel atualizar as movimentacoes. Indicadores que dependem do giro podem estar incompletos ou desatualizados.'
-                      : 'A consulta falhou. Os ultimos dados carregados foram preservados e podem estar desatualizados.'}
-                  <Button variant="outline" size="sm" className="ml-2 mt-2" disabled={isFetching} onClick={() => { void refetch(); }}>
-                    <RefreshCw className="mr-2 h-4 w-4" />{isFetching ? 'Consultando...' : 'Tentar novamente'}
-                  </Button>
-                </AlertDescription>
-              </Alert>
-            )}
-        <TabsContent aria-labelledby="pelegrini-tab-central" id="pelegrini-tabpanel-central" value="central">
+        <TabsContent className="m-0 min-h-0 flex-1 data-[state=active]:flex data-[state=active]:flex-col" aria-labelledby="pelegrini-tab-central" id="pelegrini-tabpanel-central" value="central">
           {recoveringStock && estoqueData.length === 0 ? (
-            <div
+            <EstoqueDataViewport
               aria-label="Recuperando dados completos do estoque"
-              className="border border-border bg-card p-4"
+              className="p-4"
               role="status"
             >
+              {sourceNotice}
               <LoadingState />
-            </div>
+            </EstoqueDataViewport>
           ) : (
             <EstoqueCommandCenter
               stockData={estoqueData}
@@ -268,11 +283,12 @@ export default function EstoquePage() {
               onExport={exportToExcel}
               requestedProductCode={requestedProductCode}
               onRequestedProductHandled={() => setRequestedProductCode(null)}
+              sourceNotice={sourceNotice}
             />
           )}
         </TabsContent>
 
-        <TabsContent aria-labelledby="pelegrini-tab-giro" id="pelegrini-tabpanel-giro" value="giro">
+        <TabsContent className="m-0 min-h-0 flex-1 overflow-auto p-3" aria-labelledby="pelegrini-tab-giro" id="pelegrini-tabpanel-giro" value="giro">
           <div className="mb-3 space-y-2">
             <div className="flex min-w-0 flex-wrap items-center gap-2">
               <div className="relative min-w-[200px] flex-1 max-w-md">
@@ -318,12 +334,12 @@ export default function EstoquePage() {
           />
         </TabsContent>
 
-        <TabsContent aria-labelledby="pelegrini-tab-assistente" id="pelegrini-tabpanel-assistente" value="assistente">
+        <TabsContent className="m-0 min-h-0 flex-1 overflow-auto p-3" aria-labelledby="pelegrini-tab-assistente" id="pelegrini-tabpanel-assistente" value="assistente">
           <EstoqueAssistantTab giroData={giroData} estoqueData={estoqueData} onProductAction={openProductFromAssistant} />
         </TabsContent>
           </>
         )}
       </Tabs>
-    </div>
+    </EstoqueWorkspace>
   );
 }

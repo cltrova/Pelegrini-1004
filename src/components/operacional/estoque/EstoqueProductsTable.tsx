@@ -357,7 +357,7 @@ export function EstoqueProductsTable({
         {products.length === 0 ? (
           <p className="px-4 py-10 text-center text-sm text-muted-foreground">{emptyMessage}</p>
         ) : (
-          <div className="max-h-[calc(100vh-20rem)] min-h-[18rem] min-w-max overflow-y-auto">
+          <div className="min-h-full min-w-max">
             <table className="w-full text-left text-sm">
               <thead aria-label="Cabecalho da tabela" className="sticky top-0 z-10 bg-muted">
                 <tr className="border-b border-border">
@@ -467,7 +467,7 @@ export function EstoqueProductsTable({
       {products.length > 0 && (
         <nav
           aria-label="Paginacao dos produtos"
-          className="flex items-center justify-between gap-3 border-t border-border bg-muted/20 px-3 py-2"
+          className="sticky bottom-0 z-10 flex items-center justify-between gap-3 border-t border-border bg-background px-3 py-2"
         >
           <Button
             aria-label="Pagina anterior"

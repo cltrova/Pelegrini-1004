@@ -290,18 +290,14 @@ describe('EstoqueCommandCenter', () => {
       <EstoqueCommandCenter {...fixtureProps} movementAvailable />,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: /Capital em excesso/i }));
-    const activeExcess = document.querySelector(
-      '[data-stock-summary][aria-describedby="estoque-summary-tooltip-excess"]',
-    );
+    fireEvent.click(screen.getByRole('button', { name: /^Capital em excesso:/i }));
+    const activeExcess = screen.getByRole('button', { name: /^Capital em excesso:/i });
     expect(activeExcess).toHaveAttribute('aria-pressed', 'true');
 
     rerender(<EstoqueCommandCenter {...fixtureProps} movementAvailable={false} />);
 
     expect(screen.getByRole('button', { name: /Produtos/i })).toHaveAttribute('aria-pressed', 'true');
-    expect(document.querySelector(
-      '[data-stock-summary][aria-describedby="estoque-summary-tooltip-excess"]',
-    )?.tagName).toBe('ARTICLE');
+    expect(screen.getByRole('article', { name: /Capital em excesso/i })).toBeInTheDocument();
   });
 
   it('integra estados vazios distintos para a fonte e para a visao filtrada', () => {
@@ -328,9 +324,9 @@ describe('EstoqueCommandCenter', () => {
     expect(commandCenter).toHaveClass('min-w-0', 'max-w-full');
 
     const orderedSections = [
-      within(commandCenter).getByRole('region', { name: 'Barra principal do estoque' }),
+      within(commandCenter).getByRole('toolbar', { name: 'Comandos do estoque' }),
       within(commandCenter).getByRole('region', { name: 'Resumo do estoque' }),
-      within(commandCenter).getByRole('region', { name: 'Produtos do estoque' }),
+      within(commandCenter).getByRole('region', { name: 'Dados do estoque' }),
     ];
 
     orderedSections.slice(1).forEach((section, index) => {
@@ -342,6 +338,21 @@ describe('EstoqueCommandCenter', () => {
     expect(screen.getByRole('dialog', { name: 'Atencao no estoque' })).toBeInTheDocument();
     expect(screen.getByText('Mais movimentados')).toBeInTheDocument();
     expect(screen.getByText('Produtos parados')).toBeInTheDocument();
+  });
+
+  it('compoe toolbar, metricas e tabela no viewport compacto aprovado', () => {
+    render(<EstoqueCommandCenter {...fixtureProps} />);
+
+    const commandCenter = screen.getByRole('region', { name: 'Central de estoque' });
+    const toolbar = within(commandCenter).getByRole('toolbar', { name: 'Comandos do estoque' });
+    const metrics = within(commandCenter).getByRole('region', { name: 'Indicadores de estoque' });
+    const viewport = within(commandCenter).getByRole('region', { name: 'Dados do estoque' });
+
+    expect(commandCenter).toHaveClass('flex', 'min-h-0', 'overflow-hidden');
+    expect(toolbar.compareDocumentPosition(metrics) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(metrics.compareDocumentPosition(viewport) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(within(viewport).getByRole('table')).toBeInTheDocument();
+    expect(within(viewport).getByLabelText('Paginacao dos produtos')).toBeInTheDocument();
   });
 
   it('preserva filtros de marca, grupo e linha ao trocar de modo', () => {
