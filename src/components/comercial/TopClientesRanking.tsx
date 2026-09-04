@@ -81,7 +81,7 @@ export function TopClientesRanking({ clientes, variacoesPorCodigo, totalGeral }:
   }, [clientes, totalGeral, variacoesPorCodigo]);
 
   return (
-    <Card className="overflow-hidden border-border/60 shadow-sm">
+    <Card className="overflow-hidden border-border/60">
       <header className="flex items-center justify-between gap-3 border-b border-border/60 px-5 py-4 md:px-6">
         <div className="flex items-center gap-2.5">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 ring-1 ring-primary/20">
@@ -106,8 +106,8 @@ export function TopClientesRanking({ clientes, variacoesPorCodigo, totalGeral }:
               key={it.codigo}
               className={cn(
                 'group/item relative flex items-center gap-4 px-5 py-3.5 md:px-6 cursor-pointer',
-                'transition-all duration-300 ease-out animate-fade-in',
-                'opacity-100 group-hover/list:opacity-45 hover:!opacity-100 hover:!bg-muted/50 hover:!scale-[1.005] hover:z-10'
+                'transition-colors duration-200 ease-out animate-fade-in',
+                'opacity-100 group-hover/list:opacity-60 hover:!opacity-100 hover:!bg-muted/50 hover:z-10'
               )}
               style={{ animationDelay: `${idx * 40}ms`, animationFillMode: 'both' }}
             >
@@ -120,7 +120,7 @@ export function TopClientesRanking({ clientes, variacoesPorCodigo, totalGeral }:
               {/* Posição */}
               <div
                 className={cn(
-                  'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-sm font-semibold tabular-nums ring-1 transition-transform duration-300 group-hover/item:scale-110',
+                  'flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-sm font-semibold tabular-nums ring-1',
                   rank
                     ? cn(rank.badge, 'ring-1')
                     : 'bg-muted/60 text-muted-foreground ring-border/60'
@@ -133,7 +133,7 @@ export function TopClientesRanking({ clientes, variacoesPorCodigo, totalGeral }:
               <div className="min-w-0 flex-1">
                 <div className="flex items-baseline justify-between gap-3">
                   <div className="min-w-0 flex items-center gap-2">
-                    <p className="truncate text-sm font-medium text-foreground transition-colors duration-300 group-hover/item:text-primary">
+                    <p className="truncate text-sm font-medium text-foreground transition-colors duration-200 group-hover/item:text-primary">
                       {it.nome}
                     </p>
                     {it.posicao <= 3 && (
@@ -181,10 +181,8 @@ export function TopClientesRanking({ clientes, variacoesPorCodigo, totalGeral }:
                   <div
                     className={cn(
                       'h-full rounded-full transition-all duration-700 ease-out',
-                      it.posicao === 1
-                        ? 'bg-gradient-to-r from-primary to-primary/70'
-                        : 'bg-primary/60',
-                      'group-hover/item:!bg-primary group-hover/item:shadow-[0_0_12px_hsl(var(--primary)/0.5)]'
+                      it.posicao === 1 ? 'bg-primary' : 'bg-primary/60',
+                      'group-hover/item:!bg-primary'
                     )}
                     style={{ width: `${Math.max(2, it.progresso)}%` }}
                   />

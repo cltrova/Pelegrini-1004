@@ -114,7 +114,7 @@ export function VendedoresRanking({ vendedores, variacoesPorNome }: Props) {
   }, [vendedores, variacoesPorNome]);
 
   return (
-    <Card className="overflow-hidden border-border/60 shadow-sm">
+    <Card className="overflow-hidden border-border/60">
       {/* Header */}
       <header className="flex items-center justify-between gap-3 border-b border-border/60 px-5 py-4 md:px-6">
         <div className="flex items-center gap-2.5">
@@ -169,8 +169,8 @@ export function VendedoresRanking({ vendedores, variacoesPorNome }: Props) {
               key={it.nome + idx}
               className={cn(
                 'group/item relative flex items-center gap-4 px-5 py-4 md:px-6 cursor-pointer',
-                'transition-all duration-300 ease-out animate-fade-in',
-                'opacity-100 group-hover/list:opacity-45 hover:!opacity-100 hover:!bg-muted/50 hover:!scale-[1.005] hover:z-10'
+                'transition-colors duration-200 ease-out animate-fade-in',
+                'opacity-100 group-hover/list:opacity-60 hover:!opacity-100 hover:!bg-muted/50 hover:z-10'
               )}
               style={{ animationDelay: `${idx * 40}ms`, animationFillMode: 'both' }}
             >
@@ -181,7 +181,7 @@ export function VendedoresRanking({ vendedores, variacoesPorNome }: Props) {
               />
 
               {/* Avatar + medalha */}
-              <div className="relative shrink-0 transition-transform duration-300 group-hover/item:scale-110">
+              <div className="relative shrink-0">
                 <Avatar className={cn('h-11 w-11 ring-2 ring-offset-2 ring-offset-background', isTop3 ? tier.badge.split(' ').find(c => c.startsWith('ring-')) : 'ring-border/40')}>
                   {it.avatarUrl && <AvatarImage src={it.avatarUrl} alt={it.nome} />}
                   <AvatarFallback className="bg-muted text-xs font-semibold text-foreground/80">
@@ -207,7 +207,7 @@ export function VendedoresRanking({ vendedores, variacoesPorNome }: Props) {
                     <span className="shrink-0 tabular-nums text-xs font-semibold text-muted-foreground">
                       #{it.posicao}
                     </span>
-                    <p className="truncate text-sm font-medium text-foreground transition-colors duration-300 group-hover/item:text-primary">
+                    <p className="truncate text-sm font-medium text-foreground transition-colors duration-200 group-hover/item:text-primary">
                       {it.nome}
                     </p>
                     <Badge
@@ -247,13 +247,12 @@ export function VendedoresRanking({ vendedores, variacoesPorNome }: Props) {
                     className={cn(
                       'h-full rounded-full transition-all duration-700 ease-out',
                       it.posicao === 1
-                        ? 'bg-gradient-to-r from-amber-500 to-amber-400'
+                        ? 'bg-amber-500'
                         : it.posicao === 2
-                        ? 'bg-gradient-to-r from-slate-400 to-slate-300'
+                        ? 'bg-slate-400'
                         : it.posicao === 3
-                        ? 'bg-gradient-to-r from-orange-500 to-orange-400'
+                        ? 'bg-orange-500'
                         : 'bg-primary/60',
-                      'group-hover/item:shadow-[0_0_12px_hsl(var(--primary)/0.45)]'
                     )}
                     style={{ width: `${Math.max(2, it.progresso)}%` }}
                   />
