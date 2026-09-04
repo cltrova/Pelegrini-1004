@@ -172,8 +172,23 @@ export function GiroEstoqueTab({ giroData, estoqueData, filters, onStatusFilterC
 
   const analysisGiroData = useMemo(() => {
     const identities = new Set(managementProducts.map(productIdentity));
-    return filteredGiro.filter(record => identities.has(movementIdentity(record)));
-  }, [filteredGiro, managementProducts, movementIdentity, productIdentity]);
+    const stockIdentities = new Set(
+      estoqueData
+        .filter(record => {
+          const companyCode = String(record.cod_empresa_bi ?? '').trim();
+          return companyCode !== '' && companyCode !== '0';
+        })
+        .map(productIdentity),
+    );
+
+    return filteredGiro.filter(record => {
+      const identity = movementIdentity(record);
+      if (!identities.has(identity)) return false;
+
+      const companyCode = String(record.cod_empresa_bi ?? '').trim();
+      return (companyCode !== '' && companyCode !== '0') || stockIdentities.has(identity);
+    });
+  }, [estoqueData, filteredGiro, managementProducts, movementIdentity, productIdentity]);
 
   const managementSummary = useMemo(
     () => buildGiroManagementSummary(managementProducts),

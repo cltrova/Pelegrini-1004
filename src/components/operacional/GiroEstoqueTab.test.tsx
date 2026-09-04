@@ -307,6 +307,43 @@ describe('GiroEstoqueTab', () => {
     expect(screen.getByText(/Movimentacao filtrada: 61 vendas/i)).toBeInTheDocument();
   });
 
+  it('nao reintroduz na analise movimento sem BI rejeitado para a mesma chave valida', () => {
+    const movement = (
+      sales: number,
+      overrides: Partial<GiroRecord> = {},
+    ): GiroRecord => ({
+      ...giroFixture[0],
+      cod_empresa_bi: 1004,
+      cod_empresa: 1,
+      cod_produto: 505,
+      produto: 'ITEM SOMENTE NO GIRO',
+      data_movimento: '2026-09-01',
+      saida_venda: sales,
+      quantidade_movimentada: sales,
+      tipo_movimento: 'Venda',
+      ...overrides,
+    });
+
+    render(
+      <GiroEstoqueTab
+        activeCompanyCode={1004}
+        estoqueData={[]}
+        filters={{ ...filters, statusFilter: [] }}
+        giroData={[
+          movement(12),
+          movement(900, { cod_empresa_bi: 0 }),
+        ]}
+        onStatusFilterChange={vi.fn()}
+      />,
+    );
+
+    const row = screen.getAllByRole('row').find(candidate => within(candidate).queryByText('ITEM SOMENTE NO GIRO'))!;
+    expect(within(row).getByText('12')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /Abrir analise de giro/i }));
+    expect(screen.getByText(/Movimentacao filtrada: 12 vendas/i)).toBeInTheDocument();
+  });
+
   it('exibe cobertura ausente sem inventar dias de venda', () => {
     const stock = { ...estoqueFixtureComTresItens[0], cod_produto: 818, produto: 'SEM DATA', data_ultima_venda: null };
     render(<GiroEstoqueTab estoqueData={[stock]} filters={{ ...filters, statusFilter: [] }} giroData={[]} onStatusFilterChange={vi.fn()} />);
