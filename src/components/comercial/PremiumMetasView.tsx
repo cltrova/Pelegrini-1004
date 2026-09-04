@@ -11,6 +11,7 @@ import {
 import {
   Sparkles, Target, AlertTriangle, TrendingDown, Trophy, Calendar,
   ArrowUp, ArrowDown, Minus, Check, DollarSign, Users, TrendingUp, Activity,
+  LucideIcon,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { formatCurrency, formatPercent, formatCompactNumber } from '@/utils/formatters';
@@ -151,7 +152,7 @@ export function PremiumMetasView({
 
   // ===== INSIGHTS =====
   const insights = useMemo(() => {
-    const result: Array<{ icon: any; title: string; subtitle: string; color: string }> = [];
+    const result: Array<{ icon: LucideIcon; title: string; subtitle: string; color: string }> = [];
 
     // Insight 1: faltam X / dia útil
     if (totais.falta > 0) {
@@ -457,8 +458,7 @@ export function PremiumMetasView({
             value: formatCurrency(receita),
             icon: TrendingUp,
             hint: `Meta ${formatCurrency(kpisGerais.totalMeta)} · ${formatPercent(pctMeta)}`,
-            accent: 'from-primary/25 via-primary/5 to-transparent',
-            ring: 'hover:ring-primary/40',
+            border: 'hover:border-primary/35',
             iconColor: 'text-primary',
             bar: Math.min(100, pctMeta),
             barColor: 'bg-primary',
@@ -469,8 +469,7 @@ export function PremiumMetasView({
             value: formatCurrency(ticket),
             icon: Target,
             hint: `${vendas.toLocaleString('pt-BR')} vendas no período`,
-            accent: 'from-amber-500/25 via-amber-500/5 to-transparent',
-            ring: 'hover:ring-amber-500/40',
+            border: 'hover:border-amber-500/35',
             iconColor: 'text-amber-500',
             bar: null as number | null,
             barColor: 'bg-amber-500',
@@ -481,8 +480,7 @@ export function PremiumMetasView({
             value: clientes.toLocaleString('pt-BR'),
             icon: Users,
             hint: `${vendas > 0 ? (vendas / Math.max(1, clientes)).toFixed(1) : '0'} pedidos por cliente`,
-            accent: 'from-violet-500/25 via-violet-500/5 to-transparent',
-            ring: 'hover:ring-violet-500/40',
+            border: 'hover:border-violet-500/35',
             iconColor: 'text-violet-400',
             bar: null as number | null,
             barColor: 'bg-violet-500',
@@ -493,8 +491,7 @@ export function PremiumMetasView({
             value: formatCurrency(kpisGerais.totalDevolucoes || 0),
             icon: TrendingDown,
             hint: 'Σ ValorDevolucao (linhas DEVOLUCAO)',
-            accent: 'from-destructive/25 via-destructive/5 to-transparent',
-            ring: 'hover:ring-destructive/40',
+            border: 'hover:border-destructive/35',
             iconColor: 'text-destructive',
             bar: null as number | null,
             barColor: 'bg-destructive',
@@ -505,8 +502,7 @@ export function PremiumMetasView({
             value: vendas.toLocaleString('pt-BR'),
             icon: Activity,
             hint: `${kpisGerais.totalVendedores} vendedor(es) ativo(s)`,
-            accent: 'from-emerald-500/25 via-emerald-500/5 to-transparent',
-            ring: 'hover:ring-emerald-500/40',
+            border: 'hover:border-emerald-500/35',
             iconColor: 'text-emerald-400',
             bar: null as number | null,
             barColor: 'bg-emerald-500',
@@ -520,21 +516,18 @@ export function PremiumMetasView({
                 <Card
                   key={t.key}
                   className={cn(
-                    'group relative overflow-hidden border-border/60 transition-all duration-300',
-                    'hover:-translate-y-0.5 hover:shadow-lg hover:ring-1',
-                    t.ring
+                    'relative overflow-hidden rounded-lg border-border/60 bg-card transition-colors duration-300',
+                    'hover:bg-muted/30',
+                    t.border
                   )}
                 >
-                  <div className={cn('absolute inset-0 bg-gradient-to-br opacity-70 pointer-events-none', t.accent)} />
-                  <div className="absolute -right-6 -top-6 h-24 w-24 rounded-full bg-gradient-to-br from-white/5 to-transparent blur-2xl opacity-0 group-hover:opacity-100 transition-opacity" />
                   <CardContent className="relative p-4">
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground font-medium">
                         {t.label}
                       </span>
                       <div className={cn(
-                        'h-7 w-7 rounded-md flex items-center justify-center bg-background/60 backdrop-blur-sm ring-1 ring-border/50',
-                        'transition-transform group-hover:scale-110 group-hover:rotate-[-4deg]'
+                        'h-7 w-7 rounded-md flex items-center justify-center bg-muted/40 ring-1 ring-border/60'
                       )}>
                         <Icon className={cn('h-3.5 w-3.5', t.iconColor)} />
                       </div>
@@ -546,7 +539,7 @@ export function PremiumMetasView({
                     {t.bar != null && (
                       <div className="mt-2 h-1 rounded-full bg-muted/60 overflow-hidden">
                         <div
-                          className={cn('h-full rounded-full transition-all duration-700', t.barColor)}
+                          className={cn('h-full rounded-full transition-[width] duration-700', t.barColor)}
                           style={{ width: `${t.bar}%` }}
                         />
                       </div>
@@ -571,18 +564,10 @@ export function PremiumMetasView({
             return (
               <Card
                 key={i}
-                className="relative overflow-hidden border-border/60 transition-all duration-300 hover:border-primary/40 hover:shadow-lg group cursor-default"
+                className="relative overflow-hidden rounded-lg border-border/60 bg-card transition-colors duration-300 hover:border-primary/30 hover:bg-muted/30 cursor-default"
               >
                 <div className={cn(
-                  'absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none',
-                  'bg-gradient-to-br',
-                  ins.color.includes('emerald') && 'from-emerald-500/10 via-transparent to-transparent',
-                  ins.color.includes('amber') && 'from-amber-500/10 via-transparent to-transparent',
-                  ins.color.includes('red') && 'from-red-500/10 via-transparent to-transparent',
-                  ins.color.includes('primary') && 'from-primary/10 via-transparent to-transparent',
-                )} />
-                <div className={cn(
-                  'absolute left-0 top-0 bottom-0 w-1 transition-all duration-300 group-hover:w-1.5',
+                  'absolute left-0 top-0 bottom-0 w-1',
                   ins.color.includes('emerald') && 'bg-emerald-500',
                   ins.color.includes('amber') && 'bg-amber-500',
                   ins.color.includes('red') && 'bg-red-500',
@@ -590,7 +575,7 @@ export function PremiumMetasView({
                 )} />
                 <CardContent className="p-3 flex items-start gap-3 relative">
                   <div className={cn(
-                    'h-9 w-9 rounded-lg flex items-center justify-center flex-shrink-0 transition-transform duration-300 group-hover:scale-110',
+                    'h-9 w-9 rounded-lg flex items-center justify-center flex-shrink-0',
                     ins.color,
                     ins.color.includes('emerald') && 'bg-emerald-500/15',
                     ins.color.includes('amber') && 'bg-amber-500/15',
@@ -628,10 +613,10 @@ export function PremiumMetasView({
               <button
                 onClick={() => setVendedorFoco(null)}
                 className={cn(
-                  'w-full text-left px-2 py-1.5 rounded-md text-xs font-semibold uppercase transition-all duration-200',
+                  'w-full text-left px-2 py-1.5 rounded-md text-xs font-semibold uppercase transition-colors duration-200',
                   !vendedorFoco
-                    ? 'bg-gradient-to-r from-primary/20 to-primary/5 text-primary shadow-sm ring-1 ring-primary/30'
-                    : 'text-muted-foreground hover:bg-muted/60 hover:translate-x-0.5'
+                    ? 'bg-primary/10 text-primary ring-1 ring-primary/30'
+                    : 'text-muted-foreground hover:bg-muted/60'
                 )}
               >
                 ◉ Todos
@@ -645,14 +630,14 @@ export function PremiumMetasView({
                     key={String(v.codigo)}
                     onClick={() => setVendedorFoco(String(v.codigo))}
                     className={cn(
-                      'group w-full text-left px-2 py-1.5 rounded-md text-xs font-semibold uppercase transition-all duration-200 truncate flex items-center gap-1.5',
+                      'w-full text-left px-2 py-1.5 rounded-md text-xs font-semibold uppercase transition-colors duration-200 truncate flex items-center gap-1.5',
                       active
-                        ? 'bg-gradient-to-r from-primary/20 to-primary/5 text-primary shadow-sm ring-1 ring-primary/30'
-                        : 'text-foreground hover:bg-muted/60 hover:translate-x-0.5'
+                        ? 'bg-primary/10 text-primary ring-1 ring-primary/30'
+                        : 'text-foreground hover:bg-muted/60'
                     )}
                     title={`${v.nome} · ${formatPercent(pct)}`}
                   >
-                    <span className={cn('h-1.5 w-1.5 rounded-full flex-shrink-0', dotColor, 'shadow-[0_0_6px_currentColor]')} />
+                    <span className={cn('h-1.5 w-1.5 rounded-full flex-shrink-0', dotColor)} />
                     <span className="truncate flex-1">{v.nome}</span>
                   </button>
                 );
@@ -663,37 +648,33 @@ export function PremiumMetasView({
 
         {/* Valor Total + Meta Total empilhados */}
         <div className="lg:col-span-3 grid grid-rows-2 gap-3">
-          <Card className="relative overflow-hidden group transition-all duration-300 hover:shadow-lg hover:border-emerald-500/40">
-            <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 via-transparent to-transparent opacity-60" />
-            <div className="absolute -right-6 -top-6 h-20 w-20 rounded-full bg-emerald-500/10 blur-2xl group-hover:bg-emerald-500/20 transition-colors" />
+          <Card className="relative overflow-hidden rounded-lg border-border/60 bg-card transition-colors duration-300 hover:border-emerald-500/35 hover:bg-muted/30">
             <CardContent className="p-4 flex flex-col justify-between h-full relative">
               <div className="flex items-start justify-between">
                 <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Valor Total</p>
                 <Calendar className="h-4 w-4 text-emerald-500" />
               </div>
               <div>
-                <p className="text-2xl font-bold mt-2 bg-gradient-to-br from-emerald-500 to-emerald-700 bg-clip-text text-transparent">
+                <p className="text-2xl font-bold mt-2 text-emerald-500">
                   {formatCurrency(totais.valorTotal)}
                 </p>
                 <div className="mt-1 h-1 rounded-full bg-muted overflow-hidden">
                   <div
-                    className="h-full bg-gradient-to-r from-emerald-500 to-emerald-400 transition-all duration-700"
+                    className="h-full bg-emerald-500 transition-[width] duration-700"
                     style={{ width: `${Math.min(totais.percentual, 100)}%` }}
                   />
                 </div>
               </div>
             </CardContent>
           </Card>
-          <Card className="relative overflow-hidden group transition-all duration-300 hover:shadow-lg hover:border-violet-500/40">
-            <div className="absolute inset-0 bg-gradient-to-br from-violet-500/5 via-transparent to-transparent opacity-60" />
-            <div className="absolute -right-6 -bottom-6 h-20 w-20 rounded-full bg-violet-500/10 blur-2xl group-hover:bg-violet-500/20 transition-colors" />
+          <Card className="relative overflow-hidden rounded-lg border-border/60 bg-card transition-colors duration-300 hover:border-violet-500/35 hover:bg-muted/30">
             <CardContent className="p-4 flex flex-col justify-between h-full relative">
               <div className="flex items-start justify-between">
                 <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Meta Total</p>
                 <Target className="h-4 w-4 text-violet-500" />
               </div>
               <div>
-                <p className="text-2xl font-bold mt-2 bg-gradient-to-br from-violet-500 to-violet-700 bg-clip-text text-transparent">
+                <p className="text-2xl font-bold mt-2 text-violet-500">
                   {formatCurrency(totais.metaTotal)}
                 </p>
                 {(() => {
@@ -858,12 +839,6 @@ export function PremiumMetasView({
             <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">
                 <ComposedChart data={dadosGrafico}>
-                  <defs>
-                    <linearGradient id="bar-realizado" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="hsl(142, 71%, 55%)" stopOpacity={1} />
-                      <stop offset="100%" stopColor="hsl(142, 71%, 35%)" stopOpacity={0.85} />
-                    </linearGradient>
-                  </defs>
                   <CartesianGrid strokeDasharray="3 3" className="stroke-border/40" />
                   <XAxis dataKey="label" tick={{ fontSize: 11 }} />
                   <YAxis tickFormatter={(v) => formatCompactNumber(v)} tick={{ fontSize: 11 }} />
@@ -874,11 +849,10 @@ export function PremiumMetasView({
                       backgroundColor: 'hsl(var(--popover))',
                       border: '1px solid hsl(var(--border))',
                       borderRadius: 8,
-                      boxShadow: '0 10px 30px -10px hsl(var(--primary) / 0.3)',
                     }}
                   />
                   <Legend wrapperStyle={{ fontSize: 12 }} />
-                  <Bar dataKey="valor" name="Valor Venda" fill="url(#bar-realizado)" radius={[6, 6, 0, 0]} maxBarSize={80} animationDuration={800} />
+                  <Bar dataKey="valor" name="Valor Venda" fill="hsl(142 71% 45%)" radius={[6, 6, 0, 0]} maxBarSize={80} animationDuration={800} />
                   <Line
                     type="monotone"
                     dataKey="meta"
@@ -1047,39 +1021,6 @@ function GaugeSemi({ percent }: { percent: number }) {
   return (
     <div className="relative w-full flex items-center justify-center">
       <svg width={SIZE} height={SIZE} viewBox={`0 0 ${SIZE} ${SIZE}`}>
-        <defs>
-          <linearGradient id="grad-ring-main" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#059669" />
-            <stop offset="55%" stopColor="#10b981" />
-            <stop offset="100%" stopColor="#34d399" />
-          </linearGradient>
-          <linearGradient id="grad-ring-over" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#6ee7b7" />
-            <stop offset="100%" stopColor="#a7f3d0" />
-          </linearGradient>
-          <radialGradient id="grad-tip" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor="#ffffff" stopOpacity="0.95" />
-            <stop offset="60%" stopColor="#a7f3d0" stopOpacity="0.6" />
-            <stop offset="100%" stopColor="#34d399" stopOpacity="0" />
-          </radialGradient>
-          <filter id="glow-tip" x="-200%" y="-200%" width="500%" height="500%">
-            <feGaussianBlur stdDeviation="5" result="b" />
-            <feMerge>
-              <feMergeNode in="b" />
-              <feMergeNode in="SourceGraphic" />
-            </feMerge>
-          </filter>
-          <filter id="ring-shadow" x="-50%" y="-50%" width="200%" height="200%">
-            <feGaussianBlur in="SourceAlpha" stdDeviation="2" result="blur" />
-            <feOffset dx="0" dy="2" result="offset" />
-            <feComponentTransfer><feFuncA type="linear" slope="0.4" /></feComponentTransfer>
-            <feMerge>
-              <feMergeNode />
-              <feMergeNode in="SourceGraphic" />
-            </feMerge>
-          </filter>
-        </defs>
-
         {/* Trilha do anel principal — usa border token */}
         <circle
           cx={CX}
@@ -1098,7 +1039,7 @@ function GaugeSemi({ percent }: { percent: number }) {
             cy={CY}
             r={R}
             fill="none"
-            stroke="url(#grad-ring-main)"
+            stroke="hsl(142 71% 45%)"
             strokeWidth={STROKE}
             strokeLinecap="round"
             strokeDasharray={`${mainLen} ${C}`}
@@ -1106,9 +1047,9 @@ function GaugeSemi({ percent }: { percent: number }) {
           />
         )}
 
-        {/* Glow concentrado na ponta do progresso */}
+        {/* Ponta do progresso */}
         {percent > 0 && percent < 100 && (
-          <circle cx={tipX} cy={tipY} r={STROKE * 0.9} fill="url(#grad-tip)" filter="url(#glow-tip)" />
+          <circle cx={tipX} cy={tipY} r={STROKE * 0.38} fill="hsl(142 71% 45%)" />
         )}
 
         {/* Trilha externa removida — apenas o arco real do excedente é desenhado abaixo */}
@@ -1120,12 +1061,11 @@ function GaugeSemi({ percent }: { percent: number }) {
             cy={CY}
             r={R_OVER}
             fill="none"
-            stroke="url(#grad-ring-over)"
+            stroke="hsl(142 71% 55%)"
             strokeWidth={OVER_STROKE}
             strokeLinecap="round"
             strokeDasharray={`${overLen} ${C_OVER}`}
             transform={`rotate(-90 ${CX} ${CY})`}
-            filter="url(#glow-tip)"
           />
         )}
 
@@ -1142,7 +1082,7 @@ function GaugeSemi({ percent }: { percent: number }) {
           dominantBaseline="middle"
           style={{
             fontFeatureSettings: '"tnum"',
-            letterSpacing: '-1.5px',
+            letterSpacing: '0',
           }}
         >
           {fmt(percent)}%
@@ -1153,7 +1093,7 @@ function GaugeSemi({ percent }: { percent: number }) {
           className="fill-emerald-500"
           fontSize="10.5"
           fontWeight="700"
-          letterSpacing="1.6"
+          letterSpacing="0"
           textAnchor="middle"
           dominantBaseline="middle"
           style={{ textTransform: 'uppercase' }}
