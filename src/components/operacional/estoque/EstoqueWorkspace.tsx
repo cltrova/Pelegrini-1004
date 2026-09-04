@@ -36,7 +36,7 @@ export function EstoqueWorkspaceHeader({
     <header
       aria-label={ariaLabel}
       className={cn(
-        'flex h-11 min-w-0 shrink-0 items-center border-b border-border/70 bg-card px-3',
+        'flex h-11 min-w-0 shrink-0 items-center border-b border-border/70 bg-card px-3 max-md:pl-14',
         className,
       )}
       {...props}

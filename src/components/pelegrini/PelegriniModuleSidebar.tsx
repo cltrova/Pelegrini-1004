@@ -127,7 +127,7 @@ export function PelegriniModuleSidebar({
             aria-label="Abrir menu"
             title="Abrir menu"
             onClick={() => onMobileOpenChange(true)}
-            className="fixed left-4 top-4 z-40 flex h-12 w-12 items-center justify-center rounded-lg bg-sidebar text-sidebar-foreground md:hidden"
+            className="fixed left-1.5 top-0 z-40 flex h-11 w-11 items-center justify-center rounded-lg bg-sidebar text-sidebar-foreground md:hidden"
           >
             <Menu className="h-5 w-5" aria-hidden="true" />
           </button>

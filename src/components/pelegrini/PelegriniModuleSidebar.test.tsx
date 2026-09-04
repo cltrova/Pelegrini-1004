@@ -133,6 +133,17 @@ describe('PelegriniModuleSidebar', () => {
     );
   });
 
+  it('keeps the mobile menu trigger inside the compact 44 px header rail', () => {
+    renderSidebar();
+
+    expect(screen.getByRole('button', { name: 'Abrir menu' })).toHaveClass(
+      'left-1.5',
+      'top-0',
+      'h-11',
+      'w-11',
+    );
+  });
+
   it('gives the future-section label an explicit zero-width styling hook', () => {
     renderSidebar({ withFutureItem: true });
 
