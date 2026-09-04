@@ -10,13 +10,19 @@ import { EstoqueRecord, GiroRecord } from '@/types/estoque';
 import { supabase } from '@/integrations/supabase/client';
 import ReactMarkdown from 'react-markdown';
 import { useEmpresaAtiva } from '@/hooks/useEmpresaAtiva';
+import { useFilialSelecionada } from '@/contexts/FilialSelecionadaContext';
+import { resolveCodEmpresaBiParam } from '@/utils/filialEndpoint';
 import { toast } from 'sonner';
 import { generatePDF, generateDOCX, DocumentData } from '@/utils/documentGenerator';
+import { EstoqueInsights } from './EstoqueInsights';
+import { parseStrictDate } from './estoque/assistantInsights';
 
 interface Message {
   role: 'user' | 'assistant';
   content: string;
   document?: DocumentData;
+  sourceLabel?: string;
+  periodLabel?: string;
 }
 
 interface Insight {
@@ -30,21 +36,54 @@ interface Insight {
 interface Props {
   giroData: GiroRecord[];
   estoqueData: EstoqueRecord[];
+  now?: Date;
+  onProductAction?: (productCode: string) => void;
 }
 
-function buildContext(estoque: EstoqueRecord[], giro: GiroRecord[]): string {
+const CHAT_SOURCE_LABEL = 'estoque atual e movimentacoes';
+const CHAT_PERIOD_LABEL = 'estoque atual e movimentacoes disponiveis dos ultimos 90 dias';
+const ASSISTANT_SUGGESTIONS = [
+  { label: 'Risco de ruptura', question: 'Quais produtos apresentam risco de ruptura?' },
+  { label: 'Capital parado', question: 'Onde esta o maior capital parado no estoque?' },
+  { label: 'Sem venda ha 90 dias', question: 'Quais produtos estao sem venda ha mais de 90 dias?' },
+  { label: 'Atencao de compra semanal', question: 'Quais compras precisam de atencao nesta semana?' },
+  { label: 'Transferir ou promover', question: 'Quais produtos sao candidatos a transferencia ou promocao?' },
+  { label: 'Resumo diario', question: 'Apresente um resumo das principais decisoes de estoque de hoje.' },
+] as const;
+
+function buildContext(estoque: EstoqueRecord[], giro: GiroRecord[], referenceDate = new Date()): string {
   const totalItens = estoque.length;
   const totalValor = estoque.reduce((s, r) => s + r.valor_estoque, 0);
   const totalQtd = estoque.reduce((s, r) => s + r.quantidade_estoque, 0);
 
-  const now = Date.now();
-  const diasSemVenda = (r: EstoqueRecord) => {
-    if (!r.data_ultima_venda) return 9999;
-    return Math.floor((now - new Date(r.data_ultima_venda).getTime()) / (1000*60*60*24));
+  const now = referenceDate.getTime();
+  const msPerDay = 86_400_000;
+  const d7 = now - 7 * msPerDay;
+  const d30 = now - 30 * msPerDay;
+  const d60 = now - 60 * msPerDay;
+  const d90 = now - 90 * msPerDay;
+  const currentUtcDate = new Date(now);
+  const currentCivilTimestamp = Date.UTC(currentUtcDate.getUTCFullYear(), currentUtcDate.getUTCMonth(), currentUtcDate.getUTCDate());
+  const threeMonthStart = Date.UTC(currentUtcDate.getUTCFullYear(), currentUtcDate.getUTCMonth() - 3, 1);
+  const validMovements = giro.flatMap((row) => {
+    const parsedDate = parseStrictDate(row.data_movimento);
+    if (!parsedDate || parsedDate.timestamp > now) return [];
+    return [{ row, ...parsedDate }];
+  });
+  const diasSemVenda = (r: EstoqueRecord): number | null => {
+    if (!r.data_ultima_venda) return null;
+    const timestamp = new Date(r.data_ultima_venda).getTime();
+    if (!Number.isFinite(timestamp)) return null;
+    return Math.max(0, Math.floor((now - timestamp) / msPerDay));
+  };
+  const isOverDays = (r: EstoqueRecord, days: number) => {
+    const age = diasSemVenda(r);
+    return age !== null && age > days;
   };
 
-  const semVenda90 = estoque.filter(r => diasSemVenda(r) > 90).length;
-  const semVenda180 = estoque.filter(r => diasSemVenda(r) > 180).length;
+  const semVenda90 = estoque.filter(r => isOverDays(r, 90)).length;
+  const semVenda180 = estoque.filter(r => isOverDays(r, 180)).length;
+  const dataVendaDesconhecida = estoque.filter(r => diasSemVenda(r) === null).length;
 
   // --- Agregação por Marca ---
   const brandMap = new Map<string, { count: number; valor: number; qtd: number; custoTotal: number; parados: number; ultimaVenda: string }>();
@@ -52,7 +91,7 @@ function buildContext(estoque: EstoqueRecord[], giro: GiroRecord[]): string {
     const e = brandMap.get(r.marca) || { count: 0, valor: 0, qtd: 0, custoTotal: 0, parados: 0, ultimaVenda: '' };
     e.count++; e.valor += r.valor_estoque; e.qtd += r.quantidade_estoque;
     e.custoTotal += r.custo_medio * r.quantidade_estoque;
-    if (diasSemVenda(r) > 90) e.parados++;
+    if (isOverDays(r, 90)) e.parados++;
     if (r.data_ultima_venda && r.data_ultima_venda > e.ultimaVenda) e.ultimaVenda = r.data_ultima_venda;
     brandMap.set(r.marca, e);
   });
@@ -63,7 +102,7 @@ function buildContext(estoque: EstoqueRecord[], giro: GiroRecord[]): string {
   estoque.forEach(r => {
     const e = grupoMap.get(r.grupo) || { count: 0, valor: 0, qtd: 0, parados: 0 };
     e.count++; e.valor += r.valor_estoque; e.qtd += r.quantidade_estoque;
-    if (diasSemVenda(r) > 90) e.parados++;
+    if (isOverDays(r, 90)) e.parados++;
     grupoMap.set(r.grupo, e);
   });
   const allGroups = [...grupoMap.entries()].sort((a, b) => b[1].valor - a[1].valor);
@@ -73,7 +112,7 @@ function buildContext(estoque: EstoqueRecord[], giro: GiroRecord[]): string {
   estoque.forEach(r => {
     const e = fornMap.get(r.cod_fornecedor) || { count: 0, valor: 0, qtd: 0, parados: 0 };
     e.count++; e.valor += r.valor_estoque; e.qtd += r.quantidade_estoque;
-    if (diasSemVenda(r) > 90) e.parados++;
+    if (isOverDays(r, 90)) e.parados++;
     fornMap.set(r.cod_fornecedor, e);
   });
   const allForn = [...fornMap.entries()].sort((a, b) => b[1].valor - a[1].valor);
@@ -96,7 +135,8 @@ function buildContext(estoque: EstoqueRecord[], giro: GiroRecord[]): string {
 
   // --- Giro agregado por Marca ---
   const giroByMarca = new Map<string, { vendas: number; compras: number; transferencias_saida: number; transferencias_entrada: number }>();
-  giro.forEach(r => {
+  validMovements.forEach(({ row: r, timestamp }) => {
+    if (timestamp < d90) return;
     const e = giroByMarca.get(r.marca) || { vendas: 0, compras: 0, transferencias_saida: 0, transferencias_entrada: 0 };
     e.vendas += r.saida_venda; e.compras += r.entrada_compra;
     e.transferencias_saida += r.saida_transferencia; e.transferencias_entrada += r.entrada_transferencia;
@@ -107,58 +147,52 @@ function buildContext(estoque: EstoqueRecord[], giro: GiroRecord[]): string {
   const top50Valor = [...estoque].sort((a, b) => b.valor_estoque - a.valor_estoque).slice(0, 50);
 
   // --- Top 50 produtos parados há mais tempo ---
-  const top50Parados = [...estoque].sort((a, b) => diasSemVenda(b) - diasSemVenda(a)).slice(0, 50);
+  const top50Parados = estoque
+    .filter(r => diasSemVenda(r) !== null)
+    .sort((a, b) => (diasSemVenda(b) ?? 0) - (diasSemVenda(a) ?? 0))
+    .slice(0, 50);
 
   // === NOVAS SEÇÕES: Análise de Vendas Recentes ===
-  const msPerDay = 86400000;
-  const d7 = new Date(now - 7 * msPerDay);
-  const d30 = new Date(now - 30 * msPerDay);
-  const d60 = new Date(now - 60 * msPerDay);
-  const d90 = new Date(now - 90 * msPerDay);
-
   // 1) Vendas por período
   const v7 = { qty: 0, val: 0 }, v30 = { qty: 0, val: 0 }, v60 = { qty: 0, val: 0 }, v90 = { qty: 0, val: 0 };
-  const salesRecords = giro.filter(r => r.saida_venda > 0);
-  salesRecords.forEach(r => {
-    const dt = new Date(r.data_movimento);
-    if (dt >= d90) { v90.qty += r.saida_venda; v90.val += r.valor_venda; }
-    if (dt >= d60) { v60.qty += r.saida_venda; v60.val += r.valor_venda; }
-    if (dt >= d30) { v30.qty += r.saida_venda; v30.val += r.valor_venda; }
-    if (dt >= d7)  { v7.qty += r.saida_venda; v7.val += r.valor_venda; }
+  const salesRecords = validMovements.filter(({ row }) => row.saida_venda > 0);
+  salesRecords.forEach(({ row: r, timestamp }) => {
+    if (timestamp >= d90) { v90.qty += r.saida_venda; v90.val += r.valor_venda; }
+    if (timestamp >= d60) { v60.qty += r.saida_venda; v60.val += r.valor_venda; }
+    if (timestamp >= d30) { v30.qty += r.saida_venda; v30.val += r.valor_venda; }
+    if (timestamp >= d7)  { v7.qty += r.saida_venda; v7.val += r.valor_venda; }
   });
 
   // 2) Top 30 produtos mais vendidos (90 dias)
-  const prodSales90 = new Map<number, { produto: string; marca: string; grupo: string; qty: number; val: number; lastDate: string }>();
-  salesRecords.forEach(r => {
-    const dt = new Date(r.data_movimento);
-    if (dt < d90) return;
-    const e = prodSales90.get(r.cod_produto) || { produto: r.produto, marca: r.marca, grupo: r.grupo, qty: 0, val: 0, lastDate: '' };
+  const prodSales90 = new Map<string, { codProduto: number; empresa: string; produto: string; marca: string; grupo: string; qty: number; val: number; lastDate: string }>();
+  salesRecords.forEach(({ row: r, timestamp }) => {
+    if (timestamp < d90) return;
+    const key = `${r.cod_empresa_bi}:${r.cod_empresa}:${r.cod_produto}`;
+    const e = prodSales90.get(key) || { codProduto: r.cod_produto, empresa: r.empresa, produto: r.produto, marca: r.marca, grupo: r.grupo, qty: 0, val: 0, lastDate: '' };
     e.qty += r.saida_venda; e.val += r.valor_venda;
     if (r.data_movimento > e.lastDate) e.lastDate = r.data_movimento;
-    prodSales90.set(r.cod_produto, e);
+    prodSales90.set(key, e);
   });
   const top30Vendidos = [...prodSales90.entries()]
     .sort((a, b) => b[1].qty - a[1].qty)
     .slice(0, 30);
 
-  // 3) Evolução mensal (últimos 6 meses)
+  // 3) Evolucao mensal limitada a janela realmente carregada pela API.
   const monthlyEvo = new Map<string, { vendas_qty: number; vendas_val: number; compras_qty: number; compras_val: number }>();
-  giro.forEach(r => {
-    const month = r.data_movimento?.substring(0, 7);
-    if (!month) return;
-    const e = monthlyEvo.get(month) || { vendas_qty: 0, vendas_val: 0, compras_qty: 0, compras_val: 0 };
+  validMovements.forEach(({ row: r, civilTimestamp: movementCivilTimestamp, monthKey }) => {
+    if (movementCivilTimestamp < threeMonthStart || movementCivilTimestamp > currentCivilTimestamp) return;
+    const e = monthlyEvo.get(monthKey) || { vendas_qty: 0, vendas_val: 0, compras_qty: 0, compras_val: 0 };
     e.vendas_qty += r.saida_venda; e.vendas_val += r.valor_venda;
     e.compras_qty += r.entrada_compra;
-    monthlyEvo.set(month, e);
+    monthlyEvo.set(monthKey, e);
   });
-  const sortedMonths = [...monthlyEvo.entries()].sort((a, b) => b[0].localeCompare(a[0])).slice(0, 6).reverse();
+  const sortedMonths = [...monthlyEvo.entries()].sort((a, b) => a[0].localeCompare(b[0]));
 
   // 4) Vendas por grupo e marca (30 dias)
   const salesByGroup30 = new Map<string, { qty: number; val: number }>();
   const salesByMarca30 = new Map<string, { qty: number; val: number }>();
-  salesRecords.forEach(r => {
-    const dt = new Date(r.data_movimento);
-    if (dt < d30) return;
+  salesRecords.forEach(({ row: r, timestamp }) => {
+    if (timestamp < d30) return;
     const g = salesByGroup30.get(r.grupo) || { qty: 0, val: 0 };
     g.qty += r.saida_venda; g.val += r.valor_venda;
     salesByGroup30.set(r.grupo, g);
@@ -174,6 +208,7 @@ RESUMO GERAL DO ESTOQUE:
 - Valor total em estoque: R$ ${totalValor.toFixed(2)}
 - Itens sem venda >90 dias: ${semVenda90} (${((semVenda90/totalItens)*100).toFixed(1)}%)
 - Itens sem venda >180 dias: ${semVenda180} (${((semVenda180/totalItens)*100).toFixed(1)}%)
+- Itens com data de ultima venda desconhecida: ${dataVendaDesconhecida}
 
 POR EMPRESA:
 ${[...empMap.entries()].map(([emp, d]) => `- ${emp}: ${d.count} itens, Qtd:${d.qtd}, R$ ${d.valor.toFixed(2)}`).join('\n')}
@@ -190,7 +225,7 @@ ${allGroups.map(([g, d]) => `${g}|${d.count}|${d.qtd}|${d.valor.toFixed(0)}|${d.
 TODOS OS FORNECEDORES (${allForn.length}) - CodForn|Itens|Qtd|Valor|Parados>90d:
 ${allForn.map(([f, d]) => `${f}|${d.count}|${d.qtd}|${d.valor.toFixed(0)}|${d.parados}`).join('\n')}
 
-GIRO POR MARCA - Marca|TotalVendas|TotalCompras|TransfSaida|TransfEntrada:
+GIRO POR MARCA (90 DIAS) - Marca|TotalVendas|TotalCompras|TransfSaida|TransfEntrada:
 ${[...giroByMarca.entries()].sort((a, b) => b[1].vendas - a[1].vendas).map(([m, d]) => `${m}|${d.vendas}|${d.compras}|${d.transferencias_saida}|${d.transferencias_entrada}`).join('\n')}
 
 VENDAS POR PERÍODO:
@@ -199,8 +234,8 @@ VENDAS POR PERÍODO:
 - Últimos 60 dias: ${v60.qty} unidades, R$ ${v60.val.toFixed(2)}
 - Últimos 90 dias: ${v90.qty} unidades, R$ ${v90.val.toFixed(2)}
 
-TOP 30 PRODUTOS MAIS VENDIDOS (90 DIAS) - Cod|Produto|Marca|Grupo|QtdVendida|ValorVendido|UltMovimento:
-${top30Vendidos.map(([cod, d]) => `${cod}|${d.produto.slice(0,40)}|${d.marca}|${d.grupo}|${d.qty}|${d.val.toFixed(0)}|${d.lastDate.slice(0,10)}`).join('\n')}
+TOP 30 PRODUTOS MAIS VENDIDOS (90 DIAS) - Empresa|Cod|Produto|Marca|Grupo|QtdVendida|ValorVendido|UltMovimento:
+${top30Vendidos.map(([, d]) => `${d.empresa}|${d.codProduto}|${d.produto.slice(0,40)}|${d.marca}|${d.grupo}|${d.qty}|${d.val.toFixed(0)}|${d.lastDate.slice(0,10)}`).join('\n')}
 
 EVOLUÇÃO MENSAL (${sortedMonths.length} MESES) - Mês|VendasQtd|VendasValor|ComprasQtd:
 ${sortedMonths.map(([m, d]) => `${m}|${d.vendas_qty}|${d.vendas_val.toFixed(0)}|${d.compras_qty}`).join('\n')}
@@ -215,7 +250,7 @@ TOP 50 PRODUTOS POR VALOR - Cod|Produto|Marca|Grupo|Qtd|Valor|CustoMedio|ABC|Ult
 ${top50Valor.map(r => `${r.cod_produto}|${r.produto.slice(0,40)}|${r.marca}|${r.grupo}|${r.quantidade_estoque}|${r.valor_estoque.toFixed(0)}|${r.custo_medio.toFixed(2)}|${r.classe_abc}|${r.data_ultima_venda?.slice(0,10)||'-'}|${r.cod_fornecedor}`).join('\n')}
 
 TOP 50 PRODUTOS PARADOS (SEM VENDA HÁ MAIS TEMPO) - Cod|Produto|Marca|Grupo|Qtd|Valor|DiasParado|UltVenda|Fornecedor:
-${top50Parados.map(r => `${r.cod_produto}|${r.produto.slice(0,40)}|${r.marca}|${r.grupo}|${r.quantidade_estoque}|${r.valor_estoque.toFixed(0)}|${diasSemVenda(r)}|${r.data_ultima_venda?.slice(0,10)||'-'}|${r.cod_fornecedor}`).join('\n')}
+${top50Parados.map(r => `${r.cod_produto}|${r.produto.slice(0,40)}|${r.marca}|${r.grupo}|${r.quantidade_estoque}|${r.valor_estoque.toFixed(0)}|${diasSemVenda(r) ?? 'desconhecido'}|${r.data_ultima_venda?.slice(0,10)||'-'}|${r.cod_fornecedor}`).join('\n')}
   `.trim();
 }
 
@@ -257,7 +292,7 @@ const INSIGHT_CATEGORIES = [
 ];
 
 // ==================== INSIGHTS TAB ====================
-function InsightsTab({ estoqueData, giroData }: Props) {
+function InsightsTab({ estoqueData, giroData, now }: Props) {
   const [insights, setInsights] = useState<Insight[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [lastGenerated, setLastGenerated] = useState<string | null>(null);
@@ -268,7 +303,7 @@ function InsightsTab({ estoqueData, giroData }: Props) {
     if (isLoading) return;
     setIsLoading(true);
     try {
-      const context = buildContext(estoqueData, giroData);
+      const context = buildContext(estoqueData, giroData, now);
       const { data: sessionData } = await supabase.auth.getSession();
       const token = sessionData?.session?.access_token;
 
@@ -402,11 +437,12 @@ function InsightsTab({ estoqueData, giroData }: Props) {
 }
 
 // ==================== CHAT TAB ====================
-function ChatTab({ estoqueData, giroData, customPrompt, codEmpresaBi, credits, onCreditUsed }: Props & { customPrompt: string; codEmpresaBi: string; credits: { used: number; limit: number }; onCreditUsed: () => void }) {
+function ChatTab({ estoqueData, giroData, now, customPrompt, codEmpresaBi, credits, onCreditUsed }: Props & { customPrompt: string; codEmpresaBi: string; credits: { used: number; limit: number }; onCreditUsed: () => void | Promise<void> }) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [failedConversation, setFailedConversation] = useState<Message[] | null>(null);
+  const [creditWarning, setCreditWarning] = useState<string | null>(null);
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
   const [isTranscribing, setIsTranscribing] = useState(false);
@@ -502,8 +538,9 @@ function ChatTab({ estoqueData, giroData, customPrompt, codEmpresaBi, credits, o
 
   const formatTime = (s: number) => `${Math.floor(s / 60).toString().padStart(2, '0')}:${(s % 60).toString().padStart(2, '0')}`;
 
-  const sendMessage = async () => {
-    if (!input.trim() || isLoading) return;
+  const sendMessage = async (suggestedQuestion?: string, retryConversation?: Message[]) => {
+    const userMessage = suggestedQuestion?.trim() || input.trim();
+    if ((!userMessage && !retryConversation) || isLoading) return;
 
     // Check credit limit
     if (credits.used >= credits.limit) {
@@ -511,13 +548,17 @@ function ChatTab({ estoqueData, giroData, customPrompt, codEmpresaBi, credits, o
       return;
     }
 
-    const userMessage = input.trim();
-    setInput('');
-    setMessages(prev => [...prev, { role: 'user', content: userMessage }]);
+    const conversation = retryConversation ?? [...messages, { role: 'user' as const, content: userMessage }];
+    if (!retryConversation) {
+      setInput('');
+      setMessages(conversation);
+    }
+    setFailedConversation(null);
+    setCreditWarning(null);
     setIsLoading(true);
 
     try {
-      const context = buildContext(estoqueData, giroData);
+      const context = buildContext(estoqueData, giroData, now);
       const { data: sessionData } = await supabase.auth.getSession();
       const token = sessionData?.session?.access_token;
 
@@ -531,7 +572,7 @@ function ChatTab({ estoqueData, giroData, customPrompt, codEmpresaBi, credits, o
             apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
           },
           body: JSON.stringify({
-            messages: [...messages, { role: 'user', content: userMessage }],
+            messages: conversation.map(({ role, content }) => ({ role, content })),
             context,
             customPrompt,
           }),
@@ -546,24 +587,26 @@ function ChatTab({ estoqueData, giroData, customPrompt, codEmpresaBi, credits, o
         role: 'assistant', 
         content: result.response,
         document: result.document || undefined,
+        sourceLabel: CHAT_SOURCE_LABEL,
+        periodLabel: CHAT_PERIOD_LABEL,
       }]);
 
-      // Increment credit
-      if (codEmpresaBi) {
-        await supabase.rpc('increment_assistant_credit', { p_cod_empresa_bi: codEmpresaBi });
-        onCreditUsed();
-      }
     } catch (error: unknown) {
       console.error('Erro ao enviar mensagem:', error);
-      const errorMessage = error instanceof Error ? error.message : '';
-      setMessages(prev => [...prev, {
-        role: 'assistant',
-        content: errorMessage.includes('Créditos')
-          ? 'Créditos insuficientes. Aguarde a renovação mensal ou entre em contato com o administrador.'
-          : 'Desculpe, ocorreu um erro ao processar sua mensagem. Tente novamente.'
-      }]);
-    } finally {
+      setFailedConversation(conversation);
       setIsLoading(false);
+      return;
+    }
+
+    setIsLoading(false);
+    if (codEmpresaBi) {
+      try {
+        await supabase.rpc('increment_assistant_credit', { p_cod_empresa_bi: codEmpresaBi });
+        await onCreditUsed();
+      } catch (error: unknown) {
+        console.error('Erro ao contabilizar credito do assistente:', error);
+        setCreditWarning('Resposta entregue, mas o uso de credito nao foi atualizado.');
+      }
     }
   };
 
@@ -571,38 +614,17 @@ function ChatTab({ estoqueData, giroData, customPrompt, codEmpresaBi, credits, o
     <div className="flex h-[min(34rem,calc(100vh-15rem))] min-h-[26rem] flex-col">
       <div ref={scrollRef} className="flex-1 space-y-4 overflow-y-auto px-1 py-3 sm:px-3">
         {messages.length === 0 && (
-          <div className="mx-auto flex h-full max-w-3xl flex-col items-center justify-center gap-3 py-5 text-center">
-            <Bot className="h-8 w-8 text-primary/45" />
-            <p className="text-sm text-muted-foreground">Pergunte sobre giro, compras, rupturas ou custos.</p>
-            <Button
-              aria-expanded={showSuggestions}
-              aria-label={showSuggestions ? 'Ocultar sugestoes' : 'Mostrar sugestoes'}
-              className="h-8 gap-2 text-xs"
-              onClick={() => setShowSuggestions(current => !current)}
-              size="sm"
-              type="button"
-              variant="ghost"
-            >
-              Sugestoes
-              <ChevronDown className={`h-3.5 w-3.5 transition-transform duration-150 ${showSuggestions ? 'rotate-180' : ''}`} />
-            </Button>
-            {showSuggestions && <div className="flex max-w-full gap-2 overflow-x-auto pb-1">
-              {[
-                'Qual produto gira mais?',
-                'Quais itens estão parados?',
-                'Gera pedido de compra da marca Eaton',
-                'Relatório de estoque por marca',
-                'Qual marca tem maior valor?',
-              ].map(q => (
-                <button
-                  key={q}
-                  onClick={() => setInput(q)}
-                  className="h-8 shrink-0 rounded-md border border-border px-3 text-xs transition-colors duration-150 hover:bg-accent"
-                >
-                  {q}
+          <div className="mx-auto w-full max-w-4xl space-y-3 py-4">
+            <p className="text-sm font-medium">Consultas rapidas</p>
+            <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+              {ASSISTANT_SUGGESTIONS.map(({ label, question }) => (
+                <button key={label} aria-label={label} data-testid="stock-assistant-suggestion" onClick={() => sendMessage(question)}
+                  className="min-h-10 border border-border bg-card px-3 py-2 text-left text-xs font-medium transition-colors hover:border-primary/50 hover:bg-accent">
+                  {label}
                 </button>
               ))}
-            </div>}
+            </div>
+            <p className="text-xs text-muted-foreground">As respostas usam o estoque atual e as movimentacoes disponiveis.</p>
           </div>
         )}
         {messages.map((msg, i) => (
@@ -620,6 +642,12 @@ function ChatTab({ estoqueData, giroData, customPrompt, codEmpresaBi, credits, o
                   {msg.content && (
                     <div className="prose prose-sm dark:prose-invert max-w-none">
                       <ReactMarkdown>{msg.content}</ReactMarkdown>
+                    </div>
+                  )}
+                  {msg.sourceLabel && msg.periodLabel && (
+                    <div className="flex flex-wrap gap-x-3 gap-y-1 border-t border-border/60 pt-2 text-[11px] text-muted-foreground">
+                      <span>Fonte: {msg.sourceLabel}</span>
+                      <span>Periodo: {msg.periodLabel}</span>
                     </div>
                   )}
                   {msg.document && (
@@ -652,6 +680,17 @@ function ChatTab({ estoqueData, giroData, customPrompt, codEmpresaBi, credits, o
             )}
           </div>
         ))}
+        {failedConversation && !isLoading && (
+          <div role="alert" className="flex flex-wrap items-center justify-between gap-3 border border-red-500/30 bg-red-500/5 px-3 py-2">
+            <p className="text-sm text-red-700 dark:text-red-300">Nao foi possivel concluir esta pergunta.</p>
+            <Button size="sm" type="button" variant="outline" onClick={() => sendMessage(undefined, failedConversation)}>
+              <RefreshCw className="mr-2 h-3.5 w-3.5" /> Tentar novamente
+            </Button>
+          </div>
+        )}
+        {creditWarning && (
+          <p className="text-xs text-amber-700 dark:text-amber-300" role="status">{creditWarning}</p>
+        )}
         {isLoading && (
           <div className="flex gap-3">
             <div className="h-8 w-8 rounded-full bg-amber-500/20 flex items-center justify-center">
@@ -664,7 +703,7 @@ function ChatTab({ estoqueData, giroData, customPrompt, codEmpresaBi, credits, o
         )}
       </div>
 
-      <div className="border-t border-border bg-background/95 px-1 py-3 backdrop-blur sm:px-3">
+      <div data-testid="stock-assistant-composer" className="sticky bottom-0 border-t border-border bg-background/95 px-1 py-3 backdrop-blur sm:px-3">
         {isRecording && (
           <div className="flex items-center gap-3 mb-3 px-3 py-2 rounded-lg bg-red-500/10 border border-red-500/20">
             <div className="h-2.5 w-2.5 rounded-full bg-red-500 animate-pulse" />
@@ -687,6 +726,12 @@ function ChatTab({ estoqueData, giroData, customPrompt, codEmpresaBi, credits, o
             placeholder="Pergunte sobre seu estoque..."
             className="flex-1"
             disabled={isLoading || isRecording}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                sendMessage();
+              }
+            }}
           />
           <Button
             type="button"
@@ -698,7 +743,7 @@ function ChatTab({ estoqueData, giroData, customPrompt, codEmpresaBi, credits, o
           >
             {isRecording ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
           </Button>
-          <Button type="submit" size="icon" disabled={isLoading || !input.trim() || isRecording}>
+          <Button aria-label="Enviar pergunta" type="submit" size="icon" disabled={isLoading || !input.trim() || isRecording}>
             <Send className="h-4 w-4" />
           </Button>
         </form>
@@ -922,11 +967,13 @@ function BrainTab({ codEmpresaBi }: { codEmpresaBi: string }) {
 }
 
 // ==================== MAIN COMPONENT ====================
-export function EstoqueAssistantTab({ giroData, estoqueData }: Props) {
+export function EstoqueAssistantTab({ giroData, estoqueData, now, onProductAction }: Props) {
   const [customPrompt, setCustomPrompt] = useState('');
   const [credits, setCredits] = useState({ used: 0, limit: 5000 });
-  const { codEmpresaAtiva } = useEmpresaAtiva();
-  const codEmpresaBi = codEmpresaAtiva || '';
+  const [activeView, setActiveView] = useState<'chat' | 'insights'>('chat');
+  const { codEmpresaAtiva, empresa } = useEmpresaAtiva();
+  const { filialAtiva } = useFilialSelecionada();
+  const codEmpresaBi = resolveCodEmpresaBiParam(empresa, filialAtiva) || codEmpresaAtiva || '';
 
   // Load custom prompt + credits
   useEffect(() => {
@@ -964,7 +1011,7 @@ export function EstoqueAssistantTab({ giroData, estoqueData }: Props) {
               <Bot className="h-4 w-4 text-primary" />
               Assistente de Estoque
             </h2>
-            <p className="mt-0.5 text-xs text-muted-foreground">{codEmpresaBi ? 'IA pronta' : 'Conexao indisponivel'}</p>
+            <p className="mt-0.5 text-xs text-muted-foreground">{codEmpresaBi ? 'Chat e analise local disponiveis' : 'Analise local disponivel'}</p>
           </div>
           <div className="flex items-center gap-2 text-muted-foreground">
             <div className="flex items-center gap-1.5">
@@ -980,28 +1027,23 @@ export function EstoqueAssistantTab({ giroData, estoqueData }: Props) {
             </div>
           </div>
       </header>
-      <div className="px-3">
-        <Tabs defaultValue="chat">
-          <TabsList className="h-9 w-full justify-start gap-4 rounded-none border-b border-border bg-transparent p-0">
-            <TabsTrigger value="chat" className="h-9 gap-2 rounded-none border-b-2 border-transparent px-1 shadow-none data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none">
-              <MessageSquare className="h-4 w-4" />
-              Chat
-            </TabsTrigger>
-            <TabsTrigger value="insights" className="h-9 gap-2 rounded-none border-b-2 border-transparent px-1 shadow-none data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none">
-              <Lightbulb className="h-4 w-4" />
-              Insights
-            </TabsTrigger>
-          </TabsList>
+      <Tabs className="px-3" onValueChange={(value) => setActiveView(value as 'chat' | 'insights')} value={activeView}>
+        <TabsList aria-label="Areas do assistente" className="flex h-9 w-full items-end justify-start gap-4 rounded-none border-b border-border bg-transparent p-0">
+          <TabsTrigger className="h-9 gap-2 rounded-none border-b-2 border-transparent bg-transparent px-1 py-0 shadow-none data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none" value="chat">
+            <MessageSquare className="h-4 w-4" /> Chat
+          </TabsTrigger>
+          <TabsTrigger className="h-9 gap-2 rounded-none border-b-2 border-transparent bg-transparent px-1 py-0 shadow-none data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none" value="insights">
+            <Lightbulb className="h-4 w-4" /> Insights
+          </TabsTrigger>
+        </TabsList>
 
-          <TabsContent value="chat">
-            <ChatTab estoqueData={estoqueData} giroData={giroData} customPrompt={customPrompt} codEmpresaBi={codEmpresaBi} credits={credits} onCreditUsed={refreshCredits} />
-          </TabsContent>
-
-          <TabsContent value="insights">
-            <InsightsTab estoqueData={estoqueData} giroData={giroData} />
-          </TabsContent>
-        </Tabs>
-      </div>
+        <TabsContent className="mt-2" forceMount value="chat">
+            <ChatTab estoqueData={estoqueData} giroData={giroData} now={now} customPrompt={customPrompt} codEmpresaBi={codEmpresaBi} credits={credits} onCreditUsed={refreshCredits} />
+        </TabsContent>
+        <TabsContent className="mt-2" forceMount value="insights">
+            <EstoqueInsights data={estoqueData} giroData={giroData} now={now} onProductAction={onProductAction} />
+        </TabsContent>
+      </Tabs>
     </section>
   );
 }

@@ -1,7 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
 import type { GiroRecord } from '@/types/estoque';
-import { buildEstoqueFallbackFromGiro, withEstoqueCompanyCode } from './useEstoqueData';
+import {
+  buildEstoqueFallbackFromGiro,
+  buildOperationalEstoqueFallbackFromGiro,
+  withEstoqueCompanyCode,
+} from './useEstoqueData';
 
 const giro: GiroRecord = {
   cod_empresa_bi: null as unknown as number,
@@ -66,8 +70,45 @@ describe('buildEstoqueFallbackFromGiro', () => {
     expect(result[0]).toMatchObject({ quantidade_estoque: 22, valor_estoque: 627.7656 });
   });
 
-  it('nao reaproveita dados identificados como CT na Casa do Chevrolet', () => {
-    expect(buildEstoqueFallbackFromGiro([giro], '10041')).toEqual([]);
+  it('reaproveita na CCH a fonte compartilhada sem codigo de empresa', () => {
+    expect(buildEstoqueFallbackFromGiro([giro], '10041')).toEqual([
+      expect.objectContaining({ cod_empresa_bi: 10041, cod_produto: 23 }),
+    ]);
+  });
+
+  it('nao mistura na CCH registros explicitamente identificados como CT', () => {
+    expect(buildEstoqueFallbackFromGiro([{ ...giro, cod_empresa_bi: 1004 }], '10041')).toEqual([]);
+  });
+});
+
+describe('buildOperationalEstoqueFallbackFromGiro', () => {
+  it('mantem saldos antigos e itens zerados apenas quando tiveram movimento recente', () => {
+    const saldoAntigo = {
+      ...giro,
+      cod_produto: 24,
+      data_movimento: '2024-01-10T00:00:00',
+      quantidade_estoque: 8,
+    };
+    const zeradoAntigo = {
+      ...giro,
+      cod_produto: 25,
+      data_movimento: '2024-01-10T00:00:00',
+      quantidade_estoque: 0,
+    };
+    const zeradoRecente = {
+      ...giro,
+      cod_produto: 26,
+      data_movimento: '2026-08-20T00:00:00',
+      quantidade_estoque: 0,
+    };
+
+    const result = buildOperationalEstoqueFallbackFromGiro(
+      [saldoAntigo, zeradoAntigo, zeradoRecente],
+      '1004',
+      '2026-06-01',
+    );
+
+    expect(result.map((row) => row.cod_produto)).toEqual([24, 26]);
   });
 });
 

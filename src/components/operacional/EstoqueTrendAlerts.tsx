@@ -19,13 +19,7 @@ function MiniSparkline({ data }: { data: { month: string; qty: number }[] }) {
     <div className="h-10 w-24">
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart data={data} margin={{ top: 2, right: 2, bottom: 2, left: 2 }}>
-          <defs>
-            <linearGradient id="sparkDecline" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#ef4444" stopOpacity={0.4} />
-              <stop offset="100%" stopColor="#ef4444" stopOpacity={0} />
-            </linearGradient>
-          </defs>
-          <Area type="monotone" dataKey="qty" stroke="#ef4444" fill="url(#sparkDecline)" strokeWidth={1.5} dot={false} />
+          <Area type="monotone" dataKey="qty" stroke="#ef4444" fill="#ef4444" fillOpacity={0.08} strokeWidth={1.5} dot={false} />
         </AreaChart>
       </ResponsiveContainer>
     </div>
@@ -46,7 +40,7 @@ export function EstoqueTrendAlerts({ giroData }: Props) {
 
   return (
     <Collapsible open={isOpen} onOpenChange={setIsOpen}>
-      <Card className="premium-card border-red-500/20">
+      <Card className="border-red-500/20 bg-background shadow-none">
         <CollapsibleTrigger asChild>
           <CardHeader className="pb-3 cursor-pointer hover:bg-muted/30 transition-colors rounded-t-lg">
             <div className="flex items-center justify-between">
@@ -77,7 +71,7 @@ export function EstoqueTrendAlerts({ giroData }: Props) {
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
               {declining.map(item => (
                 <div
-                  key={item.cod_produto}
+                  key={`${item.empresa}-${item.cod_produto}`}
                   className="p-3 rounded-lg bg-muted/30 border border-border/50 space-y-2"
                 >
                   <div className="flex items-start justify-between gap-2">

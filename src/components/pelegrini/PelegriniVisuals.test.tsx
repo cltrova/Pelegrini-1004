@@ -274,6 +274,33 @@ describe('Pelegrini visual components', () => {
     expect(screen.getByRole('tab', { name: 'Visão Geral' })).toHaveAttribute('aria-selected', 'true');
   });
 
+  it('navega pelas abas com setas e associa cada aba ao painel', () => {
+    const onValueChange = vi.fn();
+    render(
+      <PelegriniTabs
+        ariaLabel="Visoes do estoque"
+        items={[
+          { value: 'central', label: 'Central' },
+          { value: 'giro', label: 'Giro' },
+          { value: 'assistente', label: 'Assistente', disabled: true },
+        ]}
+        value="central"
+        onValueChange={onValueChange}
+      />,
+    );
+
+    const central = screen.getByRole('tab', { name: 'Central' });
+    const giro = screen.getByRole('tab', { name: 'Giro' });
+    expect(central).toHaveAttribute('tabindex', '0');
+    expect(giro).toHaveAttribute('tabindex', '-1');
+    expect(central).toHaveAttribute('aria-controls', 'pelegrini-tabpanel-central');
+
+    central.focus();
+    fireEvent.keyDown(central, { key: 'ArrowRight' });
+    expect(onValueChange).toHaveBeenCalledWith('giro');
+    expect(giro).toHaveFocus();
+  });
+
   it('renders chart frame with CCH catalog identity', () => {
     render(
       <PelegriniChartFrame

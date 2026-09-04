@@ -75,6 +75,25 @@ function formatMovementQuantity(available: boolean, value: number): string {
   return available ? `${formatNumber(value)} unidades` : 'Dados insuficientes';
 }
 
+const statusExplanation: Record<StockStatus, { reason: string; action: string }> = {
+  out: {
+    reason: 'O saldo atual e menor ou igual a zero.',
+    action: 'Validar pedidos em aberto e priorizar reposicao.',
+  },
+  critical: {
+    reason: 'A cobertura estimada e inferior a 15 dias.',
+    action: 'Repor o item com prioridade e revisar a demanda recente.',
+  },
+  low: {
+    reason: 'A cobertura estimada esta entre 15 e 30 dias.',
+    action: 'Monitorar o consumo e programar a proxima compra.',
+  },
+  available: {
+    reason: 'O saldo atual cobre pelo menos 30 dias, ou nao ha base de movimento suficiente para alertar.',
+    action: 'Manter o acompanhamento no ciclo normal de estoque.',
+  },
+};
+
 function DetailValue({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div className="min-w-0">
@@ -128,6 +147,15 @@ export function EstoqueProductDrawer({ product, open, onOpenChange }: EstoquePro
             </SheetHeader>
 
             <StatusValue status={product.status} />
+
+            <section aria-labelledby="stock-rule-title" className="min-w-0 border-y border-border py-4">
+              <h3 className="text-sm font-semibold text-foreground" id="stock-rule-title">Como este status foi calculado</h3>
+              <p className="mt-2 text-sm text-muted-foreground">{statusExplanation[product.status].reason}</p>
+              <p className="mt-2 text-xs text-muted-foreground">
+                Cobertura calculada com as saidas dos ultimos tres meses-calendario: saldo atual dividido pela media diaria de saidas.
+              </p>
+              <p className="mt-2 text-sm font-medium text-primary">Acao recomendada: {statusExplanation[product.status].action}</p>
+            </section>
 
             <section aria-labelledby="stock-balance-title" className="min-w-0 border-t border-border pt-5">
               <h3 className="text-sm font-semibold text-foreground" id="stock-balance-title">Saldo e cobertura</h3>

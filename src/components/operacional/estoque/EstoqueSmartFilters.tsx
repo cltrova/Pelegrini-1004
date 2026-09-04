@@ -47,6 +47,7 @@ const quickFilterLabels: Record<StockQuickFilter, string> = {
   stagnant: 'Parados',
   'with-stock': 'Com estoque',
   attention: 'Exigem atencao',
+  excess: 'Capital em excesso',
 };
 
 interface ActiveChipProps {

@@ -33,8 +33,8 @@ export default function ComissaoPage() {
   const [calculaSt, setCalculaSt] = useState(false);
   const [exibirMargem, setExibirMargem] = useState(true);
   const [vendedoresSel, setVendedoresSel] = useState<string[]>([]);
-  const [operacaoFiscalInicial, setOperacaoFiscalInicial] = useState('');
-  const [operacaoFiscalFinal, setOperacaoFiscalFinal] = useState('');
+  const [operacaoFiscalInicial, setOperacaoFiscalInicial] = useState('0');
+  const [operacaoFiscalFinal, setOperacaoFiscalFinal] = useState('62');
 
   const [aplicado, setAplicado] = useState<ComissaoFiltros | null>(null);
 
@@ -86,11 +86,13 @@ export default function ComissaoPage() {
         objetivoAteHoje: acc.objetivoAteHoje + l.objetivoAteHoje,
         faturadoAteHoje: acc.faturadoAteHoje + l.faturadoAteHoje,
         valorTotal: acc.valorTotal + l.valorTotal,
-        pedidosAberto: acc.pedidosAberto + l.pedidosAberto,
+        pedidosAberto: acc.pedidosAberto === null || l.pedidosAberto === null
+          ? null
+          : acc.pedidosAberto + l.pedidosAberto,
         devolucao: acc.devolucao + l.devolucao,
         st: acc.st + l.st,
       }),
-      { objetivoMensal: 0, objetivoAteHoje: 0, faturadoAteHoje: 0, valorTotal: 0, pedidosAberto: 0, devolucao: 0, st: 0 },
+      { objetivoMensal: 0, objetivoAteHoje: 0, faturadoAteHoje: 0, valorTotal: 0, pedidosAberto: 0 as number | null, devolucao: 0, st: 0 },
     );
   }, [linhas]);
 
@@ -196,6 +198,11 @@ export default function ComissaoPage() {
           <CardTitle className="text-sm">
             Comissão por vendedor {linhas.length > 0 && <span className="text-muted-foreground font-normal">({linhas.length})</span>}
           </CardTitle>
+          {aplicado && totais.pedidosAberto === null && (
+            <p role="status" className="text-xs text-muted-foreground">
+              Pedidos em aberto não informados pela API para um ou mais vendedores. Total indisponível.
+            </p>
+          )}
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -247,7 +254,7 @@ export default function ComissaoPage() {
                       <td className={cn(td, 'font-semibold text-foreground')}>{formatCurrency(l.faturadoAteHoje)}</td>
                       <td className={td}>{formatCurrency(l.aFaturar)}</td>
                       <td className={td}>{formatCurrency(l.valorTotal)}</td>
-                      <td className={td}>{formatCurrency(l.pedidosAberto)}</td>
+                      <td className={td}>{l.pedidosAberto === null ? 'Indisponível' : formatCurrency(l.pedidosAberto)}</td>
                       <td className={td}>{formatCurrency(l.projecao)}</td>
                       <td className={td}>{formatCurrency(l.novaProjecao)}</td>
                       <td className={td}>{formatInteger(l.pmv)}</td>
@@ -266,7 +273,7 @@ export default function ComissaoPage() {
                     <td className={td}>{formatCurrency(totais.faturadoAteHoje)}</td>
                     <td className={td} />
                     <td className={td}>{formatCurrency(totais.valorTotal)}</td>
-                    <td className={td}>{formatCurrency(totais.pedidosAberto)}</td>
+                    <td className={td}>{totais.pedidosAberto === null ? 'Indisponível' : formatCurrency(totais.pedidosAberto)}</td>
                     <td className={td} colSpan={mostrarMargem ? 4 : 3} />
                     {mostrarDevolucao && <td className={td}>{formatCurrency(totais.devolucao)}</td>}
                     {mostrarST && <td className={td}>{formatCurrency(totais.st)}</td>}

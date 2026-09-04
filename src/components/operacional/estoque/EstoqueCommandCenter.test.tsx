@@ -145,7 +145,7 @@ describe('EstoqueCommandCenter', () => {
     fireEvent.change(screen.getByRole('searchbox', { name: 'Buscar no estoque' }), {
       target: { value: 'embreagem' },
     });
-    fireEvent.click(screen.getByRole('button', { name: /Exigem atencao.*3/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Criticos.*1/i }));
 
     const products = screen.getByRole('region', { name: 'Produtos do estoque' });
     expect(within(products).getAllByText('KIT EMBREAGEM PESADA').length).toBeGreaterThan(0);
@@ -163,6 +163,20 @@ describe('EstoqueCommandCenter', () => {
       expect.objectContaining({ cod_produto: 101, produto: 'KIT EMBREAGEM PESADA' }),
     ]);
   }, 10_000);
+
+  it('abre o produto solicitado pelo Assistente', async () => {
+    const onRequestedProductHandled = vi.fn();
+    render(
+      <EstoqueCommandCenter
+        {...fixtureProps}
+        onRequestedProductHandled={onRequestedProductHandled}
+        requestedProductCode={101}
+      />,
+    );
+
+    expect(screen.getByRole('dialog', { name: 'KIT EMBREAGEM PESADA' })).toBeInTheDocument();
+    expect(onRequestedProductHandled).toHaveBeenCalledOnce();
+  });
 
   it('combina filtros de marca, grupo e linha antes de exportar', () => {
     const onExport = vi.fn();
@@ -235,11 +249,11 @@ describe('EstoqueCommandCenter', () => {
     expect(onExport).toHaveBeenCalledWith([expect.objectContaining({ cod_produto: 202 })]);
   });
 
-  it('filtra a visao real por Disponiveis e Com estoque sem alterar os quatro indicadores', () => {
+  it('filtra a visao real por Disponiveis e Com estoque sem alterar os seis indicadores', () => {
     const onExport = vi.fn();
     render(<EstoqueCommandCenter {...fixtureProps} onExport={onExport} />);
 
-    expect(document.querySelectorAll('[data-stock-summary]')).toHaveLength(4);
+    expect(document.querySelectorAll('[data-stock-summary]')).toHaveLength(6);
     fireEvent.click(screen.getByRole('button', { name: /Filtros/i }));
     fireEvent.click(screen.getByRole('button', { name: 'Disponiveis' }));
     fireEvent.click(screen.getByRole('button', { name: 'Close' }));
@@ -269,6 +283,25 @@ describe('EstoqueCommandCenter', () => {
     fireEvent.click(screen.getByRole('button', { name: /Abrir painel de atencao/i }));
     expect(screen.getByText('Dados insuficientes para movimentacao')).toBeInTheDocument();
     expect(screen.getByText('10 em estoque')).toBeInTheDocument();
+  });
+
+  it('remove o filtro de excesso quando a fonte de movimentos fica indisponivel', () => {
+    const { rerender } = render(
+      <EstoqueCommandCenter {...fixtureProps} movementAvailable />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /Capital em excesso/i }));
+    const activeExcess = document.querySelector(
+      '[data-stock-summary][aria-describedby="estoque-summary-tooltip-excess"]',
+    );
+    expect(activeExcess).toHaveAttribute('aria-pressed', 'true');
+
+    rerender(<EstoqueCommandCenter {...fixtureProps} movementAvailable={false} />);
+
+    expect(screen.getByRole('button', { name: /Produtos/i })).toHaveAttribute('aria-pressed', 'true');
+    expect(document.querySelector(
+      '[data-stock-summary][aria-describedby="estoque-summary-tooltip-excess"]',
+    )?.tagName).toBe('ARTICLE');
   });
 
   it('integra estados vazios distintos para a fonte e para a visao filtrada', () => {
@@ -309,5 +342,71 @@ describe('EstoqueCommandCenter', () => {
     expect(screen.getByRole('dialog', { name: 'Atencao no estoque' })).toBeInTheDocument();
     expect(screen.getByText('Mais movimentados')).toBeInTheDocument();
     expect(screen.getByText('Produtos parados')).toBeInTheDocument();
+  });
+
+  it('preserva filtros de marca, grupo e linha ao trocar de modo', () => {
+    const onExport = vi.fn();
+
+    function Harness() {
+      const [viewMode, setViewMode] = useState<ViewMode>('consolidado');
+      return (
+        <EstoqueCommandCenter
+          {...fixtureProps}
+          onExport={onExport}
+          onViewModeChange={setViewMode}
+          viewMode={viewMode}
+        />
+      );
+    }
+
+    render(<Harness />);
+    fireEvent.click(screen.getByRole('button', { name: /Filtros/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Marca:.*Todas/i }));
+    fireEvent.click(screen.getByRole('button', { name: 'ZF' }));
+    fireEvent.click(screen.getByRole('button', { name: /Grupo:.*Todos/i }));
+    fireEvent.click(screen.getByRole('button', { name: 'EMBREAGEM' }));
+    fireEvent.click(screen.getByRole('button', { name: /Linha:.*Todas/i }));
+    fireEvent.click(screen.getByRole('button', { name: 'Linha pesada' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Detalhado' }));
+
+    const activeFilters = screen.getByLabelText('Filtros ativos');
+    expect(within(activeFilters).getByText('Marca: ZF')).toBeInTheDocument();
+    expect(within(activeFilters).getByText('Grupo: EMBREAGEM')).toBeInTheDocument();
+    expect(within(activeFilters).getByText('Linha: Linha pesada')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Exportar visao atual' }));
+    expect(onExport).toHaveBeenCalledWith([
+      expect.objectContaining({ cod_produto: 101, marca: 'ZF', grupo: 'EMBREAGEM', linha: 'Linha pesada' }),
+    ]);
+  });
+
+  it('informa quando o modo detalhado possui apenas granularidade de produto', () => {
+    render(<EstoqueCommandCenter {...fixtureProps} stockData={estoqueFixture} viewMode="detalhado" />);
+
+    expect(screen.getByRole('status')).toHaveTextContent(
+      'A fonte atual nao fornece filial ou localizacao para detalhar estes produtos.',
+    );
+  });
+
+  it('consolida produtos repetidos e mantem registros separados no detalhado', () => {
+    const duplicate = {
+      ...estoqueFixture[0],
+      cod_empresa: 2,
+      empresa: 'FILIAL 2',
+      quantidade_estoque: 7,
+      valor_estoque: 3500,
+    };
+    const stockData = [estoqueFixture[0], duplicate];
+    const { rerender } = render(
+      <EstoqueCommandCenter {...fixtureProps} stockData={stockData} viewMode="consolidado" />,
+    );
+
+    expect(screen.getAllByText('17')).not.toHaveLength(0);
+    expect(within(screen.getByLabelText('Tabela de produtos do estoque')).getAllByRole('row')).toHaveLength(2);
+
+    rerender(<EstoqueCommandCenter {...fixtureProps} stockData={stockData} viewMode="detalhado" />);
+    expect(within(screen.getByLabelText('Tabela de produtos do estoque')).getAllByRole('row')).toHaveLength(3);
+    expect(screen.getAllByText('FILIAL 2')).not.toHaveLength(0);
   });
 });

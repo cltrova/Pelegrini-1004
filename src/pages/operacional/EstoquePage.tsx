@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react';
+import { AlertTriangle, RefreshCw } from 'lucide-react';
 
 import { EmptyState } from '@/components/common/EmptyState';
+import { ErrorState } from '@/components/common/ErrorState';
 import { LoadingState } from '@/components/common/LoadingState';
 import {
   EnterpriseFilterBar,
@@ -12,6 +14,8 @@ import { EstoqueAssistantTab } from '@/components/operacional/EstoqueAssistantTa
 import { GiroEstoqueTab } from '@/components/operacional/GiroEstoqueTab';
 import { EstoqueCommandCenter } from '@/components/operacional/estoque/EstoqueCommandCenter';
 import { PelegriniModuleHeader, PelegriniTabs } from '@/components/pelegrini';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { useFilialSelecionada } from '@/contexts/FilialSelecionadaContext';
 import { useEstoqueData } from '@/hooks/useEstoqueData';
@@ -45,7 +49,7 @@ function exportToExcel(data: EstoqueRecord[]) {
 }
 
 const PERIODO_MESES_OPTIONS = [
-  { value: 3, label: '3 meses' }, { value: 6, label: '6 meses' }, { value: 12, label: '12 meses' },
+  { value: 3, label: '3 meses' },
 ];
 const STATUS_OPTIONS = [
   { key: 'atendendo' as GiroStatus, label: '🟢 Atendendo' },
@@ -57,16 +61,17 @@ const STATUS_CONFIG_LABELS: Record<GiroStatus, string> = {
   atendendo: 'Atendendo', alerta: 'Alerta', faltando: 'Faltando', excesso: 'Excesso',
 };
 const DEFAULT_GIRO_FILTERS: GiroFiltersState = {
-  periodoMeses: 6, statusFilter: [], empresas: [], marcas: [], grupos: [], searchTerm: '',
+  periodoMeses: 3, statusFilter: [], empresas: [], marcas: [], grupos: [], searchTerm: '',
 };
 
 export default function EstoquePage() {
-  const { consolidadoData, detalhadoData, giroData, isLoading, empresa } = useEstoqueData();
+  const { consolidadoData, detalhadoData, giroData, isLoading, empresa, sourceErrors, sourceStatus, sourceLastUpdated, lastSuccessfulUpdate, partialSources, recoveredSources, recoveryStatus, isFetching, refetch } = useEstoqueData();
   const { codEmpresaContexto, filialAtiva } = useFilialSelecionada();
   const [activeTab, setActiveTab] = useState('central');
   const [viewMode, setViewMode] = useState<ViewMode>('consolidado');
   const [giroFilters, setGiroFilters] = useState<GiroFiltersState>(DEFAULT_GIRO_FILTERS);
   const [pendingGiro, setPendingGiro] = useState<GiroFiltersState>(DEFAULT_GIRO_FILTERS);
+  const [requestedProductCode, setRequestedProductCode] = useState<string | null>(null);
   const [giroFiltersOpen, setGiroFiltersOpen] = useState(false);
 
   const estoqueData = useMemo(
@@ -74,6 +79,43 @@ export default function EstoquePage() {
     [consolidadoData, detalhadoData, viewMode],
   );
   const branchKey = `${codEmpresaContexto ?? empresa?.cod_empresa_bi ?? 'empresa'}:${filialAtiva ?? 'sem-filial'}`;
+  const stockError = sourceErrors?.[viewMode];
+  const movementError = sourceErrors?.giro;
+  const stockUnavailable = Boolean(stockError && estoqueData.length === 0);
+  const movementUnavailable = Boolean(movementError);
+  const movementAvailable = !movementUnavailable && (
+    sourceStatus?.giro === undefined || sourceStatus.giro === 'ready' || (sourceStatus.giro === 'fetching' && giroData.length > 0)
+  );
+  const movementLoading = activeTab !== 'central' && sourceStatus?.giro === 'loading' && giroData.length === 0;
+  const partialStock = Boolean(partialSources?.[viewMode]);
+  const recoveredStock = Boolean(recoveredSources?.[viewMode]);
+  const recoveringStock = recoveryStatus === 'loading' && (partialStock || stockUnavailable);
+  const activeError = activeTab === 'central'
+    ? stockUnavailable && stockError && !recoveringStock
+    : (stockUnavailable && stockError) || (movementUnavailable && movementError);
+  const hasSourceIssue = Boolean(stockError || movementError);
+  const branchName = filialAtiva === 'chevrolet' ? 'Casa do Chevrolet' : 'Casa da Transmissao';
+  const activeSourceUpdate = activeTab === 'central'
+    ? sourceLastUpdated?.[viewMode]
+    : sourceLastUpdated?.giro;
+  const displayedUpdate = sourceLastUpdated === undefined ? lastSuccessfulUpdate : activeSourceUpdate;
+  const lastUpdateLabel = displayedUpdate
+    ? `Atualizado as ${displayedUpdate.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`
+    : 'Aguardando primeira atualizacao';
+  const stockSourceState = sourceStatus?.[viewMode];
+  const sourceStateLabel = isFetching
+    ? recoveringStock ? 'Recuperando estoque completo' : 'Atualizando dados'
+    : recoveredStock
+      ? 'Estoque recuperado'
+    : partialStock
+      ? 'Fonte parcial'
+      : stockError
+        ? 'Ultimos dados preservados'
+        : movementError
+          ? 'Estoque atualizado, giro pendente'
+          : stockSourceState === 'ready'
+            ? 'Dados atualizados'
+            : 'Fonte aguardando consulta';
 
   const filterOptions = useMemo(() => ({
     empresas: [...new Set(estoqueData.map(r => r.empresa))].sort(),
@@ -85,7 +127,7 @@ export default function EstoquePage() {
 
   const giroActiveCount = useMemo(() => {
     let count = 0;
-    if (pendingGiro.periodoMeses !== 6) count++;
+    if (pendingGiro.periodoMeses !== 3) count++;
     if (pendingGiro.statusFilter.length > 0) count++;
     if (pendingGiro.empresas.length > 0) count++;
     if (pendingGiro.marcas.length > 0) count++;
@@ -106,6 +148,17 @@ export default function EstoquePage() {
     setGiroFilters(DEFAULT_GIRO_FILTERS);
   };
 
+  const applyGiroStatusFilter = (statusFilter: GiroStatus[]) => {
+    setPendingGiro(current => ({ ...current, statusFilter }));
+    setGiroFilters(current => ({ ...current, statusFilter }));
+  };
+
+  const openProductFromAssistant = (productCode: string) => {
+    setViewMode('consolidado');
+    setRequestedProductCode(productCode);
+    setActiveTab('central');
+  };
+
   if (isLoading) {
     return (
       <div className="p-4">
@@ -124,14 +177,33 @@ export default function EstoquePage() {
   }
 
   return (
-    <div className="space-y-3 p-3 md:p-4">
-      <PelegriniModuleHeader
-        title="Gestao de Estoque"
-        subtitle={`${estoqueData.length.toLocaleString('pt-BR')} itens · ${giroData.length.toLocaleString('pt-BR')} movimentações`}
-        moduleKey="operacional"
-        compact
-        className="ml-10 sm:ml-0"
-      />
+    <div className="min-w-0 max-w-full space-y-3 overflow-x-clip p-3 md:p-4">
+      <div className="relative min-w-0">
+        <PelegriniModuleHeader
+          title="Gestao de Estoque"
+          subtitle={`${branchName} · ${lastUpdateLabel}`}
+          moduleKey="operacional"
+          compact
+          className="ml-10 sm:ml-0"
+        />
+        <div className="flex min-w-0 items-center justify-between gap-3 border-b border-border/70 bg-card px-4 py-2">
+          <span className="min-w-0 truncate text-xs font-medium text-muted-foreground" role="status">
+            {sourceStateLabel}
+          </span>
+          <Button
+            aria-label={isFetching ? 'Atualizando dados do estoque' : 'Atualizar dados do estoque'}
+            className="h-8 w-8 shrink-0"
+            disabled={isFetching}
+            onClick={() => { void refetch(); }}
+            size="icon"
+            title="Atualizar dados"
+            type="button"
+            variant="ghost"
+          >
+            <RefreshCw aria-hidden="true" className={`h-4 w-4 ${isFetching ? 'animate-spin' : ''}`} />
+          </Button>
+        </div>
+      </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-3">
         <PelegriniTabs
@@ -146,18 +218,64 @@ export default function EstoquePage() {
           ]}
         />
 
-        <TabsContent value="central">
-          <EstoqueCommandCenter
-            stockData={estoqueData}
-            movementData={giroData}
-            branchKey={branchKey}
-            viewMode={viewMode}
-            onViewModeChange={setViewMode}
-            onExport={exportToExcel}
-          />
+        {movementLoading ? (
+          <div className="border border-border bg-card p-4" role="status" aria-label="Carregando movimentacoes do estoque">
+            <LoadingState />
+          </div>
+        ) : activeError ? (
+          <div role="alert">
+            <ErrorState
+              title="Estoque indisponivel"
+              message={`${activeError.message} Os dados nao puderam ser consultados; isso nao significa estoque zerado.`}
+              onRetry={isFetching ? undefined : () => { void refetch(); }}
+            />
+            {isFetching && <p role="status" className="p-3 text-center text-sm text-muted-foreground">Consultando novamente...</p>}
+          </div>
+        ) : (
+          <>
+            {hasSourceIssue && !recoveredStock && (
+              <Alert>
+                <AlertTriangle className="h-4 w-4" />
+                <AlertTitle>{recoveringStock ? 'Recuperando estoque completo' : partialStock ? 'Estoque parcial' : 'Dados com atualizacao pendente'}</AlertTitle>
+                <AlertDescription>
+                  {recoveringStock
+                    ? 'A fonte consolidada falhou. O sistema esta reconstruindo o estoque pelo historico completo de movimentacoes.'
+                    : partialStock
+                    ? 'A fonte principal falhou. Exibindo apenas produtos presentes no giro do periodo, nao o estoque completo.'
+                    : movementError
+                      ? 'Nao foi possivel atualizar as movimentacoes. Indicadores que dependem do giro podem estar incompletos ou desatualizados.'
+                      : 'A consulta falhou. Os ultimos dados carregados foram preservados e podem estar desatualizados.'}
+                  <Button variant="outline" size="sm" className="ml-2 mt-2" disabled={isFetching} onClick={() => { void refetch(); }}>
+                    <RefreshCw className="mr-2 h-4 w-4" />{isFetching ? 'Consultando...' : 'Tentar novamente'}
+                  </Button>
+                </AlertDescription>
+              </Alert>
+            )}
+        <TabsContent aria-labelledby="pelegrini-tab-central" id="pelegrini-tabpanel-central" value="central">
+          {recoveringStock && estoqueData.length === 0 ? (
+            <div
+              aria-label="Recuperando dados completos do estoque"
+              className="border border-border bg-card p-4"
+              role="status"
+            >
+              <LoadingState />
+            </div>
+          ) : (
+            <EstoqueCommandCenter
+              stockData={estoqueData}
+              movementData={giroData}
+              movementAvailable={movementAvailable}
+              branchKey={branchKey}
+              viewMode={viewMode}
+              onViewModeChange={setViewMode}
+              onExport={exportToExcel}
+              requestedProductCode={requestedProductCode}
+              onRequestedProductHandled={() => setRequestedProductCode(null)}
+            />
+          )}
         </TabsContent>
 
-        <TabsContent value="giro">
+        <TabsContent aria-labelledby="pelegrini-tab-giro" id="pelegrini-tabpanel-giro" value="giro">
           <div className="mb-3 space-y-2">
             <EnterpriseFilterBar
               activeCount={giroActiveCount}
@@ -231,12 +349,20 @@ export default function EstoquePage() {
               )}
             </EnterpriseFilterBar>
           </div>
-          <GiroEstoqueTab giroData={giroData} estoqueData={estoqueData} filters={giroFilters} setFilters={setGiroFilters} />
+          <GiroEstoqueTab
+            activeCompanyCode={codEmpresaContexto ?? empresa?.cod_empresa_bi}
+            giroData={giroData}
+            estoqueData={estoqueData}
+            filters={giroFilters}
+            onStatusFilterChange={applyGiroStatusFilter}
+          />
         </TabsContent>
 
-        <TabsContent value="assistente">
-          <EstoqueAssistantTab giroData={giroData} estoqueData={estoqueData} />
+        <TabsContent aria-labelledby="pelegrini-tab-assistente" id="pelegrini-tabpanel-assistente" value="assistente">
+          <EstoqueAssistantTab giroData={giroData} estoqueData={estoqueData} onProductAction={openProductFromAssistant} />
         </TabsContent>
+          </>
+        )}
       </Tabs>
     </div>
   );

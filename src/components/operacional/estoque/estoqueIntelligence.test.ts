@@ -4,6 +4,8 @@ import {
   buildStockEvolution,
   buildStockInsights,
   classifyStockTrend,
+  consolidateStockRecords,
+  detectStockGranularity,
   filterStockInsights,
   normalizeStockSearch,
   sortStockInsights,
@@ -17,6 +19,107 @@ import {
 } from './estoqueFixtures';
 
 describe('stock intelligence', () => {
+  it('consolida registros duplicados por produto somando quantidade e valor e preservando as datas mais recentes', () => {
+    const rows = [
+      estoqueFixture[0],
+      {
+        ...estoqueFixture[0],
+        cod_empresa: 2,
+        empresa: 'FILIAL 2',
+        quantidade_estoque: 7,
+        valor_estoque: 3500,
+        data_ultima_compra: '2026-08-25',
+        data_ultima_venda: '2026-08-29',
+        data_ultima_transferencia: '2026-08-30',
+      },
+    ];
+
+    expect(consolidateStockRecords(rows)).toEqual([
+      expect.objectContaining({
+        cod_produto: 101,
+        empresa: 'CASA DA TRANSMISSAO',
+        quantidade_estoque: 17,
+        valor_estoque: 8500,
+        data_ultima_compra: '2026-08-25',
+        data_ultima_venda: '2026-08-31',
+        data_ultima_transferencia: '2026-08-30',
+      }),
+    ]);
+    expect(rows[0].quantidade_estoque).toBe(10);
+  });
+
+  it('consolida por produto dentro do conjunto ativo mesmo com codigos BI diferentes', () => {
+    const rows = [
+      estoqueFixture[0],
+      {
+        ...estoqueFixture[0],
+        cod_empresa_bi: 10041,
+        cod_empresa: 2,
+        quantidade_estoque: 5,
+        valor_estoque: 2500,
+      },
+    ];
+
+    expect(consolidateStockRecords(rows)).toEqual([
+      expect.objectContaining({ cod_produto: 101, quantidade_estoque: 15, valor_estoque: 7500 }),
+    ]);
+  });
+
+  it('agrega movimentos de todas as filiais contribuintes no insight consolidado', () => {
+    const stock = consolidateStockRecords([
+      estoqueFixture[0],
+      { ...estoqueFixture[0], cod_empresa: 2, empresa: 'FILIAL 2', quantidade_estoque: 5 },
+    ]);
+    const movements = [
+      { ...giroFixture[0], saida_venda: 10 },
+      { ...giroFixture[0], cod_empresa: 2, empresa: 'FILIAL 2', saida_venda: 20 },
+    ];
+
+    expect(buildStockInsights(stock, movements, NOW, 'product')[0]).toMatchObject({
+      totalOutbound: 30,
+      totalSales: 30,
+      movementDataAvailable: true,
+    });
+  });
+
+  it('detecta localizacao como maior granularidade disponivel', () => {
+    expect(detectStockGranularity([
+      { ...estoqueFixture[0], localizacao_produto: 'A-01' },
+      { ...estoqueFixture[0], cod_empresa: 2, empresa: 'FILIAL 2' },
+    ])).toBe('location');
+  });
+
+  it('ignora datas operacionais impossiveis durante a consolidacao', () => {
+    const rows = [
+      { ...estoqueFixture[0], data_ultima_compra: '2026-01-31' },
+      { ...estoqueFixture[0], cod_empresa: 2, data_ultima_compra: '2026-02-30' },
+    ];
+
+    expect(consolidateStockRecords(rows)[0].data_ultima_compra).toBe('2026-01-31');
+  });
+
+  it('descarta datas impossiveis presentes no primeiro ou unico registro consolidado', () => {
+    const row = {
+      ...estoqueFixture[0],
+      data_ultima_compra: '2026-02-30',
+      data_ultima_venda: 'invalida',
+      data_ultima_transferencia: '2026-13-01',
+    };
+
+    expect(consolidateStockRecords([row])[0]).toMatchObject({
+      data_ultima_compra: null,
+      data_ultima_venda: null,
+      data_ultima_transferencia: null,
+    });
+  });
+
+  it('detecta filial quando existem filiais distintas sem localizacao', () => {
+    expect(detectStockGranularity([
+      estoqueFixture[0],
+      { ...estoqueFixture[0], cod_empresa: 2, empresa: 'FILIAL 2' },
+    ])).toBe('branch');
+  });
+
   it('calcula minimo de 30 dias e classifica cobertura inferior a 15 dias como critica', () => {
     const insights = buildStockInsights(estoqueFixture, giroFixture, NOW);
 
@@ -211,7 +314,7 @@ describe('stock intelligence', () => {
     expect(classifyStockTrend(points)).toBe(expected);
   });
 
-  it('classifica produto sem data na faixa superior a 180 dias', () => {
+  it('mantem produto sem data fora das faixas de inatividade', () => {
     const semDatas = estoqueFixture.map((item) => ({
       ...item,
       data_ultima_compra: null,
@@ -221,7 +324,7 @@ describe('stock intelligence', () => {
 
     const insight = buildStockInsights(semDatas, [], NOW)[0];
 
-    expect(insight.stagnantDays).toBeGreaterThan(180);
+    expect(insight.stagnantDays).toBe(0);
     expect(insight.lastMovementDate).toBeNull();
   });
 
