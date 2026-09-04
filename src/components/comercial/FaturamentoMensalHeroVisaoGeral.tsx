@@ -72,7 +72,7 @@ function RichTooltip({ active, payload, label }: any) {
   const delta = anterior !== null && anterior > 0 ? ((atual - anterior) / anterior) * 100 : null;
   const up = (delta ?? 0) >= 0;
   return (
-    <div className="min-w-[240px] rounded-xl border border-border/70 bg-popover/95 backdrop-blur-xl p-3.5 shadow-2xl shadow-primary/20 animate-in fade-in-0 zoom-in-95 duration-150">
+    <div className="min-w-[240px] rounded-lg border border-border bg-popover p-3.5 animate-in fade-in-0 zoom-in-95 duration-150">
       <div className="flex items-center justify-between gap-3 pb-2 mb-2 border-b border-border/50">
         <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
           {formatMesLongo(label)}
@@ -128,15 +128,7 @@ function KpiTile({
     ? textValue
     : isCurrency ? formatCurrency(animated) : formatInteger(Math.round(animated));
   return (
-    <div className="group relative overflow-hidden rounded-2xl border border-border/60 bg-gradient-to-br from-card via-card to-card/60 p-4 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-primary/10 hover:border-primary/40">
-      <div className={cn(
-        'absolute -top-16 -right-16 h-32 w-32 rounded-full blur-3xl opacity-40 group-hover:opacity-70 transition-opacity duration-500',
-        accent === 'primary' && 'bg-primary/40',
-        accent === 'success' && 'bg-emerald-500/40',
-        accent === 'destructive' && 'bg-rose-500/40',
-        accent === 'chart-3' && 'bg-chart-3/40',
-        accent === 'chart-4' && 'bg-chart-4/40',
-      )} />
+    <div className="group relative overflow-hidden rounded-lg border border-border/60 bg-card p-4 transition-colors duration-300 hover:border-primary/40">
       <div className="relative flex items-center justify-between mb-2">
         <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{label}</span>
         {Icon && (
@@ -180,7 +172,7 @@ function DailyTooltip({ active, payload, label }: any) {
   const dt = new Date(Number(y), Number(m) - 1, Number(d));
   const diaSem = dt.toLocaleDateString('pt-BR', { weekday: 'long' });
   return (
-    <div className="rounded-xl border border-border/70 bg-popover/95 backdrop-blur-xl px-3.5 py-2.5 shadow-2xl shadow-primary/20 min-w-[180px] animate-in fade-in-0 zoom-in-95 duration-150">
+    <div className="rounded-lg border border-border bg-popover px-3.5 py-2.5 min-w-[180px] animate-in fade-in-0 zoom-in-95 duration-150">
       <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1 capitalize">
         {diaSem} · {d}/{m}
       </p>
@@ -307,10 +299,10 @@ function SmartFooter({ stats, singlePoint }: { stats: any; singlePoint: boolean 
         return (
           <div
             key={i}
-            className="group flex items-start gap-3 rounded-xl border border-border/60 bg-card/60 p-3 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:border-primary/30"
+            className="group flex items-start gap-3 rounded-lg border border-border/60 bg-card p-3 transition-colors duration-200 hover:border-primary/30"
           >
             <div className={cn(
-              'h-8 w-8 shrink-0 rounded-lg flex items-center justify-center ring-1 transition-transform group-hover:scale-110',
+              'h-8 w-8 shrink-0 rounded-lg flex items-center justify-center ring-1',
               ins.tone === 'success' && 'bg-emerald-500/15 ring-emerald-500/30 text-emerald-500',
               ins.tone === 'destructive' && 'bg-rose-500/15 ring-rose-500/30 text-rose-500',
               ins.tone === 'primary' && 'bg-primary/15 ring-primary/30 text-primary',
@@ -360,7 +352,7 @@ export function FaturamentoMensalHeroVisaoGeral({ data, diaria = [] }: Props) {
     return (
       <Card className="border-dashed border-border/60">
         <CardContent className="py-14 flex flex-col items-center justify-center gap-3 text-center">
-          <div className="h-12 w-12 rounded-2xl bg-muted/40 flex items-center justify-center">
+          <div className="h-12 w-12 rounded-lg bg-muted/40 flex items-center justify-center">
             <Activity className="h-6 w-6 text-muted-foreground" />
           </div>
           <p className="text-sm font-semibold">Sem dados de faturamento no período</p>
@@ -374,15 +366,12 @@ export function FaturamentoMensalHeroVisaoGeral({ data, diaria = [] }: Props) {
   const growing = stats.slope > 0;
 
   return (
-    <Card className="relative overflow-hidden border-border/60 bg-gradient-to-br from-card via-card to-primary/[0.02] shadow-lg">
-      <div className="pointer-events-none absolute -top-24 -right-24 h-64 w-64 rounded-full bg-primary/10 blur-3xl" />
-      <div className="pointer-events-none absolute -bottom-32 -left-24 h-64 w-64 rounded-full bg-chart-3/10 blur-3xl" />
-
+    <Card className="relative overflow-hidden border-border/60 bg-card">
       <CardContent className="relative p-5 sm:p-6 space-y-6">
         {/* ═══ 1) Cabeçalho Executivo ═══ */}
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 ring-1 ring-primary/30 flex items-center justify-center shadow-inner">
+            <div className="h-10 w-10 rounded-lg bg-primary/10 ring-1 ring-primary/30 flex items-center justify-center">
               <Sparkles className="h-5 w-5 text-primary" />
             </div>
             <div>
