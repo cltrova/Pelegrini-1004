@@ -121,48 +121,44 @@ function buildFallbackInsights(marcas: MarcaAgg[], selectedMarca: string | null)
 }
 
 const TYPE_STYLES: Record<AIInsight['type'], {
-  icon: React.ReactNode; gradient: string; border: string; iconBg: string;
+  icon: React.ReactNode; border: string; iconBg: string;
 }> = {
   oportunidade: {
     icon: <Zap className="h-5 w-5" />,
-    gradient: 'from-emerald-500/20 to-emerald-700/5',
     border: 'border-emerald-500/40',
-    iconBg: 'bg-emerald-500/20 text-emerald-400',
+    iconBg: 'bg-emerald-500/10 text-emerald-500 border-emerald-500/30',
   },
   alerta: {
     icon: <AlertTriangle className="h-5 w-5" />,
-    gradient: 'from-amber-500/20 to-amber-700/5',
     border: 'border-amber-500/40',
-    iconBg: 'bg-amber-500/20 text-amber-400',
+    iconBg: 'bg-amber-500/10 text-amber-600 border-amber-500/30',
   },
   destaque: {
     icon: <Crown className="h-5 w-5" />,
-    gradient: 'from-violet-500/20 to-violet-700/5',
-    border: 'border-violet-500/40',
-    iconBg: 'bg-violet-500/20 text-violet-400',
+    border: 'border-primary/35',
+    iconBg: 'bg-primary/10 text-primary border-primary/30',
   },
   risco: {
     icon: <ShieldAlert className="h-5 w-5" />,
-    gradient: 'from-red-500/20 to-red-700/5',
     border: 'border-red-500/40',
-    iconBg: 'bg-red-500/20 text-red-400',
+    iconBg: 'bg-red-500/10 text-red-500 border-red-500/30',
   },
 };
 
-// Paleta gradient premium (start, end) — usadas no swatch das marcas
-const GRAD_PAIRS: Array<[string, string]> = [
-  ['hsl(217, 91%, 65%)', 'hsl(217, 91%, 45%)'],
-  ['hsl(173, 80%, 50%)', 'hsl(173, 80%, 30%)'],
-  ['hsl(142, 71%, 55%)', 'hsl(142, 71%, 35%)'],
-  ['hsl(38, 92%, 60%)',  'hsl(38, 92%, 40%)'],
-  ['hsl(280, 65%, 65%)', 'hsl(280, 65%, 45%)'],
-  ['hsl(0, 72%, 60%)',   'hsl(0, 72%, 40%)'],
-  ['hsl(200, 80%, 60%)', 'hsl(200, 80%, 40%)'],
-  ['hsl(330, 70%, 60%)', 'hsl(330, 70%, 40%)'],
-  ['hsl(45, 95%, 55%)',  'hsl(45, 95%, 35%)'],
-  ['hsl(260, 75%, 65%)', 'hsl(260, 75%, 45%)'],
-  ['hsl(160, 70%, 50%)', 'hsl(160, 70%, 30%)'],
-  ['hsl(20, 85%, 60%)',  'hsl(20, 85%, 40%)'],
+// Paleta premium sólida usada nos swatches das marcas.
+const BRAND_SWATCHES = [
+  'hsl(217, 91%, 54%)',
+  'hsl(173, 80%, 38%)',
+  'hsl(142, 71%, 40%)',
+  'hsl(38, 92%, 48%)',
+  'hsl(280, 65%, 52%)',
+  'hsl(0, 72%, 50%)',
+  'hsl(200, 80%, 46%)',
+  'hsl(330, 70%, 48%)',
+  'hsl(45, 95%, 45%)',
+  'hsl(260, 75%, 55%)',
+  'hsl(160, 70%, 37%)',
+  'hsl(20, 85%, 50%)',
 ];
 
 function lucroColor(margem: number) {
@@ -245,8 +241,8 @@ export function PremiumMarcasView({ porMarca, selectedMarca, onSelectMarca, peri
       } else {
         throw new Error('Resposta inválida da IA');
       }
-    } catch (e: any) {
-      const msg = e?.message || 'Falha ao gerar insights';
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'Falha ao gerar insights';
       const fallback = buildFallbackInsights(porMarca, selectedMarca);
       setAiInsights(fallback.length ? fallback : null);
       setAiError(fallback.length ? null : msg);
@@ -294,7 +290,7 @@ export function PremiumMarcasView({ porMarca, selectedMarca, onSelectMarca, peri
         {aiLoading && !aiInsights && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             {[0, 1, 2, 3].map(i => (
-              <div key={i} className="h-32 rounded-xl border border-border/60 bg-muted/30 animate-pulse" />
+              <div key={i} className="h-32 rounded-lg border border-border/60 bg-muted/30 animate-pulse" />
             ))}
           </div>
         )}
@@ -321,7 +317,6 @@ export function PremiumMarcasView({ porMarca, selectedMarca, onSelectMarca, peri
                   value={ins.value}
                   marca={ins.marca}
                   insight={ins.insight}
-                  gradient={style.gradient}
                   border={style.border}
                   iconBg={style.iconBg}
                   onClick={clickable ? () => onSelectMarca(ins.marca) : undefined}
@@ -351,7 +346,7 @@ export function PremiumMarcasView({ porMarca, selectedMarca, onSelectMarca, peri
                   onClick={() => onSelectMarca(null)}
                   className="flex items-center gap-2 px-3 py-1.5 bg-primary/10 border border-primary/30 rounded-md text-xs text-primary hover:bg-primary/20 transition-colors"
                 >
-                  <span className="size-1.5 rounded-full bg-primary shadow-[0_0_8px_hsl(var(--primary))] animate-pulse" />
+                  <span className="size-1.5 rounded-full bg-primary animate-pulse" />
                   <span className="uppercase tracking-wider font-medium">Filtro: {selectedMarca}</span>
                   <span className="text-primary/60 hover:text-primary text-base leading-none ml-1">×</span>
                 </button>
@@ -367,7 +362,7 @@ export function PremiumMarcasView({ porMarca, selectedMarca, onSelectMarca, peri
           <div className="hidden md:block overflow-y-auto max-h-[600px] rounded-md border border-border/60 mx-3 sm:mx-0">
             <table className="w-full text-sm">
               <thead className="sticky top-0 z-20">
-                <tr className="text-left text-[11px] uppercase tracking-wider text-muted-foreground [&>th]:bg-card [&>th]:border-b [&>th]:border-border [&>th]:shadow-[0_1px_0_0_hsl(var(--border))]">
+                <tr className="text-left text-[11px] uppercase tracking-wider text-muted-foreground [&>th]:bg-card [&>th]:border-b [&>th]:border-border">
                   <th className="px-3 py-2.5 w-12">Rank</th>
                   <th className="px-3 py-2.5">Marca</th>
                   <th className="px-3 py-2.5 text-right">SKUs</th>
@@ -384,17 +379,17 @@ export function PremiumMarcasView({ porMarca, selectedMarca, onSelectMarca, peri
                   const isSelected = selectedMarca === m.marca;
                   const isDimmed = selectedMarca && !isSelected;
                   const trend = tendencia(m);
-                  const grad = GRAD_PAIRS[i % GRAD_PAIRS.length];
+                  const swatch = BRAND_SWATCHES[i % BRAND_SWATCHES.length];
                   const pctMax = maxReceita > 0 ? (m.faturamento / maxReceita) * 100 : 0;
                   return (
                     <tr
                       key={m.marca}
                       onClick={() => onSelectMarca(isSelected ? null : m.marca)}
                       className={cn(
-                        "border-t border-border/40 cursor-pointer transition-all duration-150 group",
+                        "border-t border-border/40 cursor-pointer transition-colors duration-150 group",
                         isSelected
-                          ? 'bg-primary/10 hover:bg-primary/15 shadow-[inset_2px_0_0_hsl(var(--primary))]'
-                          : 'hover:bg-muted/50 hover:shadow-[inset_2px_0_0_hsl(var(--primary))]',
+                          ? 'bg-primary/10 hover:bg-primary/15'
+                          : 'hover:bg-muted/50',
                         isDimmed && 'opacity-50'
                       )}
                     >
@@ -409,8 +404,8 @@ export function PremiumMarcasView({ porMarca, selectedMarca, onSelectMarca, peri
                       <td className="px-3 py-2.5">
                         <div className="flex items-center gap-2">
                           <span
-                            className="inline-block h-3 w-3 rounded-sm shadow-sm shrink-0"
-                            style={{ background: `linear-gradient(135deg, ${grad[0]}, ${grad[1]})` }}
+                            className="inline-block h-3 w-3 rounded-sm shrink-0"
+                            style={{ backgroundColor: swatch }}
                           />
                           <span className={cn("font-medium truncate", isSelected && 'text-primary font-bold')}>
                             {m.marca}
@@ -435,10 +430,9 @@ export function PremiumMarcasView({ porMarca, selectedMarca, onSelectMarca, peri
                         </div>
                         <div className="h-1.5 rounded-full bg-muted/60 overflow-hidden">
                           <div
-                            className="h-full transition-all duration-700 ease-out"
+                            className="h-full bg-primary transition-[width] duration-700 ease-out"
                             style={{
                               width: `${Math.max(2, pctMax)}%`,
-                              background: `linear-gradient(90deg, ${grad[0]}, ${grad[1]})`,
                             }}
                           />
                         </div>
@@ -483,16 +477,16 @@ export function PremiumMarcasView({ porMarca, selectedMarca, onSelectMarca, peri
               const isSelected = selectedMarca === m.marca;
               const isDimmed = selectedMarca && !isSelected;
               const trend = tendencia(m);
-              const grad = GRAD_PAIRS[i % GRAD_PAIRS.length];
+              const swatch = BRAND_SWATCHES[i % BRAND_SWATCHES.length];
               const pctMax = maxReceita > 0 ? (m.faturamento / maxReceita) * 100 : 0;
               return (
                 <div
                   key={m.marca}
                   onClick={() => onSelectMarca(isSelected ? null : m.marca)}
                   className={cn(
-                    "p-3 rounded-xl border transition-all cursor-pointer",
+                    "p-3 rounded-lg border transition-colors cursor-pointer",
                     isSelected
-                      ? 'border-primary/60 bg-primary/10 shadow-md shadow-primary/20'
+                      ? 'border-primary/60 bg-primary/10'
                       : 'border-border/60 bg-card hover:border-border',
                     isDimmed && 'opacity-50'
                   )}
@@ -501,7 +495,7 @@ export function PremiumMarcasView({ porMarca, selectedMarca, onSelectMarca, peri
                     <div className="flex items-center gap-2 min-w-0">
                       <span
                         className="h-7 w-7 rounded-lg flex items-center justify-center text-xs font-bold text-white shrink-0"
-                        style={{ background: `linear-gradient(135deg, ${grad[0]}, ${grad[1]})` }}
+                        style={{ backgroundColor: swatch }}
                       >
                         {i + 1}
                       </span>
@@ -534,10 +528,9 @@ export function PremiumMarcasView({ porMarca, selectedMarca, onSelectMarca, peri
                   </div>
                   <div className="h-1.5 rounded-full bg-muted/60 overflow-hidden">
                     <div
-                      className="h-full transition-all duration-500"
+                      className="h-full bg-primary transition-[width] duration-500"
                       style={{
                         width: `${Math.max(2, pctMax)}%`,
-                        background: `linear-gradient(90deg, ${grad[0]}, ${grad[1]})`,
                       }}
                     />
                   </div>
@@ -565,25 +558,24 @@ interface AIInsightCardProps {
   value: string;
   marca: string | null;
   insight: string;
-  gradient: string;
   border: string;
   iconBg: string;
   onClick?: () => void;
 }
 
-function AIInsightCard({ icon, title, value, marca, insight, gradient, border, iconBg, onClick }: AIInsightCardProps) {
+function AIInsightCard({ icon, title, value, marca, insight, border, iconBg, onClick }: AIInsightCardProps) {
   return (
     <button
       onClick={onClick}
       disabled={!onClick}
       className={cn(
-        "text-left p-4 rounded-xl border bg-gradient-to-br transition-all duration-200 flex flex-col h-full",
-        gradient, border,
-        onClick ? 'hover:scale-[1.02] hover:shadow-lg cursor-pointer' : 'cursor-default'
+        "text-left p-4 rounded-lg border bg-card transition-colors duration-200 flex flex-col h-full",
+        border,
+        onClick ? 'hover:bg-muted/30 cursor-pointer' : 'cursor-default'
       )}
     >
       <div className="flex items-start gap-3 mb-2">
-        <div className={cn("h-10 w-10 rounded-lg flex items-center justify-center shrink-0", iconBg)}>
+        <div className={cn("h-10 w-10 rounded-lg border flex items-center justify-center shrink-0", iconBg)}>
           {icon}
         </div>
         <div className="min-w-0 flex-1">
