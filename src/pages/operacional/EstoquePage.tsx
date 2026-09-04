@@ -1,11 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, RefreshCw, Search, X } from 'lucide-react';
+import { AlertTriangle, RefreshCw, Search, SlidersHorizontal, X } from 'lucide-react';
 
 import { EmptyState } from '@/components/common/EmptyState';
 import { ErrorState } from '@/components/common/ErrorState';
 import { FilterDropdownChip, MultiSelectOptions, SingleSelectOptions } from '@/components/common/FilterDropdownChip';
 import { LoadingState } from '@/components/common/LoadingState';
-import { UnifiedFilterBar } from '@/components/common/UnifiedFilterBar';
 import { EstoqueAssistantTab } from '@/components/operacional/EstoqueAssistantTab';
 import { GiroEstoqueTab } from '@/components/operacional/GiroEstoqueTab';
 import { EstoqueCommandCenter } from '@/components/operacional/estoque/EstoqueCommandCenter';
@@ -15,10 +14,10 @@ import {
   EstoqueWorkspaceHeader,
 } from '@/components/operacional/estoque/EstoqueWorkspace';
 import { PelegriniTabs } from '@/components/pelegrini';
-import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { useFilialSelecionada } from '@/contexts/FilialSelecionadaContext';
 import { useEstoqueData } from '@/hooks/useEstoqueData';
@@ -74,6 +73,7 @@ export default function EstoquePage() {
   const [viewMode, setViewMode] = useState<ViewMode>('consolidado');
   const [giroFilters, setGiroFilters] = useState<GiroFiltersState>(DEFAULT_GIRO_FILTERS);
   const [pendingGiro, setPendingGiro] = useState<GiroFiltersState>(DEFAULT_GIRO_FILTERS);
+  const [giroFiltersOpen, setGiroFiltersOpen] = useState(false);
   const [requestedProductCode, setRequestedProductCode] = useState<string | null>(null);
   const [sourceNoticeDismissed, setSourceNoticeDismissed] = useState(false);
 
@@ -298,26 +298,43 @@ export default function EstoquePage() {
           )}
         </TabsContent>
 
-        <TabsContent className="m-0 min-h-0 flex-1 overflow-y-auto p-3 md:overflow-hidden" aria-labelledby="pelegrini-tab-giro" id="pelegrini-tabpanel-giro" value="giro">
-          <div className="mb-3 space-y-2">
-            <div className="flex min-w-0 flex-wrap items-center gap-2">
-              <div className="relative min-w-[200px] flex-1 max-w-md">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  placeholder="Buscar produto, fabricante, marca..."
-                  value={pendingGiro.searchTerm}
-                  onChange={(event) => setPendingGiro(filters => ({ ...filters, searchTerm: event.target.value }))}
-                  onKeyDown={(event) => {
-                    if (event.key === 'Enter') applyGiroFilters();
-                  }}
-                  className="h-9 pl-9"
-                />
-              </div>
-              <Badge variant="secondary" className="text-xs tabular-nums">
-                {estoqueData.length.toLocaleString('pt-BR')} itens
-              </Badge>
-            </div>
-            <UnifiedFilterBar activeCount={giroActiveCount} summary={giroSummary} onClear={clearGiroFilters} onApply={applyGiroFilters}>
+        <TabsContent className="m-0 min-h-0 flex-1 overflow-hidden data-[state=active]:flex data-[state=active]:flex-col" aria-labelledby="pelegrini-tab-giro" id="pelegrini-tabpanel-giro" value="giro">
+          <GiroEstoqueTab
+            activeCompanyCode={activeCompanyCode}
+            giroData={giroData}
+            estoqueData={estoqueData}
+            filters={giroFilters}
+            onStatusFilterChange={applyGiroStatusFilter}
+            toolbarContent={(
+              <>
+                <div className="relative min-w-[15rem] flex-1 sm:max-w-md">
+                  <Search aria-hidden="true" className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    aria-label="Buscar produtos no giro"
+                    className="h-8 pl-8"
+                    placeholder="Buscar produto, fabricante, marca..."
+                    value={pendingGiro.searchTerm}
+                    onChange={(event) => setPendingGiro(filters => ({ ...filters, searchTerm: event.target.value }))}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter') applyGiroFilters();
+                    }}
+                  />
+                </div>
+                <Popover onOpenChange={setGiroFiltersOpen} open={giroFiltersOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      aria-label={giroActiveCount > 0 ? `Filtros: ${giroSummary}` : 'Filtros do giro'}
+                      className="h-8 shrink-0 gap-2"
+                      size="sm"
+                      type="button"
+                      variant="outline"
+                    >
+                      <SlidersHorizontal aria-hidden="true" className="h-4 w-4" />
+                      <span>Filtros{giroActiveCount > 0 ? ` (${giroActiveCount})` : ''}</span>
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent align="end" className="w-[min(92vw,44rem)] space-y-3 p-3">
+                    <div className="flex flex-wrap items-center gap-2">
               <FilterDropdownChip label="Período" displayValue={`${pendingGiro.periodoMeses} meses`} isActive={false} onClear={() => { setPendingGiro(filters => ({ ...filters, periodoMeses: 3 })); setGiroFilters(filters => ({ ...filters, periodoMeses: 3 })); }}>
                 <SingleSelectOptions options={PERIODO_MESES_OPTIONS} selected={pendingGiro.periodoMeses} onChange={(value) => setPendingGiro(filters => ({ ...filters, periodoMeses: Number(value) }))} />
               </FilterDropdownChip>
@@ -333,14 +350,19 @@ export default function EstoquePage() {
               <FilterDropdownChip label="Grupo" displayValue={pendingGiro.grupos.length > 0 ? `${pendingGiro.grupos.length} selecionado(s)` : 'Todos'} isActive={pendingGiro.grupos.length > 0} onClear={() => { setPendingGiro(filters => ({ ...filters, grupos: [] })); setGiroFilters(filters => ({ ...filters, grupos: [] })); }}>
                 <MultiSelectOptions options={filterOptions.grupos} selected={pendingGiro.grupos} onChange={(value) => setPendingGiro(filters => ({ ...filters, grupos: value }))} searchable allLabel="Todos" />
               </FilterDropdownChip>
-            </UnifiedFilterBar>
-          </div>
-          <GiroEstoqueTab
-            activeCompanyCode={activeCompanyCode}
-            giroData={giroData}
-            estoqueData={estoqueData}
-            filters={giroFilters}
-            onStatusFilterChange={applyGiroStatusFilter}
+                    </div>
+                    <div className="flex items-center justify-end gap-2 border-t border-border/70 pt-3">
+                      {giroActiveCount > 0 && (
+                        <Button onClick={() => { clearGiroFilters(); setGiroFiltersOpen(false); }} size="sm" type="button" variant="ghost">Limpar filtros</Button>
+                      )}
+                      <Button onClick={() => { applyGiroFilters(); setGiroFiltersOpen(false); }} size="sm" type="button">
+                        <Search aria-hidden="true" className="mr-1.5 h-3.5 w-3.5" />Pesquisar
+                      </Button>
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              </>
+            )}
           />
         </TabsContent>
 

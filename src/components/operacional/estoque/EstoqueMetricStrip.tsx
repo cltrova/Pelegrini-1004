@@ -17,6 +17,7 @@ export interface EstoqueMetric {
 interface EstoqueMetricStripProps {
   metrics: EstoqueMetric[];
   activeKey?: string;
+  activeKeys?: string[];
   onMetricClick?: (key: string) => void;
   className?: string;
 }
@@ -132,6 +133,7 @@ function MetricItem({ active, metric, onMetricClick }: MetricItemProps) {
 
 export function EstoqueMetricStrip({
   activeKey,
+  activeKeys,
   className,
   metrics,
   onMetricClick,
@@ -146,7 +148,7 @@ export function EstoqueMetricStrip({
     >
       {metrics.map((metric) => (
         <MetricItem
-          active={metric.interactive && metric.key === activeKey}
+          active={metric.interactive && (metric.key === activeKey || Boolean(activeKeys?.includes(metric.key)))}
           key={metric.key}
           metric={metric}
           onMetricClick={onMetricClick}

@@ -25,6 +25,49 @@ beforeAll(() => {
 afterAll(() => vi.unstubAllGlobals());
 
 describe('GiroEstoqueTab', () => {
+  it('usa um unico viewport de dados sem scroll vertical local na tabela', () => {
+    render(<GiroEstoqueTab estoqueData={estoqueFixtureComTresItens} filters={{ ...filters, statusFilter: [] }} giroData={giroFixture} onStatusFilterChange={vi.fn()} />);
+
+    const viewport = screen.getByRole('region', { name: 'Dados do giro de estoque' });
+    const scroller = within(viewport).getByRole('region', { name: 'Rolagem dos produtos do giro' });
+    expect(viewport).toHaveClass('overflow-hidden');
+    expect(scroller).toHaveClass('min-h-0', 'flex-1', 'overflow-auto');
+    expect(scroller).not.toHaveClass('max-h-[calc(100vh-19rem)]');
+  });
+
+  it('exibe as colunas operacionais padrao e esconde filial em contexto unico', () => {
+    render(<GiroEstoqueTab estoqueData={estoqueFixtureComTresItens} filters={{ ...filters, statusFilter: [] }} giroData={giroFixture} onStatusFilterChange={vi.fn()} />);
+
+    const table = screen.getByRole('table');
+    expect(within(table).getByRole('columnheader', { name: 'Produto' })).toBeInTheDocument();
+    expect(within(table).getByRole('columnheader', { name: 'Marca' })).toBeInTheDocument();
+    expect(within(table).getByRole('columnheader', { name: 'Status' })).toBeInTheDocument();
+    expect(within(table).getByRole('columnheader', { name: 'Estoque' })).toBeInTheDocument();
+    expect(within(table).getByRole('columnheader', { name: 'Valor Estoque' })).toBeInTheDocument();
+    expect(within(table).getByRole('columnheader', { name: 'Vendas' })).toBeInTheDocument();
+    expect(within(table).getByRole('columnheader', { name: 'Cobertura' })).toBeInTheDocument();
+    expect(within(table).getByRole('columnheader', { name: 'Acao recomendada' })).toBeInTheDocument();
+    expect(within(table).queryByRole('columnheader', { name: 'Filial' })).not.toBeInTheDocument();
+  });
+
+  it('exibe filial quando os produtos visiveis pertencem a empresas diferentes', () => {
+    const stockA = { ...estoqueFixtureComTresItens[0], cod_produto: 901, empresa: 'EMPRESA A' };
+    const stockB = { ...estoqueFixtureComTresItens[1], cod_empresa_bi: 10041, cod_produto: 902, empresa: 'EMPRESA B' };
+
+    render(<GiroEstoqueTab estoqueData={[stockA, stockB]} filters={{ ...filters, statusFilter: [] }} giroData={[]} onStatusFilterChange={vi.fn()} />);
+
+    expect(within(screen.getByRole('table')).getByRole('columnheader', { name: 'Filial' })).toBeInTheDocument();
+  });
+
+  it('trata nomes juridicos diferentes com o mesmo codigo BI como uma unica filial', () => {
+    const stockA = { ...estoqueFixtureComTresItens[0], cod_empresa_bi: 1004, cod_empresa: 1, cod_produto: 911, empresa: 'CT MATRIZ' };
+    const stockB = { ...estoqueFixtureComTresItens[1], cod_empresa_bi: 1004, cod_empresa: 1, cod_produto: 912, empresa: 'CASA DA TRANSMISSAO LTDA' };
+
+    render(<GiroEstoqueTab estoqueData={[stockA, stockB]} filters={{ ...filters, statusFilter: [] }} giroData={[]} onStatusFilterChange={vi.fn()} />);
+
+    expect(within(screen.getByRole('table')).queryByRole('columnheader', { name: 'Filial' })).not.toBeInTheDocument();
+  });
+
   it('renderiza acao recomendada e tooltip visivel no foco com descricao estavel', () => {
     render(<GiroEstoqueTab estoqueData={estoqueFixtureComTresItens} filters={{ ...filters, statusFilter: [] }} giroData={giroFixture} onStatusFilterChange={vi.fn()} />);
 
@@ -260,11 +303,11 @@ describe('GiroEstoqueTab', () => {
     expect(screen.getByText(/Movimentacao filtrada: 61 vendas/i)).toBeInTheDocument();
   });
 
-  it('exibe data de venda ausente como desconhecida', () => {
+  it('exibe cobertura ausente sem inventar dias de venda', () => {
     const stock = { ...estoqueFixtureComTresItens[0], cod_produto: 818, produto: 'SEM DATA', data_ultima_venda: null };
     render(<GiroEstoqueTab estoqueData={[stock]} filters={{ ...filters, statusFilter: [] }} giroData={[]} onStatusFilterChange={vi.fn()} />);
     const row = screen.getAllByRole('row').find(candidate => within(candidate).queryByText('SEM DATA'))!;
-    expect(within(row).getByText('Desconhecido')).toBeInTheDocument();
+    expect(within(row).getByText('Sem baseline')).toBeInTheDocument();
     expect(within(row).queryByText('9999d')).not.toBeInTheDocument();
   });
 

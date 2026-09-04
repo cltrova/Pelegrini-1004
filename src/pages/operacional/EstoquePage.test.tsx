@@ -273,10 +273,15 @@ describe('EstoquePage', () => {
     expect(screen.getByText(/Movimentacoes indisponiveis/i)).toBeInTheDocument();
   });
 
-  it('preserva acesso temporario aos paineis legados sem duplicar o scroller desktop do Giro', () => {
+  it('transforma o Giro em mesa operacional sem compatibilidade temporaria de scroll', () => {
     renderEstoquePage();
     fireEvent.click(screen.getByRole('tab', { name: 'Giro de Estoque' }));
-    expect(screen.getByRole('tabpanel', { name: 'Giro de Estoque' })).toHaveClass('overflow-y-auto', 'md:overflow-hidden');
+    const giroPanel = screen.getByRole('tabpanel', { name: 'Giro de Estoque' });
+    expect(giroPanel).toHaveClass('min-h-0', 'flex-1', 'overflow-hidden');
+    expect(giroPanel).not.toHaveClass('overflow-y-auto', 'p-3');
+    expect(within(giroPanel).getByRole('toolbar', { name: 'Comandos do giro de estoque' })).toBeInTheDocument();
+    expect(within(giroPanel).getByRole('region', { name: 'Indicadores de estoque' })).toBeInTheDocument();
+    expect(within(giroPanel).getByRole('region', { name: 'Dados do giro de estoque' })).toBeInTheDocument();
     fireEvent.click(screen.getByRole('tab', { name: 'Assistente' }));
     expect(screen.getByRole('tabpanel', { name: 'Assistente' })).toHaveClass('overflow-y-auto');
     expect(screen.getByRole('tabpanel', { name: 'Assistente' })).not.toHaveClass('md:overflow-hidden');

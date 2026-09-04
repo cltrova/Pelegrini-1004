@@ -17,22 +17,15 @@ const products = [
 })) as GiroProductSummary[];
 
 describe('GiroManagementPanel', () => {
-  it('usa o mesmo padrao responsivo dos totalizadores da central', () => {
+  it('usa a faixa compacta compartilhada dos totalizadores da central', () => {
     const { container } = render(
       <GiroManagementPanel activeStatuses={[]} onStatusFilterChange={vi.fn()} products={products} />,
     );
 
-    const region = screen.getByRole('region', { name: 'Indicadores gerenciais de giro' });
-    expect(region).toHaveClass(
-      'grid-cols-1',
-      'min-[480px]:grid-cols-2',
-      'lg:grid-cols-3',
-      'xl:grid-cols-6',
-      'gap-2',
-    );
+    const region = screen.getByRole('region', { name: 'Indicadores de estoque' });
+    expect(region).toHaveClass('h-[52px]', 'overflow-x-auto');
     container.querySelectorAll('[data-stock-summary]').forEach((card) => {
-      expect(card).toHaveClass('min-w-0', 'min-h-16', 'rounded-md', 'border', 'bg-card');
-      expect(card.querySelector('.pelegrini-responsive-value')).toHaveAttribute('data-size', 'md');
+      expect(card).toHaveClass('h-full', 'min-w-[9rem]');
     });
   });
 
@@ -53,7 +46,7 @@ describe('GiroManagementPanel', () => {
   it('mantem capital e cobertura informativos e explica a estimativa', () => {
     render(<GiroManagementPanel activeStatuses={[] as GiroStatus[]} onStatusFilterChange={vi.fn()} products={products} />);
 
-    const region = screen.getByRole('region', { name: 'Indicadores gerenciais de giro' });
+    const region = screen.getByRole('region', { name: 'Indicadores de estoque' });
     expect(within(region).getByText('Capital parado')).toBeInTheDocument();
     expect(within(region).getByText('Cobertura media')).toBeInTheDocument();
     expect(within(region).queryByRole('button', { name: /Capital parado/i })).not.toBeInTheDocument();
@@ -66,7 +59,8 @@ describe('GiroManagementPanel', () => {
     const alertButton = screen.getByRole('button', { name: /Alerta: 1/i });
     const helpId = alertButton.getAttribute('aria-describedby');
     expect(helpId).toBeTruthy();
-    expect(document.getElementById(helpId!)).toHaveAttribute('role', 'tooltip');
     expect(document.getElementById(helpId!)).toHaveTextContent(/cobertura entre 1 e 2 meses/i);
+    fireEvent.focus(alertButton);
+    expect(screen.getByRole('tooltip')).toHaveTextContent(/cobertura entre 1 e 2 meses/i);
   });
 });
