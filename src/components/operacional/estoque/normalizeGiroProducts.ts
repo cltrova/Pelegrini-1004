@@ -7,10 +7,6 @@ function code(value: unknown): string {
   return normalized === '0' ? '' : normalized;
 }
 
-function productLookupKey(companyCode: string | number | null | undefined, productCode: string | number): string {
-  return `${code(companyCode)}:${String(productCode).trim()}`;
-}
-
 export function giroProductKey(
   companyCode: string | number | null | undefined,
   branchCode: string | number | null | undefined,
@@ -61,7 +57,6 @@ export function normalizeGiroProducts(
 ): GiroProductSummary[] {
   const activeCode = code(activeCompanyCode);
   const stockByKey = new Map<string, EstoqueRecord[]>();
-  const stockKeysByProduct = new Map<string, Set<string>>();
 
   stockRows.forEach((row) => {
     const rowCompanyCode = code(row.cod_empresa_bi);
@@ -70,10 +65,6 @@ export function normalizeGiroProducts(
 
     const key = giroProductKey(rowCompanyCode, row.cod_empresa, row.cod_produto);
     stockByKey.set(key, [...(stockByKey.get(key) ?? []), row]);
-    const lookupKey = productLookupKey(rowCompanyCode, row.cod_produto);
-    const keys = stockKeysByProduct.get(lookupKey) ?? new Set<string>();
-    keys.add(key);
-    stockKeysByProduct.set(lookupKey, keys);
   });
 
   const movementByKey = new Map<string, GiroRecord[]>();
@@ -89,16 +80,11 @@ export function normalizeGiroProducts(
     const effectiveCompanyCode = rowCompanyCode || activeCode;
     if (!effectiveCompanyCode) return;
 
-    const matchingStockKeys = stockKeysByProduct.get(productLookupKey(effectiveCompanyCode, row.cod_produto));
-    let key = giroProductKey(effectiveCompanyCode, row.cod_empresa, row.cod_produto);
+    const key = giroProductKey(effectiveCompanyCode, row.cod_empresa, row.cod_produto);
 
     if (!rowCompanyCode && !stockByKey.has(key)) {
       // Sem codigo BI, somente a chave interna exata prova que o movimento e da filial ativa.
       return;
-    }
-
-    if (rowCompanyCode && !stockByKey.has(key) && matchingStockKeys?.size === 1) {
-      key = [...matchingStockKeys][0];
     }
 
     movementByKey.set(key, [...(movementByKey.get(key) ?? []), row]);

@@ -148,6 +148,24 @@ describe('normalizeGiroProducts', () => {
     expect(result[0]).toMatchObject({ cod_empresa: 1, cod_produto: 99, total_vendas: 0 });
   });
 
+  it('mantem movimento com BI valido na propria chave quando nao ha estoque exato', () => {
+    const result = normalizeGiroProducts(
+      [saleRow({ cod_empresa_bi: 1004, cod_empresa: 77, cod_produto: 99, quantidade_movimentada: 5 })],
+      [stockRow({ cod_empresa_bi: 1004, cod_empresa: 1, cod_produto: 99 })],
+      '1004',
+      3,
+      now,
+    );
+
+    expect(result).toHaveLength(2);
+    expect(result.find((item) => item.cod_empresa === 1)).toMatchObject({ total_vendas: 0 });
+    expect(result.find((item) => item.cod_empresa === 77)).toMatchObject({
+      cod_empresa_bi: 1004,
+      cod_produto: 99,
+      total_vendas: 5,
+    });
+  });
+
   it('usa quantidade movimentada nos totais e mantem campos diretos nos acumuladores', () => {
     const result = normalizeGiroProducts(
       [

@@ -161,14 +161,14 @@ describe('GiroEstoqueTab', () => {
     expect(screen.getByText(/Movimentacao filtrada: 61 vendas/i)).toBeInTheDocument();
   });
 
-  it('soma saldos de localizacoes do mesmo produto e vincula movimentos pelo codigo BI', () => {
+  it('soma saldos de localizacoes e vincula movimentos pela chave exata', () => {
     const base = estoqueFixtureComTresItens[0];
     const locations = [
       { ...base, cod_empresa_bi: 1004, cod_empresa: 1, empresa: 'CT MATRIZ', cod_produto: 808, produto: 'ITEM LOCALIZADO', localizacao_produto: 'A-01', quantidade_estoque: 4, valor_estoque: 400 },
       { ...base, cod_empresa_bi: 1004, cod_empresa: 1, empresa: 'Casa da Transmissao', cod_produto: 808, produto: 'ITEM LOCALIZADO', localizacao_produto: 'B-02', quantidade_estoque: 6, valor_estoque: 600 },
     ];
     const movements = [{
-      ...giroFixture[0], cod_empresa_bi: 1004, cod_empresa: 77, empresa: 'CASA DA TRANSMISSAO LTDA', cod_produto: 808,
+      ...giroFixture[0], cod_empresa_bi: 1004, cod_empresa: 1, empresa: 'CASA DA TRANSMISSAO LTDA', cod_produto: 808,
       produto: 'ITEM LOCALIZADO', data_movimento: '2026-09-01', saida_venda: 5, quantidade_movimentada: 5, tipo_movimento: 'Venda',
     }];
 
