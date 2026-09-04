@@ -283,8 +283,9 @@ describe('EstoquePage', () => {
     expect(within(giroPanel).getByRole('region', { name: 'Indicadores de estoque' })).toBeInTheDocument();
     expect(within(giroPanel).getByRole('region', { name: 'Dados do giro de estoque' })).toBeInTheDocument();
     fireEvent.click(screen.getByRole('tab', { name: 'Assistente' }));
-    expect(screen.getByRole('tabpanel', { name: 'Assistente' })).toHaveClass('overflow-y-auto');
-    expect(screen.getByRole('tabpanel', { name: 'Assistente' })).not.toHaveClass('md:overflow-hidden');
+    const assistantPanel = screen.getByRole('tabpanel', { name: 'Assistente' });
+    expect(assistantPanel).toHaveClass('min-h-0', 'flex-1', 'overflow-hidden');
+    expect(assistantPanel).not.toHaveClass('overflow-y-auto', 'p-3');
   });
 
   it('remove o alerta parcial quando o estoque operacional foi recuperado pelo historico', () => {
@@ -416,7 +417,7 @@ describe('EstoquePage', () => {
 
     fireEvent.click(screen.getByRole('tab', { name: 'Assistente' }));
 
-    expect(await screen.findByText('Assistente de Estoque')).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Assistente de Estoque' })).not.toBeInTheDocument();
     expect(screen.getByRole('region', { name: 'Assistente de estoque' })).toBeInTheDocument();
     expect(screen.getByPlaceholderText('Pergunte sobre seu estoque...')).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: 'Insights' })).toBeInTheDocument();

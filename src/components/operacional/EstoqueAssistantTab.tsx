@@ -16,6 +16,7 @@ import { toast } from 'sonner';
 import { generatePDF, generateDOCX, DocumentData } from '@/utils/documentGenerator';
 import { EstoqueInsights } from './EstoqueInsights';
 import { parseStrictDate } from './estoque/assistantInsights';
+import { EstoqueDataViewport, EstoqueToolbar } from './estoque/EstoqueWorkspace';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -611,8 +612,8 @@ function ChatTab({ estoqueData, giroData, now, customPrompt, codEmpresaBi, credi
   };
 
   return (
-    <div className="flex h-[min(34rem,calc(100vh-15rem))] min-h-[26rem] flex-col">
-      <div ref={scrollRef} className="flex-1 space-y-4 overflow-y-auto px-1 py-3 sm:px-3">
+    <div className="flex min-h-0 flex-1 flex-col">
+      <div ref={scrollRef} data-testid="stock-assistant-history" className="min-h-0 flex-1 space-y-4 overflow-y-auto px-3 py-3">
         {messages.length === 0 && (
           <div className="mx-auto w-full max-w-4xl space-y-3 py-4">
             <p className="text-sm font-medium">Consultas rapidas</p>
@@ -703,7 +704,7 @@ function ChatTab({ estoqueData, giroData, now, customPrompt, codEmpresaBi, credi
         )}
       </div>
 
-      <div data-testid="stock-assistant-composer" className="sticky bottom-0 border-t border-border bg-background/95 px-1 py-3 backdrop-blur sm:px-3">
+      <div data-testid="stock-assistant-composer" className="shrink-0 border-t border-border bg-background px-3 py-3">
         {isRecording && (
           <div className="flex items-center gap-3 mb-3 px-3 py-2 rounded-lg bg-red-500/10 border border-red-500/20">
             <div className="h-2.5 w-2.5 rounded-full bg-red-500 animate-pulse" />
@@ -1004,16 +1005,19 @@ export function EstoqueAssistantTab({ giroData, estoqueData, now, onProductActio
   const creditPercent = credits.limit > 0 ? Math.min((credits.used / credits.limit) * 100, 100) : 0;
 
   return (
-    <section aria-label="Assistente de estoque" className="min-w-0 border-y border-border/70 bg-background">
-      <header className="flex min-w-0 flex-wrap items-center justify-between gap-3 border-b border-border/70 px-3 py-2.5">
-          <div>
-            <h2 className="flex items-center gap-2 text-sm font-semibold">
-              <Bot className="h-4 w-4 text-primary" />
-              Assistente de Estoque
-            </h2>
-            <p className="mt-0.5 text-xs text-muted-foreground">{codEmpresaBi ? 'Chat e analise local disponiveis' : 'Analise local disponivel'}</p>
-          </div>
-          <div className="flex items-center gap-2 text-muted-foreground">
+    <section aria-label="Assistente de estoque" className="flex min-h-0 min-w-0 flex-1 flex-col bg-background">
+      <Tabs className="flex min-h-0 flex-1 flex-col" onValueChange={(value) => setActiveView(value as 'chat' | 'insights')} value={activeView}>
+        <EstoqueToolbar aria-label="Comandos do assistente de estoque" className="justify-between">
+          <TabsList aria-label="Areas do assistente" className="flex h-full shrink-0 items-end justify-start gap-4 rounded-none bg-transparent p-0">
+            <TabsTrigger className="h-full gap-2 rounded-none border-b-2 border-transparent bg-transparent px-1 py-0 shadow-none data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none" value="chat">
+              <MessageSquare className="h-4 w-4" /> Chat
+            </TabsTrigger>
+            <TabsTrigger className="h-full gap-2 rounded-none border-b-2 border-transparent bg-transparent px-1 py-0 shadow-none data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none" value="insights">
+              <Lightbulb className="h-4 w-4" /> Insights
+            </TabsTrigger>
+          </TabsList>
+
+          <div className="ml-auto flex shrink-0 items-center gap-2 text-muted-foreground" aria-label={`${credits.used} de ${credits.limit} creditos usados`}>
             <div className="flex items-center gap-1.5">
               <Zap className="h-3.5 w-3.5 text-primary" />
               <span className="text-xs font-semibold">{credits.used}</span>
@@ -1026,23 +1030,16 @@ export function EstoqueAssistantTab({ giroData, estoqueData, now, onProductActio
               />
             </div>
           </div>
-      </header>
-      <Tabs className="px-3" onValueChange={(value) => setActiveView(value as 'chat' | 'insights')} value={activeView}>
-        <TabsList aria-label="Areas do assistente" className="flex h-9 w-full items-end justify-start gap-4 rounded-none border-b border-border bg-transparent p-0">
-          <TabsTrigger className="h-9 gap-2 rounded-none border-b-2 border-transparent bg-transparent px-1 py-0 shadow-none data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none" value="chat">
-            <MessageSquare className="h-4 w-4" /> Chat
-          </TabsTrigger>
-          <TabsTrigger className="h-9 gap-2 rounded-none border-b-2 border-transparent bg-transparent px-1 py-0 shadow-none data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none" value="insights">
-            <Lightbulb className="h-4 w-4" /> Insights
-          </TabsTrigger>
-        </TabsList>
+        </EstoqueToolbar>
 
-        <TabsContent className="mt-2" forceMount value="chat">
+        <EstoqueDataViewport aria-label="Conteudo do assistente de estoque">
+          <TabsContent className="m-0 min-h-0 flex-1 overflow-hidden data-[state=active]:flex data-[state=active]:flex-col data-[state=inactive]:hidden" forceMount value="chat">
             <ChatTab estoqueData={estoqueData} giroData={giroData} now={now} customPrompt={customPrompt} codEmpresaBi={codEmpresaBi} credits={credits} onCreditUsed={refreshCredits} />
-        </TabsContent>
-        <TabsContent className="mt-2" forceMount value="insights">
+          </TabsContent>
+          <TabsContent className="m-0 min-h-0 flex-1 overflow-y-auto px-3 py-2 data-[state=inactive]:hidden" forceMount value="insights">
             <EstoqueInsights data={estoqueData} giroData={giroData} now={now} onProductAction={onProductAction} />
-        </TabsContent>
+          </TabsContent>
+        </EstoqueDataViewport>
       </Tabs>
     </section>
   );

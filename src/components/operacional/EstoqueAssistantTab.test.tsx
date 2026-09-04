@@ -43,6 +43,18 @@ describe('EstoqueAssistantTab', () => {
     mockRpc.mockResolvedValue({ data: null });
   });
 
+  it('remove o cabecalho duplicado e mantem historico e compositor no viewport', () => {
+    render(<EstoqueAssistantTab estoqueData={estoqueFixture} giroData={giroFixture} />);
+
+    expect(screen.queryByRole('heading', { name: 'Assistente de Estoque' })).not.toBeInTheDocument();
+    expect(screen.queryByText('Chat e analise local disponiveis')).not.toBeInTheDocument();
+    expect(screen.getByRole('toolbar', { name: 'Comandos do assistente de estoque' })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'Chat' })).toBeInTheDocument();
+    expect(screen.getByTestId('stock-assistant-history')).toHaveClass('min-h-0', 'overflow-y-auto');
+    expect(screen.getByTestId('stock-assistant-composer')).toHaveClass('shrink-0');
+    expect(screen.getByTestId('stock-assistant-composer')).not.toHaveClass('sticky');
+  });
+
   it('renderiza insights locais mesmo sem configuracao de IA', () => {
     const onProductAction = vi.fn();
     render(
