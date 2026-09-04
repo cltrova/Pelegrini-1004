@@ -50,4 +50,33 @@ describe('GiroFilterPopover', () => {
     fireEvent.click(trigger);
     expect(screen.getByRole('button', { name: 'Limpar filtros' })).toBeInTheDocument();
   });
+
+  it('usa painel local e fecha com Escape devolvendo o foco ao trigger', () => {
+    render(
+      <GiroFilterPopover
+        appliedCount={0}
+        appliedSummary=""
+        onApply={vi.fn()}
+        onClear={vi.fn()}
+        pendingCount={0}
+      >
+        <button type="button">Controle interno</button>
+      </GiroFilterPopover>,
+    );
+
+    const trigger = screen.getByRole('button', { name: 'Filtros do giro' });
+    fireEvent.click(trigger);
+
+    const dialog = screen.getByRole('dialog', { name: 'Filtros do giro' });
+    expect(dialog.parentElement).toHaveClass('relative');
+    expect(trigger).toHaveAttribute('aria-expanded', 'true');
+    expect(trigger).toHaveAttribute('aria-controls', dialog.id);
+
+    screen.getByRole('button', { name: 'Controle interno' }).focus();
+    fireEvent.keyDown(dialog.parentElement as HTMLElement, { key: 'Escape' });
+
+    expect(screen.queryByRole('dialog', { name: 'Filtros do giro' })).not.toBeInTheDocument();
+    expect(trigger).toHaveFocus();
+    expect(trigger).toHaveAttribute('aria-expanded', 'false');
+  });
 });

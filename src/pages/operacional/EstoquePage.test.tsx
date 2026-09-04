@@ -470,6 +470,49 @@ describe('EstoquePage', () => {
     expect(within(screen.getByRole('table')).getByText('PRODUTO EM RUPTURA')).toBeInTheDocument();
   });
 
+  it('mantem a tabela filtrada ao limpar um chip individual ate pesquisar', () => {
+    const alertaStock = {
+      ...estoqueFixtureComTresItens[0],
+      cod_produto: 707,
+      produto: 'PRODUTO EM ALERTA',
+      quantidade_estoque: 10,
+    };
+    const rupturaStock = {
+      ...estoqueFixtureComTresItens[1],
+      cod_produto: 708,
+      produto: 'PRODUTO EM RUPTURA',
+      quantidade_estoque: 0,
+    };
+    testState.hookResult = createHookResult({
+      consolidadoData: [alertaStock, rupturaStock],
+      giroData: [{
+        ...giroFixture[0],
+        cod_produto: 707,
+        produto: 'PRODUTO EM ALERTA',
+        quantidade_estoque: 10,
+        quantidade_movimentada: 20,
+        saida_venda: 20,
+        tipo_movimento: 'Venda',
+      }],
+    });
+    renderEstoquePage();
+    fireEvent.click(screen.getByRole('tab', { name: 'Giro de Estoque' }));
+    fireEvent.click(screen.getByRole('button', { name: /Alerta: 1/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Filtros:.*Alerta/i }));
+
+    const statusChip = screen.getByText('Status:').closest('button');
+    const clearIcon = statusChip?.querySelector('svg');
+    expect(clearIcon).not.toBeNull();
+    fireEvent.click(clearIcon as SVGElement);
+
+    const table = screen.getByRole('table');
+    expect(within(table).getByText('PRODUTO EM ALERTA')).toBeInTheDocument();
+    expect(within(table).queryByText('PRODUTO EM RUPTURA')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /Pesquisar/i }));
+    expect(within(table).getByText('PRODUTO EM RUPTURA')).toBeInTheDocument();
+  });
+
   it('preserva o guard de carregamento', () => {
     testState.hookResult = createHookResult({ isLoading: true });
 

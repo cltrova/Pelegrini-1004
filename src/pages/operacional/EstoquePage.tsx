@@ -309,16 +309,16 @@ export default function EstoquePage() {
                   onClear={clearGiroFilters}
                   pendingCount={pendingGiroCount}
                 >
-              <FilterDropdownChip label="Período" displayValue={`${pendingGiro.periodoMeses} meses`} isActive={false} onClear={() => { setPendingGiro(filters => ({ ...filters, periodoMeses: 3 })); setGiroFilters(filters => ({ ...filters, periodoMeses: 3 })); }}>
+              <FilterDropdownChip label="Período" displayValue={`${pendingGiro.periodoMeses} meses`} isActive={false} onClear={() => setPendingGiro(filters => ({ ...filters, periodoMeses: 3 }))}>
                 <SingleSelectOptions options={PERIODO_MESES_OPTIONS} selected={pendingGiro.periodoMeses} onChange={(value) => setPendingGiro(filters => ({ ...filters, periodoMeses: Number(value) }))} />
               </FilterDropdownChip>
-              <FilterDropdownChip label="Status" displayValue={pendingGiro.statusFilter.length > 0 ? pendingGiro.statusFilter.map(status => GIRO_STATUS_LABELS[status]).join(', ') : 'Todos'} isActive={pendingGiro.statusFilter.length > 0} onClear={() => { setPendingGiro(filters => ({ ...filters, statusFilter: [] })); setGiroFilters(filters => ({ ...filters, statusFilter: [] })); }}>
+              <FilterDropdownChip label="Status" displayValue={pendingGiro.statusFilter.length > 0 ? pendingGiro.statusFilter.map(status => GIRO_STATUS_LABELS[status]).join(', ') : 'Todos'} isActive={pendingGiro.statusFilter.length > 0} onClear={() => setPendingGiro(filters => ({ ...filters, statusFilter: [] }))}>
                 <MultiSelectOptions options={STATUS_OPTIONS.map(option => option.label)} selected={pendingGiro.statusFilter.map(status => STATUS_OPTIONS.find(option => option.key === status)?.label || '')} onChange={(labels) => { const statuses = labels.map(label => STATUS_OPTIONS.find(option => option.label === label)?.key).filter(Boolean) as GiroStatus[]; setPendingGiro(filters => ({ ...filters, statusFilter: statuses })); }} allLabel="Todos" />
               </FilterDropdownChip>
-              <FilterDropdownChip label="Marca" displayValue={pendingGiro.marcas.length > 0 ? `${pendingGiro.marcas.length} selecionada(s)` : 'Todas'} isActive={pendingGiro.marcas.length > 0} onClear={() => { setPendingGiro(filters => ({ ...filters, marcas: [] })); setGiroFilters(filters => ({ ...filters, marcas: [] })); }}>
+              <FilterDropdownChip label="Marca" displayValue={pendingGiro.marcas.length > 0 ? `${pendingGiro.marcas.length} selecionada(s)` : 'Todas'} isActive={pendingGiro.marcas.length > 0} onClear={() => setPendingGiro(filters => ({ ...filters, marcas: [] }))}>
                 <MultiSelectOptions options={filterOptions.marcas} selected={pendingGiro.marcas} onChange={(value) => setPendingGiro(filters => ({ ...filters, marcas: value }))} searchable allLabel="Todas" />
               </FilterDropdownChip>
-              <FilterDropdownChip label="Grupo" displayValue={pendingGiro.grupos.length > 0 ? `${pendingGiro.grupos.length} selecionado(s)` : 'Todos'} isActive={pendingGiro.grupos.length > 0} onClear={() => { setPendingGiro(filters => ({ ...filters, grupos: [] })); setGiroFilters(filters => ({ ...filters, grupos: [] })); }}>
+              <FilterDropdownChip label="Grupo" displayValue={pendingGiro.grupos.length > 0 ? `${pendingGiro.grupos.length} selecionado(s)` : 'Todos'} isActive={pendingGiro.grupos.length > 0} onClear={() => setPendingGiro(filters => ({ ...filters, grupos: [] }))}>
                 <MultiSelectOptions options={filterOptions.grupos} selected={pendingGiro.grupos} onChange={(value) => setPendingGiro(filters => ({ ...filters, grupos: value }))} searchable allLabel="Todos" />
               </FilterDropdownChip>
                 </GiroFilterPopover>
