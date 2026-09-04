@@ -37,6 +37,7 @@ describe('useEstoqueData integration', () => {
 
     const { result, rerender, client } = renderStock();
 
+    expect(result.current.activeCompanyCode).toBe('10041');
     expect(result.current.lastSuccessfulUpdate).toBeNull();
     expect(result.current.sourceStatus).toEqual({
       consolidado: 'loading',

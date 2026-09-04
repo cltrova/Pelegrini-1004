@@ -20,6 +20,7 @@ import {
   GIRO_RECOMMENDED_ACTIONS,
   GIRO_STATUS_RULES,
 } from './estoque/giroIntelligence';
+import { normalizeGiroProducts } from './estoque/normalizeGiroProducts';
 
 interface Props {
   giroData: GiroRecord[];
@@ -72,26 +73,6 @@ function LineChartTooltip({ active, payload, label }: LineTooltipProps) {
   );
 }
 
-function calcGiroStatus(estoque: number, vendasPeriodo: number, meses: number): GiroStatus {
-  if (estoque === 0) return 'faltando';
-  const mediaVendaMensal = vendasPeriodo / meses;
-  if (mediaVendaMensal === 0) {
-    return estoque > 0 ? 'excesso' : 'faltando';
-  }
-  const mesesEstoque = estoque / mediaVendaMensal;
-  if (mesesEstoque < 1) return 'faltando';
-  if (mesesEstoque < 2) return 'alerta';
-  if (mesesEstoque > 6) return 'excesso';
-  return 'atendendo';
-}
-
-function getDaysSinceSale(value: string | null): number | null {
-  if (!value) return null;
-  const timestamp = Date.parse(value);
-  if (!Number.isFinite(timestamp)) return null;
-  return Math.max(0, Math.floor((Date.now() - timestamp) / (1000 * 60 * 60 * 24)));
-}
-
 function GiroStatusHelp({ id, status }: { id: string; status: GiroStatus }) {
   const [open, setOpen] = useState(false);
   const config = STATUS_CONFIG[status];
@@ -132,6 +113,7 @@ export function GiroEstoqueTab({ giroData, estoqueData, filters, onStatusFilterC
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
   const [visibleCount, setVisibleCount] = useState(50);
   const [analysisOpen, setAnalysisOpen] = useState(false);
+  const [referenceNow] = useState(() => new Date());
   const productIdentity = useCallback((record: EstoqueRecord | GiroRecord | GiroProductSummary) => {
     const recordCompanyCode = String(record.cod_empresa_bi ?? '').trim();
     if (recordCompanyCode && recordCompanyCode !== '0') return stockProductIdentity(record);
@@ -153,99 +135,15 @@ export function GiroEstoqueTab({ giroData, estoqueData, filters, onStatusFilterC
     });
   }, [giroData, dateCutoff]);
 
-  // Build product summaries
+  // Normalize stock and movements before applying presentation filters.
   const managementProducts = useMemo(() => {
-    const map = new Map<string, GiroProductSummary>();
-
-    // Initialize from estoque data
-    estoqueData.forEach(r => {
-      const identity = productIdentity(r);
-      if (!map.has(identity)) {
-        map.set(identity, {
-          cod_empresa_bi: r.cod_empresa_bi,
-          cod_empresa: r.cod_empresa,
-          cod_produto: r.cod_produto,
-          produto: r.produto,
-          marca: r.marca,
-          grupo: r.grupo,
-          empresa: r.empresa,
-          quantidade_estoque: r.quantidade_estoque,
-          valor_estoque: r.valor_estoque,
-          total_vendas: 0,
-          total_compras: 0,
-          giro: 0,
-          status: 'atendendo',
-          dias_sem_venda: getDaysSinceSale(r.data_ultima_venda),
-          ultima_venda: r.data_ultima_venda,
-          total_saida_venda: 0,
-          total_entrada_compra: 0,
-          total_saida_transferencia: 0,
-          total_entrada_transferencia: 0,
-          cobertura_meses: null,
-          classe_abc: r.classe_abc,
-        });
-      } else {
-        const existing = map.get(identity)!;
-        existing.quantidade_estoque += r.quantidade_estoque;
-        existing.valor_estoque += r.valor_estoque;
-        if (r.data_ultima_venda && (!existing.ultima_venda || r.data_ultima_venda > existing.ultima_venda)) {
-          existing.ultima_venda = r.data_ultima_venda;
-          existing.dias_sem_venda = getDaysSinceSale(r.data_ultima_venda);
-        }
-      }
-    });
-
-    // Aggregate giro data
-    filteredGiro.forEach(r => {
-      const identity = movementIdentity(r);
-      let entry = map.get(identity);
-      if (!entry) {
-        entry = {
-          cod_empresa_bi: r.cod_empresa_bi,
-          cod_empresa: r.cod_empresa,
-          cod_produto: r.cod_produto,
-          produto: r.produto,
-          marca: r.marca,
-          grupo: r.grupo,
-          empresa: r.empresa,
-          quantidade_estoque: r.quantidade_estoque,
-          valor_estoque: r.valor_estoque,
-          total_vendas: 0,
-          total_compras: 0,
-          giro: 0,
-          status: 'atendendo',
-          dias_sem_venda: null,
-          ultima_venda: null,
-          total_saida_venda: 0,
-          total_entrada_compra: 0,
-          total_saida_transferencia: 0,
-          total_entrada_transferencia: 0,
-          cobertura_meses: null,
-          classe_abc: null,
-        };
-        map.set(identity, entry);
-      }
-      entry.total_saida_venda += r.saida_venda;
-      entry.total_entrada_compra += r.entrada_compra;
-      entry.total_saida_transferencia += r.saida_transferencia;
-      entry.total_entrada_transferencia += r.entrada_transferencia;
-      entry.total_vendas += r.quantidade_movimentada * (r.tipo_movimento === 'Venda' ? 1 : 0);
-      entry.total_compras += r.quantidade_movimentada * (r.tipo_movimento === 'Compra' ? 1 : 0);
-    });
-
-    // Calculate status and giro
-    map.forEach(entry => {
-      entry.giro = entry.quantidade_estoque > 0
-        ? entry.total_vendas / entry.quantidade_estoque
-        : 0;
-      const mediaVendaMensal = entry.total_vendas / filters.periodoMeses;
-      entry.cobertura_meses = mediaVendaMensal > 0
-        ? entry.quantidade_estoque / mediaVendaMensal
-        : null;
-      entry.status = calcGiroStatus(entry.quantidade_estoque, entry.total_vendas, filters.periodoMeses);
-    });
-
-    let summaries = [...map.values()];
+    let summaries = normalizeGiroProducts(
+      giroData,
+      estoqueData,
+      activeCompanyCode,
+      filters.periodoMeses,
+      referenceNow,
+    );
 
     // Apply filters
     if (filters.empresas.length > 0) summaries = summaries.filter(s => filters.empresas.includes(s.empresa));
@@ -257,7 +155,7 @@ export function GiroEstoqueTab({ giroData, estoqueData, filters, onStatusFilterC
     }
 
     return summaries;
-  }, [estoqueData, filteredGiro, filters, movementIdentity, productIdentity]);
+  }, [activeCompanyCode, estoqueData, filters, giroData, referenceNow]);
 
   const productSummaries = useMemo(() => (
     filters.statusFilter.length > 0

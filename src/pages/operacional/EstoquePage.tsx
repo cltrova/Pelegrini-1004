@@ -63,7 +63,7 @@ const DEFAULT_GIRO_FILTERS: GiroFiltersState = {
 };
 
 export default function EstoquePage() {
-  const { consolidadoData, detalhadoData, giroData, isLoading, empresa, sourceErrors, sourceStatus, sourceLastUpdated, lastSuccessfulUpdate, partialSources, recoveredSources, recoveryStatus, isFetching, refetch } = useEstoqueData();
+  const { activeCompanyCode, consolidadoData, detalhadoData, giroData, isLoading, empresa, sourceErrors, sourceStatus, sourceLastUpdated, lastSuccessfulUpdate, partialSources, recoveredSources, recoveryStatus, isFetching, refetch } = useEstoqueData();
   const { codEmpresaContexto, filialAtiva } = useFilialSelecionada();
   const [activeTab, setActiveTab] = useState('central');
   const [viewMode, setViewMode] = useState<ViewMode>('consolidado');
@@ -310,7 +310,7 @@ export default function EstoquePage() {
             </UnifiedFilterBar>
           </div>
           <GiroEstoqueTab
-            activeCompanyCode={codEmpresaContexto ?? empresa?.cod_empresa_bi}
+            activeCompanyCode={activeCompanyCode}
             giroData={giroData}
             estoqueData={estoqueData}
             filters={giroFilters}

@@ -390,6 +390,7 @@ export function useEstoqueData() {
   const isError = consolidadoQuery.isError || detalhadoQuery.isError || giroQuery.isError;
 
   return {
+    activeCompanyCode: String(estoqueCompanyCode ?? ''),
     consolidadoData,
     detalhadoData,
     giroData,

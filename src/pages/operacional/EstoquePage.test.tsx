@@ -35,6 +35,7 @@ const detalhadoData = [
 
 function createHookResult(overrides: Record<string, unknown> = {}) {
   return {
+    activeCompanyCode: '1004',
     consolidadoData: estoqueFixtureComTresItens,
     detalhadoData,
     giroData: giroFixture,
