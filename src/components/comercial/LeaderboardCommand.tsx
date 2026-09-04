@@ -128,9 +128,9 @@ function avatarColor(seed: string) {
 /* ---------- Rank tiers ---------- */
 
 const RANK_TIER: Record<number, { tile: string; label: string; Icon: React.ComponentType<{ className?: string }> }> = {
-  1: { tile: 'bg-gradient-to-br from-amber-400/85 to-amber-600/70 text-amber-50 ring-amber-500/50 shadow-[0_4px_16px_-4px_hsl(38_92%_50%/0.55)]', label: 'Ouro',   Icon: Crown },
-  2: { tile: 'bg-gradient-to-br from-slate-300/70 to-slate-500/60 text-slate-50 ring-slate-400/40 shadow-[0_4px_14px_-4px_hsl(220_15%_60%/0.45)]', label: 'Prata',  Icon: Medal },
-  3: { tile: 'bg-gradient-to-br from-orange-400/85 to-orange-600/60 text-orange-50 ring-orange-500/45 shadow-[0_4px_14px_-4px_hsl(20_90%_50%/0.5)]', label: 'Bronze', Icon: Award },
+  1: { tile: 'bg-amber-500/10 text-amber-600 ring-amber-500/35', label: 'Ouro',   Icon: Crown },
+  2: { tile: 'bg-slate-500/10 text-slate-500 ring-slate-500/30', label: 'Prata',  Icon: Medal },
+  3: { tile: 'bg-orange-500/10 text-orange-600 ring-orange-500/35', label: 'Bronze', Icon: Award },
 };
 
 /* ---------- Delta chip ---------- */
@@ -148,7 +148,7 @@ function DeltaChip({ pct, size = 'sm' }: { pct: number | null | undefined; size?
   return (
     <span
       className={cn(
-        'inline-flex items-center gap-1 rounded-full font-semibold tabular-nums ring-1 transition-all',
+        'inline-flex items-center gap-1 rounded-md font-semibold tabular-nums ring-1 transition-colors',
         size === 'md' ? 'px-2 py-0.5 text-xs' : 'px-1.5 py-[1px] text-[10.5px]',
         up ? 'bg-emerald-500/10 text-emerald-500 ring-emerald-500/25' : 'bg-rose-500/10 text-rose-500 ring-rose-500/25',
       )}
@@ -187,9 +187,9 @@ function LeaderboardRow({
         'transition-[background,opacity,border-color] duration-200 ease-out',
         'border border-transparent',
         active
-          ? 'bg-primary/[0.06] border-primary/25 shadow-[0_0_0_1px_hsl(var(--primary)/0.2)_inset,0_8px_20px_-14px_hsl(var(--primary)/0.6)]'
+          ? 'bg-primary/[0.06] border-primary/25'
           : 'hover:bg-muted/40 [ul:hover>&:not(:hover)]:opacity-45',
-        'animate-fade-in rounded-xl',
+        'animate-fade-in rounded-lg',
       )}
       style={{ animationDelay: `${index * 25}ms`, animationFillMode: 'both' }}
       role="button"
@@ -201,7 +201,7 @@ function LeaderboardRow({
     >
       {/* Rank tile */}
       <div className={cn(
-        'flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-[12px] font-bold tabular-nums ring-1 transition-transform duration-300 group-hover/row:scale-[1.06]',
+        'flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-[12px] font-bold tabular-nums ring-1 transition-colors duration-200',
         tier ? tier.tile : 'bg-muted/50 text-muted-foreground ring-border/60',
       )}>
         {tier ? <tier.Icon className="h-4 w-4" /> : entry.rank}
@@ -209,7 +209,7 @@ function LeaderboardRow({
 
       {/* Colored avatar tile */}
       <div className={cn(
-        'flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg text-[11px] font-bold ring-1 transition-transform duration-300 group-hover/row:scale-[1.06]',
+        'flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg text-[11px] font-bold ring-1',
         color.bg,
       )}>
         {entry.avatarUrl ? (
@@ -240,15 +240,15 @@ function LeaderboardRow({
         <div className="relative h-1 w-full max-w-[130px] overflow-hidden rounded-full bg-muted/40">
           <div
             className={cn(
-              'absolute inset-y-0 left-0 rounded-full transition-all duration-500 ease-out',
+              'absolute inset-y-0 left-0 rounded-full transition-[width,background-color] duration-500 ease-out',
               active
-                ? 'bg-gradient-to-r from-primary to-primary/60 shadow-[0_0_10px_hsl(var(--primary)/0.55)]'
+                ? 'bg-primary'
                 : entry.rank === 1
-                  ? 'bg-gradient-to-r from-amber-400 to-amber-500/70'
+                  ? 'bg-amber-500'
                   : entry.rank === 2
-                    ? 'bg-gradient-to-r from-slate-300 to-slate-400/70'
+                    ? 'bg-slate-400'
                     : entry.rank === 3
-                      ? 'bg-gradient-to-r from-orange-400 to-orange-500/70'
+                      ? 'bg-orange-500'
                       : 'bg-foreground/30 group-hover/row:bg-primary/70',
             )}
             style={{ width: `${Math.max(3, Math.min(100, entry.share))}%` }}
@@ -266,7 +266,7 @@ function LeaderboardRow({
 
       {/* Chevron */}
       <ChevronRight className={cn(
-        'h-4 w-4 shrink-0 transition-all duration-300',
+        'h-4 w-4 shrink-0 transition-[color,transform] duration-300',
         active ? 'text-primary translate-x-0.5' : 'text-muted-foreground/50 group-hover/row:text-foreground/70 group-hover/row:translate-x-0.5',
       )} />
     </li>
@@ -289,8 +289,8 @@ function DetailPanel({ entry, primaryLabel }: { entry: LeaderboardEntry | null; 
 
   if (!entry) {
     return (
-      <div className="flex h-full min-h-[520px] flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-border/60 bg-muted/10 p-10 text-center">
-        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 ring-1 ring-primary/20">
+      <div className="flex h-full min-h-[520px] flex-col items-center justify-center gap-3 rounded-lg border border-dashed border-border/60 bg-muted/10 p-10 text-center">
+        <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 ring-1 ring-primary/20">
           <Sparkles className="h-5 w-5 text-primary" />
         </div>
         <p className="text-sm font-medium">Selecione um item do ranking</p>
@@ -311,15 +311,13 @@ function DetailPanel({ entry, primaryLabel }: { entry: LeaderboardEntry | null; 
   return (
     <div
       key={entry.id}
-      className="relative flex h-full flex-col overflow-hidden rounded-2xl border border-border/60 bg-gradient-to-br from-card via-card to-card/60 shadow-[0_10px_40px_-20px_hsl(var(--foreground)/0.35)] animate-fade-in"
+      className="relative flex h-full flex-col overflow-hidden rounded-lg border border-border/60 bg-card animate-fade-in"
     >
-      <div aria-hidden className="pointer-events-none absolute -top-28 left-1/2 h-56 w-[70%] -translate-x-1/2 rounded-full bg-primary/10 blur-3xl" />
-
       {/* Header */}
       <div className="relative flex items-start justify-between gap-3 px-5 py-4">
         <div className="flex min-w-0 items-center gap-3">
           <div className={cn(
-            'flex h-11 w-11 items-center justify-center overflow-hidden rounded-xl text-[13px] font-bold ring-1',
+            'flex h-11 w-11 items-center justify-center overflow-hidden rounded-lg text-[13px] font-bold ring-1',
             color.bg,
           )}>
             {entry.avatarUrl ? <img src={entry.avatarUrl} alt={entry.title} className="h-full w-full object-cover" /> : entry.initials}
@@ -354,7 +352,7 @@ function DetailPanel({ entry, primaryLabel }: { entry: LeaderboardEntry | null; 
           </button>
           <button
             onClick={() => setStarred(v => !v)}
-            className={cn('rounded-md p-1.5 transition-all hover:bg-muted', starred ? 'text-amber-400' : 'text-muted-foreground hover:text-foreground')}
+            className={cn('rounded-md p-1.5 transition-colors hover:bg-muted', starred ? 'text-amber-500' : 'text-muted-foreground hover:text-foreground')}
             aria-label="Favoritar"
           >
             <Star className={cn('h-4 w-4 transition-transform', starred && 'fill-current scale-110')} />
@@ -374,7 +372,7 @@ function DetailPanel({ entry, primaryLabel }: { entry: LeaderboardEntry | null; 
         <div className="mt-3 flex items-center gap-2">
           <div className="relative h-1.5 flex-1 overflow-hidden rounded-full bg-muted/40">
             <div
-              className="h-full rounded-full bg-gradient-to-r from-primary via-primary to-primary/60 shadow-[0_0_14px_hsl(var(--primary)/0.55)] transition-[width] duration-700 ease-out"
+              className="h-full rounded-full bg-primary transition-[width] duration-700 ease-out"
               style={{ width: `${Math.max(3, Math.min(100, share))}%` }}
             />
           </div>
@@ -389,12 +387,6 @@ function DetailPanel({ entry, primaryLabel }: { entry: LeaderboardEntry | null; 
         {entry.sparkline.length > 1 ? (
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={entry.sparkline} margin={{ top: 8, right: 12, left: 8, bottom: 4 }}>
-              <defs>
-                <linearGradient id="detailArea" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0" stopColor="hsl(var(--primary))" stopOpacity={0.4} />
-                  <stop offset="1" stopColor="hsl(var(--primary))" stopOpacity={0} />
-                </linearGradient>
-              </defs>
               <CartesianGrid strokeDasharray="2 4" vertical={false} className="stroke-border/40" />
               <XAxis
                 dataKey="mes"
@@ -425,10 +417,9 @@ function DetailPanel({ entry, primaryLabel }: { entry: LeaderboardEntry | null; 
                   border: '1px solid hsl(var(--border))',
                   borderRadius: 10,
                   fontSize: 11,
-                  boxShadow: '0 10px 28px hsl(var(--foreground) / 0.18)',
                 }}
               />
-              <Area type="monotone" dataKey="valor" stroke="hsl(var(--primary))" strokeWidth={2} fill="url(#detailArea)" animationDuration={700} />
+              <Area type="monotone" dataKey="valor" stroke="hsl(var(--primary))" strokeWidth={2} fill="hsl(var(--primary))" fillOpacity={0.12} animationDuration={700} />
             </AreaChart>
           </ResponsiveContainer>
         ) : (
@@ -437,15 +428,12 @@ function DetailPanel({ entry, primaryLabel }: { entry: LeaderboardEntry | null; 
               {fallbackBars.map((height, index) => (
                 <div
                   key={index}
-                  className="relative flex-1 overflow-hidden rounded-t-xl border border-primary/10 bg-primary/5"
+                  className="relative flex-1 overflow-hidden rounded-t-lg border border-primary/10 bg-primary/15"
                   style={{ height: `${height}%` }}
-                >
-                  <div className="absolute inset-0 bg-gradient-to-t from-primary/75 via-primary/35 to-cyan-300/20" />
-                  <div className="absolute inset-x-0 top-0 h-5 bg-white/10 blur-sm" />
-                </div>
+                />
               ))}
             </div>
-            <div className="rounded-xl border border-primary/15 bg-primary/[0.06] px-3 py-2">
+            <div className="rounded-lg border border-primary/15 bg-primary/[0.06] px-3 py-2">
               <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-primary/80">Compra no periodo</p>
               <div className="mt-1 flex items-baseline justify-between gap-3">
                 <span className="text-sm font-bold tabular-nums text-foreground">
@@ -468,7 +456,7 @@ function DetailPanel({ entry, primaryLabel }: { entry: LeaderboardEntry | null; 
             return (
               <div
                 key={i}
-                className="group/stat rounded-xl border border-border/50 bg-card/60 p-3 transition-all hover:border-primary/30 hover:bg-primary/[0.04]"
+                className="group/stat rounded-lg border border-border/50 bg-card/60 p-3 transition-colors hover:border-primary/30 hover:bg-primary/[0.04]"
               >
                 <div className="flex items-center gap-1.5">
                   {StatIcon && (
@@ -548,13 +536,11 @@ export function LeaderboardCommand({ title = 'Ranking Comercial', subtitle, tabs
   const sortLabel = sortKey === 'primary' ? 'Faturamento' : sortKey === 'share' ? 'Participação' : sortKey === 'delta' ? 'Variação' : 'Nome';
 
   return (
-    <section className="relative overflow-hidden rounded-2xl border border-border/60 bg-gradient-to-br from-card via-card to-background/50 shadow-[0_10px_50px_-24px_hsl(var(--foreground)/0.35)]">
-      <div aria-hidden className="pointer-events-none absolute -top-40 right-0 h-72 w-[55%] rounded-full bg-primary/10 blur-3xl" />
-
+    <section className="relative overflow-hidden rounded-lg border border-border/60 bg-card">
       {/* Global header (tabs + subtitle) */}
       <header className="relative flex flex-col gap-3 border-b border-border/60 px-5 py-4 md:flex-row md:items-center md:justify-between md:px-6">
         <div className="flex items-center gap-2.5">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-primary/25 to-primary/5 ring-1 ring-primary/25">
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 ring-1 ring-primary/25">
             <Trophy className="h-4 w-4 text-primary" />
           </div>
           <div>
@@ -567,7 +553,7 @@ export function LeaderboardCommand({ title = 'Ranking Comercial', subtitle, tabs
 
         <div className="flex flex-wrap items-center gap-2">
           {headerAction}
-          <div className="inline-flex items-center rounded-xl border border-border/60 bg-muted/40 p-0.5 shadow-inner">
+          <div className="inline-flex items-center rounded-lg border border-border/60 bg-muted/40 p-0.5">
             {tabs.map(t => {
               const active = t.key === tabKey;
               const Icon = t.icon;
@@ -576,9 +562,9 @@ export function LeaderboardCommand({ title = 'Ranking Comercial', subtitle, tabs
                   key={t.key}
                   onClick={() => { setTabKey(t.key); setSearch(''); }}
                   className={cn(
-                    'relative inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[12px] font-semibold transition-all',
+                    'relative inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[12px] font-semibold transition-colors',
                     active
-                      ? 'bg-gradient-to-b from-primary/25 to-primary/10 text-primary ring-1 ring-primary/40 shadow-[0_2px_10px_-2px_hsl(var(--primary)/0.35)]'
+                      ? 'bg-primary/10 text-primary ring-1 ring-primary/35'
                       : 'text-muted-foreground hover:text-foreground',
                   )}
                 >
@@ -662,7 +648,7 @@ export function LeaderboardCommand({ title = 'Ranking Comercial', subtitle, tabs
             <div className="border-t border-border/60 p-2.5">
               <button
                 onClick={activeTab.onSeeAll}
-                className="group/see inline-flex w-full items-center justify-center gap-1.5 rounded-lg py-2 text-[12px] font-semibold text-muted-foreground transition-all hover:bg-muted/50 hover:text-foreground"
+                className="group/see inline-flex w-full items-center justify-center gap-1.5 rounded-lg py-2 text-[12px] font-semibold text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
               >
                 {activeTab.seeAllLabel ?? `Ver todos os ${activeTab.label.toLowerCase()}`}
                 <ChevronRight className="h-3.5 w-3.5 transition-transform group-hover/see:translate-x-0.5" />
