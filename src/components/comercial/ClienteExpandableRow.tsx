@@ -50,33 +50,36 @@ const getInitials = (name?: string) => {
 /** Tier visual baseado na participação do cliente no total */
 function getTier(participacao: number) {
   if (participacao >= 5)
-    return { label: 'Diamond', icon: Sparkles, color: 'hsl(200 95% 65%)', glow: 'hsl(200 95% 65% / 0.45)' };
+    return { label: 'Diamond', icon: Sparkles, color: 'hsl(200 95% 65%)' };
   if (participacao >= 2)
-    return { label: 'Gold', icon: Crown, color: 'hsl(45 95% 60%)', glow: 'hsl(45 95% 60% / 0.45)' };
+    return { label: 'Gold', icon: Crown, color: 'hsl(45 95% 60%)' };
   if (participacao >= 1)
-    return { label: 'Silver', icon: Medal, color: 'hsl(220 10% 75%)', glow: 'hsl(220 10% 75% / 0.4)' };
-  return { label: 'Bronze', icon: Award, color: 'hsl(25 70% 55%)', glow: 'hsl(25 70% 55% / 0.4)' };
+    return { label: 'Silver', icon: Medal, color: 'hsl(220 10% 75%)' };
+  return { label: 'Bronze', icon: Award, color: 'hsl(25 70% 55%)' };
 }
 
 /** Cor para o destaque do rank (Top 3) */
 function getRankMedal(rank: number) {
   if (rank === 1)
     return {
-      bg: 'linear-gradient(135deg, hsl(45 95% 65%), hsl(38 90% 50%))',
+      bg: 'bg-amber-500/15',
       ring: 'hsl(45 95% 60%)',
-      text: 'hsl(40 95% 12%)',
+      text: 'text-amber-500',
+      border: 'border-amber-500/35',
     };
   if (rank === 2)
     return {
-      bg: 'linear-gradient(135deg, hsl(220 15% 85%), hsl(220 10% 65%))',
+      bg: 'bg-slate-400/15',
       ring: 'hsl(220 10% 75%)',
-      text: 'hsl(220 30% 15%)',
+      text: 'text-slate-400',
+      border: 'border-slate-400/35',
     };
   if (rank === 3)
     return {
-      bg: 'linear-gradient(135deg, hsl(25 75% 60%), hsl(18 70% 42%))',
+      bg: 'bg-orange-500/15',
       ring: 'hsl(25 70% 55%)',
-      text: 'hsl(20 80% 12%)',
+      text: 'text-orange-500',
+      border: 'border-orange-500/35',
     };
   return null;
 }
@@ -129,8 +132,8 @@ export function ClienteExpandableRow({
   return (
     <div
       className={cn(
-        'group relative transition-all duration-300',
-        isExpanded ? 'bg-gradient-to-r from-primary/[0.04] via-card/40 to-transparent' : 'hover:bg-muted/30',
+        'group relative transition-colors duration-200',
+        isExpanded ? 'bg-muted/30' : 'hover:bg-muted/30',
         className,
       )}
     >
@@ -141,7 +144,6 @@ export function ClienteExpandableRow({
           className="absolute left-0 top-0 bottom-0 w-[3px] transition-all"
           style={{
             background: medal?.ring,
-            boxShadow: `0 0 18px ${medal?.ring}, 0 0 4px ${medal?.ring}`,
             opacity: isExpanded ? 1 : 0.85,
           }}
         />
@@ -156,12 +158,12 @@ export function ClienteExpandableRow({
         <div className="w-11 flex justify-center flex-shrink-0">
           {medal ? (
             <div
-              className="h-10 w-10 rounded-full flex items-center justify-center font-black tabular-nums shadow-lg ring-2 ring-background transition-transform group-hover:scale-105"
-              style={{
-                background: medal.bg,
-                color: medal.text,
-                boxShadow: `0 8px 22px -10px ${medal.ring}, inset 0 1px 0 hsl(0 0% 100% / 0.42)`,
-              }}
+              className={cn(
+                'h-10 w-10 rounded-full flex items-center justify-center font-black tabular-nums border',
+                medal.bg,
+                medal.text,
+                medal.border,
+              )}
             >
               {ranking === 1 ? (
                 <Crown className="h-5 w-5" strokeWidth={2.5} fill="currentColor" />
@@ -170,7 +172,7 @@ export function ClienteExpandableRow({
               )}
             </div>
           ) : (
-            <div className="h-10 w-10 rounded-xl flex items-center justify-center bg-muted/40 border border-border/60 text-sm font-semibold italic tabular-nums text-muted-foreground">
+            <div className="h-10 w-10 rounded-lg flex items-center justify-center bg-muted/40 border border-border/60 text-sm font-semibold italic tabular-nums text-muted-foreground">
               {String(ranking).padStart(2, '0')}
             </div>
           )}
@@ -180,9 +182,9 @@ export function ClienteExpandableRow({
         <div className="flex-1 min-w-0 flex items-center gap-3">
           <div
             className={cn(
-              'w-11 h-11 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 border-2 transition-all',
+              'w-11 h-11 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 border-2 transition-colors',
               isTop3
-                ? 'bg-gradient-to-br from-primary/25 to-primary/5 border-primary/50 text-primary shadow-[0_4px_16px_-4px_hsl(var(--primary)/0.4)]'
+                ? 'bg-primary/10 border-primary/40 text-primary'
                 : 'bg-muted border-border text-foreground group-hover:border-primary/30',
             )}
           >
@@ -199,7 +201,7 @@ export function ClienteExpandableRow({
                 style={{
                   background: `${tier.color}18`,
                   color: tier.color,
-                  boxShadow: `inset 0 0 0 1px ${tier.color}40`,
+                  borderColor: tier.color,
                 }}
               >
                 <TierIcon className="h-2.5 w-2.5" strokeWidth={2.5} />
@@ -263,10 +265,7 @@ export function ClienteExpandableRow({
               className={cn('h-full rounded-full transition-all duration-700 ease-out')}
               style={{
                 width: `${barWidth}%`,
-                background: isTop3 && medal
-                  ? `linear-gradient(90deg, ${medal.ring.replace(')', ' / 0.45)')}, ${medal.ring})`
-                  : 'linear-gradient(90deg, hsl(var(--primary)/0.5), hsl(var(--primary)))',
-                boxShadow: isTop3 && medal ? `0 0 10px ${medal.ring.replace(')', ' / 0.45)')}` : '0 0 6px hsl(var(--primary)/0.4)',
+                background: isTop3 && medal ? medal.ring : 'hsl(var(--primary))',
               }}
             />
           </div>
@@ -308,7 +307,7 @@ export function ClienteExpandableRow({
           className={cn(
             'h-7 w-7 rounded-full flex items-center justify-center flex-shrink-0 transition-all duration-300',
             isExpanded
-              ? 'bg-primary text-primary-foreground shadow-md shadow-primary/30 rotate-180'
+              ? 'bg-primary text-primary-foreground rotate-180'
               : 'bg-muted/40 text-muted-foreground group-hover:bg-primary/15 group-hover:text-primary',
           )}
         >
@@ -350,12 +349,8 @@ export function ClienteExpandableRow({
               ].map((kpi, i) => (
                 <div
                   key={i}
-                  className="relative p-4 rounded-xl bg-gradient-to-br from-card via-card/80 to-card/40 border border-border/60 overflow-hidden group/kpi hover:border-primary/40 transition-all"
+                  className="relative p-4 rounded-lg bg-card border border-border/60 overflow-hidden group/kpi hover:border-primary/40 transition-colors"
                 >
-                  <div
-                    className="absolute -top-6 -right-6 h-20 w-20 rounded-full opacity-10 blur-xl"
-                    style={{ background: kpi.color }}
-                  />
                   <div className="flex items-center gap-2 mb-1.5">
                     <kpi.icon className="h-3.5 w-3.5" style={{ color: kpi.color }} strokeWidth={2.5} />
                     <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">
@@ -374,13 +369,13 @@ export function ClienteExpandableRow({
               {/* Extra: Ticket Médio + Pedidos */}
               {(cliente.ticketMedio > 0 || cliente.totalPedidos > 0) && (
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="p-3 rounded-xl bg-card/60 border border-border/60">
+                  <div className="p-3 rounded-lg bg-card border border-border/60">
                     <p className="text-[9px] uppercase tracking-widest text-muted-foreground font-semibold">
                       Pedidos
                     </p>
                     <p className="text-sm font-bold mono-value mt-0.5">{cliente.totalPedidos}</p>
                   </div>
-                  <div className="p-3 rounded-xl bg-card/60 border border-border/60">
+                  <div className="p-3 rounded-lg bg-card border border-border/60">
                     <p className="text-[9px] uppercase tracking-widest text-muted-foreground font-semibold">
                       Ticket
                     </p>
@@ -393,11 +388,7 @@ export function ClienteExpandableRow({
             </div>
 
             {/* Evolução premium */}
-            <div className="col-span-1 md:col-span-2 p-5 rounded-xl bg-gradient-to-br from-card via-card/80 to-card/40 border border-border/60 flex flex-col relative overflow-hidden">
-              <div
-                className="absolute -top-10 -right-10 h-40 w-40 rounded-full opacity-10 blur-3xl"
-                style={{ background: 'hsl(var(--primary))' }}
-              />
+            <div className="col-span-1 md:col-span-2 p-5 rounded-lg bg-card border border-border/60 flex flex-col relative overflow-hidden">
               <div className="flex justify-between items-start mb-3 relative">
                 <div>
                   <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">
@@ -472,7 +463,6 @@ export function ClienteExpandableRow({
                           border: '1px solid hsl(var(--border))',
                           borderRadius: '8px',
                           fontSize: '12px',
-                          boxShadow: '0 8px 24px -8px hsl(var(--primary) / 0.3)',
                         }}
                       />
                       <Area
