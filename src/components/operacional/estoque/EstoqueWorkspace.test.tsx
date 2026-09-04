@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react';
+import type { CSSProperties } from 'react';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -24,7 +25,7 @@ describe('EstoqueWorkspace', () => {
     const viewport = screen.getByRole('region', { name: 'Dados do estoque' });
 
     expect(workspace).toHaveClass(
-      'h-[calc(100dvh-var(--estoque-shell-offset))]',
+      'h-[calc(100dvh-var(--estoque-shell-offset,0px))]',
       'min-h-0',
       'overflow-hidden',
     );
@@ -32,6 +33,35 @@ describe('EstoqueWorkspace', () => {
     expect(header).toHaveClass('h-11', 'shrink-0');
     expect(toolbar).toHaveClass('h-11', 'shrink-0');
     expect(viewport).toHaveClass('min-h-0', 'flex-1', 'overflow-auto');
+  });
+
+  it('mantem fallback sem bloquear offset por estilo, classe ou ancestral', () => {
+    render(
+      <>
+        <EstoqueWorkspace
+          aria-label="Offset local"
+          style={{ '--estoque-shell-offset': '6rem' } as CSSProperties}
+        />
+        <div style={{ '--estoque-shell-offset': '4rem' } as CSSProperties}>
+          <EstoqueWorkspace aria-label="Offset herdado" />
+        </div>
+        <EstoqueWorkspace
+          aria-label="Altura por classe"
+          className="h-[calc(100dvh-8rem)]"
+        />
+      </>,
+    );
+
+    const local = screen.getByRole('region', { name: 'Offset local' });
+    const inherited = screen.getByRole('region', { name: 'Offset herdado' });
+    const byClass = screen.getByRole('region', { name: 'Altura por classe' });
+
+    expect(local.style.getPropertyValue('--estoque-shell-offset')).toBe('6rem');
+    expect(inherited.style.getPropertyValue('--estoque-shell-offset')).toBe('');
+    expect(inherited.parentElement?.style.getPropertyValue('--estoque-shell-offset')).toBe('4rem');
+    expect(inherited).toHaveClass('h-[calc(100dvh-var(--estoque-shell-offset,0px))]');
+    expect(byClass).toHaveClass('h-[calc(100dvh-8rem)]');
+    expect(byClass).not.toHaveClass('h-[calc(100dvh-var(--estoque-shell-offset,0px))]');
   });
 
   it('permite complementar classes sem perder as regras estruturais', () => {

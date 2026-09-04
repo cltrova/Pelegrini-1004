@@ -42,7 +42,7 @@ function MetricContent({ icon: Icon, label, value }: Pick<EstoqueMetric, 'icon' 
         <span className="block truncate text-[9px] font-semibold uppercase leading-none text-muted-foreground">
           {label}
         </span>
-        <span className="mt-1 block min-w-0 max-w-full whitespace-nowrap text-[clamp(0.95rem,1.25vw,1.2rem)] font-semibold leading-none tabular-nums text-foreground">
+        <span className="mt-1 block min-w-0 max-w-full whitespace-nowrap text-[clamp(0.875rem,1vw,1.125rem)] font-semibold leading-none tabular-nums text-foreground">
           {value}
         </span>
       </span>
@@ -52,7 +52,8 @@ function MetricContent({ icon: Icon, label, value }: Pick<EstoqueMetric, 'icon' 
 
 function MetricItem({ active, metric, onMetricClick }: MetricItemProps) {
   const [tooltipPosition, setTooltipPosition] = useState<{ left: number; top: number } | null>(null);
-  const tooltipId = `estoque-metric-${useId().replace(/:/g, '')}`;
+  const descriptionId = `estoque-metric-description-${useId().replace(/:/g, '')}`;
+  const metricMinWidth = `calc(${metric.value.length}ch + 7rem)`;
   const commonClassName = cn(
     'relative flex h-full min-w-[9rem] flex-1 items-center gap-2 border-r border-border/70 px-3 text-left',
     'transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring',
@@ -69,7 +70,7 @@ function MetricItem({ active, metric, onMetricClick }: MetricItemProps) {
     });
   };
   const interactionProps = {
-    'aria-describedby': tooltipPosition ? tooltipId : undefined,
+    'aria-describedby': descriptionId,
     onBlur: () => setTooltipPosition(null),
     onFocus: showTooltip,
     onMouseEnter: showTooltip,
@@ -85,6 +86,7 @@ function MetricItem({ active, metric, onMetricClick }: MetricItemProps) {
           data-active={active || undefined}
           data-tone={metric.tone}
           onClick={() => onMetricClick?.(metric.key)}
+          style={{ minWidth: metricMinWidth }}
           type="button"
         >
           {content}
@@ -99,6 +101,7 @@ function MetricItem({ active, metric, onMetricClick }: MetricItemProps) {
           aria-label={`${metric.label}: ${metric.value}`}
           className={commonClassName}
           data-tone={metric.tone}
+          style={{ minWidth: metricMinWidth }}
           tabIndex={0}
         >
           {content}
@@ -108,10 +111,12 @@ function MetricItem({ active, metric, onMetricClick }: MetricItemProps) {
   return (
     <>
       {control}
+      <span className="sr-only" id={descriptionId}>
+        {metric.description}
+      </span>
       {tooltipPosition && typeof document !== 'undefined' && createPortal(
         <span
           className="pointer-events-none fixed z-50 max-w-72 rounded-md border border-border bg-popover px-2.5 py-1.5 text-xs leading-5 text-popover-foreground shadow-md"
-          id={tooltipId}
           role="tooltip"
           style={tooltipPosition}
         >

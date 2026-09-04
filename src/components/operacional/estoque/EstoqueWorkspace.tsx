@@ -16,7 +16,7 @@ export function EstoqueWorkspace({
     <section
       aria-label={ariaLabel}
       className={cn(
-        'estoque-workspace flex h-[calc(100dvh-var(--estoque-shell-offset))] min-h-0 min-w-0 flex-col overflow-hidden',
+        'flex h-[calc(100dvh-var(--estoque-shell-offset,0px))] min-h-0 min-w-0 flex-col overflow-hidden',
         className,
       )}
       {...props}
