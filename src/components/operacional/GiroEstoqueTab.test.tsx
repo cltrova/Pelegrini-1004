@@ -179,12 +179,12 @@ describe('GiroEstoqueTab', () => {
     expect(within(row).getByText('5')).toBeInTheDocument();
   });
 
-  it('usa a filial ativa para vincular movimentos que chegam sem codigo BI', () => {
+  it('usa a filial ativa e a chave interna para vincular movimentos que chegam sem codigo BI', () => {
     const stock = { ...estoqueFixtureComTresItens[0], cod_empresa_bi: 1004, cod_empresa: 1, cod_produto: 707, produto: 'ITEM SEM CODIGO NO GIRO' };
     const movement = {
       ...giroFixture[0],
       cod_empresa_bi: 0,
-      cod_empresa: 99,
+      cod_empresa: 1,
       cod_produto: 707,
       produto: 'ITEM SEM CODIGO NO GIRO',
       data_movimento: '2026-09-01',

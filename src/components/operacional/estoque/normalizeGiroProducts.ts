@@ -43,11 +43,7 @@ function latestDate(values: Array<string | null | undefined>): string | null {
 }
 
 function movementAmount(row: GiroRecord, field: 'venda' | 'compra'): number {
-  const direct = field === 'venda' ? Number(row.saida_venda || 0) : Number(row.entrada_compra || 0);
-  if (direct !== 0) return direct;
-
-  const movementType = String(row.tipo_movimento ?? '').trim().toUpperCase();
-  return movementType === (field === 'venda' ? 'VENDA' : 'COMPRA')
+  return row.tipo_movimento === (field === 'venda' ? 'Venda' : 'Compra')
     ? Number(row.quantidade_movimentada || 0)
     : 0;
 }
@@ -96,11 +92,13 @@ export function normalizeGiroProducts(
     const matchingStockKeys = stockKeysByProduct.get(productLookupKey(effectiveCompanyCode, row.cod_produto));
     let key = giroProductKey(effectiveCompanyCode, row.cod_empresa, row.cod_produto);
 
-    if (!stockByKey.has(key) && matchingStockKeys?.size === 1) {
-      key = [...matchingStockKeys][0];
-    } else if (!rowCompanyCode && !stockByKey.has(key)) {
-      // A origem selecionada, sozinha, nao prova a filial de uma linha sem codigo BI.
+    if (!rowCompanyCode && !stockByKey.has(key)) {
+      // Sem codigo BI, somente a chave interna exata prova que o movimento e da filial ativa.
       return;
+    }
+
+    if (rowCompanyCode && !stockByKey.has(key) && matchingStockKeys?.size === 1) {
+      key = [...matchingStockKeys][0];
     }
 
     movementByKey.set(key, [...(movementByKey.get(key) ?? []), row]);

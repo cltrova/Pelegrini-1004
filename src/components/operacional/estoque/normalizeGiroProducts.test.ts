@@ -119,10 +119,10 @@ describe('normalizeGiroProducts', () => {
     expect(result.map((item) => item.cod_produto)).toEqual([2]);
   });
 
-  it('associa movimento sem codigo BI somente quando o estoque ativo prova a filial', () => {
+  it('associa movimento sem codigo BI quando a chave interna existe no estoque ativo', () => {
     const result = normalizeGiroProducts(
       [
-        saleRow({ cod_empresa_bi: 0, cod_empresa: 77, cod_produto: 99 }),
+        saleRow({ cod_empresa_bi: 0, cod_empresa: 1, cod_produto: 99 }),
         saleRow({ cod_empresa_bi: 0, cod_empresa: 77, cod_produto: 100, produto: 'SEM PROVA' }),
       ],
       [stockRow()],
@@ -133,6 +133,45 @@ describe('normalizeGiroProducts', () => {
 
     expect(result).toHaveLength(1);
     expect(result[0]).toMatchObject({ cod_empresa_bi: 1004, cod_produto: 99, total_vendas: 4 });
+  });
+
+  it('descarta movimento sem codigo BI do mesmo produto quando cod_empresa diverge', () => {
+    const result = normalizeGiroProducts(
+      [saleRow({ cod_empresa_bi: 0, cod_empresa: 77, cod_produto: 99, quantidade_movimentada: 25 })],
+      [stockRow({ cod_empresa: 1, cod_produto: 99 })],
+      '1004',
+      3,
+      now,
+    );
+
+    expect(result).toHaveLength(1);
+    expect(result[0]).toMatchObject({ cod_empresa: 1, cod_produto: 99, total_vendas: 0 });
+  });
+
+  it('usa quantidade movimentada nos totais e mantem campos diretos nos acumuladores', () => {
+    const result = normalizeGiroProducts(
+      [
+        saleRow({ saida_venda: 2, quantidade_movimentada: 9, tipo_movimento: 'Venda' }),
+        saleRow({
+          data_movimento: '2026-08-20T00:00:00Z',
+          saida_venda: 0,
+          entrada_compra: 3,
+          quantidade_movimentada: 7,
+          tipo_movimento: 'Compra',
+        }),
+      ],
+      [stockRow()],
+      '1004',
+      3,
+      now,
+    );
+
+    expect(result[0]).toMatchObject({
+      total_vendas: 9,
+      total_compras: 7,
+      total_saida_venda: 2,
+      total_entrada_compra: 3,
+    });
   });
 
   it('preserva as regras atuais de status, cobertura e dias sem venda', () => {
