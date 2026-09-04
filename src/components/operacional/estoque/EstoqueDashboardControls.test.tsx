@@ -39,56 +39,114 @@ const insightsFixture: StockProductInsight[] = [
 ];
 
 describe('EstoqueSummaryCards', () => {
-  it('mantem quatro indicadores compactos e valores contidos', () => {
+  it('renderiza seis indicadores compactos em uma grade responsiva', () => {
     const { container } = render(
       <EstoqueSummaryCards products={insightsFixture} activeFilter="all" onFilterChange={vi.fn()} />,
     );
 
     const grid = screen.getByLabelText('Resumo do estoque');
-    expect(grid).toHaveClass('grid-cols-2', 'lg:grid-cols-4', 'min-w-0');
-    expect(container.querySelectorAll('[data-stock-summary]')).toHaveLength(4);
+    expect(grid).toHaveClass(
+      'grid-cols-1',
+      'min-[480px]:grid-cols-2',
+      'lg:grid-cols-3',
+      'xl:grid-cols-6',
+      'min-w-0',
+      'gap-2',
+    );
+    expect(container.querySelectorAll('[data-stock-summary]')).toHaveLength(6);
+    ['Produtos', 'Valor do estoque', 'Sem estoque', 'Estoque baixo', 'Criticos', 'Capital em excesso'].forEach((label) => {
+      expect(screen.getByText(label)).toBeInTheDocument();
+    });
     container.querySelectorAll('[data-stock-summary]').forEach((card) => {
-      expect(card).toHaveClass('min-w-0');
+      expect(card).toHaveClass('min-w-0', 'min-h-16', 'rounded-md', 'border', 'bg-card');
+      expect(card.querySelector('.pelegrini-responsive-value')).toHaveAttribute('data-size', 'md');
     });
   });
 
-  it('aplica e remove o filtro de atencao pelo mesmo indicador', () => {
+  it.each([
+    ['Estoque baixo', 'low'],
+    ['Criticos', 'critical'],
+    ['Sem estoque', 'out'],
+  ] as const)('aplica e remove o filtro %s pelo mesmo indicador', (label, filter) => {
     const onFilterChange = vi.fn();
     const { rerender } = render(
       <EstoqueSummaryCards products={insightsFixture} activeFilter="all" onFilterChange={onFilterChange} />,
     );
 
-    const attention = screen.getByRole('button', { name: /Exigem atencao.*4/i });
-    expect(attention).toHaveAttribute('aria-pressed', 'false');
-    fireEvent.click(attention);
-    expect(onFilterChange).toHaveBeenLastCalledWith('attention');
+    const metric = screen.getByRole('button', { name: new RegExp(label, 'i') });
+    expect(metric).toHaveAttribute('aria-pressed', 'false');
+    fireEvent.click(metric);
+    expect(onFilterChange).toHaveBeenLastCalledWith(filter);
 
     rerender(
-      <EstoqueSummaryCards products={insightsFixture} activeFilter="attention" onFilterChange={onFilterChange} />,
+      <EstoqueSummaryCards products={insightsFixture} activeFilter={filter} onFilterChange={onFilterChange} />,
     );
-    expect(screen.getByRole('button', { name: /Exigem atencao.*4/i })).toHaveAttribute('aria-pressed', 'true');
-    fireEvent.click(screen.getByRole('button', { name: /Exigem atencao.*4/i }));
+    expect(screen.getByRole('button', { name: new RegExp(label, 'i') })).toHaveAttribute('aria-pressed', 'true');
+    fireEvent.click(screen.getByRole('button', { name: new RegExp(label, 'i') }));
     expect(onFilterChange).toHaveBeenLastCalledWith('all');
-  });
-
-  it('agrupa criticos, estoque baixo e parados no indicador de atencao', () => {
-    const onFilterChange = vi.fn();
-    render(<EstoqueSummaryCards products={insightsFixture} activeFilter="all" onFilterChange={onFilterChange} />);
-
-    const attention = screen.getByRole('button', { name: /Exigem atencao.*4/i });
-    fireEvent.click(attention);
-    expect(onFilterChange).toHaveBeenCalledWith('attention');
   });
 
   it('mantem valor estimado informativo sem aplicar filtro', () => {
     const onFilterChange = vi.fn();
     render(<EstoqueSummaryCards products={insightsFixture} activeFilter="all" onFilterChange={onFilterChange} />);
 
-    const value = screen.getByText('Valor estimado').closest('[data-stock-summary]');
+    const value = screen.getByText('Valor do estoque').closest('[data-stock-summary]');
     expect(value?.tagName).toBe('ARTICLE');
     expect(within(value as HTMLElement).getByText(/R\$/)).toBeInTheDocument();
     expect(within(value as HTMLElement).queryByRole('button')).not.toBeInTheDocument();
     expect(onFilterChange).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['Produtos', /Fonte: estoque/i, /Periodo: consulta atual/i, /Regra: quantidade de produtos retornados/i],
+    ['Valor do estoque', /Fonte: estoque/i, /Periodo: consulta atual/i, /Regra: soma do valor em estoque/i],
+    ['Sem estoque', /Fonte: estoque/i, /Periodo: consulta atual/i, /Regra: quantidade menor ou igual a zero/i],
+    ['Estoque baixo', /Fontes: estoque e movimentacoes/i, /Periodo: consulta atual e ultimos 90 dias/i, /Regra: cobertura entre 15 e 30 dias/i],
+    ['Criticos', /Fontes: estoque e movimentacoes/i, /Periodo: consulta atual e ultimos 90 dias/i, /Regra: cobertura menor que 15 dias/i],
+    ['Capital em excesso', /Fontes: estoque e movimentacoes/i, /Periodo: consulta atual e ultimos 90 dias/i, /Regra: cobertura superior a 90 dias/i],
+  ] as const)('explica fonte, periodo e regra de %s em tooltip acessivel', (label, source, period, rule) => {
+    render(<EstoqueSummaryCards products={insightsFixture} activeFilter="all" onFilterChange={vi.fn()} />);
+
+    const card = screen.getByText(label).closest('[data-stock-summary]') as HTMLElement;
+    const tooltipId = card.getAttribute('aria-describedby');
+    expect(tooltipId).toBeTruthy();
+
+    const tooltip = document.getElementById(tooltipId!);
+    expect(tooltip).toHaveAttribute('role', 'tooltip');
+    expect(tooltip).toHaveTextContent(source);
+    expect(tooltip).toHaveTextContent(period);
+    expect(tooltip).toHaveTextContent(rule);
+    expect(tooltip).toHaveClass('hidden', 'group-hover:block', 'group-focus-within:block');
+    expect(tooltip).toHaveClass('inset-x-2', 'whitespace-normal', 'break-words');
+    expect(tooltip).not.toHaveClass('w-max');
+    expect(tooltip?.parentElement).toHaveClass('group', 'relative', 'min-w-0', 'overflow-visible');
+  });
+
+  it('mantem valor monetario longo dentro de um container responsivo', () => {
+    const products = [product(99, 'Produto de alto valor', { valor_estoque: 9876543210987.65 })];
+    render(<EstoqueSummaryCards products={products} activeFilter="all" onFilterChange={vi.fn()} />);
+
+    const value = screen.getByText('Valor do estoque').closest('[data-stock-summary]');
+    expect(value).toHaveClass('min-w-0');
+    expect(value).not.toHaveClass('overflow-hidden');
+    const amount = within(value as HTMLElement).getByText(/9\.876\.543\.210\.987,65/);
+    expect(amount).toHaveClass('tabular-nums', 'break-words');
+    expect(amount).not.toHaveClass('truncate', 'overflow-hidden');
+  });
+
+  it('informa dados insuficientes quando a fonte de movimentos esta indisponivel', () => {
+    render(
+      <EstoqueSummaryCards
+        products={insightsFixture}
+        activeFilter="all"
+        movementAvailable={false}
+        onFilterChange={vi.fn()}
+      />,
+    );
+
+    const excess = screen.getByText('Capital em excesso').closest('[data-stock-summary]');
+    expect(within(excess as HTMLElement).getByText('Dados insuficientes')).toBeInTheDocument();
+    expect(within(excess as HTMLElement).queryByRole('button')).not.toBeInTheDocument();
   });
 });
 

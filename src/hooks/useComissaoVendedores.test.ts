@@ -69,7 +69,7 @@ describe('mapComissaoLinha', () => {
     expect(linha.novaProjecao).toBeCloseTo(85_120.10, 2);
   });
 
-  it('usa A FATURAR como fallback quando a API nao envia campo de pedidos em aberto', () => {
+  it('usa AFaturar como pedidos em aberto', () => {
     const linha = mapComissaoLinha({
       Vendedor: '10',
       NomeVendedor: 'XEXEU',
@@ -78,6 +78,24 @@ describe('mapComissaoLinha', () => {
 
     expect(linha.aFaturar).toBeCloseTo(65_057.10, 2);
     expect(linha.pedidosAberto).toBeCloseTo(65_057.10, 2);
+  });
+
+  it('preserva pedidos em aberto explicitamente zerados pela API', () => {
+    const linha = mapComissaoLinha({ AFaturar: 53_850.70, PedidosEmAberto: 0 });
+    expect(linha.pedidosAberto).toBe(0);
+    expect(linha.aFaturar).toBeCloseTo(53_850.70, 2);
+  });
+
+  it('usa AFaturar quando o campo alternativo vem null ou vazio', () => {
+    expect(mapComissaoLinha({ AFaturar: 100, PedidosEmAberto: null }).pedidosAberto).toBe(100);
+    expect(mapComissaoLinha({ AFaturar: 100, PedidosEmAberto: '' }).pedidosAberto).toBe(100);
+  });
+
+  it('aceita os aliases de A faturar como pedidos em aberto', () => {
+    expect(mapComissaoLinha({ AFaturar: 0 }).pedidosAberto).toBe(0);
+    expect(mapComissaoLinha({ 'A FATURAR': '1.234,56' }).pedidosAberto).toBeCloseTo(1234.56, 2);
+    expect(mapComissaoLinha({ a_faturar: 100 }).pedidosAberto).toBe(100);
+    expect(mapComissaoLinha({}).pedidosAberto).toBeNull();
   });
 
   it('identifica linhas da Forca P na comissao do cliente 1004', () => {

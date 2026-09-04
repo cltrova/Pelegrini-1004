@@ -1443,6 +1443,16 @@
     white-space: nowrap;
   }
 
+  .pelegrini-metric-card {
+    container-type: inline-size;
+  }
+
+  .pelegrini-metric-card .pelegrini-responsive-value {
+    font-size: clamp(0.9rem, 7.2cqw, 1.2rem);
+    overflow-wrap: normal;
+    white-space: nowrap;
+  }
+
   .pelegrini-branch-switcher {
     display: inline-grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));

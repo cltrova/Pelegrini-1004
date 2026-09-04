@@ -39,7 +39,20 @@ function createHookResult(overrides: Record<string, unknown> = {}) {
     detalhadoData,
     giroData: giroFixture,
     isLoading: false,
+    isFetching: false,
     isError: false,
+    sourceErrors: { consolidado: null, detalhado: null, giro: null },
+    sourceStatus: { consolidado: 'ready', detalhado: 'ready', giro: 'ready' },
+    sourceLastUpdated: {
+      consolidado: new Date('2026-09-03T13:45:00-03:00'),
+      detalhado: new Date('2026-09-03T13:45:00-03:00'),
+      giro: new Date('2026-09-03T13:45:00-03:00'),
+    },
+    lastSuccessfulUpdate: new Date('2026-09-03T13:45:00-03:00'),
+    partialSources: { consolidado: false, detalhado: false },
+    recoveredSources: { consolidado: false, detalhado: false },
+    recoveryStatus: 'idle',
+    refetch: vi.fn(),
     empresa: {
       cod_empresa_bi: 1004,
       modulo_operacional: true,
@@ -109,6 +122,147 @@ afterEach(() => {
 });
 
 describe('EstoquePage', () => {
+  it('mostra filial, ultima atualizacao, estado da fonte e permite atualizar', () => {
+    const refetch = vi.fn();
+    testState.hookResult = createHookResult({ refetch });
+
+    renderEstoquePage();
+
+    expect(screen.getByText(/Casa da Transmissao/i)).toBeInTheDocument();
+    expect(screen.getByText(/Atualizado.*13:45/i)).toBeInTheDocument();
+    expect(screen.getByText('Dados atualizados')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Atualizar dados do estoque' }));
+    expect(refetch).toHaveBeenCalledOnce();
+  });
+
+  it('desabilita a atualizacao e mostra feedback enquanto consulta', () => {
+    testState.hookResult = createHookResult({ isFetching: true });
+
+    renderEstoquePage();
+
+    const refresh = screen.getByRole('button', { name: 'Atualizando dados do estoque' });
+    expect(refresh).toBeDisabled();
+    expect(refresh.querySelector('svg')).toHaveClass('animate-spin');
+  });
+
+  it('nao apresenta totalizadores zerados quando a API falha e permite tentar novamente', () => {
+    const refetch = vi.fn();
+    testState.hookResult = createHookResult({
+      consolidadoData: [], detalhadoData: [], giroData: [], isError: true, refetch,
+      sourceErrors: { consolidado: new Error('API indisponivel (HTTP 504)'), detalhado: new Error('HTTP 504'), giro: new Error('HTTP 504') },
+    });
+    renderEstoquePage();
+    expect(screen.getByText('Estoque indisponivel')).toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: 'Resumo do estoque' })).not.toBeInTheDocument();
+    expect(screen.queryByText('0 itens · 0 movimentações')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Tentar novamente' }));
+    expect(refetch).toHaveBeenCalledOnce();
+  });
+
+  it('mostra recuperacao em andamento em vez de erro enquanto consulta o historico', () => {
+    testState.hookResult = createHookResult({
+      consolidadoData: [],
+      detalhadoData: [],
+      giroData: [],
+      isError: true,
+      isFetching: true,
+      recoveryStatus: 'loading',
+      sourceErrors: {
+        consolidado: new Error('Falha na consulta de estoque (HTTP 500).'),
+        detalhado: new Error('HTTP 500'),
+        giro: null,
+      },
+    });
+
+    renderEstoquePage();
+
+    expect(screen.getByRole('alert')).toHaveTextContent('Recuperando estoque completo');
+    expect(screen.queryByText('Estoque indisponivel')).not.toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: 'Resumo do estoque' })).not.toBeInTheDocument();
+    expect(screen.getByRole('status', { name: 'Recuperando dados completos do estoque' })).toBeInTheDocument();
+  });
+
+  it('identifica a contingencia de giro como parcial sem esconder os produtos disponiveis', () => {
+    testState.hookResult = createHookResult({
+      isError: true,
+      sourceErrors: { consolidado: new Error('HTTP 500'), detalhado: null, giro: null },
+      partialSources: { consolidado: true, detalhado: false },
+    });
+    renderEstoquePage();
+    expect(screen.getByRole('alert')).toHaveTextContent('Estoque parcial');
+    expect(screen.getAllByText('KIT EMBREAGEM PESADA').length).toBeGreaterThan(0);
+  });
+
+  it('remove o alerta parcial quando o estoque operacional foi recuperado pelo historico', () => {
+    testState.hookResult = createHookResult({
+      isError: true,
+      sourceErrors: { consolidado: new Error('HTTP 500'), detalhado: null, giro: null },
+      recoveredSources: { consolidado: true, detalhado: false },
+      recoveryStatus: 'ready',
+    });
+
+    renderEstoquePage();
+
+    expect(screen.getByText('Estoque recuperado')).toBeInTheDocument();
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  });
+
+  it('mantem estoque disponivel e bloqueia analises quando a consulta de giro falha', () => {
+    testState.hookResult = createHookResult({
+      giroData: [], isError: true,
+      sourceErrors: { consolidado: null, detalhado: null, giro: new Error('HTTP 504') },
+    });
+    renderEstoquePage();
+    expect(screen.getAllByText('KIT EMBREAGEM PESADA').length).toBeGreaterThan(0);
+    expect(screen.getByRole('alert')).toHaveTextContent('Nao foi possivel atualizar as movimentacoes');
+    fireEvent.click(screen.getByRole('tab', { name: 'Giro de Estoque' }));
+    expect(screen.getByText('Estoque indisponivel')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('tab', { name: 'Assistente' }));
+    expect(screen.getByText('Estoque indisponivel')).toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: 'Assistente de estoque' })).not.toBeInTheDocument();
+  });
+
+  it('mostra carregamento no Giro sem usar zeros nem horario de outra fonte', () => {
+    testState.hookResult = createHookResult({
+      giroData: [],
+      sourceStatus: { consolidado: 'ready', detalhado: 'ready', giro: 'loading' },
+      sourceLastUpdated: {
+        consolidado: new Date('2026-09-03T13:45:00-03:00'),
+        detalhado: new Date('2026-09-03T13:45:00-03:00'),
+        giro: null,
+      },
+    });
+
+    renderEstoquePage();
+    fireEvent.click(screen.getByRole('tab', { name: 'Giro de Estoque' }));
+
+    expect(screen.getByRole('status', { name: 'Carregando movimentacoes do estoque' })).toBeInTheDocument();
+    expect(screen.getByText(/Aguardando primeira atualizacao/i)).toBeInTheDocument();
+    expect(screen.queryByText(/produtos analisados/i)).not.toBeInTheDocument();
+  });
+
+  it('marca movimentos como indisponiveis quando a atualizacao falha mesmo preservando dados anteriores', () => {
+    testState.hookResult = createHookResult({
+      giroData: giroFixture,
+      isError: true,
+      sourceErrors: { consolidado: null, detalhado: null, giro: new Error('HTTP 504') },
+    });
+
+    renderEstoquePage();
+
+    const excess = screen.getByText('Capital em excesso').closest('[data-stock-summary]') as HTMLElement;
+    expect(within(excess).getByText('Dados insuficientes')).toBeInTheDocument();
+    expect(excess.tagName).toBe('ARTICLE');
+    expect(screen.getByRole('alert')).toHaveTextContent('Nao foi possivel atualizar as movimentacoes');
+  });
+
+  it('preserva o estado vazio quando a API retorna uma lista vazia com sucesso', () => {
+    testState.hookResult = createHookResult({ consolidadoData: [], detalhadoData: [], giroData: [] });
+    renderEstoquePage();
+    expect(screen.getByRole('region', { name: 'Resumo do estoque' })).toBeInTheDocument();
+    expect(screen.queryByText('Estoque indisponivel')).not.toBeInTheDocument();
+  });
+
   it('abre a Central de Estoque e remove as abas legadas', () => {
     renderEstoquePage();
 
@@ -159,7 +313,8 @@ describe('EstoquePage', () => {
     expect(screen.getByText('Movimentação mensal')).toBeInTheDocument();
     expect(screen.getByText('Maior giro')).toBeInTheDocument();
     expect(screen.getByText('Mais tempo sem venda')).toBeInTheDocument();
-    expect(screen.getByText('6 meses')).toBeInTheDocument();
+    expect(screen.getByText('3 meses')).toBeInTheDocument();
+    expect(screen.queryByText('6 meses')).not.toBeInTheDocument();
   });
 
   it('abre o Assistente de Estoque real', async () => {
@@ -172,9 +327,53 @@ describe('EstoquePage', () => {
     expect(screen.getByPlaceholderText('Pergunte sobre seu estoque...')).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: 'Insights' })).toBeInTheDocument();
     expect(screen.queryByRole('tab', { name: 'Cérebro' })).not.toBeInTheDocument();
-    expect(screen.queryByText('Qual produto gira mais?')).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Mostrar sugestoes' }));
-    expect(screen.getByText('Qual produto gira mais?')).toBeInTheDocument();
+    expect(screen.getAllByTestId('stock-assistant-suggestion')).toHaveLength(6);
+    expect(screen.getByRole('button', { name: 'Risco de ruptura' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Resumo diario' })).toBeInTheDocument();
+  });
+
+  it('sincroniza filtro de status acionado pelo KPI com controles pendentes, aplicar e limpar', () => {
+    const alertaStock = {
+      ...estoqueFixtureComTresItens[0],
+      cod_produto: 707,
+      produto: 'PRODUTO EM ALERTA',
+      quantidade_estoque: 10,
+    };
+    const rupturaStock = {
+      ...estoqueFixtureComTresItens[1],
+      cod_produto: 708,
+      produto: 'PRODUTO EM RUPTURA',
+      quantidade_estoque: 0,
+    };
+    testState.hookResult = createHookResult({
+      consolidadoData: [alertaStock, rupturaStock],
+      giroData: [{
+        ...giroFixture[0],
+        cod_produto: 707,
+        produto: 'PRODUTO EM ALERTA',
+        quantidade_estoque: 10,
+        quantidade_movimentada: 20,
+        saida_venda: 20,
+        tipo_movimento: 'Venda',
+      }],
+    });
+    renderEstoquePage();
+    fireEvent.click(screen.getByRole('tab', { name: 'Giro de Estoque' }));
+
+    fireEvent.click(screen.getByRole('button', { name: /Alerta: 1/i }));
+    const filterBar = screen.getByRole('button', { name: /Filtros:.*Alerta/i });
+    expect(filterBar).toBeInTheDocument();
+    expect(within(screen.getByRole('table')).getByText('PRODUTO EM ALERTA')).toBeInTheDocument();
+    expect(within(screen.getByRole('table')).queryByText('PRODUTO EM RUPTURA')).not.toBeInTheDocument();
+
+    fireEvent.click(filterBar);
+    fireEvent.click(screen.getByRole('button', { name: /Pesquisar/i }));
+    expect(within(screen.getByRole('table')).getByText('PRODUTO EM ALERTA')).toBeInTheDocument();
+    expect(within(screen.getByRole('table')).queryByText('PRODUTO EM RUPTURA')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /Filtros:.*Alerta/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Limpar filtros/i }));
+    expect(within(screen.getByRole('table')).getByText('PRODUTO EM RUPTURA')).toBeInTheDocument();
   });
 
   it('preserva o guard de carregamento', () => {
@@ -199,11 +398,11 @@ describe('EstoquePage', () => {
 
   it('troca CT por CCH no contexto real e atualiza a branchKey da central', async () => {
     localStorage.setItem(
-      'pelegrini:estoque:columns:1004:transmissao',
-      JSON.stringify(['product', 'quantity', 'status', 'application']),
+      'pelegrini:estoque:columns:1004:transmissao:consolidado',
+      JSON.stringify(['product', 'quantity', 'status', 'group']),
     );
     localStorage.setItem(
-      'pelegrini:estoque:columns:1004:chevrolet',
+      'pelegrini:estoque:columns:1004:chevrolet:consolidado',
       JSON.stringify(['product', 'quantity', 'status', 'brand']),
     );
     renderEstoquePage({ withBranchSwitcher: true });
@@ -211,7 +410,7 @@ describe('EstoquePage', () => {
     const transmissao = screen.getByRole('radio', { name: 'Casa da Transmissão' });
     const chevrolet = screen.getByRole('radio', { name: 'Casa do Chevrolet' });
     expect(transmissao).toHaveAttribute('aria-checked', 'true');
-    expect(screen.getByRole('columnheader', { name: 'Aplicacao' })).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: 'Grupo' })).toBeInTheDocument();
     expect(screen.queryByRole('columnheader', { name: 'Marca' })).not.toBeInTheDocument();
 
     fireEvent.click(chevrolet);
@@ -219,7 +418,7 @@ describe('EstoquePage', () => {
     await waitFor(() => expect(chevrolet).toHaveAttribute('aria-checked', 'true'));
     expect(localStorage.getItem('bi-reports-filial-1004')).toBe('chevrolet');
     await waitFor(() => expect(screen.getByRole('columnheader', { name: 'Marca' })).toBeInTheDocument());
-    expect(screen.queryByRole('columnheader', { name: 'Aplicacao' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('columnheader', { name: 'Grupo' })).not.toBeInTheDocument();
   });
 
   it('exporta somente os registros filtrados pela central', async () => {

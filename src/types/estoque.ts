@@ -67,6 +67,8 @@ export interface GiroRecord {
 export type GiroStatus = 'atendendo' | 'alerta' | 'faltando' | 'excesso';
 
 export interface GiroProductSummary {
+  cod_empresa_bi?: number;
+  cod_empresa?: number;
   cod_produto: number;
   produto: string;
   marca: string;
@@ -78,15 +80,21 @@ export interface GiroProductSummary {
   total_compras: number;
   giro: number; // vendas / estoque
   status: GiroStatus;
-  dias_sem_venda: number;
+  dias_sem_venda: number | null;
   ultima_venda: string | null;
   total_saida_venda: number;
   total_entrada_compra: number;
   total_saida_transferencia: number;
   total_entrada_transferencia: number;
+  /** Cobertura calculada com a mesma media mensal usada pela classificacao de giro. */
+  cobertura_meses?: number | null;
+  /** Curva real do cadastro de estoque, quando disponivel para o produto. */
+  classe_abc?: string | null;
 }
 
 export type ViewMode = 'consolidado' | 'detalhado';
+
+export type StockSourceState = 'idle' | 'loading' | 'fetching' | 'ready' | 'error';
 
 export interface EstoqueFiltersState {
   viewMode: ViewMode;
@@ -107,7 +115,7 @@ export interface EstoqueFiltersState {
 }
 
 export interface GiroFiltersState {
-  periodoMeses: number; // 3 | 6 | 12
+  periodoMeses: number; // atualmente limitado aos 3 meses realmente consultados
   statusFilter: GiroStatus[];
   empresas: string[];
   marcas: string[];

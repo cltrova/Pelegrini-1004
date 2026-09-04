@@ -1,5 +1,5 @@
 import { BellRing, Download, Layers3, ListTree } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -21,6 +21,8 @@ import { EstoqueSmartFilters } from './EstoqueSmartFilters';
 import { EstoqueSummaryCards } from './EstoqueSummaryCards';
 import {
   buildStockInsights,
+  consolidateStockRecords,
+  detectStockGranularity,
   filterStockInsights,
   sortStockInsights,
   type StockProductInsight,
@@ -35,6 +37,9 @@ export interface EstoqueCommandCenterProps {
   viewMode: ViewMode;
   onViewModeChange: (mode: ViewMode) => void;
   onExport: (records: EstoqueRecord[]) => void;
+  movementAvailable?: boolean;
+  requestedProductCode?: number | string | null;
+  onRequestedProductHandled?: () => void;
 }
 
 function uniqueOptions(values: Array<string | null>): string[] {
@@ -49,6 +54,9 @@ export function EstoqueCommandCenter({
   viewMode,
   onViewModeChange,
   onExport,
+  movementAvailable = true,
+  requestedProductCode,
+  onRequestedProductHandled,
 }: EstoqueCommandCenterProps) {
   const [search, setSearch] = useState('');
   const [quickFilter, setQuickFilter] = useState<StockQuickFilter>('all');
@@ -59,9 +67,26 @@ export function EstoqueCommandCenter({
   const [selectedProduct, setSelectedProduct] = useState<StockProductInsight | null>(null);
   const [attentionOpen, setAttentionOpen] = useState(false);
 
+  useEffect(() => {
+    if (!movementAvailable && quickFilter === 'excess') {
+      setQuickFilter('all');
+    }
+  }, [movementAvailable, quickFilter]);
+
+  const displayedStock = useMemo(
+    () => viewMode === 'consolidado' ? consolidateStockRecords(stockData) : stockData,
+    [stockData, viewMode],
+  );
+  const detailedGranularity = useMemo(() => detectStockGranularity(stockData), [stockData]);
+
   const insights = useMemo(
-    () => buildStockInsights(stockData, movementData),
-    [stockData, movementData],
+    () => buildStockInsights(
+      displayedStock,
+      movementData,
+      new Date(),
+      viewMode === 'consolidado' ? 'product' : 'branch',
+    ),
+    [displayedStock, movementData, viewMode],
   );
 
   const options = useMemo(() => ({
@@ -83,6 +108,13 @@ export function EstoqueCommandCenter({
     ),
     [brands, groups, insights, lines, quickFilter, search, sortMode],
   );
+
+  useEffect(() => {
+    if (requestedProductCode === null || requestedProductCode === undefined) return;
+    const requested = insights.find(product => String(product.cod_produto) === String(requestedProductCode));
+    if (requested) setSelectedProduct(requested);
+    onRequestedProductHandled?.();
+  }, [insights, onRequestedProductHandled, requestedProductCode]);
   const attentionCount = useMemo(
     () => insights.filter((item) => (
       item.status === 'out' ||
@@ -187,9 +219,19 @@ export function EstoqueCommandCenter({
 
       <EstoqueSummaryCards
         activeFilter={quickFilter}
+        movementAvailable={movementAvailable}
         onFilterChange={setQuickFilter}
         products={insights}
       />
+
+      {viewMode === 'detalhado' && stockData.length > 0 && detailedGranularity === 'product' && (
+        <p
+          className="rounded-md border border-primary/20 bg-primary/[0.04] px-3 py-2 text-xs text-muted-foreground"
+          role="status"
+        >
+          A fonte atual nao fornece filial ou localizacao para detalhar estes produtos.
+        </p>
+      )}
 
       <EstoqueProductsTable
         branchKey={branchKey}
@@ -198,6 +240,7 @@ export function EstoqueCommandCenter({
         products={filtered}
         sortMode={sortMode}
         sourceEmpty={stockData.length === 0}
+        viewMode={viewMode}
       />
 
       <EstoqueProductDrawer

@@ -1,14 +1,38 @@
 import { useQuery } from '@tanstack/react-query';
+import { useMemo } from 'react';
 import { useEmpresaAtiva } from '@/hooks/useEmpresaAtiva';
 import type { Empresa } from '@/hooks/useEmpresaConfig';
 import { supabase } from '@/integrations/supabase/client';
 import { buildApiProxyUrl } from '@/utils/apiEndpointResolver';
-import { EstoqueRecord, GiroRecord } from '@/types/estoque';
-import { filtrarEstoqueCasaChevrolet10041 } from '@/utils/estoque10041';
+import { EstoqueRecord, GiroRecord, type StockSourceState } from '@/types/estoque';
+import { filtrarEstoqueCasaChevrolet10041, isAgraleEstoque10041 } from '@/utils/estoque10041';
 import { useFilialSelecionada } from '@/contexts/FilialSelecionadaContext';
 import { resolveCodEmpresaBiParam } from '@/utils/filialEndpoint';
 
 type EstoqueApiRow = Record<string, unknown>;
+
+const ESTOQUE_RECOVERY_START = '2000-01-01';
+
+type StockQueryState = {
+  data: unknown;
+  dataUpdatedAt: number;
+  isLoading: boolean;
+  isFetching: boolean;
+  isError: boolean;
+};
+
+function resolveStockSourceState(
+  query: StockQueryState,
+  hasUsableFallback = false,
+): StockSourceState {
+  const hasUsableData = query.data !== undefined || hasUsableFallback;
+
+  if (query.isLoading && !hasUsableData) return 'loading';
+  if (query.isError && !hasUsableData) return 'error';
+  if (query.isFetching && hasUsableData) return 'fetching';
+  if (hasUsableData) return 'ready';
+  return 'idle';
+}
 
 export function withEstoqueCompanyCode(endpointPath: string, codEmpresaBi?: string | null): string {
   const code = String(codEmpresaBi ?? '').trim();
@@ -61,23 +85,22 @@ async function fetchFromEndpoint(
         apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
       },
     });
-    clearTimeout(timeout);
     if (!response.ok) {
-      if (response.status >= 500) {
-        console.warn(`[Estoque] Endpoint indisponível (${response.status}); retornando lista vazia para manter a tela estável.`);
-        return [];
-      }
-      throw new Error(`Erro do endpoint: ${response.status}`);
+      throw new Error(response.status === 504
+        ? 'A API de estoque excedeu o tempo de resposta (HTTP 504).'
+        : `Falha na consulta de estoque (HTTP ${response.status}).`);
+    }
+    if (response.headers.get('x-proxy-upstream-error') === 'true') {
+      throw new Error('O proxy nao conseguiu consultar a API de estoque.');
     }
     return parseEstoqueRows(await response.json());
   } catch (e) {
-    clearTimeout(timeout);
-    const message = e instanceof Error ? e.message : String(e);
-    if (message.includes('500') || message.includes('502') || message.includes('503') || message.includes('504')) {
-      console.warn('[Estoque] Falha temporária no endpoint; retornando lista vazia para manter a tela estável.', e);
-      return [];
+    if (controller.signal.aborted) {
+      throw new Error('A API de estoque excedeu o tempo de resposta. Tente novamente.');
     }
     throw e;
+  } finally {
+    clearTimeout(timeout);
   }
 }
 
@@ -115,8 +138,29 @@ async function fetchEstoqueSource(
   }
 
 
-  console.warn(`[Estoque] Nenhuma fonte configurada para ${type}`);
-  return [];
+  throw new Error(`Fonte de estoque ${type} nao configurada para esta filial.`);
+}
+
+function withGiroPeriod(endpointPath: string, dataInicio: string, dataFim: string): string {
+  const [path, query = ''] = endpointPath.split('?');
+  const params = new URLSearchParams(query);
+  params.set('data_ini', dataInicio);
+  params.set('data_fim', dataFim);
+  return `${path}?${params.toString()}`;
+}
+
+async function fetchEstoqueRecoverySource(
+  empresa: Empresa,
+  codEmpresaBi?: string | null,
+): Promise<EstoqueApiRow[]> {
+  const endpointPath = empresa.endpoint_path_estoque_giro;
+  if (!endpointPath || (!empresa.endpoint_url && !empresa.usar_vps_intermediaria)) {
+    throw new Error('Fonte historica de estoque nao configurada para esta filial.');
+  }
+
+  const hoje = new Date().toISOString().slice(0, 10);
+  const recoveryPath = withGiroPeriod(endpointPath, ESTOQUE_RECOVERY_START, hoje);
+  return fetchFromEndpoint(empresa, withEstoqueCompanyCode(recoveryPath, codEmpresaBi));
 }
 
 function normalizeBranchText(value: unknown): string {
@@ -133,7 +177,8 @@ function isGiroRowFromActiveBranch(row: GiroRecord, codEmpresaAtiva?: string | n
   const isChevrolet = normalizeBranchText(row.empresa).includes('CHEVROLET');
 
   if (activeCode === '10041') {
-    return rowCode === '10041' || (!rowCode && isChevrolet);
+    return (!rowCode || rowCode === '10041')
+      && !isAgraleEstoque10041(row as unknown as Record<string, unknown>);
   }
 
   if (activeCode === '1004') {
@@ -207,6 +252,29 @@ export function buildEstoqueFallbackFromGiro(
   });
 }
 
+export function buildOperationalEstoqueFallbackFromGiro(
+  giroRows: GiroRecord[],
+  codEmpresaAtiva?: string | null,
+  recentSince?: string,
+): EstoqueRecord[] {
+  const branchRows = giroRows.filter((row) => isGiroRowFromActiveBranch(row, codEmpresaAtiva));
+  const latestMovementByProduct = new Map<string, number>();
+
+  branchRows.forEach((row) => {
+    const key = `${row.cod_empresa}:${row.cod_produto}`;
+    const timestamp = new Date(row.data_movimento).getTime();
+    if (!Number.isFinite(timestamp)) return;
+    latestMovementByProduct.set(key, Math.max(latestMovementByProduct.get(key) ?? 0, timestamp));
+  });
+
+  const cutoff = recentSince ? new Date(`${recentSince}T00:00:00`).getTime() : Number.POSITIVE_INFINITY;
+  return buildEstoqueFallbackFromGiro(branchRows, codEmpresaAtiva).filter((row) => {
+    if (Number(row.quantidade_estoque) !== 0) return true;
+    const latestMovement = latestMovementByProduct.get(`${row.cod_empresa}:${row.cod_produto}`) ?? 0;
+    return latestMovement >= cutoff;
+  });
+}
+
 export function useEstoqueData() {
   const { empresa, codEmpresaAtiva, isLoading: isLoadingEmpresa } = useEmpresaAtiva();
   const { filialAtiva } = useFilialSelecionada();
@@ -217,6 +285,7 @@ export function useEstoqueData() {
     queryFn: async () => fetchEstoqueSource(empresa!, 'consolidado', estoqueCompanyCode),
     enabled: !!empresa && !!empresa.modulo_operacional,
     staleTime: 5 * 60 * 1000,
+    retry: false,
   });
 
   const detalhadoQuery = useQuery({
@@ -224,6 +293,7 @@ export function useEstoqueData() {
     queryFn: async () => fetchEstoqueSource(empresa!, 'detalhado', estoqueCompanyCode),
     enabled: !!empresa && !!empresa.modulo_operacional,
     staleTime: 5 * 60 * 1000,
+    retry: false,
   });
 
   const giroQuery = useQuery({
@@ -231,6 +301,17 @@ export function useEstoqueData() {
     queryFn: async () => fetchEstoqueSource(empresa!, 'giro', estoqueCompanyCode),
     enabled: !!empresa && !!empresa.modulo_operacional,
     staleTime: 5 * 60 * 1000,
+    retry: false,
+  });
+
+  const recoveryQuery = useQuery({
+    queryKey: ['estoque-recuperacao', estoqueCompanyCode],
+    queryFn: async () => fetchEstoqueRecoverySource(empresa!, estoqueCompanyCode),
+    enabled: !!empresa
+      && !!empresa.modulo_operacional
+      && (consolidadoQuery.isError || detalhadoQuery.isError),
+    staleTime: 30 * 60 * 1000,
+    retry: false,
   });
 
   const estoqueConsolidadoPrincipal = filtrarEstoqueCasaChevrolet10041(
@@ -246,14 +327,66 @@ export function useEstoqueData() {
     estoqueCompanyCode,
   ) as unknown as GiroRecord[]).filter(row => isGiroRowFromActiveBranch(row, estoqueCompanyCode));
   const estoqueFallback = buildEstoqueFallbackFromGiro(giroData, estoqueCompanyCode);
-  const consolidadoData = estoqueConsolidadoPrincipal.length > 0
-    ? estoqueConsolidadoPrincipal
-    : estoqueFallback;
-  const detalhadoData = estoqueDetalhadoPrincipal.length > 0
-    ? estoqueDetalhadoPrincipal
-    : estoqueFallback;
+  const recoveryRows = (filtrarEstoqueCasaChevrolet10041(
+    (recoveryQuery.data || []) as unknown as Array<Record<string, unknown>>,
+    estoqueCompanyCode,
+  ) as unknown as GiroRecord[]).filter(row => isGiroRowFromActiveBranch(row, estoqueCompanyCode));
+  const recentStart = (() => {
+    const hoje = new Date();
+    return new Date(hoje.getFullYear(), hoje.getMonth() - 3, 1).toISOString().slice(0, 10);
+  })();
+  const estoqueRecuperado = buildOperationalEstoqueFallbackFromGiro(
+    recoveryRows,
+    estoqueCompanyCode,
+    recentStart,
+  );
+  const recoveredSources = {
+    consolidado: consolidadoQuery.isError && !estoqueConsolidadoPrincipal.length && estoqueRecuperado.length > 0,
+    detalhado: detalhadoQuery.isError && !estoqueDetalhadoPrincipal.length && estoqueRecuperado.length > 0,
+  };
+  const partialSources = {
+    consolidado: consolidadoQuery.isError && !estoqueConsolidadoPrincipal.length && !recoveredSources.consolidado && estoqueFallback.length > 0,
+    detalhado: detalhadoQuery.isError && !estoqueDetalhadoPrincipal.length && !recoveredSources.detalhado && estoqueFallback.length > 0,
+  };
+  const consolidadoData = recoveredSources.consolidado
+    ? estoqueRecuperado
+    : partialSources.consolidado ? estoqueFallback : estoqueConsolidadoPrincipal;
+  const detalhadoData = recoveredSources.detalhado
+    ? estoqueRecuperado
+    : partialSources.detalhado ? estoqueFallback : estoqueDetalhadoPrincipal;
 
-  const isLoading = isLoadingEmpresa || consolidadoQuery.isLoading || detalhadoQuery.isLoading || giroQuery.isLoading;
+  const sourceStatus = {
+    consolidado: resolveStockSourceState(consolidadoQuery, partialSources.consolidado || recoveredSources.consolidado),
+    detalhado: resolveStockSourceState(detalhadoQuery, partialSources.detalhado || recoveredSources.detalhado),
+    giro: resolveStockSourceState(giroQuery),
+  };
+  const sourceLastUpdated = useMemo(() => ({
+    consolidado: recoveredSources.consolidado && recoveryQuery.dataUpdatedAt > 0
+      ? new Date(recoveryQuery.dataUpdatedAt)
+      : consolidadoQuery.dataUpdatedAt > 0 ? new Date(consolidadoQuery.dataUpdatedAt) : null,
+    detalhado: recoveredSources.detalhado && recoveryQuery.dataUpdatedAt > 0
+      ? new Date(recoveryQuery.dataUpdatedAt)
+      : detalhadoQuery.dataUpdatedAt > 0 ? new Date(detalhadoQuery.dataUpdatedAt) : null,
+    giro: giroQuery.dataUpdatedAt > 0 ? new Date(giroQuery.dataUpdatedAt) : null,
+  }), [
+    consolidadoQuery.dataUpdatedAt,
+    detalhadoQuery.dataUpdatedAt,
+    giroQuery.dataUpdatedAt,
+    recoveredSources.consolidado,
+    recoveredSources.detalhado,
+    recoveryQuery.dataUpdatedAt,
+  ]);
+  const lastSuccessfulUpdate = useMemo(() => {
+    const latestTimestamp = Math.max(
+      consolidadoQuery.dataUpdatedAt,
+      detalhadoQuery.dataUpdatedAt,
+      giroQuery.dataUpdatedAt,
+      recoveryQuery.dataUpdatedAt,
+    );
+    return latestTimestamp > 0 ? new Date(latestTimestamp) : null;
+  }, [consolidadoQuery.dataUpdatedAt, detalhadoQuery.dataUpdatedAt, giroQuery.dataUpdatedAt, recoveryQuery.dataUpdatedAt]);
+
+  const isLoading = isLoadingEmpresa || (consolidadoQuery.isLoading && consolidadoQuery.data === undefined);
   const isError = consolidadoQuery.isError || detalhadoQuery.isError || giroQuery.isError;
 
   return {
@@ -262,6 +395,24 @@ export function useEstoqueData() {
     giroData,
     isLoading,
     isError,
+    sourceErrors: {
+      consolidado: consolidadoQuery.error,
+      detalhado: detalhadoQuery.error,
+      giro: giroQuery.error,
+    },
+    sourceStatus,
+    sourceLastUpdated,
+    lastSuccessfulUpdate,
+    partialSources,
+    recoveredSources,
+    recoveryStatus: resolveStockSourceState(recoveryQuery),
+    isFetching: consolidadoQuery.isFetching || detalhadoQuery.isFetching || giroQuery.isFetching || recoveryQuery.isFetching,
+    refetch: () => Promise.all([
+      consolidadoQuery.refetch(),
+      detalhadoQuery.refetch(),
+      giroQuery.refetch(),
+      recoveryQuery.refetch(),
+    ]),
     empresa,
     isMasterDemo: false,
   };

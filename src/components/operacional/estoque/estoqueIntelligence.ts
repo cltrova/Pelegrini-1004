@@ -1,12 +1,15 @@
 import type { EstoqueRecord, GiroRecord } from '@/types/estoque';
 
 export type StockStatus = 'available' | 'low' | 'critical' | 'out';
-export type StockQuickFilter = 'all' | StockStatus | 'stagnant' | 'with-stock' | 'attention';
+export type StockGranularity = 'product' | 'branch' | 'location';
+export type StockQuickFilter = 'all' | StockStatus | 'stagnant' | 'with-stock' | 'attention' | 'excess';
 export type StockSortMode = 'stock-desc' | 'stock-asc' | 'product' | 'last-movement' | 'brand';
 export type StockMovementTrend = 'increasing' | 'decreasing' | 'stagnant' | 'irregular';
 export type StockPrimaryMovementType = 'sale' | 'withdrawal' | 'purchase' | 'entry';
+export type StockMovementScope = 'branch' | 'product';
 
 export interface StockProductInsight extends EstoqueRecord {
+  sourceRowKey: string;
   status: StockStatus;
   operationalMinimum: number;
   coverageDays: number | null;
@@ -37,9 +40,75 @@ export interface StockInsightFilters {
 }
 
 const DAY_MS = 86_400_000;
+export const STOCK_EXCESS_COVERAGE_DAYS = 90;
 
-function movementKey(record: Pick<EstoqueRecord | GiroRecord, 'cod_empresa' | 'cod_produto'>): string {
-  return `${record.cod_empresa}:${record.cod_produto}`;
+export function isStockExcess(product: StockProductInsight): boolean {
+  return product.status === 'available' &&
+    product.movementDataAvailable &&
+    product.coverageDays !== null &&
+    product.coverageDays > STOCK_EXCESS_COVERAGE_DAYS;
+}
+
+function latestOperationalDate(values: Array<string | null>): string | null {
+  return values.reduce<string | null>((latest, value) => {
+    const timestamp = value ? civilDayTimestamp(value) : null;
+    if (timestamp === null) return latest;
+    if (!latest || timestamp > (civilDayTimestamp(latest) ?? 0)) return value;
+    return latest;
+  }, null);
+}
+
+export function detectStockGranularity(rows: EstoqueRecord[]): StockGranularity {
+  if (rows.some((row) => Boolean(row.localizacao_produto?.trim()))) return 'location';
+
+  const branches = new Set(rows.map((row) => `${row.cod_empresa}:${row.empresa}`));
+  return branches.size > 1 ? 'branch' : 'product';
+}
+
+export function consolidateStockRecords(rows: EstoqueRecord[]): EstoqueRecord[] {
+  const consolidated = new Map<string, EstoqueRecord>();
+
+  rows.forEach((row) => {
+    const key = String(row.cod_produto);
+    const current = consolidated.get(key);
+    if (!current) {
+      consolidated.set(key, {
+        ...row,
+        data_ultima_compra: latestOperationalDate([row.data_ultima_compra]),
+        data_ultima_venda: latestOperationalDate([row.data_ultima_venda]),
+        data_ultima_transferencia: latestOperationalDate([row.data_ultima_transferencia]),
+      });
+      return;
+    }
+
+    consolidated.set(key, {
+      ...current,
+      quantidade_estoque: current.quantidade_estoque + row.quantidade_estoque,
+      valor_estoque: current.valor_estoque + row.valor_estoque,
+      data_ultima_compra: latestOperationalDate([current.data_ultima_compra, row.data_ultima_compra]),
+      data_ultima_venda: latestOperationalDate([current.data_ultima_venda, row.data_ultima_venda]),
+      data_ultima_transferencia: latestOperationalDate([
+        current.data_ultima_transferencia,
+        row.data_ultima_transferencia,
+      ]),
+    });
+  });
+
+  return [...consolidated.values()];
+}
+
+function movementKey(
+  record: Pick<EstoqueRecord | GiroRecord, 'cod_empresa' | 'cod_produto'>,
+  scope: StockMovementScope,
+): string {
+  return scope === 'product'
+    ? String(record.cod_produto)
+    : `${record.cod_empresa}:${record.cod_produto}`;
+}
+
+function stockSourceRowKey(item: EstoqueRecord, index: number): string {
+  const location = item.localizacao_produto?.trim() || 'sem-localizacao';
+  return `${item.cod_empresa}:${item.cod_produto}:${location}:${index}`;
 }
 
 function absoluteQuantity(...values: number[]): number {
@@ -130,6 +199,7 @@ export function buildStockInsights(
   stock: EstoqueRecord[],
   movement: GiroRecord[],
   now = new Date(),
+  movementScope: StockMovementScope = 'branch',
 ): StockProductInsight[] {
   const currentDay = currentCivilDayTimestamp(now);
   const startDay = currentDay - 90 * DAY_MS;
@@ -139,12 +209,12 @@ export function buildStockInsights(
     const movementDay = civilDayTimestamp(row.data_movimento);
     if (movementDay === null || movementDay < startDay || movementDay > currentDay) return;
 
-    const key = movementKey(row);
+    const key = movementKey(row, movementScope);
     byProduct.set(key, [...(byProduct.get(key) ?? []), row]);
   });
 
-  return stock.map((item) => {
-    const movements = byProduct.get(movementKey(item)) ?? [];
+  return stock.map((item, index) => {
+    const movements = byProduct.get(movementKey(item, movementScope)) ?? [];
     const totalOutbound = movements.reduce((sum, row) => sum + operationalOutboundQuantity(row), 0);
     const totalPhysicalOutbound = movements.reduce((sum, row) => sum + physicalOutboundQuantity(row), 0);
     const totalInbound = movements.reduce((sum, row) => sum + inboundQuantity(row), 0);
@@ -177,10 +247,11 @@ export function buildStockInsights(
     const lastMovementDate = latestTimestamp ? new Date(latestTimestamp).toISOString() : null;
     const stagnantDays = latestTimestamp
       ? Math.max(0, Math.floor((now.getTime() - latestTimestamp) / DAY_MS))
-      : 9999;
+      : 0;
 
     return {
       ...item,
+      sourceRowKey: stockSourceRowKey(item, index),
       status,
       operationalMinimum,
       coverageDays,
@@ -275,6 +346,7 @@ export function filterStockInsights(
       )) ||
       (filters.quickFilter === 'stagnant' && item.stagnantDays > 90) ||
       (filters.quickFilter === 'with-stock' && item.quantidade_estoque > 0) ||
+      (filters.quickFilter === 'excess' && isStockExcess(item)) ||
       item.status === filters.quickFilter;
 
     return matchesSearch && matchesBrand && matchesGroup && matchesLine && matchesQuickFilter;

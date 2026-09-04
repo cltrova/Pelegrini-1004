@@ -7,21 +7,26 @@ describe('filtrarEstoqueCasaChevrolet10041', () => {
       { cod_empresa_bi: 10041, marca: 'CHEVROLET', produto: 'Filtro' },
       { cod_empresa_bi: 10041, marca: 'Agrale', produto: 'Peca Agrale' },
       { cod_empresa_bi: 1004, marca: 'CHEVROLET', produto: 'Item CT' },
-      { cod_empresa_bi: '', marca: 'MWM', produto: 'Sem cod BI' },
+      { cod_empresa_bi: '', empresa: 'CASA DA TRANSMISSAO MOTORES E PECAS LTDA', marca: 'MWM', produto: 'Base compartilhada' },
     ];
 
     expect(filtrarEstoqueCasaChevrolet10041(rows, '10041')).toEqual([
       { cod_empresa_bi: 10041, marca: 'CHEVROLET', produto: 'Filtro' },
-      { cod_empresa_bi: '', marca: 'MWM', produto: 'Sem cod BI' },
+      { cod_empresa_bi: '', empresa: 'CASA DA TRANSMISSAO MOTORES E PECAS LTDA', marca: 'MWM', produto: 'Base compartilhada' },
     ]);
   });
 
-  it('nao altera estoque de outros clientes', () => {
+  it('recorta CT sem misturar registros identificados como CCH e preserva payload sem codigo', () => {
     const rows = [
       { cod_empresa_bi: 1004, marca: 'Agrale', produto: 'Item CT' },
+      { cod_empresa_bi: 10041, marca: 'CHEVROLET', produto: 'Item CCH' },
+      { cod_empresa_bi: '', empresa: '', marca: 'MWM', produto: 'Sem codigo' },
     ];
 
-    expect(filtrarEstoqueCasaChevrolet10041(rows, '1004')).toEqual(rows);
+    expect(filtrarEstoqueCasaChevrolet10041(rows, '1004')).toEqual([
+      { cod_empresa_bi: 1004, marca: 'Agrale', produto: 'Item CT' },
+      { cod_empresa_bi: '', empresa: '', marca: 'MWM', produto: 'Sem codigo' },
+    ]);
   });
 
   it('identifica Agrale sem depender de acentos ou caixa', () => {

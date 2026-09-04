@@ -190,6 +190,7 @@ const baseProps = {
   products: [criticalInsight],
   sortMode: 'stock-desc' as const,
   branchKey: 'CT',
+  viewMode: 'consolidado' as const,
   onSortChange: vi.fn(),
   onSelectProduct: vi.fn(),
   onVisibleColumnsChange: vi.fn(),
@@ -227,7 +228,7 @@ describe('EstoqueProductsTable', () => {
     expect(onSelectProduct).toHaveBeenCalledWith(criticalInsight);
   });
 
-  it('mostra as seis colunas essenciais em tabela contida com cabecalho fixo', () => {
+  it('mostra as colunas consolidadas em tabela contida com cabecalho fixo', () => {
     render(<EstoqueProductsTable {...baseProps} />);
 
     const desktop = screen.getByLabelText('Tabela de produtos do estoque');
@@ -239,38 +240,110 @@ describe('EstoqueProductsTable', () => {
       'Marca',
       'Grupo',
       'Quantidade',
+      'Valor em estoque',
       'Ultima movimentacao',
       'Situacao',
     ]);
   });
 
-  it('nao apresenta minimo operacional conhecido quando nao ha dados de giro', () => {
-    const insightWithoutMovement = buildStockInsights(estoqueFixture, [], NOW)[0];
-    render(<EstoqueProductsTable {...baseProps} products={[insightWithoutMovement]} />);
-    openColumnsMenu();
-    fireEvent.click(screen.getByRole('menuitemcheckbox', { name: 'Minimo operacional estimado' }));
+  it('renderiza cabecalhos e dados reais especificos do modo detalhado', () => {
+    const detailed = {
+      ...criticalInsight,
+      empresa: 'FILIAL CAMPINAS',
+      localizacao_produto: 'RUA A-12',
+      custo_medio: 432.1,
+      valor_estoque: 4321,
+      data_ultima_compra: '2026-08-20',
+      data_ultima_venda: '2026-08-31',
+    };
+
+    render(<EstoqueProductsTable {...baseProps} products={[detailed]} viewMode="detalhado" />);
 
     const desktop = screen.getByLabelText('Tabela de produtos do estoque');
-    expect(within(desktop).getByText('Dados insuficientes')).toBeInTheDocument();
-    expect(within(desktop).queryByText('0')).not.toBeInTheDocument();
+    expect(within(desktop).getAllByRole('columnheader').map((header) => header.textContent)).toEqual([
+      'Produto',
+      'Filial',
+      'Localizacao',
+      'Quantidade',
+      'Custo medio',
+      'Valor em estoque',
+      'Ultima compra',
+      'Ultima venda',
+    ]);
+    expect(within(desktop).getByText('FILIAL CAMPINAS')).toBeInTheDocument();
+    expect(within(desktop).getByText('RUA A-12')).toBeInTheDocument();
+    expect(within(desktop).getByText(/R\$.*432,10/)).toBeInTheDocument();
+    expect(within(desktop).getByText('20/08/2026')).toBeInTheDocument();
+    expect(within(desktop).getByText('31/08/2026')).toBeInTheDocument();
   });
 
-  it('oferece as 15 colunas e impede remover produto, quantidade e situacao', () => {
+  it('mostra filial, localizacao, custo, valor, compra e venda na lista compacta detalhada', () => {
+    const detailed = {
+      ...criticalInsight,
+      empresa: 'FILIAL CAMPINAS',
+      localizacao_produto: 'RUA A-12',
+      custo_medio: 432.1,
+      valor_estoque: 4321,
+      data_ultima_compra: '2026-08-20',
+      data_ultima_venda: '2026-08-31',
+    };
+
+    render(<EstoqueProductsTable {...baseProps} products={[detailed]} viewMode="detalhado" />);
+
+    const item = screen.getByTestId('stock-mobile-item-101');
+    expect(within(item).getByText('FILIAL CAMPINAS')).toBeInTheDocument();
+    expect(within(item).getByText('RUA A-12')).toBeInTheDocument();
+    expect(within(item).getByText(/R\$.*432,10/)).toBeInTheDocument();
+    expect(within(item).getByText(/R\$.*4\.321,00/)).toBeInTheDocument();
+    expect(within(item).getByText('20/08/2026')).toBeInTheDocument();
+    expect(within(item).getByText('31/08/2026')).toBeInTheDocument();
+    expect(within(item).queryByText('Critico')).not.toBeInTheDocument();
+  });
+
+  it('rotula custo inferido da contingencia como estimado no desktop e mobile', () => {
+    const fallback = {
+      ...criticalInsight,
+      tipo_relatorio: 'GIRO API - CONTINGENCIA',
+      custo_medio: 500,
+    };
+
+    render(<EstoqueProductsTable {...baseProps} products={[fallback]} viewMode="detalhado" />);
+
+    expect(screen.getAllByText('Custo estimado')).toHaveLength(2);
+    expect(screen.queryByText('Custo informado')).not.toBeInTheDocument();
+  });
+
+  it('usa filial e localizacao na identidade de registros detalhados', () => {
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const products = [
+      { ...criticalInsight, localizacao_produto: 'A-01' },
+      { ...criticalInsight, localizacao_produto: 'B-02' },
+    ];
+
+    render(<EstoqueProductsTable {...baseProps} products={products} viewMode="detalhado" />);
+
+    expect(screen.getAllByText('A-01')).toHaveLength(2);
+    expect(screen.getAllByText('B-02')).toHaveLength(2);
+    expect(consoleError.mock.calls.flat().join(' ')).not.toContain('same key');
+    consoleError.mockRestore();
+  });
+
+  it('oferece as colunas do modo consolidado e impede remover as essenciais', () => {
     render(<EstoqueProductsTable {...baseProps} />);
 
     openColumnsMenu();
-    expect(screen.getAllByRole('menuitemcheckbox')).toHaveLength(15);
+    expect(screen.getAllByRole('menuitemcheckbox')).toHaveLength(7);
     expect(screen.getByRole('menuitemcheckbox', { name: 'Produto' })).toBeDisabled();
     expect(screen.getByRole('menuitemcheckbox', { name: 'Quantidade' })).toBeDisabled();
-    expect(screen.getByRole('menuitemcheckbox', { name: 'Situacao' })).toBeDisabled();
+    expect(screen.getByRole('menuitemcheckbox', { name: 'Situacao' })).not.toBeDisabled();
   });
 
   it('persiste colunas por filial e notifica a preferencia atualizada', () => {
     localStorage.setItem(
-      'pelegrini:estoque:columns:CT',
+      'pelegrini:estoque:columns:CT:consolidado',
       JSON.stringify(['product', 'brand', 'group', 'quantity', 'minimum', 'lastMovement', 'status', 'value']),
     );
-    localStorage.setItem('pelegrini:estoque:columns:CCH', JSON.stringify(['product', 'quantity', 'status', 'abc']));
+    localStorage.setItem('pelegrini:estoque:columns:CCH:consolidado', JSON.stringify(['product', 'quantity', 'status']));
     const onVisibleColumnsChange = vi.fn();
 
     render(<EstoqueProductsTable {...baseProps} onVisibleColumnsChange={onVisibleColumnsChange} />);
@@ -278,34 +351,32 @@ describe('EstoqueProductsTable', () => {
     const valueColumn = screen.getByRole('menuitemcheckbox', { name: 'Valor em estoque' });
     fireEvent.click(valueColumn);
 
-    expect(JSON.parse(localStorage.getItem('pelegrini:estoque:columns:CT')!)).not.toContain('value');
-    expect(JSON.parse(localStorage.getItem('pelegrini:estoque:columns:CCH')!)).toEqual([
+    expect(JSON.parse(localStorage.getItem('pelegrini:estoque:columns:CT:consolidado')!)).not.toContain('value');
+    expect(JSON.parse(localStorage.getItem('pelegrini:estoque:columns:CCH:consolidado')!)).toEqual([
       'product',
       'quantity',
       'status',
-      'abc',
     ]);
     expect(onVisibleColumnsChange).toHaveBeenLastCalledWith([
       'product',
       'brand',
       'group',
       'quantity',
-      'minimum',
       'lastMovement',
       'status',
     ]);
   });
 
   it('restaura preferencias independentes ao trocar entre CT e CCH', () => {
-    localStorage.setItem('pelegrini:estoque:columns:CT', JSON.stringify(['product', 'quantity', 'status', 'value']));
-    localStorage.setItem('pelegrini:estoque:columns:CCH', JSON.stringify(['product', 'quantity', 'status', 'abc']));
+    localStorage.setItem('pelegrini:estoque:columns:CT:consolidado', JSON.stringify(['product', 'quantity', 'status', 'value']));
+    localStorage.setItem('pelegrini:estoque:columns:CCH:consolidado', JSON.stringify(['product', 'quantity', 'status']));
 
     const { rerender } = render(<EstoqueProductsTable {...baseProps} />);
     expect(screen.getByRole('columnheader', { name: 'Valor em estoque' })).toBeInTheDocument();
     expect(screen.queryByRole('columnheader', { name: 'Curva ABC' })).not.toBeInTheDocument();
 
     rerender(<EstoqueProductsTable {...baseProps} branchKey="CCH" />);
-    expect(screen.getByRole('columnheader', { name: 'Curva ABC' })).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: 'Situacao' })).toBeInTheDocument();
     expect(screen.queryByRole('columnheader', { name: 'Valor em estoque' })).not.toBeInTheDocument();
   });
 
@@ -329,15 +400,15 @@ describe('EstoqueProductsTable', () => {
 
   it('renderiza valores monetarios com o valor responsivo Pelegrini', () => {
     localStorage.setItem(
-      'pelegrini:estoque:columns:CT',
-      JSON.stringify(['product', 'quantity', 'status', 'value', 'averageCost']),
+      'pelegrini:estoque:columns:CT:detalhado',
+      JSON.stringify(['product', 'quantity', 'value', 'averageCost']),
     );
-    render(<EstoqueProductsTable {...baseProps} />);
+    render(<EstoqueProductsTable {...baseProps} viewMode="detalhado" />);
 
-    const value = screen.getByText(/R\$.*5\.000/);
-    const averageCost = screen.getByText(/R\$.*500/);
-    expect(value).toHaveClass('pelegrini-responsive-value');
-    expect(averageCost).toHaveClass('pelegrini-responsive-value');
+    const values = screen.getAllByText(/R\$.*5\.000/);
+    const averageCosts = screen.getAllByText(/R\$.*500/);
+    values.forEach((value) => expect(value).toHaveClass('pelegrini-responsive-value'));
+    averageCosts.forEach((averageCost) => expect(averageCost).toHaveClass('pelegrini-responsive-value'));
   });
 
   it('diferencia fonte de estoque vazia de filtros sem resultado', () => {
@@ -351,6 +422,25 @@ describe('EstoqueProductsTable', () => {
     rerender(<EstoqueProductsTable {...baseProps} products={[]} sourceEmpty={false} />);
     expect(screen.getAllByText('Nenhum produto corresponde aos filtros atuais.')).toHaveLength(2);
     expect(screen.queryByText('Nenhum produto disponivel na fonte de estoque.')).not.toBeInTheDocument();
+  });
+
+  it('mantem preferencias de colunas independentes por modo', () => {
+    localStorage.setItem(
+      'pelegrini:estoque:columns:CT:consolidado',
+      JSON.stringify(['product', 'quantity', 'status']),
+    );
+    localStorage.setItem(
+      'pelegrini:estoque:columns:CT:detalhado',
+      JSON.stringify(['product', 'branch', 'quantity', 'lastSale']),
+    );
+
+    const { rerender } = render(<EstoqueProductsTable {...baseProps} />);
+    expect(screen.getByRole('columnheader', { name: 'Situacao' })).toBeInTheDocument();
+    expect(screen.queryByRole('columnheader', { name: 'Ultima venda' })).not.toBeInTheDocument();
+
+    rerender(<EstoqueProductsTable {...baseProps} viewMode="detalhado" />);
+    expect(screen.getByRole('columnheader', { name: 'Ultima venda' })).toBeInTheDocument();
+    expect(screen.queryByRole('columnheader', { name: 'Situacao' })).not.toBeInTheDocument();
   });
 
   it('pagina grandes volumes sem reduzir o total disponivel', () => {

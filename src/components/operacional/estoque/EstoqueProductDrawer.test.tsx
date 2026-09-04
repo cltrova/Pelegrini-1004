@@ -92,6 +92,9 @@ describe('EstoqueProductDrawer', () => {
     expect(within(dialog).getByText('Entradas fisicas do periodo')).toBeInTheDocument();
     expect(within(dialog).getByText('Saidas fisicas do periodo')).toBeInTheDocument();
     expect(within(dialog).getByText('Giro fisico do periodo')).toBeInTheDocument();
+    expect(within(dialog).getByText('Como este status foi calculado')).toBeInTheDocument();
+    expect(within(dialog).getByText(/Cobertura calculada com as saidas dos ultimos tres meses-calendario/i)).toBeInTheDocument();
+    expect(within(dialog).getByText(/Acao recomendada:/i)).toBeInTheDocument();
   });
 
   it('usa totais fisicos explicitos no resumo incluindo devolucoes', () => {

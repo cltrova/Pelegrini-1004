@@ -1,8 +1,11 @@
 import { GiroRecord } from '@/types/estoque';
+import { stockProductIdentity } from './stockIdentity';
 
 export type TrendDirection = 'declining' | 'stable' | 'growing';
 
 export interface ProductTrend {
+  cod_empresa_bi?: number;
+  cod_empresa?: number;
   cod_produto: number;
   produto: string;
   marca: string;
@@ -44,10 +47,14 @@ function linearSlope(values: number[]): number {
  */
 export function analyzeSalesTrends(
   giroData: GiroRecord[],
-  minMonths: number = 3
+  minMonths: number = 3,
+  identityResolver: (record: GiroRecord) => string = stockProductIdentity,
 ): ProductTrend[] {
   // Group sales by product → month
-  const productMonthly = new Map<number, {
+  const productMonthly = new Map<string, {
+    cod_empresa_bi?: number;
+    cod_empresa?: number;
+    cod_produto: number;
     produto: string;
     marca: string;
     grupo: string;
@@ -60,9 +67,13 @@ export function analyzeSalesTrends(
   giroData.forEach(r => {
     if (r.saida_venda <= 0) return;
     const month = r.data_movimento.substring(0, 7); // YYYY-MM
-    let entry = productMonthly.get(r.cod_produto);
+    const identity = identityResolver(r);
+    let entry = productMonthly.get(identity);
     if (!entry) {
       entry = {
+        cod_empresa_bi: r.cod_empresa_bi,
+        cod_empresa: r.cod_empresa,
+        cod_produto: r.cod_produto,
         produto: r.produto,
         marca: r.marca,
         grupo: r.grupo,
@@ -71,14 +82,14 @@ export function analyzeSalesTrends(
         quantidade_estoque: r.quantidade_estoque,
         months: new Map(),
       };
-      productMonthly.set(r.cod_produto, entry);
+      productMonthly.set(identity, entry);
     }
     entry.months.set(month, (entry.months.get(month) || 0) + r.saida_venda);
   });
 
   const results: ProductTrend[] = [];
 
-  productMonthly.forEach((entry, cod_produto) => {
+  productMonthly.forEach(entry => {
     // Sort months chronologically
     const sortedMonths = [...entry.months.entries()]
       .sort(([a], [b]) => a.localeCompare(b));
@@ -102,7 +113,9 @@ export function analyzeSalesTrends(
     else trend = 'stable';
 
     results.push({
-      cod_produto,
+      cod_empresa_bi: entry.cod_empresa_bi,
+      cod_empresa: entry.cod_empresa,
+      cod_produto: entry.cod_produto,
       produto: entry.produto,
       marca: entry.marca,
       grupo: entry.grupo,

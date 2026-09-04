@@ -22,6 +22,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
+import type { ViewMode } from '@/types/estoque';
 
 import type { StockProductInsight, StockSortMode, StockStatus } from './estoqueIntelligence';
 
@@ -30,17 +31,14 @@ export type StockColumnKey =
   | 'brand'
   | 'group'
   | 'quantity'
-  | 'minimum'
   | 'lastMovement'
   | 'status'
   | 'branch'
-  | 'abc'
   | 'value'
   | 'averageCost'
-  | 'line'
-  | 'application'
-  | 'originalReference'
-  | 'location';
+  | 'location'
+  | 'lastPurchase'
+  | 'lastSale';
 
 interface StockColumnDefinition {
   key: StockColumnKey;
@@ -49,35 +47,32 @@ interface StockColumnDefinition {
   numeric?: boolean;
 }
 
-const stockColumns: readonly StockColumnDefinition[] = [
+const consolidatedColumns: readonly StockColumnDefinition[] = [
   { key: 'product', label: 'Produto', required: true },
   { key: 'brand', label: 'Marca' },
   { key: 'group', label: 'Grupo' },
   { key: 'quantity', label: 'Quantidade', required: true, numeric: true },
-  { key: 'minimum', label: 'Minimo operacional estimado', numeric: true },
-  { key: 'lastMovement', label: 'Ultima movimentacao' },
-  { key: 'status', label: 'Situacao', required: true },
-  { key: 'branch', label: 'Filial' },
-  { key: 'abc', label: 'Curva ABC' },
   { key: 'value', label: 'Valor em estoque', numeric: true },
-  { key: 'averageCost', label: 'Custo medio', numeric: true },
-  { key: 'line', label: 'Linha' },
-  { key: 'application', label: 'Aplicacao' },
-  { key: 'originalReference', label: 'Referencia original' },
+  { key: 'lastMovement', label: 'Ultima movimentacao' },
+  { key: 'status', label: 'Situacao' },
+];
+
+const detailedColumns: readonly StockColumnDefinition[] = [
+  { key: 'product', label: 'Produto', required: true },
+  { key: 'branch', label: 'Filial' },
   { key: 'location', label: 'Localizacao' },
+  { key: 'quantity', label: 'Quantidade', required: true, numeric: true },
+  { key: 'averageCost', label: 'Custo medio', numeric: true },
+  { key: 'value', label: 'Valor em estoque', numeric: true },
+  { key: 'lastPurchase', label: 'Ultima compra' },
+  { key: 'lastSale', label: 'Ultima venda' },
 ];
 
-const defaultColumns: StockColumnKey[] = [
-  'product',
-  'brand',
-  'group',
-  'quantity',
-  'lastMovement',
-  'status',
-];
-
-const requiredColumns = new Set<StockColumnKey>(['product', 'quantity', 'status']);
-const validColumns = new Set(stockColumns.map((column) => column.key));
+const columnsByMode: Record<ViewMode, readonly StockColumnDefinition[]> = {
+  consolidado: consolidatedColumns,
+  detalhado: detailedColumns,
+};
+const requiredColumns = new Set<StockColumnKey>(['product', 'quantity']);
 const PAGE_SIZE = 50;
 
 const statusConfig: Record<
@@ -119,29 +114,33 @@ export interface EstoqueProductsTableProps {
   sourceEmpty?: boolean;
   sortMode: StockSortMode;
   branchKey: string;
+  viewMode: ViewMode;
   onSortChange: (mode: StockSortMode) => void;
   onSelectProduct: (product: StockProductInsight) => void;
   onVisibleColumnsChange?: (columns: StockColumnKey[]) => void;
 }
 
-function storageKey(branchKey: string): string {
-  return `pelegrini:estoque:columns:${branchKey}`;
+function storageKey(branchKey: string, viewMode: ViewMode): string {
+  return `pelegrini:estoque:columns:${branchKey}:${viewMode}`;
 }
 
-function readVisibleColumns(branchKey: string): StockColumnKey[] {
-  if (typeof window === 'undefined') return [...defaultColumns];
+function readVisibleColumns(branchKey: string, viewMode: ViewMode): StockColumnKey[] {
+  const modeColumns = columnsByMode[viewMode];
+  const defaultColumns = modeColumns.map((column) => column.key);
+  const validColumns = new Set(defaultColumns);
+  if (typeof window === 'undefined') return defaultColumns;
 
   try {
-    const stored = JSON.parse(window.localStorage.getItem(storageKey(branchKey)) ?? 'null');
-    if (!Array.isArray(stored)) return [...defaultColumns];
+    const stored = JSON.parse(window.localStorage.getItem(storageKey(branchKey, viewMode)) ?? 'null');
+    if (!Array.isArray(stored)) return defaultColumns;
 
     const selected = new Set<StockColumnKey>(
       stored.filter((key): key is StockColumnKey => typeof key === 'string' && validColumns.has(key as StockColumnKey)),
     );
     requiredColumns.forEach((key) => selected.add(key));
-    return stockColumns.filter((column) => selected.has(column.key)).map((column) => column.key);
+    return modeColumns.filter((column) => selected.has(column.key)).map((column) => column.key);
   } catch {
-    return [...defaultColumns];
+    return defaultColumns;
   }
 }
 
@@ -159,6 +158,36 @@ function formatCurrency(value: number): string {
 function formatDate(value: string | null): string {
   const match = value?.match(/^(\d{4})-(\d{2})-(\d{2})/);
   return match ? `${match[3]}/${match[2]}/${match[1]}` : 'Data desconhecida';
+}
+
+function stockTableRowKey(product: StockProductInsight, viewMode: ViewMode): string {
+  if (viewMode === 'consolidado') {
+    return `${product.cod_produto}:${product.sourceRowKey}`;
+  }
+
+  const location = product.localizacao_produto?.trim() || 'sem-localizacao';
+  return `${product.cod_empresa}:${product.cod_produto}:${location}:${product.sourceRowKey}`;
+}
+
+function isContingencyRecord(product: StockProductInsight): boolean {
+  return product.tipo_relatorio.trim().toUpperCase() === 'GIRO API - CONTINGENCIA';
+}
+
+function AverageCostValue({ product }: { product: StockProductInsight }) {
+  const estimated = isContingencyRecord(product);
+
+  return (
+    <span className="inline-flex min-w-0 flex-col items-end">
+      {estimated && (
+        <span className="block text-[10px] font-medium uppercase text-amber-600 dark:text-amber-400">
+          Custo estimado
+        </span>
+      )}
+      <PelegriniResponsiveValue className="tabular-nums" size="sm">
+        {formatCurrency(product.custo_medio)}
+      </PelegriniResponsiveValue>
+    </span>
+  );
 }
 
 function StockStatusValue({ status }: { status: StockStatus }) {
@@ -211,24 +240,17 @@ function ColumnValue({ column, product, onSelectProduct }: {
   if (column === 'brand') return product.marca || '--';
   if (column === 'group') return product.grupo || '--';
   if (column === 'quantity') return <span className="font-semibold tabular-nums">{formatNumber(product.quantidade_estoque)}</span>;
-  if (column === 'minimum') {
-    return product.movementDataAvailable
-      ? <span className="tabular-nums">{formatNumber(product.operationalMinimum)}</span>
-      : <span className="text-xs text-muted-foreground">Dados insuficientes</span>;
-  }
   if (column === 'lastMovement') return <span className="whitespace-nowrap tabular-nums">{formatDate(product.lastMovementDate)}</span>;
+  if (column === 'lastPurchase') return <span className="whitespace-nowrap tabular-nums">{formatDate(product.data_ultima_compra)}</span>;
+  if (column === 'lastSale') return <span className="whitespace-nowrap tabular-nums">{formatDate(product.data_ultima_venda)}</span>;
   if (column === 'status') return <StockStatusValue status={product.status} />;
   if (column === 'branch') return product.empresa || '--';
-  if (column === 'abc') return product.classe_abc || '--';
   if (column === 'value') {
     return <PelegriniResponsiveValue className="font-semibold tabular-nums" size="sm">{formatCurrency(product.valor_estoque)}</PelegriniResponsiveValue>;
   }
   if (column === 'averageCost') {
-    return <PelegriniResponsiveValue className="tabular-nums" size="sm">{formatCurrency(product.custo_medio)}</PelegriniResponsiveValue>;
+    return <AverageCostValue product={product} />;
   }
-  if (column === 'line') return product.linha || '--';
-  if (column === 'application') return product.aplicacao_produto || '--';
-  if (column === 'originalReference') return product.nr_original || '--';
   return product.localizacao_produto || '--';
 }
 
@@ -237,22 +259,24 @@ export function EstoqueProductsTable({
   sourceEmpty = false,
   sortMode,
   branchKey,
+  viewMode,
   onSortChange,
   onSelectProduct,
   onVisibleColumnsChange,
 }: EstoqueProductsTableProps) {
-  const [visibleColumns, setVisibleColumns] = useState<StockColumnKey[]>(() => readVisibleColumns(branchKey));
+  const [visibleColumns, setVisibleColumns] = useState<StockColumnKey[]>(() => readVisibleColumns(branchKey, viewMode));
   const [columnsMenuOpen, setColumnsMenuOpen] = useState(false);
   const [page, setPage] = useState(0);
 
   useEffect(() => {
-    setVisibleColumns(readVisibleColumns(branchKey));
-  }, [branchKey]);
+    setVisibleColumns(readVisibleColumns(branchKey, viewMode));
+  }, [branchKey, viewMode]);
 
   useEffect(() => {
     setPage(0);
-  }, [branchKey, products, sortMode]);
+  }, [branchKey, products, sortMode, viewMode]);
 
+  const stockColumns = columnsByMode[viewMode];
   const selectedColumns = stockColumns.filter((column) => visibleColumns.includes(column.key));
   const pageCount = Math.max(1, Math.ceil(products.length / PAGE_SIZE));
   const safePage = Math.min(page, pageCount - 1);
@@ -270,7 +294,7 @@ export function EstoqueProductsTable({
           .filter((definition) => visibleColumns.includes(definition.key) || definition.key === column)
           .map((definition) => definition.key);
     setVisibleColumns(next);
-    window.localStorage.setItem(storageKey(branchKey), JSON.stringify(next));
+    window.localStorage.setItem(storageKey(branchKey, viewMode), JSON.stringify(next));
     onVisibleColumnsChange?.(next);
   };
 
@@ -354,7 +378,7 @@ export function EstoqueProductsTable({
               </thead>
               <tbody className="divide-y divide-border/70">
                 {visibleProducts.map((product) => (
-                  <tr className="transition-colors hover:bg-primary/[0.04]" key={`${product.cod_empresa}:${product.cod_produto}`}>
+                  <tr className="transition-colors hover:bg-primary/[0.04]" key={stockTableRowKey(product, viewMode)}>
                     {selectedColumns.map((column) => (
                       <td
                         className={cn(
@@ -379,19 +403,51 @@ export function EstoqueProductsTable({
           <p className="px-4 py-10 text-center text-sm text-muted-foreground">{emptyMessage}</p>
         ) : (
           visibleProducts.map((product) => (
-            <article className="min-w-0 p-3" data-testid={`stock-mobile-item-${product.cod_produto}`} key={`${product.cod_empresa}:${product.cod_produto}`}>
+            <article className="min-w-0 p-3" data-testid={`stock-mobile-item-${product.cod_produto}`} key={stockTableRowKey(product, viewMode)}>
               <div className="flex min-w-0 items-start justify-between gap-3">
                 <div className="min-w-0 flex-1">
                   <ProductButton product={product} onSelectProduct={onSelectProduct} />
-                  <p className="mt-1 truncate text-xs text-muted-foreground" title={product.marca}>{product.marca || '--'}</p>
+                  {viewMode === 'consolidado' && (
+                    <p className="mt-1 truncate text-xs text-muted-foreground" title={product.marca}>{product.marca || '--'}</p>
+                  )}
                 </div>
                 <p className="shrink-0 text-right">
                   <span className="block text-lg font-semibold tabular-nums text-foreground">{formatNumber(product.quantidade_estoque)}</span>
                   <span className="block text-[11px] text-muted-foreground">em estoque</span>
                 </p>
               </div>
+              {viewMode === 'detalhado' && (
+                <dl className="mt-3 grid min-w-0 grid-cols-2 gap-x-4 gap-y-2 border-t border-border/60 pt-3 text-xs">
+                  <div className="min-w-0">
+                    <dt className="text-[10px] uppercase text-muted-foreground">Filial</dt>
+                    <dd className="truncate font-medium text-foreground" title={product.empresa}>{product.empresa || '--'}</dd>
+                  </div>
+                  <div className="min-w-0">
+                    <dt className="text-[10px] uppercase text-muted-foreground">Localizacao</dt>
+                    <dd className="truncate font-medium text-foreground" title={product.localizacao_produto}>{product.localizacao_produto || '--'}</dd>
+                  </div>
+                  <div className="min-w-0">
+                    <dt className="text-[10px] uppercase text-muted-foreground">Custo medio</dt>
+                    <dd className="font-medium text-foreground"><AverageCostValue product={product} /></dd>
+                  </div>
+                  <div className="min-w-0">
+                    <dt className="text-[10px] uppercase text-muted-foreground">Valor em estoque</dt>
+                    <dd className="font-medium text-foreground">
+                      <PelegriniResponsiveValue className="tabular-nums" size="sm">{formatCurrency(product.valor_estoque)}</PelegriniResponsiveValue>
+                    </dd>
+                  </div>
+                  <div className="min-w-0">
+                    <dt className="text-[10px] uppercase text-muted-foreground">Ultima compra</dt>
+                    <dd className="font-medium tabular-nums text-foreground">{formatDate(product.data_ultima_compra)}</dd>
+                  </div>
+                  <div className="min-w-0">
+                    <dt className="text-[10px] uppercase text-muted-foreground">Ultima venda</dt>
+                    <dd className="font-medium tabular-nums text-foreground">{formatDate(product.data_ultima_venda)}</dd>
+                  </div>
+                </dl>
+              )}
               <div className="mt-2 flex min-w-0 items-center justify-between gap-2">
-                <StockStatusValue status={product.status} />
+                {viewMode === 'consolidado' ? <StockStatusValue status={product.status} /> : <span />}
                 <Button
                   aria-label={`Abrir ${product.produto}`}
                   className="h-8 w-8 shrink-0"
