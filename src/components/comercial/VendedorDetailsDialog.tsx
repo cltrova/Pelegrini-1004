@@ -10,6 +10,7 @@ import {
   DollarSign, Target, TrendingUp, TrendingDown, Users, ReceiptText,
   Trophy, AlertTriangle, Sparkles, MapPin, Calendar, Percent, Package, Loader2, Crown, Medal, Award
 } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { formatCurrency, formatPercent } from '@/utils/formatters';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
@@ -76,7 +77,7 @@ export function VendedorDetailsDialog({ vendedor, ranking, pedidos, devolucoes, 
     // Se o array unificado tiver devoluções, usamos ele; senão, caímos no array legado `devsV`.
     const devsUnificadas = pedidosV.filter(p => p.tipo === 'DEVOLUCAO');
     const totalDevolucoes = devsUnificadas.length > 0
-      ? devsUnificadas.reduce((s, d: any) => s + Math.abs(d.valor_devolucao_real ?? d.valor_real ?? d.valor_liquido ?? d.valor_total ?? 0), 0)
+      ? devsUnificadas.reduce((s, d) => s + Math.abs(Number(d.valor_devolucao_real ?? d.valor_real ?? d.valor_liquido ?? d.valor_total ?? 0)), 0)
       : devsV.reduce((s, d) => s + Math.abs(d.valor_total || d.valor_liquido || 0), 0);
     const qtdPedidos = pedidosOnly.length;
     const qtdDevolucoes = devsUnificadas.length > 0 ? devsUnificadas.length : devsV.length;
@@ -84,7 +85,7 @@ export function VendedorDetailsDialog({ vendedor, ranking, pedidos, devolucoes, 
 
     // Valor por linha: prioriza valor_liquido (faturado), mas cai para valor_real/valor_liquido_coluna/valor_bruto
     // quando o pedido ainda não foi faturado (sem data_faturamento), evitando Top 5 zerado.
-    const valorLinha = (p: any) => {
+    const valorLinha = (p: Pedido) => {
       const v = Math.abs(p.valor_liquido || 0);
       if (v > 0) return v;
       return Math.abs(p.valor_real || p.valor_liquido_coluna || p.valor_bruto || 0);
@@ -178,8 +179,8 @@ Sem introduções, sem rodeios, sem repetir dados óbvios. Use números apenas q
       });
       if (error) throw error;
       setAiInsights(data?.reply || 'Sem resposta.');
-    } catch (e: any) {
-      setAiError(String(e?.message || e));
+    } catch (e: unknown) {
+      setAiError(e instanceof Error ? e.message : String(e));
     } finally {
       setAiLoading(false);
     }
@@ -195,11 +196,11 @@ Sem introduções, sem rodeios, sem repetir dados óbvios. Use números apenas q
 
   // ============ THEMING (escopo 1005) ============
   if (is1005) {
-    const rb =
-      ranking === 1 ? { bg: `linear-gradient(135deg, ${C.amber}, #FBBF24)`, color: '#0B0F1A', icon: Crown }
-      : ranking === 2 ? { bg: `linear-gradient(135deg, #CBD5E1, #94A3B8)`, color: '#0B0F1A', icon: Medal }
-      : ranking === 3 ? { bg: `linear-gradient(135deg, #B45309, #92400E)`, color: '#FFF', icon: Award }
-      : { bg: 'rgba(148,163,184,0.18)', color: C.sub, icon: null as any };
+    const rb: { bg: string; color: string; icon: LucideIcon | null } =
+      ranking === 1 ? { bg: `${C.amber}20`, color: C.amber, icon: Crown }
+      : ranking === 2 ? { bg: 'rgba(148,163,184,0.18)', color: C.sub, icon: Medal }
+      : ranking === 3 ? { bg: 'rgba(249,115,22,0.16)', color: '#F97316', icon: Award }
+      : { bg: 'rgba(148,163,184,0.18)', color: C.sub, icon: null };
     const RbIcon = rb.icon;
     const stColor = vendedor.status === 'acima' ? C.green : vendedor.status === 'proximo' ? C.amber : C.red;
     const totalTop5 = stats.topClientes.reduce((s, c) => s + c.valor, 0) || 1;
@@ -217,7 +218,7 @@ Sem introduções, sem rodeios, sem repetir dados óbvios. Use números apenas q
         <DialogContent
           className="max-w-4xl max-h-[90vh] p-0 gap-0 border-0 overflow-hidden"
           style={{
-            background: `radial-gradient(1200px 600px at 80% -10%, ${C.blue}10, transparent 60%), ${C.bg0}`,
+            background: C.bg0,
             border: `1px solid ${C.border}`,
           }}
         >
@@ -288,10 +289,10 @@ Sem introduções, sem rodeios, sem repetir dados óbvios. Use números apenas q
                 </div>
                 <div className="mt-3 h-2 rounded-full overflow-hidden" style={{ background: 'rgba(148,163,184,0.12)' }}>
                   <div
-                    className="h-full rounded-full transition-all"
+                    className="h-full rounded-full transition-[width]"
                     style={{
                       width: metaInconsistente ? '0%' : `${Math.min(100, vendedor.percentualMetaFaturado)}%`,
-                      background: `linear-gradient(90deg, ${C.blue}, ${C.violet})`,
+                      background: C.blue,
                     }}
                   />
                 </div>
@@ -351,7 +352,7 @@ Sem introduções, sem rodeios, sem repetir dados óbvios. Use números apenas q
                               <span className="font-mono">{pct.toFixed(1)}% do Top 5</span>
                             </div>
                             <div className="mt-1 h-1 rounded-full overflow-hidden" style={{ background: 'rgba(148,163,184,0.10)' }}>
-                              <div className="h-full rounded-full" style={{ width: `${barW}%`, background: `linear-gradient(90deg, ${C.green}, ${C.blue})` }} />
+                              <div className="h-full rounded-full" style={{ width: `${barW}%`, background: C.green }} />
                             </div>
                           </div>
                         </div>
@@ -391,7 +392,7 @@ Sem introduções, sem rodeios, sem repetir dados óbvios. Use números apenas q
                     size="sm"
                     onClick={gerarInsightsIA}
                     disabled={aiLoading}
-                    style={{ background: `linear-gradient(135deg, ${C.blue}, ${C.violet})`, color: '#fff', border: 'none' }}
+                    style={{ background: C.blue, color: '#fff', border: 'none' }}
                   >
                     {aiLoading ? <><Loader2 className="h-3.5 w-3.5 mr-2 animate-spin" /> Analisando...</> : <><Sparkles className="h-3.5 w-3.5 mr-2" /> {aiInsights ? 'Gerar novamente' : 'Gerar análise'}</>}
                   </Button>
@@ -565,11 +566,10 @@ Sem introduções, sem rodeios, sem repetir dados óbvios. Use números apenas q
 function Panel1005({ children }: { children: React.ReactNode }) {
   return (
     <div
-      className="rounded-2xl p-4"
+      className="rounded-lg p-4"
       style={{
-        background: `linear-gradient(140deg, ${C.card} 0%, ${C.card2} 100%)`,
+        background: C.card,
         border: `1px solid ${C.border}`,
-        boxShadow: '0 1px 0 rgba(255,255,255,0.04) inset, 0 10px 30px -16px rgba(0,0,0,0.6)',
       }}
     >
       {children}
@@ -577,24 +577,20 @@ function Panel1005({ children }: { children: React.ReactNode }) {
   );
 }
 
-function Kpi1005({ icon: Icon, label, value, accent, small }: { icon: any; label: string; value: string; accent: string; small?: boolean }) {
+function Kpi1005({ icon: Icon, label, value, accent, small }: { icon: LucideIcon; label: string; value: string; accent: string; small?: boolean }) {
   return (
     <div
-      className="relative overflow-hidden rounded-xl p-3"
+      className="rounded-lg p-3"
       style={{
-        background: `linear-gradient(140deg, ${C.card} 0%, ${C.card2} 100%)`,
+        background: C.card,
         border: `1px solid ${C.border}`,
       }}
     >
-      <div
-        className="absolute -top-10 -right-10 w-24 h-24 rounded-full opacity-20 blur-2xl pointer-events-none"
-        style={{ background: accent }}
-      />
-      <div className="relative flex items-center gap-2 text-[11px] uppercase tracking-wider mb-1" style={{ color: C.sub }}>
+      <div className="flex items-center gap-2 text-[11px] uppercase tracking-wider mb-1" style={{ color: C.sub }}>
         <Icon className="w-3.5 h-3.5" style={{ color: accent }} />
         {label}
       </div>
-      <div className={cn('relative font-mono font-bold tabular-nums', small ? 'text-sm' : 'text-lg')} style={{ color: accent }}>
+      <div className={cn('font-mono font-bold tabular-nums', small ? 'text-sm' : 'text-lg')} style={{ color: accent }}>
         {value}
       </div>
     </div>

@@ -61,7 +61,7 @@ export function ValorTotalDetalheDialog({ open, onOpenChange, pedidos, totalEspe
 
       const codCliente = String(p.cliente_codigo ?? '').trim() || 'sem-codigo';
       const nomeCliente = String(p.cliente_fantasia || p.cliente_razao || '—');
-      const numero = String((p as any).numero ?? (p as any).num_nf ?? p.id ?? '').trim();
+      const numero = String(p.numero ?? p.num_nf ?? p.id ?? '').trim();
       if (numero === '0') continue;
       const pedidoKey = numero || String(p.id);
       const valor = Number(p.valor_liquido || 0);
@@ -134,7 +134,7 @@ export function ValorTotalDetalheDialog({ open, onOpenChange, pedidos, totalEspe
   };
 
   const exportExcel = () => {
-    const rows: any[] = [];
+    const rows: Array<Record<string, string | number>> = [];
     for (const g of filtrados) {
       for (const p of g.pedidos) {
         rows.push({
@@ -210,7 +210,7 @@ export function ValorTotalDetalheDialog({ open, onOpenChange, pedidos, totalEspe
             </div>
           ) : (
             <table className="w-full text-sm">
-              <thead className="sticky top-0 bg-muted/70 backdrop-blur border-b z-10">
+              <thead className="sticky top-0 bg-muted border-b z-10">
                 <tr className="text-xs uppercase text-muted-foreground">
                   <th className="w-8"></th>
                   <th className="text-left px-3 py-2 font-semibold">Cliente</th>
