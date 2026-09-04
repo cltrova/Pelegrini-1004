@@ -74,6 +74,13 @@ describe('EstoqueRetroativoPage', () => {
     expect(screen.queryByRole('heading', { name: 'Estoque Retroativo' })).not.toBeInTheDocument();
   });
 
+  it('recua a toolbar em 56px no mobile para nao sobrepor o botao da sidebar', () => {
+    render(<EstoqueRetroativoPage />);
+
+    expect(screen.getByRole('toolbar', { name: 'Comandos do estoque retroativo' }))
+      .toHaveClass('max-md:pl-14');
+  });
+
   it('mantem resultados e tabela dentro de um unico viewport de dados', async () => {
     render(<EstoqueRetroativoPage />);
 
@@ -169,6 +176,29 @@ describe('EstoqueRetroativoPage', () => {
     const viewport = screen.getByRole('region', { name: 'Dados do estoque' });
     expect(within(viewport).getByText('Nenhum produto corresponde aos filtros.')).toBeInTheDocument();
     expect(within(viewport).queryByRole('table')).not.toBeInTheDocument();
+  });
+
+  it('informa quantos registros estao visiveis quando o resultado ultrapassa 500 itens', async () => {
+    const items = Array.from({ length: 501 }, (_, index) => ({
+      CodEmpresa_bi: 1004,
+      empresa_codigo: 1,
+      empresa_nome: 'Matriz',
+      cod_produto: index + 1,
+      descricao: `PRODUTO ${index + 1}`,
+      marca: 'LUK',
+      saldo_estoque: 1,
+      valor_unitario: 10,
+      preco_venda_unitario: 20,
+    }));
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify(items), { status: 200 })));
+    render(<EstoqueRetroativoPage />);
+
+    fireEvent.change(screen.getByLabelText('Data do estoque'), { target: { value: '2026-08-31' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Consultar' }));
+
+    expect(await screen.findByText('501 produtos')).toBeInTheDocument();
+    expect(screen.getByText('Exibindo 500 de 501 registros. Refine os filtros ou exporte para consultar todos.'))
+      .toBeInTheDocument();
   });
 
   it.each([

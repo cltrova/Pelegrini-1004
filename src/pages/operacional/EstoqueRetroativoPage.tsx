@@ -331,7 +331,7 @@ export default function EstoqueRetroativoPage() {
 
   return (
     <EstoqueWorkspace className="bg-background">
-      <EstoqueToolbar aria-label="Comandos do estoque retroativo">
+      <EstoqueToolbar aria-label="Comandos do estoque retroativo" className="max-md:pl-14">
         <div className="relative shrink-0">
           <Label htmlFor="data_estoque" className="sr-only">Data do estoque</Label>
           <CalendarDays className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -465,7 +465,7 @@ export default function EstoqueRetroativoPage() {
               </Table>
               </div>
             </div>
-            {filtered.length > 500 ? <div className="shrink-0 border-t px-3 py-2 text-center text-xs text-muted-foreground">Exibindo os primeiros 500 registros. Refine os filtros ou exporte para consultar todos.</div> : null}
+            {filtered.length > 500 ? <div className="shrink-0 border-t px-3 py-2 text-center text-xs text-muted-foreground">Exibindo 500 de {filtered.length.toLocaleString('pt-BR')} registros. Refine os filtros ou exporte para consultar todos.</div> : null}
           </>
         )}
       </EstoqueDataViewport>
