@@ -50,22 +50,26 @@ describe('GiroEstoqueTab', () => {
     expect(within(table).queryByRole('columnheader', { name: 'Filial' })).not.toBeInTheDocument();
   });
 
-  it('exibe filial quando os produtos visiveis pertencem a empresas diferentes', () => {
+  it('nao exibe filial porque a filial BI e selecionada globalmente', () => {
     const stockA = { ...estoqueFixtureComTresItens[0], cod_produto: 901, empresa: 'EMPRESA A' };
     const stockB = { ...estoqueFixtureComTresItens[1], cod_empresa_bi: 10041, cod_produto: 902, empresa: 'EMPRESA B' };
 
     render(<GiroEstoqueTab estoqueData={[stockA, stockB]} filters={{ ...filters, statusFilter: [] }} giroData={[]} onStatusFilterChange={vi.fn()} />);
 
-    expect(within(screen.getByRole('table')).getByRole('columnheader', { name: 'Filial' })).toBeInTheDocument();
+    expect(within(screen.getByRole('table')).queryByRole('columnheader', { name: 'Filial' })).not.toBeInTheDocument();
   });
 
-  it('trata nomes juridicos diferentes com o mesmo codigo BI como uma unica filial', () => {
-    const stockA = { ...estoqueFixtureComTresItens[0], cod_empresa_bi: 1004, cod_empresa: 1, cod_produto: 911, empresa: 'CT MATRIZ' };
-    const stockB = { ...estoqueFixtureComTresItens[1], cod_empresa_bi: 1004, cod_empresa: 1, cod_produto: 912, empresa: 'CASA DA TRANSMISSAO LTDA' };
+  it('usa a identidade completa e sanitizada para linhas e tooltips de empresas internas distintas', () => {
+    const stockA = { ...estoqueFixtureComTresItens[0], cod_empresa_bi: 1004, cod_empresa: 1, cod_produto: 919, produto: 'ITEM REPETIDO', empresa: 'MESMA RAZAO SOCIAL' };
+    const stockB = { ...estoqueFixtureComTresItens[1], cod_empresa_bi: 1004, cod_empresa: 2, cod_produto: 919, produto: 'ITEM REPETIDO', empresa: 'MESMA RAZAO SOCIAL' };
 
-    render(<GiroEstoqueTab estoqueData={[stockA, stockB]} filters={{ ...filters, statusFilter: [] }} giroData={[]} onStatusFilterChange={vi.fn()} />);
+    render(<GiroEstoqueTab activeCompanyCode={1004} estoqueData={[stockA, stockB]} filters={{ ...filters, statusFilter: [] }} giroData={[]} onStatusFilterChange={vi.fn()} />);
 
-    expect(within(screen.getByRole('table')).queryByRole('columnheader', { name: 'Filial' })).not.toBeInTheDocument();
+    const rows = screen.getAllByRole('row').filter((row) => within(row).queryByText('ITEM REPETIDO'));
+    expect(rows).toHaveLength(2);
+    const descriptionIds = rows.map((row) => within(row).getByRole('button', { name: /Explicar status/i }).getAttribute('aria-describedby'));
+    expect(new Set(descriptionIds).size).toBe(2);
+    descriptionIds.forEach((id) => expect(id).toMatch(/^[A-Za-z][A-Za-z0-9_-]*$/));
   });
 
   it('renderiza acao recomendada e tooltip visivel no foco com descricao estavel', () => {
@@ -164,7 +168,7 @@ describe('GiroEstoqueTab', () => {
 
   it('mantem produtos e tendencias separados quando empresas compartilham o mesmo codigo', () => {
     const stockA = { ...estoqueFixtureComTresItens[0], cod_produto: 909, produto: 'ITEM EMPRESA A', empresa: 'EMPRESA A', marca: 'ZF' };
-    const stockB = { ...estoqueFixtureComTresItens[0], cod_empresa_bi: 10041, cod_produto: 909, produto: 'ITEM EMPRESA B', empresa: 'EMPRESA B', marca: 'ZF', quantidade_estoque: 20 };
+    const stockB = { ...estoqueFixtureComTresItens[0], cod_empresa_bi: 10041, cod_produto: 909, produto: 'ITEM EMPRESA B', empresa: 'EMPRESA B', marca: 'MWM', quantidade_estoque: 20 };
     const movement = (stock: typeof stockA, date: string, sales: number): GiroRecord => ({
       ...giroFixture[0],
       cod_empresa_bi: stock.cod_empresa_bi,
@@ -196,7 +200,7 @@ describe('GiroEstoqueTab', () => {
     expect(within(rowB).getByLabelText(/Tendencia de crescimento/i)).toBeInTheDocument();
 
     rerender(
-      <GiroEstoqueTab estoqueData={[stockA, stockB]} filters={{ ...filters, statusFilter: [], empresas: ['EMPRESA B'] }} giroData={movements} onStatusFilterChange={vi.fn()} />,
+      <GiroEstoqueTab estoqueData={[stockA, stockB]} filters={{ ...filters, statusFilter: [], marcas: ['MWM'] }} giroData={movements} onStatusFilterChange={vi.fn()} />,
     );
     expect(within(screen.getByRole('table')).queryByText('ITEM EMPRESA A')).not.toBeInTheDocument();
     expect(within(screen.getByRole('table')).getByText('ITEM EMPRESA B')).toBeInTheDocument();

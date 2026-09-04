@@ -44,10 +44,8 @@ const formatCurrency = (v: number) =>
 const formatNumber = (v: number) =>
   new Intl.NumberFormat('pt-BR').format(v);
 
-function branchIdentity(summary: GiroProductSummary): string {
-  if (summary.cod_empresa_bi) return `bi:${summary.cod_empresa_bi}`;
-  if (summary.cod_empresa) return `empresa:${summary.cod_empresa}`;
-  return `nome:${summary.empresa.trim().toLocaleLowerCase('pt-BR')}`;
+function sanitizeDomId(value: string): string {
+  return value.replace(/[^A-Za-z0-9_-]/g, '-');
 }
 
 interface LineTooltipEntry {
@@ -260,10 +258,6 @@ export function GiroEstoqueTab({ giroData, estoqueData, filters, onStatusFilterC
     sortField === field ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none'
   );
 
-  const showBranchColumn = useMemo(() => new Set(
-    productSummaries.map(branchIdentity),
-  ).size > 1, [productSummaries]);
-
   return (
     <TooltipProvider delayDuration={0}>
     <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
@@ -453,14 +447,15 @@ export function GiroEstoqueTab({ giroData, estoqueData, filters, onStatusFilterC
           <div aria-label="Rolagem dos produtos do giro" className="min-h-0 flex-1 overflow-auto" role="region">
           <div className="divide-y md:hidden">
             {sorted.slice(0, visibleCount).map(s => {
-              const statusHelpId = `giro-status-mobile-${encodeURIComponent(s.empresa)}-${s.cod_produto}`;
+              const identity = productIdentity(s);
+              const statusHelpId = `giro-status-mobile-${sanitizeDomId(identity)}`;
               return (
-                <article key={`${s.empresa}-${s.cod_produto}`} className="space-y-2 px-3 py-2.5">
+                <article key={identity} className="space-y-2 px-3 py-2.5">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <p className="truncate text-sm font-semibold">{s.produto}</p>
                       <p className="mt-0.5 text-xs text-muted-foreground">
-                        {s.cod_produto} · {s.marca || 'Sem marca'}{showBranchColumn ? ` · ${s.empresa.replace(/^CASPPER\s*/i, '')}` : ''}
+                        {s.cod_produto} · {s.marca || 'Sem marca'}
                       </p>
                     </div>
                     <span className="shrink-0">
@@ -488,7 +483,6 @@ export function GiroEstoqueTab({ giroData, estoqueData, filters, onStatusFilterC
                     </button>
                   </TableHead>
                   <TableHead>Marca</TableHead>
-                  {showBranchColumn && <TableHead>Filial</TableHead>}
                   <TableHead className="text-center">Status</TableHead>
                   <TableHead aria-label="Estoque" aria-sort={sortDirection('quantidade_estoque')} className="p-0 text-right">
                     <button aria-label="Ordenar por estoque" className="flex h-10 w-full items-center justify-end gap-1 px-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring" onClick={() => toggleSort('quantidade_estoque')} type="button">
@@ -515,15 +509,15 @@ export function GiroEstoqueTab({ giroData, estoqueData, filters, onStatusFilterC
               </TableHeader>
               <TableBody>
                 {sorted.slice(0, visibleCount).map(s => {
-                  const statusHelpId = `giro-status-table-${encodeURIComponent(s.empresa)}-${s.cod_produto}`;
+                  const identity = productIdentity(s);
+                  const statusHelpId = `giro-status-table-${sanitizeDomId(identity)}`;
                   return (
-                    <TableRow className="h-11" key={`${s.empresa}-${s.cod_produto}`}>
+                    <TableRow className="h-11" key={identity}>
                       <TableCell className="max-w-[240px]">
                         <span className="block truncate text-sm font-medium">{s.produto}</span>
                         <span className="block text-[11px] text-muted-foreground">Codigo {s.cod_produto}</span>
                       </TableCell>
                       <TableCell className="text-xs">{s.marca}</TableCell>
-                      {showBranchColumn && <TableCell className="max-w-[180px] truncate text-xs">{s.empresa.replace(/^CASPPER\s*/i, '')}</TableCell>}
                       <TableCell className="text-center">
                         <GiroStatusHelp id={statusHelpId} status={s.status} />
                       </TableCell>
