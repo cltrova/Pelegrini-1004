@@ -139,7 +139,7 @@ export function ProdutosSectionPremium({ topProdutos, porCategoria, produtosSemG
                             className="inline-flex items-center justify-center h-6 w-6 rounded-full text-[10px] font-bold"
                             style={
                               rankColor
-                                ? { background: `${rankColor}25`, color: rankColor, boxShadow: `0 0 8px ${rankColor}40` }
+                                ? { background: `${rankColor}25`, color: rankColor }
                                 : { background: 'hsl(var(--muted))', color: 'hsl(var(--muted-foreground))' }
                             }
                           >
@@ -161,7 +161,7 @@ export function ProdutosSectionPremium({ topProdutos, porCategoria, produtosSemG
                           <div className="flex items-center justify-end gap-2">
                             <div className="w-16 h-1.5 rounded-full bg-muted/40 overflow-hidden">
                               <div
-                                className="h-full rounded-full bg-primary transition-all duration-500"
+                                className="h-full rounded-full bg-primary transition-[width] duration-500"
                                 style={{
                                   width: `${Math.min(100, p.participacao * 4)}%`,
                                 }}
@@ -207,7 +207,7 @@ export function ProdutosSectionPremium({ topProdutos, porCategoria, produtosSemG
                       </div>
                       <div className="h-2 rounded-full bg-muted/40 overflow-hidden">
                         <div
-                          className="h-full rounded-full transition-all duration-700"
+                          className="h-full rounded-full transition-[width] duration-700"
                           style={{
                             width: `${Math.min(100, c.participacao)}%`,
                             background: color,

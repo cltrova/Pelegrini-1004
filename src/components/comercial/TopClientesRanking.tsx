@@ -169,7 +169,7 @@ export function TopClientesRanking({ clientes, variacoesPorCodigo, totalGeral }:
                       <span className="ml-1">do total</span>
                     </span>
                     {/* Info extra revelada no hover */}
-                    <span className="hidden max-w-0 overflow-hidden whitespace-nowrap opacity-0 transition-all duration-300 group-hover/item:max-w-xs group-hover/item:opacity-100 md:inline">
+                    <span className="hidden max-w-0 overflow-hidden whitespace-nowrap opacity-0 transition-[max-width,opacity] duration-300 group-hover/item:max-w-xs group-hover/item:opacity-100 md:inline">
                       · Ranking #{it.posicao}
                     </span>
                   </div>
@@ -180,7 +180,7 @@ export function TopClientesRanking({ clientes, variacoesPorCodigo, totalGeral }:
                 <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-muted/60">
                   <div
                     className={cn(
-                      'h-full rounded-full transition-all duration-700 ease-out',
+                      'h-full rounded-full transition-[width,background-color] duration-700 ease-out',
                       it.posicao === 1 ? 'bg-primary' : 'bg-primary/60',
                       'group-hover/item:!bg-primary'
                     )}

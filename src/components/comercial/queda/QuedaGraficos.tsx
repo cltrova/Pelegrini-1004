@@ -25,6 +25,7 @@ interface Props {
 type Modo = 'valor' | 'percent';
 
 const CARD_BODY = 'h-[380px]';
+const SITUACOES_QUEDA: SituacaoCliente[] = ['parou', 'caiu_forte', 'caiu_leve', 'ok'];
 
 export function QuedaGraficos({
   clientes,
@@ -54,8 +55,7 @@ export function QuedaGraficos({
       : Math.max(...ranking.map(c => Math.abs(c.variacaoPercent)), 1);
   }, [ranking, modo]);
 
-  const situacoes: SituacaoCliente[] = ['parou', 'caiu_forte', 'caiu_leve', 'ok'];
-  const distribuicao = useMemo(() => situacoes.map(s => ({
+  const distribuicao = useMemo(() => SITUACOES_QUEDA.map(s => ({
     name: SITUACAO_LABEL[s],
     situacao: s,
     value: clientes.filter(c => classificarSituacao(c) === s).length,
@@ -165,7 +165,7 @@ export function QuedaGraficos({
                           <div className="mt-1 ml-7 flex items-center gap-2">
                             <div className="h-1.5 flex-1 rounded-full bg-muted/50 overflow-hidden">
                               <div
-                                className="h-full rounded-full transition-all"
+                                className="h-full rounded-full transition-[width]"
                                 style={{ width: `${largura}%`, backgroundColor: cor }}
                               />
                             </div>
@@ -218,8 +218,9 @@ export function QuedaGraficos({
                         outerRadius="88%"
                         paddingAngle={2}
                         stroke="none"
-                        onClick={(d: any) => {
-                          const s = d?.payload?.situacao as SituacaoCliente;
+                        onClick={(d: unknown) => {
+                          const s = (d as { payload?: { situacao?: SituacaoCliente } })?.payload?.situacao;
+                          if (!s) return;
                           onSelectSituacao?.(situacaoSelecionada === s ? null : s);
                         }}
                       >

@@ -234,7 +234,7 @@ export function VendedoresRanking({ vendedores, variacoesPorNome }: Props) {
                       <span className="ml-1">de participação</span>
                     </span>
                     {/* Info extra no hover */}
-                    <span className="hidden max-w-0 overflow-hidden whitespace-nowrap opacity-0 transition-all duration-300 group-hover/item:max-w-xs group-hover/item:opacity-100 md:inline">
+                    <span className="hidden max-w-0 overflow-hidden whitespace-nowrap opacity-0 transition-[max-width,opacity] duration-300 group-hover/item:max-w-xs group-hover/item:opacity-100 md:inline">
                       · Tier {tier.label}
                     </span>
                   </div>
@@ -245,7 +245,7 @@ export function VendedoresRanking({ vendedores, variacoesPorNome }: Props) {
                 <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-muted/60">
                   <div
                     className={cn(
-                      'h-full rounded-full transition-all duration-700 ease-out',
+                      'h-full rounded-full transition-[width,background-color] duration-700 ease-out',
                       it.posicao === 1
                         ? 'bg-amber-500'
                         : it.posicao === 2
