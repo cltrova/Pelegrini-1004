@@ -12,7 +12,6 @@ import { CheckCircle2, AlertTriangle, XCircle, TrendingUp, TrendingDown, Minus, 
 import { cn } from '@/lib/utils';
 import { EstoqueRecord, GiroRecord, GiroFiltersState, GiroProductSummary, GiroStatus } from '@/types/estoque';
 import { analyzeSalesTrends, TrendDirection } from '@/utils/salesTrendAnalysis';
-import { stockProductIdentity } from '@/utils/stockIdentity';
 import { EstoqueTrendAlerts } from './EstoqueTrendAlerts';
 import { GiroManagementPanel } from './estoque/GiroManagementPanel';
 import {
@@ -20,7 +19,7 @@ import {
   GIRO_RECOMMENDED_ACTIONS,
   GIRO_STATUS_RULES,
 } from './estoque/giroIntelligence';
-import { normalizeGiroProducts } from './estoque/normalizeGiroProducts';
+import { giroProductKey, normalizeGiroProducts } from './estoque/normalizeGiroProducts';
 
 interface Props {
   giroData: GiroRecord[];
@@ -115,9 +114,11 @@ export function GiroEstoqueTab({ giroData, estoqueData, filters, onStatusFilterC
   const [analysisOpen, setAnalysisOpen] = useState(false);
   const [referenceNow] = useState(() => new Date());
   const productIdentity = useCallback((record: EstoqueRecord | GiroRecord | GiroProductSummary) => {
-    const recordCompanyCode = String(record.cod_empresa_bi ?? '').trim();
-    if (recordCompanyCode && recordCompanyCode !== '0') return stockProductIdentity(record);
-    return stockProductIdentity({ ...record, cod_empresa_bi: activeCompanyCode });
+    return giroProductKey(
+      record.cod_empresa_bi || activeCompanyCode,
+      record.cod_empresa,
+      record.cod_produto,
+    );
   }, [activeCompanyCode]);
   const movementIdentity = productIdentity;
 

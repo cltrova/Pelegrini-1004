@@ -208,6 +208,58 @@ describe('GiroEstoqueTab', () => {
     expect(within(productRows[0]).getByText('7')).toBeInTheDocument();
   });
 
+  it('mantem tabela e tendencias no mesmo conjunto de movimentos aceitos', () => {
+    const stock = {
+      ...estoqueFixtureComTresItens[0],
+      cod_empresa_bi: 1004,
+      cod_empresa: 1,
+      cod_produto: 606,
+      produto: 'ITEM COM ISOLAMENTO EXATO',
+    };
+    const movement = (
+      date: string,
+      sales: number,
+      overrides: Partial<GiroRecord> = {},
+    ): GiroRecord => ({
+      ...giroFixture[0],
+      cod_empresa_bi: 1004,
+      cod_empresa: 1,
+      cod_produto: 606,
+      produto: stock.produto,
+      data_movimento: date,
+      saida_venda: sales,
+      quantidade_movimentada: sales,
+      tipo_movimento: 'Venda',
+      ...overrides,
+    });
+    const movements = [
+      movement('2026-06-01', 10),
+      movement('2026-07-01', 20),
+      movement('2026-08-01', 31),
+      movement('2026-06-01', 300, { cod_empresa_bi: 0, cod_empresa: 77 }),
+      movement('2026-07-01', 200, { cod_empresa_bi: 0, cod_empresa: 77 }),
+      movement('2026-08-01', 10, { cod_empresa_bi: 0, cod_empresa: 77 }),
+      movement('2026-08-01', 900, { cod_empresa_bi: 10041 }),
+    ];
+
+    render(
+      <GiroEstoqueTab
+        activeCompanyCode={1004}
+        estoqueData={[stock]}
+        filters={{ ...filters, statusFilter: [] }}
+        giroData={movements}
+        onStatusFilterChange={vi.fn()}
+      />,
+    );
+
+    const row = screen.getAllByRole('row').find(candidate => within(candidate).queryByText(stock.produto))!;
+    expect(within(row).getByText('61')).toBeInTheDocument();
+    expect(within(row).getByLabelText(/Tendencia de crescimento/i)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /Abrir analise de giro/i }));
+    expect(screen.getByText(/Movimentacao filtrada: 61 vendas/i)).toBeInTheDocument();
+  });
+
   it('exibe data de venda ausente como desconhecida', () => {
     const stock = { ...estoqueFixtureComTresItens[0], cod_produto: 818, produto: 'SEM DATA', data_ultima_venda: null };
     render(<GiroEstoqueTab estoqueData={[stock]} filters={{ ...filters, statusFilter: [] }} giroData={[]} onStatusFilterChange={vi.fn()} />);
