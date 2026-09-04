@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Package, TrendingUp, AlertTriangle, Tag, Search, Sparkles } from 'lucide-react';
+import { Package, TrendingUp, AlertTriangle, Tag, Search, type LucideIcon } from 'lucide-react';
 import { formatCurrency, formatNumber } from '@/utils/formatters';
 import type { TopProdutoAgg, CategoriaAgg, ProdutoSemGiro } from '@/types/comercialProdutos';
 import { cn } from '@/lib/utils';
@@ -19,13 +19,11 @@ export function ProdutosSectionPremium({ topProdutos, porCategoria, produtosSemG
   const [tab, setTab] = useState<TabKey>('top');
   const [search, setSearch] = useState('');
 
-  const tabs: { key: TabKey; label: string; icon: any; count?: number; color: string }[] = [
+  const tabs: { key: TabKey; label: string; icon: LucideIcon; count?: number; color: string }[] = [
     { key: 'top', label: 'Top Produtos', icon: TrendingUp, count: topProdutos.length, color: 'hsl(217 91% 60%)' },
     { key: 'categoria', label: 'Por Categoria', icon: Tag, count: porCategoria.length, color: 'hsl(280 65% 60%)' },
     { key: 'sem-giro', label: 'Sem Giro', icon: AlertTriangle, count: produtosSemGiro.length, color: 'hsl(0 72% 51%)' },
   ];
-
-  const activeColor = tabs.find(t => t.key === tab)?.color || 'hsl(var(--primary))';
 
   const filteredTop = useMemo(() => {
     const s = search.trim().toLowerCase();
@@ -55,49 +53,29 @@ export function ProdutosSectionPremium({ topProdutos, porCategoria, produtosSemG
 
   return (
     <Card className="premium-card border-border/60 overflow-hidden stagger-4">
-      {/* HERO HEADER */}
-      <div
-        className="relative overflow-hidden p-5 border-b border-border/40"
-        style={{
-          background: `linear-gradient(135deg, ${activeColor}18 0%, transparent 50%, ${activeColor}10 100%)`,
-        }}
-      >
-        <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full blur-3xl opacity-30 transition-all duration-500"
-          style={{ background: activeColor }} />
+      <div className="relative overflow-hidden p-5 border-b border-border/40 bg-card">
         <div className="relative flex items-center justify-between flex-wrap gap-3">
           <div className="flex items-center gap-3">
-            <div
-              className="h-11 w-11 rounded-xl flex items-center justify-center shadow-lg ring-1"
-              style={{
-                background: `linear-gradient(135deg, ${activeColor}40, ${activeColor}15)`,
-                color: activeColor,
-                boxShadow: `0 0 20px ${activeColor}30`,
-              }}
-            >
+            <div className="h-11 w-11 rounded-lg flex items-center justify-center border border-primary/20 bg-primary/10 text-primary">
               <Package className="h-5 w-5" />
             </div>
             <div>
-              <h3 className="text-base font-bold flex items-center gap-2">
-                Análise de Produtos
-                <Sparkles className="h-3.5 w-3.5 text-primary animate-pulse" />
-              </h3>
+              <h3 className="text-base font-bold">Análise de Produtos</h3>
               <p className="text-xs text-muted-foreground">Drill-down por categoria, marca e giro</p>
             </div>
           </div>
 
-          {/* Search */}
           <div className="relative w-full md:w-64">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Buscar produto, código, marca…"
-              className="w-full h-9 pl-8 pr-3 text-xs rounded-lg bg-card/60 backdrop-blur-md border border-border/60 focus:outline-none focus:ring-2 focus:ring-primary/40 transition"
+              className="w-full h-9 pl-8 pr-3 text-xs rounded-lg bg-background border border-border/60 focus:outline-none focus:ring-2 focus:ring-primary/40 transition"
             />
           </div>
         </div>
 
-        {/* Custom premium tabs */}
         <div className="flex gap-2 mt-4 flex-wrap">
           {tabs.map(t => {
             const Icon = t.icon;
@@ -107,21 +85,11 @@ export function ProdutosSectionPremium({ topProdutos, porCategoria, produtosSemG
                 key={t.key}
                 onClick={() => setTab(t.key)}
                 className={cn(
-                  'group relative inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all duration-300',
-                  'border backdrop-blur-md',
+                  'group relative inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-colors duration-200 border',
                   isActive
-                    ? 'text-foreground shadow-lg scale-[1.02]'
-                    : 'border-border/40 bg-card/30 text-muted-foreground hover:text-foreground hover:scale-[1.02]'
+                    ? 'border-primary/40 bg-primary/10 text-foreground'
+                    : 'border-border/40 bg-background text-muted-foreground hover:text-foreground hover:bg-muted/40'
                 )}
-                style={
-                  isActive
-                    ? {
-                        borderColor: `${t.color}50`,
-                        background: `linear-gradient(135deg, ${t.color}25, ${t.color}10)`,
-                        boxShadow: `0 0 18px ${t.color}30, inset 0 1px 0 ${t.color}30`,
-                      }
-                    : undefined
-                }
               >
                 <Icon className="h-3.5 w-3.5" style={isActive ? { color: t.color } : undefined} />
                 {t.label}
@@ -148,9 +116,9 @@ export function ProdutosSectionPremium({ topProdutos, porCategoria, produtosSemG
           filteredTop.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-12">Nenhum produto encontrado.</p>
           ) : (
-            <div className="overflow-y-auto max-h-[520px] rounded-lg border border-border/40 bg-card/30 backdrop-blur-md">
+            <div className="overflow-y-auto max-h-[520px] rounded-lg border border-border/60 bg-card">
               <table className="w-full text-sm">
-                <thead className="sticky top-0 z-10 bg-muted/70 backdrop-blur">
+                <thead className="sticky top-0 z-10 bg-muted">
                   <tr className="text-left text-[10px] uppercase tracking-wider text-muted-foreground">
                     <th className="px-3 py-2.5 font-semibold w-10">#</th>
                     <th className="px-3 py-2.5 font-semibold">Produto</th>
@@ -193,10 +161,9 @@ export function ProdutosSectionPremium({ topProdutos, porCategoria, produtosSemG
                           <div className="flex items-center justify-end gap-2">
                             <div className="w-16 h-1.5 rounded-full bg-muted/40 overflow-hidden">
                               <div
-                                className="h-full rounded-full transition-all duration-500"
+                                className="h-full rounded-full bg-primary transition-all duration-500"
                                 style={{
                                   width: `${Math.min(100, p.participacao * 4)}%`,
-                                  background: 'linear-gradient(90deg, hsl(var(--primary)), hsl(217 91% 70%))',
                                 }}
                               />
                             </div>
@@ -226,13 +193,9 @@ export function ProdutosSectionPremium({ topProdutos, porCategoria, produtosSemG
                 return (
                   <div
                     key={c.chave}
-                    className="group relative overflow-hidden p-3.5 rounded-xl border border-border/50 bg-card/40 backdrop-blur-md hover:scale-[1.02] hover:shadow-xl transition-all duration-300 cursor-default"
-                    style={{ boxShadow: `inset 3px 0 0 ${color}, 0 4px 12px -8px ${color}30` }}
+                    className="group relative overflow-hidden p-3.5 rounded-lg border border-border/60 bg-card transition-colors duration-200 cursor-default hover:border-primary/30"
+                    style={{ borderLeftColor: color, borderLeftWidth: 3 }}
                   >
-                    <div
-                      className="absolute -top-8 -right-8 w-24 h-24 rounded-full blur-2xl opacity-0 group-hover:opacity-40 transition-opacity duration-500"
-                      style={{ background: color }}
-                    />
                     <div className="relative">
                       <div className="flex items-center justify-between mb-2">
                         <span className="font-semibold text-sm truncate" style={{ color }}>{c.chave}</span>
@@ -247,8 +210,7 @@ export function ProdutosSectionPremium({ topProdutos, porCategoria, produtosSemG
                           className="h-full rounded-full transition-all duration-700"
                           style={{
                             width: `${Math.min(100, c.participacao)}%`,
-                            background: `linear-gradient(90deg, ${color}aa, ${color})`,
-                            boxShadow: `0 0 8px ${color}60`,
+                            background: color,
                           }}
                         />
                       </div>
@@ -267,9 +229,9 @@ export function ProdutosSectionPremium({ topProdutos, porCategoria, produtosSemG
               Todos os produtos tiveram movimento no período. 🎯
             </p>
           ) : (
-            <div className="overflow-y-auto max-h-[520px] rounded-lg border border-border/40 bg-card/30 backdrop-blur-md">
+            <div className="overflow-y-auto max-h-[520px] rounded-lg border border-border/60 bg-card">
               <table className="w-full text-sm">
-                <thead className="sticky top-0 z-10 bg-muted/70 backdrop-blur">
+                <thead className="sticky top-0 z-10 bg-muted">
                   <tr className="text-left text-[10px] uppercase tracking-wider text-muted-foreground">
                     <th className="px-3 py-2.5 font-semibold">Produto</th>
                     <th className="px-3 py-2.5 font-semibold">Marca / Categoria</th>
