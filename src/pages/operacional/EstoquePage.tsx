@@ -86,6 +86,8 @@ export default function EstoquePage() {
   const movementAvailable = !movementUnavailable && (
     sourceStatus?.giro === undefined || sourceStatus.giro === 'ready' || (sourceStatus.giro === 'fetching' && giroData.length > 0)
   );
+  const detailedStockLoading = activeTab === 'central' && viewMode === 'detalhado'
+    && sourceStatus?.detalhado === 'loading' && detalhadoData.length === 0;
   const movementLoading = activeTab !== 'central' && sourceStatus?.giro === 'loading' && giroData.length === 0;
   const partialStock = Boolean(partialSources?.[viewMode]);
   const recoveredStock = Boolean(recoveredSources?.[viewMode]);
@@ -239,7 +241,11 @@ export default function EstoquePage() {
           </Button>
         </EstoqueWorkspaceHeader>
 
-        {movementLoading ? (
+        {detailedStockLoading ? (
+          <EstoqueDataViewport className="p-4" role="status" aria-label="Carregando dados detalhados do estoque">
+            <LoadingState />
+          </EstoqueDataViewport>
+        ) : movementLoading ? (
           <EstoqueDataViewport className="p-4" role="status" aria-label="Carregando movimentacoes do estoque">
             <LoadingState />
           </EstoqueDataViewport>

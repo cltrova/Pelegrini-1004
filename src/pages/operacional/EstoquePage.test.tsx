@@ -387,6 +387,21 @@ describe('EstoquePage', () => {
     expect(screen.getByRole('button', { name: 'Detalhado' })).toHaveAttribute('aria-pressed', 'true');
   });
 
+  it('mostra carregamento ao alternar para a fonte detalhada sem apresentar estoque vazio', () => {
+    testState.hookResult = createHookResult({
+      detalhadoData: [],
+      sourceStatus: { consolidado: 'ready', detalhado: 'loading', giro: 'ready' },
+    });
+
+    renderEstoquePage();
+    fireEvent.click(screen.getByRole('button', { name: 'Detalhado' }));
+
+    expect(screen.getByRole('status', { name: 'Carregando dados detalhados do estoque' })).toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: 'Resumo do estoque' })).not.toBeInTheDocument();
+    expect(screen.queryByText(/^0 produtos$/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Nenhum produto disponivel/i)).not.toBeInTheDocument();
+  });
+
   it('mantem busca de Giro pendente ate a aplicacao explicita', () => {
     renderEstoquePage();
     fireEvent.click(screen.getByRole('tab', { name: 'Giro de Estoque' }));
