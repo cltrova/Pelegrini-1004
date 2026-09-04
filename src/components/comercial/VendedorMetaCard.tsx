@@ -36,8 +36,7 @@ export function VendedorMetaCard({
 
   return (
     <Card className={cn(
-      'relative overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-1',
-      'bg-gradient-to-br from-card to-card/80',
+      'relative overflow-hidden bg-card transition-colors duration-300 hover:border-primary/30',
       className
     )}>
       <CardContent className="p-6 flex flex-col items-center">
@@ -60,24 +59,18 @@ export function VendedorMetaCard({
               cy="70"
               r={radius}
               fill="none"
-              stroke="url(#progressGradient)"
               strokeWidth="10"
               strokeLinecap="round"
               strokeDasharray={circumference}
               strokeDashoffset={strokeDashoffset}
-              className="transition-all duration-1000 ease-out"
+              stroke="hsl(var(--primary))"
+              className="transition-[stroke-dashoffset] duration-1000 ease-out"
             />
-            <defs>
-              <linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stopColor="hsl(var(--primary))" />
-                <stop offset="100%" stopColor="hsl(var(--chart-2))" />
-              </linearGradient>
-            </defs>
           </svg>
           
           {/* Foto do vendedor no centro */}
           <div className="absolute inset-0 flex items-center justify-center">
-            <div className="w-24 h-24 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 border-4 border-background shadow-lg flex items-center justify-center overflow-hidden">
+            <div className="w-24 h-24 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center overflow-hidden">
               {foto ? (
                 <img src={foto} alt={nome} className="w-full h-full object-cover" />
               ) : (
@@ -87,7 +80,7 @@ export function VendedorMetaCard({
           </div>
           
           {/* Percentual sobre o círculo */}
-          <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-background px-3 py-1 rounded-full shadow-md border">
+          <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-background px-3 py-1 rounded-md border">
             <span className="text-lg font-bold text-primary mono-value">
               {formatPercent(percentualMeta)}
             </span>

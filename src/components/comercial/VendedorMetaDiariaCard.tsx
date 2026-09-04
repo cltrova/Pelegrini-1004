@@ -180,7 +180,7 @@ export function VendedorMetaDiariaCard({ vendedor, className, compact1004 = fals
             </div>
             <div className="h-2.5 overflow-hidden rounded-full bg-background/70">
               <div
-                className={cn('h-full rounded-full transition-all duration-700', barClass)}
+                className={cn('h-full rounded-full transition-[width] duration-700', barClass)}
                 style={{ width: `${pct}%` }}
               />
             </div>
