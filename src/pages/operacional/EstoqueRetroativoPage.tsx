@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Loader2, Search, FileSpreadsheet, CalendarDays, Package, Boxes, Building2, CircleDollarSign } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { useEmpresaAtiva } from '@/hooks/useEmpresaAtiva';
@@ -10,6 +10,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { ErrorState } from '@/components/common/ErrorState';
+import { LoadingState } from '@/components/common/LoadingState';
 import {
   EstoqueDataViewport,
   EstoqueToolbar,
@@ -38,6 +40,7 @@ import { toast } from 'sonner';
 
 interface EstoqueItem {
   CodEmpresa_bi?: string | number;
+  cod_empresa_bi?: string | number;
   empresa_codigo?: string | number;
   empresa_estoque?: string;
   empresa_nome?: string;
@@ -81,6 +84,9 @@ const getFilialLabel = (r: EstoqueItem): string => {
   return codigo ? `${codigo} - ${nome}` : nome;
 };
 
+const getCodEmpresaBi = (row: EstoqueItem): string =>
+  String(row.cod_empresa_bi ?? row.CodEmpresa_bi ?? '').trim();
+
 export default function EstoqueRetroativoPage() {
   const { empresa } = useEmpresaAtiva();
   const { filialAtiva } = useFilialSelecionada();
@@ -88,11 +94,33 @@ export default function EstoqueRetroativoPage() {
 
   const [dataEstoque, setDataEstoque] = useState('');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [rows, setRows] = useState<EstoqueItem[]>([]);
   const [filialFiltro, setFilialFiltro] = useState<string>('__all__');
   const [busca, setBusca] = useState('');
   const [ultimaData, setUltimaData] = useState('');
   const [valorExcel, setValorExcel] = useState<ValorExcel>('venda');
+  const requestControllerRef = useRef<AbortController | null>(null);
+  const requestGenerationRef = useRef(0);
+
+  useEffect(() => {
+    requestGenerationRef.current += 1;
+    requestControllerRef.current?.abort();
+    requestControllerRef.current = null;
+    setDataEstoque('');
+    setLoading(false);
+    setError(null);
+    setRows([]);
+    setFilialFiltro('__all__');
+    setBusca('');
+    setUltimaData('');
+    setValorExcel('venda');
+  }, [codEmpresaBi, filialAtiva]);
+
+  useEffect(() => () => {
+    requestGenerationRef.current += 1;
+    requestControllerRef.current?.abort();
+  }, []);
 
   const filiaisDisponiveis = useMemo(() => {
     const map = new Map<string, string>();
@@ -136,16 +164,25 @@ export default function EstoqueRetroativoPage() {
       toast.error('Empresa ativa sem código BI configurado');
       return;
     }
+    requestControllerRef.current?.abort();
+    const controller = new AbortController();
+    const requestGeneration = requestGenerationRef.current + 1;
+    requestGenerationRef.current = requestGeneration;
+    requestControllerRef.current = controller;
     setLoading(true);
+    setError(null);
     setRows([]);
+    setUltimaData('');
     try {
       const url = buildApiProxyUrl(
         empresa,
         `/operacional/estoque/retroativo?data_estoque=${dataEstoque}&cod_empresa_bi=${codEmpresaBi}`
       );
       const { data: sessionData } = await supabase.auth.getSession();
+      if (controller.signal.aborted || requestGeneration !== requestGenerationRef.current) return;
       const token = sessionData?.session?.access_token;
       const resp = await fetch(url, {
+        signal: controller.signal,
         headers: {
           Authorization: `Bearer ${token}`,
           apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
@@ -158,11 +195,8 @@ export default function EstoqueRetroativoPage() {
         : typeof data === 'object' && data !== null && 'data' in data && Array.isArray(data.data)
         ? data.data as EstoqueItem[]
         : [];
-      // Segurança extra: nunca misturar CodEmpresa_bi diferentes do contexto ativo
-      const filteredByBi = list.filter((r) => {
-        const bi = String(r?.CodEmpresa_bi ?? '').trim();
-        return !bi || bi === String(codEmpresaBi);
-      });
+      if (controller.signal.aborted || requestGeneration !== requestGenerationRef.current) return;
+      const filteredByBi = list.filter((row) => getCodEmpresaBi(row) === String(codEmpresaBi));
       const filteredByContext = filtrarEstoqueCasaChevrolet10041(
         filteredByBi as unknown as Array<Record<string, unknown>>,
         String(codEmpresaBi),
@@ -172,10 +206,16 @@ export default function EstoqueRetroativoPage() {
       setFilialFiltro('__all__');
       toast.success(`${filteredByContext.length} itens carregados`);
     } catch (e: unknown) {
+      if (controller.signal.aborted || requestGeneration !== requestGenerationRef.current) return;
       console.error('[EstoqueRetroativo] Erro ao consultar:', e);
-      toast.error(`Falha ao consultar: ${e instanceof Error ? e.message : 'erro'}`);
+      const message = e instanceof Error ? e.message : 'Erro desconhecido';
+      setError(message);
+      toast.error(`Falha ao consultar: ${message}`);
     } finally {
-      setLoading(false);
+      if (requestGeneration === requestGenerationRef.current) {
+        setLoading(false);
+        if (requestControllerRef.current === controller) requestControllerRef.current = null;
+      }
     }
   };
 
@@ -339,13 +379,34 @@ export default function EstoqueRetroativoPage() {
       {ultimaData && rows.length > 0 ? <EstoqueMetricStrip metrics={metrics} /> : null}
 
       <EstoqueDataViewport>
-        {!ultimaData ? (
+        {loading ? (
+          <div className="min-h-0 flex-1 p-3" role="status">
+            <LoadingState
+              className="h-full rounded-md border-border/70 shadow-none"
+              message="Consultando estoque retroativo..."
+              size="sm"
+            />
+          </div>
+        ) : error ? (
+          <div className="min-h-0 flex-1 p-3" role="alert">
+            <ErrorState
+              className="h-full rounded-md border-border/70 shadow-none"
+              message={error}
+              onRetry={consultar}
+              title="Estoque retroativo indisponível"
+            />
+          </div>
+        ) : !ultimaData ? (
           <div className="flex min-h-0 flex-1 items-center justify-center px-4 text-center text-sm text-muted-foreground">
             Selecione uma data para consultar a posição do estoque.
           </div>
         ) : rows.length === 0 ? (
           <div className="flex min-h-0 flex-1 items-center justify-center px-4 text-center text-sm text-muted-foreground">
             Nenhum item encontrado para a data consultada.
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="flex min-h-0 flex-1 items-center justify-center px-4 text-center text-sm text-muted-foreground">
+            Nenhum produto corresponde aos filtros.
           </div>
         ) : (
           <>
