@@ -156,7 +156,7 @@ export function PremiumTopProdutos({
       } else {
         throw new Error('Resposta vazia');
       }
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error('produtos-insights error', e);
       setAiInsights(buildFallbackInsights());
       setAiUsedFallback(true);
@@ -246,8 +246,8 @@ export function PremiumTopProdutos({
       {/* Insights estratégicos da IA — substitui totalizadores repetidos */}
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
-          <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-md shadow-primary/30">
-            <Sparkles className="h-4 w-4 text-primary-foreground" />
+          <div className="h-8 w-8 rounded-lg bg-primary/10 border border-primary/30 flex items-center justify-center">
+            <Sparkles className="h-4 w-4 text-primary" />
           </div>
           <div>
             <h3 className="text-sm font-bold leading-tight">Insights da IA</h3>
@@ -293,13 +293,12 @@ export function PremiumTopProdutos({
 
 
       {/* Card principal premium */}
-      <Card className="border-border/60 overflow-hidden shadow-lg shadow-primary/5">
-        {/* Header com gradiente sutil */}
-        <div className="relative p-5 border-b border-border/50 bg-gradient-to-br from-primary/5 via-transparent to-accent/5">
+      <Card className="border-border/60 overflow-hidden bg-card">
+        <div className="relative p-5 border-b border-border/50 bg-card">
           <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:justify-between">
             <div className="flex items-center gap-3">
-              <div className="h-11 w-11 rounded-xl bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center shadow-lg shadow-primary/30">
-                <Trophy className="h-5 w-5 text-primary-foreground" />
+              <div className="h-11 w-11 rounded-lg bg-primary/10 border border-primary/30 flex items-center justify-center">
+                <Trophy className="h-5 w-5 text-primary" />
               </div>
               <div>
                 <h3 className="font-bold text-lg leading-tight">Ranking de Produtos</h3>
@@ -316,7 +315,7 @@ export function PremiumTopProdutos({
                   placeholder="Buscar produto, código ou marca..."
                   value={busca}
                   onChange={e => { setBusca(e.target.value); setMostrar(PAGE_SIZE); }}
-                  className="pl-9 h-9 text-sm bg-background/60 backdrop-blur"
+                  className="pl-9 h-9 text-sm bg-background"
                 />
               </div>
               {selectedMarca && (
@@ -363,9 +362,8 @@ export function PremiumTopProdutos({
                   <div
                     key={String(p.cod_produto) + i}
                     className={cn(
-                      "group px-5 py-3.5 transition-all relative",
-                      "hover:bg-gradient-to-r hover:from-primary/5 hover:via-transparent hover:to-transparent",
-                      isTop3 && "bg-gradient-to-r from-amber-500/5 via-transparent to-transparent",
+                      "group px-5 py-3.5 transition-colors relative hover:bg-muted/30",
+                      isTop3 && "bg-muted/20",
                     )}
                   >
                     {/* Layout desktop: grid */}
@@ -373,10 +371,10 @@ export function PremiumTopProdutos({
                       {/* Rank com ícone para top 3 */}
                       <div className="flex items-center justify-center">
                         <div className={cn(
-                          "h-9 w-9 rounded-lg flex items-center justify-center text-sm font-bold tabular-nums shadow-sm transition-transform group-hover:scale-110",
-                          rank === 1 && "bg-gradient-to-br from-amber-400 to-amber-600 text-white shadow-amber-500/40",
-                          rank === 2 && "bg-gradient-to-br from-slate-300 to-slate-500 text-white shadow-slate-400/40",
-                          rank === 3 && "bg-gradient-to-br from-orange-400 to-orange-700 text-white shadow-orange-500/40",
+                          "h-9 w-9 rounded-lg flex items-center justify-center text-sm font-bold tabular-nums border border-border/60",
+                          rank === 1 && "bg-amber-500/10 text-amber-600 border-amber-500/35",
+                          rank === 2 && "bg-slate-500/10 text-slate-500 border-slate-500/30",
+                          rank === 3 && "bg-orange-500/10 text-orange-600 border-orange-500/35",
                           !isTop3 && "bg-muted/70 text-muted-foreground border border-border/60",
                         )}>
                           {rankIcon || rank}
@@ -404,7 +402,7 @@ export function PremiumTopProdutos({
                             <button
                               onClick={(e) => { e.stopPropagation(); onSelectMarca(selectedMarca === p.marca ? null : p.marca!); }}
                               className={cn(
-                                "text-[11px] px-1.5 py-0.5 rounded-md border transition-all",
+                                "text-[11px] px-1.5 py-0.5 rounded-md border transition-colors",
                                 selectedMarca === p.marca
                                   ? "bg-primary/15 border-primary/40 text-primary font-semibold"
                                   : "bg-muted/40 border-border/60 text-muted-foreground hover:border-primary/40 hover:text-primary"
@@ -427,10 +425,10 @@ export function PremiumTopProdutos({
                         <div className="h-1.5 mt-1.5 rounded-full bg-muted/60 overflow-hidden">
                           <div
                             className={cn(
-                              "h-full rounded-full transition-all duration-700",
+                              "h-full rounded-full transition-[width] duration-700",
                               isTop3
-                                ? "bg-gradient-to-r from-amber-400 to-amber-600"
-                                : "bg-gradient-to-r from-primary to-primary/70"
+                                ? "bg-amber-500"
+                                : "bg-primary"
                             )}
                             style={{ width: `${barPct}%` }}
                           />
@@ -454,10 +452,10 @@ export function PremiumTopProdutos({
                     {/* Layout mobile */}
                     <div className="md:hidden flex items-start gap-3">
                       <div className={cn(
-                        "h-9 w-9 rounded-lg flex items-center justify-center text-sm font-bold shrink-0 shadow-sm",
-                        rank === 1 && "bg-gradient-to-br from-amber-400 to-amber-600 text-white",
-                        rank === 2 && "bg-gradient-to-br from-slate-300 to-slate-500 text-white",
-                        rank === 3 && "bg-gradient-to-br from-orange-400 to-orange-700 text-white",
+                        "h-9 w-9 rounded-lg flex items-center justify-center text-sm font-bold shrink-0 border border-border/60",
+                        rank === 1 && "bg-amber-500/10 text-amber-600 border-amber-500/35",
+                        rank === 2 && "bg-slate-500/10 text-slate-500 border-slate-500/30",
+                        rank === 3 && "bg-orange-500/10 text-orange-600 border-orange-500/35",
                         !isTop3 && "bg-muted/70 text-muted-foreground border border-border/60",
                       )}>
                         {rankIcon || rank}
@@ -489,8 +487,8 @@ export function PremiumTopProdutos({
                         <div className="h-1.5 mt-1.5 rounded-full bg-muted/60 overflow-hidden">
                           <div
                             className={cn(
-                              "h-full bg-gradient-to-r",
-                              isTop3 ? "from-amber-400 to-amber-600" : "from-primary to-primary/70"
+                              "h-full transition-[width] duration-700",
+                              isTop3 ? "bg-amber-500" : "bg-primary"
                             )}
                             style={{ width: `${barPct}%` }}
                           />
@@ -534,8 +532,8 @@ export function PremiumTopProdutos({
             <>
               <SheetHeader className="pb-4 border-b border-border/50">
                 <div className="flex items-start gap-3">
-                  <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center shadow-lg shadow-primary/30 shrink-0">
-                    <Package className="h-6 w-6 text-primary-foreground" />
+                  <div className="h-12 w-12 rounded-lg bg-primary/10 border border-primary/30 flex items-center justify-center shrink-0">
+                    <Package className="h-6 w-6 text-primary" />
                   </div>
                   <div className="min-w-0 flex-1">
                     <SheetTitle className="text-left text-base leading-tight">{produtoDetalhe.descricao}</SheetTitle>
@@ -632,7 +630,7 @@ export function PremiumTopProdutos({
                               <span>{c.pedidos} {c.pedidos === 1 ? 'compra' : 'compras'}</span>
                             </div>
                             <div className="h-1 rounded-full bg-muted overflow-hidden">
-                              <div className="h-full bg-gradient-to-r from-primary to-primary/60" style={{ width: `${pct}%` }} />
+                              <div className="h-full bg-primary" style={{ width: `${pct}%` }} />
                             </div>
                           </div>
                         );
@@ -712,38 +710,17 @@ export function PremiumTopProdutos({
   );
 }
 
-function ResumoCard({
-  icon, label, value, gradient, iconBg,
-}: { icon: React.ReactNode; label: string; value: string; gradient: string; iconBg: string }) {
-  return (
-    <Card className={cn(
-      "border-border/60 overflow-hidden relative bg-gradient-to-br shadow-md",
-      gradient,
-    )}>
-      <CardContent className="p-4 flex items-center gap-3 relative z-10">
-        <div className={cn("h-11 w-11 rounded-xl flex items-center justify-center shrink-0 shadow-sm", iconBg)}>
-          {icon}
-        </div>
-        <div className="min-w-0">
-          <p className="text-[11px] uppercase font-semibold text-muted-foreground tracking-wide">{label}</p>
-          <p className="text-lg font-bold tabular-nums truncate">{value}</p>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
 function DetalheKPI({
   label, value, color,
 }: { label: string; value: string; color: 'primary' | 'success' | 'accent' | 'warning' | 'destructive' }) {
   return (
     <div className={cn(
-      "p-2.5 rounded-lg border bg-gradient-to-br",
-      color === 'primary' && "border-primary/30 from-primary/10 to-transparent",
-      color === 'success' && "border-success/30 from-success/10 to-transparent",
-      color === 'accent' && "border-accent/30 from-accent/10 to-transparent",
-      color === 'warning' && "border-warning/30 from-warning/10 to-transparent",
-      color === 'destructive' && "border-destructive/30 from-destructive/10 to-transparent",
+      "p-2.5 rounded-lg border bg-card",
+      color === 'primary' && "border-primary/30",
+      color === 'success' && "border-success/30",
+      color === 'accent' && "border-accent/30",
+      color === 'warning' && "border-warning/30",
+      color === 'destructive' && "border-destructive/30",
     )}>
       <div className="text-[10px] uppercase font-semibold text-muted-foreground tracking-wide">{label}</div>
       <div className={cn(
@@ -775,16 +752,6 @@ function Sparkline({ data }: { data: number[] }) {
 
   return (
     <svg viewBox={`0 0 ${w} ${h}`} className="w-full h-10" preserveAspectRatio="none">
-      <defs>
-        <linearGradient id="spark-grad" x1="0" x2="0" y1="0" y2="1">
-          <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity="0.4" />
-          <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity="0" />
-        </linearGradient>
-      </defs>
-      <polygon
-        points={`0,${h} ${points} ${w},${h}`}
-        fill="url(#spark-grad)"
-      />
       <polyline
         points={points}
         fill="none"
@@ -806,18 +773,18 @@ function formatMes(ym: string) {
 
 function InsightCard({ insight }: { insight: AIInsight }) {
   const cfg = {
-    oportunidade: { icon: Lightbulb, grad: 'from-primary/20 via-primary/10 to-transparent', iconBg: 'bg-primary/15 text-primary', border: 'border-primary/30', label: 'Oportunidade' },
-    destaque:     { icon: Trophy,    grad: 'from-success/20 via-success/10 to-transparent', iconBg: 'bg-success/15 text-success', border: 'border-success/30', label: 'Destaque' },
-    alerta:       { icon: AlertTriangle, grad: 'from-warning/20 via-warning/10 to-transparent', iconBg: 'bg-warning/15 text-warning', border: 'border-warning/30', label: 'Alerta' },
-    risco:        { icon: Target,    grad: 'from-destructive/20 via-destructive/10 to-transparent', iconBg: 'bg-destructive/15 text-destructive', border: 'border-destructive/30', label: 'Risco' },
-  }[insight.type] ?? { icon: Sparkles, grad: 'from-accent/20 via-accent/10 to-transparent', iconBg: 'bg-accent/15 text-accent-foreground', border: 'border-accent/30', label: 'Insight' };
+    oportunidade: { icon: Lightbulb, iconBg: 'bg-primary/10 text-primary border-primary/30', border: 'border-primary/30', label: 'Oportunidade' },
+    destaque:     { icon: Trophy,    iconBg: 'bg-success/10 text-success border-success/30', border: 'border-success/30', label: 'Destaque' },
+    alerta:       { icon: AlertTriangle, iconBg: 'bg-warning/10 text-warning border-warning/30', border: 'border-warning/30', label: 'Alerta' },
+    risco:        { icon: Target,    iconBg: 'bg-destructive/10 text-destructive border-destructive/30', border: 'border-destructive/30', label: 'Risco' },
+  }[insight.type] ?? { icon: Sparkles, iconBg: 'bg-accent/10 text-accent-foreground border-accent/30', border: 'border-accent/30', label: 'Insight' };
   const Icon = cfg.icon;
   return (
-    <Card className={cn('overflow-hidden relative bg-gradient-to-br shadow-md hover:shadow-lg transition-shadow', cfg.grad, cfg.border)}>
+    <Card className={cn('overflow-hidden relative bg-card transition-colors hover:bg-muted/30', cfg.border)}>
       <CardContent className="p-4 relative z-10 flex flex-col gap-2 h-full">
         <div className="flex items-start justify-between gap-2">
           <div className="flex items-center gap-2 min-w-0">
-            <div className={cn('h-9 w-9 rounded-lg flex items-center justify-center shrink-0 shadow-sm', cfg.iconBg)}>
+            <div className={cn('h-9 w-9 rounded-lg border flex items-center justify-center shrink-0', cfg.iconBg)}>
               <Icon className="h-4 w-4" />
             </div>
             <div className="min-w-0">
