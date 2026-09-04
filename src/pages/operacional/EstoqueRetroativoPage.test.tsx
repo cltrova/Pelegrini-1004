@@ -42,8 +42,34 @@ describe('EstoqueRetroativoPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Consultar' }));
 
     await waitFor(() => expect(screen.getByText('1 produto')).toBeInTheDocument());
-    expect(within(screen.getByRole('region', { name: 'Resumo da consulta' })).getByText('3,00')).toBeInTheDocument();
+    expect(within(screen.getByRole('region', { name: 'Indicadores de estoque' })).getByText('3,00')).toBeInTheDocument();
     expect(screen.getAllByText('KIT EMBREAGEM').length).toBeGreaterThan(0);
     expect(screen.getByRole('searchbox', { name: 'Buscar nos resultados' })).toBeInTheDocument();
+  });
+
+  it('usa a mesa operacional compartilhada com comandos em uma unica barra', () => {
+    render(<EstoqueRetroativoPage />);
+
+    expect(screen.getByRole('region', { name: 'Mesa operacional de estoque' })).toBeInTheDocument();
+    const toolbar = screen.getByRole('toolbar', { name: 'Comandos do estoque retroativo' });
+    expect(within(toolbar).getByLabelText('Data do estoque')).toBeInTheDocument();
+    expect(within(toolbar).getByRole('button', { name: 'Consultar' })).toBeInTheDocument();
+    expect(within(toolbar).getByRole('searchbox', { name: 'Buscar nos resultados' })).toBeInTheDocument();
+    expect(within(toolbar).getByLabelText('Base de valor')).toBeInTheDocument();
+    expect(within(toolbar).getByRole('button', { name: 'Exportar' })).toBeInTheDocument();
+    expect(within(toolbar).getByRole('button', { name: 'Exportar' })).toBeEnabled();
+    expect(screen.queryByRole('heading', { name: 'Estoque Retroativo' })).not.toBeInTheDocument();
+  });
+
+  it('mantem resultados e tabela dentro de um unico viewport de dados', async () => {
+    render(<EstoqueRetroativoPage />);
+
+    fireEvent.change(screen.getByLabelText('Data do estoque'), { target: { value: '2026-08-31' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Consultar' }));
+
+    await waitFor(() => expect(screen.getByText('1 produto')).toBeInTheDocument());
+    const viewport = screen.getByRole('region', { name: 'Dados do estoque' });
+    expect(within(viewport).getByRole('table')).toBeInTheDocument();
+    expect(viewport.querySelector('.max-h-\\[65vh\\]')).not.toBeInTheDocument();
   });
 });

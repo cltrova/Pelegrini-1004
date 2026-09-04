@@ -10,7 +10,15 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card } from '@/components/ui/card';
+import {
+  EstoqueDataViewport,
+  EstoqueToolbar,
+  EstoqueWorkspace,
+} from '@/components/operacional/estoque/EstoqueWorkspace';
+import {
+  EstoqueMetricStrip,
+  type EstoqueMetric,
+} from '@/components/operacional/estoque/EstoqueMetricStrip';
 import {
   Select,
   SelectContent,
@@ -46,7 +54,7 @@ interface EstoqueItem {
 
 type ValorExcel = 'custo' | 'venda';
 
-const toNumber = (v: any): number => {
+const toNumber = (v: unknown): number => {
   if (v == null || v === '') return 0;
   const n = typeof v === 'number' ? v : parseFloat(String(v).replace(',', '.'));
   return isNaN(n) ? 0 : n;
@@ -55,19 +63,19 @@ const toNumber = (v: any): number => {
 const getValorUnitario = (row: EstoqueItem, tipo: ValorExcel): number =>
   toNumber(tipo === 'custo' ? row.valor_unitario : row.preco_venda_unitario);
 
-const pad7 = (v: any) => String(v ?? '').replace(/\D/g, '').padStart(7, '0').slice(-7);
+const pad7 = (v: unknown) => String(v ?? '').replace(/\D/g, '').padStart(7, '0').slice(-7);
 
-const getFilialKey = (r: any): string => {
+const getFilialKey = (r: EstoqueItem): string => {
   const ec = String(r?.empresa_codigo ?? '').trim();
   const ee = String(r?.empresa_estoque ?? '').trim();
   return `${ec}|${ee}`;
 };
 
-const getEmpresaNome = (r: any): string => {
+const getEmpresaNome = (r: EstoqueItem): string => {
   return String(r?.empresa_nome ?? '').trim() || getFilialKey(r);
 };
 
-const getFilialLabel = (r: any): string => {
+const getFilialLabel = (r: EstoqueItem): string => {
   const codigo = String(r?.empresa_codigo ?? '').trim();
   const nome = getEmpresaNome(r);
   return codigo ? `${codigo} - ${nome}` : nome;
@@ -76,7 +84,7 @@ const getFilialLabel = (r: any): string => {
 export default function EstoqueRetroativoPage() {
   const { empresa } = useEmpresaAtiva();
   const { filialAtiva } = useFilialSelecionada();
-  const codEmpresaBi = resolveCodEmpresaBiParam(empresa as any, filialAtiva);
+  const codEmpresaBi = resolveCodEmpresaBiParam(empresa, filialAtiva);
 
   const [dataEstoque, setDataEstoque] = useState('');
   const [loading, setLoading] = useState(false);
@@ -144,11 +152,11 @@ export default function EstoqueRetroativoPage() {
         },
       });
       if (!resp.ok) throw new Error(`Erro ${resp.status}`);
-      const data = await resp.json();
+      const data: unknown = await resp.json();
       const list: EstoqueItem[] = Array.isArray(data)
-        ? data
-        : Array.isArray((data as any)?.data)
-        ? (data as any).data
+        ? data as EstoqueItem[]
+        : typeof data === 'object' && data !== null && 'data' in data && Array.isArray(data.data)
+        ? data.data as EstoqueItem[]
         : [];
       // Segurança extra: nunca misturar CodEmpresa_bi diferentes do contexto ativo
       const filteredByBi = list.filter((r) => {
@@ -163,9 +171,9 @@ export default function EstoqueRetroativoPage() {
       setUltimaData(dataEstoque);
       setFilialFiltro('__all__');
       toast.success(`${filteredByContext.length} itens carregados`);
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error('[EstoqueRetroativo] Erro ao consultar:', e);
-      toast.error(`Falha ao consultar: ${e?.message ?? 'erro'}`);
+      toast.error(`Falha ao consultar: ${e instanceof Error ? e.message : 'erro'}`);
     } finally {
       setLoading(false);
     }
@@ -176,7 +184,7 @@ export default function EstoqueRetroativoPage() {
       toast.error('Sem dados para exportar');
       return;
     }
-    const aoa: any[][] = [
+    const aoa: Array<Array<string | number>> = [
       [
         'CODIGO',
         'DESCRICAO',
@@ -237,74 +245,114 @@ export default function EstoqueRetroativoPage() {
     return { quantidade, valor, filiais };
   }, [filtered, valorExcel]);
 
-  return (
-    <div className="mx-auto w-full min-w-0 max-w-[1600px] space-y-5 px-4 py-5 sm:px-6 lg:py-6">
-      <header className="ml-10 flex flex-col gap-1 sm:ml-0 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h1 className="text-xl font-semibold sm:text-2xl">Estoque Retroativo</h1>
-          <p className="text-sm text-muted-foreground">Consulte o saldo registrado em uma data específica.</p>
-        </div>
-        {codEmpresaBi ? <span className="text-xs text-muted-foreground">Empresa {codEmpresaBi}</span> : null}
-      </header>
+  const metrics = useMemo<EstoqueMetric[]>(() => [
+    {
+      key: 'products',
+      label: 'Produtos',
+      value: `${filtered.length} ${filtered.length === 1 ? 'produto' : 'produtos'}`,
+      description: 'Quantidade de produtos exibidos após os filtros da consulta retroativa.',
+      icon: Package,
+      tone: 'information',
+      interactive: false,
+    },
+    {
+      key: 'balance',
+      label: 'Saldo total',
+      value: resumo.quantidade.toLocaleString('pt-BR', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      }),
+      description: 'Soma das quantidades em estoque na data de referência.',
+      icon: Boxes,
+      tone: 'neutral',
+      interactive: false,
+    },
+    {
+      key: 'value',
+      label: valorExcel === 'venda' ? 'Valor de venda' : 'Valor de custo',
+      value: resumo.valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
+      description: valorExcel === 'venda'
+        ? 'Valor total estimado pelo preço de venda selecionado.'
+        : 'Valor total estimado pelo custo do fornecedor selecionado.',
+      icon: CircleDollarSign,
+      tone: 'attention',
+      interactive: false,
+    },
+    {
+      key: 'branches',
+      label: 'Filiais',
+      value: resumo.filiais.toLocaleString('pt-BR'),
+      description: 'Quantidade de filiais presentes nos resultados filtrados.',
+      icon: Building2,
+      tone: 'neutral',
+      interactive: false,
+    },
+  ], [filtered.length, resumo, valorExcel]);
 
-      <section aria-label="Consulta retroativa" className="flex flex-col gap-3 rounded-md border bg-card p-3 sm:flex-row sm:items-end">
-        <div className="w-full sm:w-auto">
-          <Label htmlFor="data_estoque" className="text-xs">Data do estoque</Label>
-          <div className="relative mt-1.5">
-            <CalendarDays className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input id="data_estoque" type="date" value={dataEstoque} onChange={event => setDataEstoque(event.target.value)} className="w-full pl-9 sm:w-48" />
-          </div>
+  return (
+    <EstoqueWorkspace className="bg-background">
+      <EstoqueToolbar aria-label="Comandos do estoque retroativo">
+        <div className="relative shrink-0">
+          <Label htmlFor="data_estoque" className="sr-only">Data do estoque</Label>
+          <CalendarDays className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            className="h-8 w-[10.5rem] pl-8"
+            id="data_estoque"
+            onChange={event => setDataEstoque(event.target.value)}
+            type="date"
+            value={dataEstoque}
+          />
         </div>
-        <Button onClick={consultar} disabled={loading || !dataEstoque} className="gap-2 sm:w-auto">
+        <Button className="h-8 shrink-0 gap-2 px-3" disabled={loading || !dataEstoque} onClick={consultar} size="sm">
           {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
           {loading ? 'Consultando' : 'Consultar'}
         </Button>
-      </section>
-
-      {!ultimaData ? (
-        <div className="flex min-h-32 items-center justify-center rounded-md border border-dashed px-4 text-center text-sm text-muted-foreground">
-          Selecione uma data para consultar a posição do estoque.
+        <span aria-hidden="true" className="h-5 w-px shrink-0 bg-border" />
+        <Select disabled={!ultimaData} value={filialFiltro} onValueChange={setFilialFiltro}>
+          <SelectTrigger aria-label="Filial" className="h-8 w-44 shrink-0"><SelectValue placeholder="Todas as filiais" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="__all__">Todas as filiais</SelectItem>
+            {filiaisDisponiveis.map(item => <SelectItem key={item.value} value={item.value}>{item.label}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <div className="relative min-w-[13rem] flex-1">
+          <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            aria-label="Buscar nos resultados"
+            className="h-8 pl-8"
+            disabled={!ultimaData}
+            onChange={event => setBusca(event.target.value)}
+            placeholder="Buscar código, descrição ou marca"
+            type="search"
+            value={busca}
+          />
         </div>
-      ) : rows.length === 0 ? (
-        <div className="flex min-h-32 items-center justify-center rounded-md border border-dashed px-4 text-center text-sm text-muted-foreground">
-          Nenhum item encontrado para a data consultada.
-        </div>
-      ) : (
-        <>
-          <section aria-label="Resumo da consulta" className="grid grid-cols-2 gap-2 lg:grid-cols-4">
-            {[
-              { icon: Package, label: 'Produtos', value: `${filtered.length} ${filtered.length === 1 ? 'produto' : 'produtos'}` },
-              { icon: Boxes, label: 'Saldo total', value: resumo.quantidade.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) },
-              { icon: CircleDollarSign, label: valorExcel === 'venda' ? 'Valor de venda' : 'Valor de custo', value: resumo.valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) },
-              { icon: Building2, label: 'Filiais', value: resumo.filiais.toLocaleString('pt-BR') },
-            ].map(item => (
-              <div key={item.label} className="flex min-h-20 items-center gap-3 rounded-md border bg-card p-3">
-                <item.icon className="h-4 w-4 shrink-0 text-primary" />
-                <div className="min-w-0"><p className="text-xs text-muted-foreground">{item.label}</p><p className="mt-1 truncate text-sm font-semibold tabular-nums sm:text-base">{item.value}</p></div>
-              </div>
-            ))}
-          </section>
+        <Select value={valorExcel} onValueChange={value => setValorExcel(value as ValorExcel)}>
+          <SelectTrigger aria-label="Base de valor" className="h-8 w-44 shrink-0"><SelectValue /></SelectTrigger>
+          <SelectContent><SelectItem value="venda">Preço de venda</SelectItem><SelectItem value="custo">Custo do fornecedor</SelectItem></SelectContent>
+        </Select>
+        <Button className="h-8 shrink-0 gap-2 px-3" onClick={gerarExcel} size="sm" variant="outline">
+          <FileSpreadsheet className="h-4 w-4" /> Exportar
+        </Button>
+      </EstoqueToolbar>
 
-          <section aria-label="Filtros dos resultados" className="grid gap-2 rounded-md border bg-card p-3 sm:grid-cols-2 xl:grid-cols-[220px_minmax(260px,1fr)_220px_auto]">
-            <Select value={filialFiltro} onValueChange={setFilialFiltro}>
-              <SelectTrigger aria-label="Filial"><SelectValue placeholder="Todas as filiais" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="__all__">Todas as filiais</SelectItem>
-                {filiaisDisponiveis.map(item => <SelectItem key={item.value} value={item.value}>{item.label}</SelectItem>)}
-              </SelectContent>
-            </Select>
-            <Input type="search" aria-label="Buscar nos resultados" placeholder="Buscar código, descrição ou marca" value={busca} onChange={event => setBusca(event.target.value)} />
-            <Select value={valorExcel} onValueChange={value => setValorExcel(value as ValorExcel)}>
-              <SelectTrigger aria-label="Base de valor"><SelectValue /></SelectTrigger>
-              <SelectContent><SelectItem value="venda">Preço de venda</SelectItem><SelectItem value="custo">Custo do fornecedor</SelectItem></SelectContent>
-            </Select>
-            <Button onClick={gerarExcel} variant="outline" className="gap-2"><FileSpreadsheet className="h-4 w-4" /> Exportar</Button>
-          </section>
+      {ultimaData && rows.length > 0 ? <EstoqueMetricStrip metrics={metrics} /> : null}
 
-          <Card className="overflow-hidden">
-            <div className="divide-y md:hidden">
+      <EstoqueDataViewport>
+        {!ultimaData ? (
+          <div className="flex min-h-0 flex-1 items-center justify-center px-4 text-center text-sm text-muted-foreground">
+            Selecione uma data para consultar a posição do estoque.
+          </div>
+        ) : rows.length === 0 ? (
+          <div className="flex min-h-0 flex-1 items-center justify-center px-4 text-center text-sm text-muted-foreground">
+            Nenhum item encontrado para a data consultada.
+          </div>
+        ) : (
+          <>
+            <div className="min-h-0 flex-1 overflow-auto">
+              <div className="divide-y md:hidden">
               {filtered.slice(0, 500).map((row, index) => (
-                <article key={`${getFilialKey(row)}-${row.cod_produto}-${index}`} className="space-y-3 p-4">
+                <article key={`${getFilialKey(row)}-${row.cod_produto}-${index}`} className="space-y-2 p-3">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0"><p className="truncate text-sm font-semibold">{row.descricao || 'Produto sem descrição'}</p><p className="mt-0.5 text-xs text-muted-foreground">{pad7(row.cod_produto)} · {row.marca || 'Sem marca'}</p></div>
                     <span className="shrink-0 text-sm font-semibold tabular-nums">{toNumber(row.saldo_estoque).toLocaleString('pt-BR', { maximumFractionDigits: 2 })}</span>
@@ -312,10 +360,10 @@ export default function EstoqueRetroativoPage() {
                   <div className="flex items-center justify-between gap-3 text-xs text-muted-foreground"><span className="truncate">{getFilialLabel(row)}</span><span className="whitespace-nowrap font-medium text-foreground tabular-nums">{getValorUnitario(row, valorExcel).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span></div>
                 </article>
               ))}
-            </div>
-            <div className="hidden max-h-[65vh] overflow-auto md:block">
+              </div>
+              <div className="hidden min-w-max md:block">
               <Table>
-                <TableHeader className="sticky top-0 bg-background z-10">
+                <TableHeader className="sticky top-0 z-10 bg-background">
                   <TableRow>
                     <TableHead>CÓDIGO</TableHead>
                     <TableHead>DESCRIÇÃO</TableHead>
@@ -354,11 +402,12 @@ export default function EstoqueRetroativoPage() {
                   ))}
                 </TableBody>
               </Table>
+              </div>
             </div>
-            {filtered.length > 500 ? <div className="border-t p-3 text-center text-xs text-muted-foreground">Exibindo os primeiros 500 registros. Refine os filtros ou exporte para consultar todos.</div> : null}
-          </Card>
-        </>
-      )}
-    </div>
+            {filtered.length > 500 ? <div className="shrink-0 border-t px-3 py-2 text-center text-xs text-muted-foreground">Exibindo os primeiros 500 registros. Refine os filtros ou exporte para consultar todos.</div> : null}
+          </>
+        )}
+      </EstoqueDataViewport>
+    </EstoqueWorkspace>
   );
 }
