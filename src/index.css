@@ -2046,6 +2046,10 @@
 }
 
 /* Premium scrollbar for executive tables */
+.estoque-workspace {
+  --estoque-shell-offset: 0px;
+}
+
 .premium-scrollbar::-webkit-scrollbar {
   width: 8px;
   height: 8px;
