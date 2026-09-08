@@ -65,7 +65,7 @@ const DEFAULT_GIRO_FILTERS: GiroFiltersState = {
 };
 
 export default function EstoquePage() {
-  const { activeCompanyCode, consolidadoData, detalhadoData, giroData, isLoading, empresa, sourceErrors, sourceStatus, sourceLastUpdated, lastSuccessfulUpdate, partialSources, recoveredSources, recoveryStatus, isFetching, refetch } = useEstoqueData();
+  const { activeCompanyCode, consolidadoData, detalhadoData, giroData, isLoading, isInitialLoading, empresa, sourceErrors, sourceStatus, sourceLastUpdated, lastSuccessfulUpdate, partialSources, recoveredSources, recoveryStatus, isFetching, refetch } = useEstoqueData();
   const { codEmpresaContexto, filialAtiva } = useFilialSelecionada();
   const [activeTab, setActiveTab] = useState('central');
   const [viewMode, setViewMode] = useState<ViewMode>('consolidado');
@@ -208,6 +208,20 @@ export default function EstoquePage() {
       <div className="p-6">
         <EmptyState message="O módulo Operacional não está ativado para esta empresa." />
       </div>
+    );
+  }
+
+  if (isInitialLoading) {
+    return (
+      <EstoqueWorkspace>
+        <EstoqueDataViewport
+          aria-label="Carregando dados completos do estoque"
+          className="p-4"
+          role="status"
+        >
+          <LoadingState />
+        </EstoqueDataViewport>
+      </EstoqueWorkspace>
     );
   }
 

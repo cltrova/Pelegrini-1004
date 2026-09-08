@@ -387,6 +387,11 @@ export function useEstoqueData() {
   }, [consolidadoQuery.dataUpdatedAt, detalhadoQuery.dataUpdatedAt, giroQuery.dataUpdatedAt, recoveryQuery.dataUpdatedAt]);
 
   const isLoading = isLoadingEmpresa || (consolidadoQuery.isLoading && consolidadoQuery.data === undefined);
+  const isInitialLoading = isLoadingEmpresa
+    || consolidadoQuery.isLoading
+    || detalhadoQuery.isLoading
+    || giroQuery.isLoading
+    || recoveryQuery.isLoading;
   const isError = consolidadoQuery.isError || detalhadoQuery.isError || giroQuery.isError;
 
   return {
@@ -395,6 +400,7 @@ export function useEstoqueData() {
     detalhadoData,
     giroData,
     isLoading,
+    isInitialLoading,
     isError,
     sourceErrors: {
       consolidado: consolidadoQuery.error,

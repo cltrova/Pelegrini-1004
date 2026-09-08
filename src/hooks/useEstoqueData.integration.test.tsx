@@ -78,7 +78,7 @@ describe('useEstoqueData integration', () => {
     });
   });
 
-  it('libera a Central quando o consolidado termina sem esperar detalhado e giro', async () => {
+  it('mantem a carga inicial aberta ate detalhado e giro terminarem', async () => {
     let releaseSecondary!: () => void;
     const secondaryGate = new Promise<void>((resolve) => { releaseSecondary = resolve; });
     vi.stubGlobal('fetch', vi.fn(async (url: string) => {
@@ -91,11 +91,13 @@ describe('useEstoqueData integration', () => {
     await waitFor(() => expect(result.current.consolidadoData).toHaveLength(1));
 
     expect(result.current.isLoading).toBe(false);
+    expect(result.current.isInitialLoading).toBe(true);
     expect(result.current.sourceStatus.consolidado).toBe('ready');
     expect(result.current.sourceStatus.detalhado).toBe('loading');
     expect(result.current.sourceStatus.giro).toBe('loading');
 
     releaseSecondary();
+    await waitFor(() => expect(result.current.isInitialLoading).toBe(false));
   });
 
   it('exposes HTTP 504 instead of treating failure as zero stock, and supports retry', async () => {

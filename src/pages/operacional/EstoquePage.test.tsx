@@ -40,6 +40,7 @@ function createHookResult(overrides: Record<string, unknown> = {}) {
     detalhadoData,
     giroData: giroFixture,
     isLoading: false,
+    isInitialLoading: false,
     isFetching: false,
     isError: false,
     sourceErrors: { consolidado: null, detalhado: null, giro: null },
@@ -123,6 +124,20 @@ afterEach(() => {
 });
 
 describe('EstoquePage', () => {
+  it('mantem uma carga inicial unica ate todas as fontes do estoque terminarem', () => {
+    testState.hookResult = createHookResult({
+      isInitialLoading: true,
+      sourceStatus: { consolidado: 'ready', detalhado: 'loading', giro: 'ready' },
+    });
+
+    renderEstoquePage();
+
+    expect(screen.getByRole('status', { name: 'Carregando dados completos do estoque' })).toBeInTheDocument();
+    expect(screen.getByText('Carregando dados da filial')).toBeInTheDocument();
+    expect(screen.queryByRole('tab', { name: 'Central de Estoque' })).not.toBeInTheDocument();
+    expect(screen.queryByText('Recuperando estoque completo')).not.toBeInTheDocument();
+  });
+
   it('mostra filial, ultima atualizacao e estado da fonte no cabecalho compacto', () => {
     const refetch = vi.fn();
     testState.hookResult = createHookResult({ refetch });
@@ -185,13 +200,14 @@ describe('EstoquePage', () => {
     expect(refetch).toHaveBeenCalledOnce();
   });
 
-  it('mostra recuperacao em andamento em vez de erro enquanto consulta o historico', () => {
+  it('mantem a tela limpa enquanto consulta o historico completo', () => {
     testState.hookResult = createHookResult({
       consolidadoData: [],
       detalhadoData: [],
       giroData: [],
       isError: true,
       isFetching: true,
+      isInitialLoading: true,
       recoveryStatus: 'loading',
       sourceErrors: {
         consolidado: new Error('Falha na consulta de estoque (HTTP 500).'),
@@ -202,10 +218,11 @@ describe('EstoquePage', () => {
 
     renderEstoquePage();
 
-    expect(screen.getByRole('status', { name: 'Recuperando dados completos do estoque' })).toHaveTextContent('Recuperando estoque completo');
+    expect(screen.getByRole('status', { name: 'Carregando dados completos do estoque' })).toBeInTheDocument();
+    expect(screen.getByText('Carregando dados da filial')).toBeInTheDocument();
+    expect(screen.queryByText('Recuperando estoque completo')).not.toBeInTheDocument();
     expect(screen.queryByText('Estoque indisponivel')).not.toBeInTheDocument();
     expect(screen.queryByRole('region', { name: 'Resumo do estoque' })).not.toBeInTheDocument();
-    expect(screen.getByRole('status', { name: 'Recuperando dados completos do estoque' })).toBeInTheDocument();
   });
 
   it('identifica a contingencia de giro como parcial sem esconder os produtos disponiveis', () => {
