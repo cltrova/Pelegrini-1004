@@ -267,6 +267,10 @@ describe('Pelegrini visual foundation', () => {
     expect(css).toContain('.pelegrini-page-surface :where([class~=\'space-y-6\'])');
     expect(css).toContain('.pelegrini-page-surface :where(.enterprise-page-header, .page-header, .pelegrini-module-header)');
     expect(css).toContain(':where(div:has(> h1:first-child), div:has(> div > h1:first-child))');
+    expect(css).toContain('.pelegrini-page-surface :where([data-testid=\'enterprise-filter-bar\'])');
+    expect(css).toContain('.pelegrini-page-surface :where([role=\'tablist\'])');
+    expect(css).toContain('.pelegrini-page-surface :where(td, th)');
+    expect(css).toContain('.pelegrini-page-surface :where([class~=\'text-2xl\'], [class*=\'text-[26px]\'], .kpi-fluid-value)');
     expect(css).toContain('.pelegrini-page-surface :where([class~=\'p-6\'])');
     expect(css).toContain('.pelegrini-page-surface :where([class*=\'h-[640px]\'])');
   });
