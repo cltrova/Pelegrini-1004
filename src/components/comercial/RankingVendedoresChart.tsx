@@ -90,10 +90,10 @@ export function RankingVendedoresChart({ data, periodo, onClick, variant = 'defa
     <Card className={cn(
       'overflow-hidden relative transition-shadow duration-300',
       isBlue
-        ? 'pelegrini-led-card border-border/60 bg-card text-foreground'
+        ? 'pelegrini-ranking-card pelegrini-led-card border-border/60 bg-card text-foreground'
         : 'border-border/60 bg-card',
     )}>
-      <CardHeader className="pb-3 relative">
+      <CardHeader className={cn(isBlue ? 'p-3 pb-2' : 'pb-3 relative')}>
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div />
 
@@ -130,7 +130,7 @@ export function RankingVendedoresChart({ data, periodo, onClick, variant = 'defa
         </div>
 
         {/* Mini stat strip */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mt-4">
+        <div className={cn("grid", isBlue ? 'grid-cols-3 gap-1.5 mt-2' : 'grid-cols-1 md:grid-cols-3 gap-2 mt-4')}>
           <StatChip
             icon={<Trophy className={cn('h-3.5 w-3.5', isBlue ? 'text-primary' : 'text-amber-400')} />}
             label="Líder"
@@ -155,7 +155,7 @@ export function RankingVendedoresChart({ data, periodo, onClick, variant = 'defa
         </div>
       </CardHeader>
 
-      <CardContent className="relative">
+      <CardContent className={cn("relative", isBlue ? "px-3 pb-2 pt-0" : undefined)}>
         {enriched.length === 0 ? (
           <div className={cn('text-center text-sm py-16', isBlue ? 'text-muted-foreground' : 'text-muted-foreground')}>
             Sem dados no período selecionado
@@ -163,11 +163,11 @@ export function RankingVendedoresChart({ data, periodo, onClick, variant = 'defa
         ) : (
           <div className="w-full min-w-0 pb-2">
             <div className="min-w-0">
-              <div className="h-[280px] sm:h-[320px]">
+              <div className={cn(isBlue ? 'h-[160px]' : 'h-[280px] sm:h-[320px]')}>
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart
                     data={enriched}
-                    margin={{ top: 24, right: 16, left: 8, bottom: 12 }}
+                    margin={isBlue ? { top: 12, right: 18, left: -8, bottom: 4 } : { top: 24, right: 16, left: 8, bottom: 12 }}
                     onMouseLeave={() => setHoverKey(null)}
                   >
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} opacity={isBlue ? 0.42 : 0.4} />
@@ -180,7 +180,7 @@ export function RankingVendedoresChart({ data, periodo, onClick, variant = 'defa
                 />
                 <YAxis
                   stroke="hsl(var(--muted-foreground))"
-                  tick={{ fontSize: 15, fill: isBlue ? 'hsl(var(--muted-foreground))' : 'currentColor' }}
+                  tick={{ fontSize: isBlue ? 12 : 15, fill: isBlue ? 'hsl(var(--muted-foreground))' : 'currentColor' }}
                   tickFormatter={(v) => modo === 'faturamento' ? compactCurrency(v) : `${v}%`}
                 />
                 <RTooltip
@@ -203,7 +203,7 @@ export function RankingVendedoresChart({ data, periodo, onClick, variant = 'defa
                     stroke={isBlue ? '#2563eb' : 'hsl(var(--primary))'}
                     strokeDasharray="4 4"
                     strokeOpacity={0.55}
-                    label={{ value: `Média ${compactCurrency(media)}`, position: 'right', fill: 'hsl(var(--primary))', fontSize: 14 }}
+                    label={{ value: isBlue ? 'Média' : `Média ${compactCurrency(media)}`, position: 'right', fill: 'hsl(var(--primary))', fontSize: isBlue ? 12 : 14 }}
                   />
                 )}
 

@@ -273,9 +273,27 @@ describe('Pelegrini visual foundation', () => {
     const source = readFileSync(join(process.cwd(), 'src/components/comercial/VisaoGeralRapida1004.tsx'), 'utf8');
 
     expect(source).toContain('pelegrini-compact-card');
-    expect(source).toContain('isEmpresaPelegrini ? \'h-[210px]\' : \'h-72\'');
+    expect(source).toContain('isEmpresaPelegrini ? \'h-[230px]\' : \'h-72\'');
+    expect(source).toContain('isEmpresaPelegrini ? { top: 28, right: 12, left: -10, bottom: 8 }');
+    expect(source).toContain("label={{ value: 'Hoje', position: 'insideTop'");
     expect(source).toContain('isEmpresaPelegrini ? \'h-auto min-h-0\' : isEmpresa1001 ? \'h-96\' : \'h-64\'');
-    expect(source).toContain('isEmpresaPelegrini ? \'min-w-[420px]\' : \'min-w-[500px]\'');
-    expect(source).toContain('isEmpresaPelegrini ? \'h-4\' : \'h-5\'');
+    expect(source).toContain('selectedHeatCell');
+    expect(source).toContain('setSelectedHeatCell');
+    expect(source).toContain('w-28 text-[12px]');
+    expect(source).toContain('isEmpresaPelegrini ? \'h-[18px]\' : \'h-5\'');
+    expect(source).toContain('gridTemplateColumns: `7rem repeat(${totalDiasMes}, minmax(12px, 1fr))`');
+  });
+
+  it('keeps Pelegrini ranking dense while preserving readable labels and interactions', () => {
+    const chartSource = readFileSync(join(process.cwd(), 'src/components/comercial/RankingVendedoresChart.tsx'), 'utf8');
+    const labelSource = readFileSync(join(process.cwd(), 'src/components/comercial/RankingVendedoresLabels.tsx'), 'utf8');
+
+    expect(chartSource).toContain('pelegrini-ranking-card');
+    expect(chartSource).toContain("isBlue ? 'p-3 pb-2' : 'pb-3 relative'");
+    expect(chartSource).toContain("isBlue ? 'grid-cols-3 gap-1.5 mt-2' : 'grid-cols-1 md:grid-cols-3 gap-2 mt-4'");
+    expect(chartSource).toContain("isBlue ? 'h-[160px]' : 'h-[280px] sm:h-[320px]'");
+    expect(chartSource).toContain('setHoverKey(String(d.codigo))');
+    expect(labelSource).toContain("variant === 'pelegriniBlue'");
+    expect(labelSource).toContain('min-h-[48px]');
   });
 });

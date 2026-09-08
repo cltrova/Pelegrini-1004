@@ -1,5 +1,6 @@
 import { formatCurrency, formatPercent } from '@/utils/formatters';
 import { getRankingVendedoresChartLayout } from './rankingVendedoresChartLayout';
+import { cn } from '@/lib/utils';
 
 type Modo = 'faturamento' | 'meta';
 
@@ -16,12 +17,16 @@ interface Props {
   variant?: 'default' | 'pelegriniBlue';
 }
 
-export function RankingVendedoresLabels({ data, modo }: Props) {
+export function RankingVendedoresLabels({ data, modo, variant }: Props) {
   const layout = getRankingVendedoresChartLayout(data.length);
+  const isPelegrini = variant === 'pelegriniBlue';
 
   return (
     <div
-      className="grid min-h-[104px] items-start gap-0 pl-[68px] pr-4 pt-2"
+      className={cn(
+        "grid items-start gap-0",
+        isPelegrini ? "min-h-[48px] pl-[48px] pr-2 pt-1" : "min-h-[104px] pl-[68px] pr-4 pt-2",
+      )}
       style={{ gridTemplateColumns: `repeat(${data.length}, minmax(0, 1fr))` }}
     >
       {data.map((row, index) => {
@@ -33,14 +38,20 @@ export function RankingVendedoresLabels({ data, modo }: Props) {
         return (
           <div key={String(row.codigo ?? index)} className="min-w-0 text-center" title={row.nome}>
             <span
-              className="block truncate text-muted-foreground"
-              style={{ fontSize: layout.sellerFontSize, fontWeight: layout.sellerFontWeight }}
+              className={cn("block truncate text-muted-foreground", isPelegrini && "leading-tight")}
+              style={{
+                fontSize: isPelegrini ? 10 : layout.sellerFontSize,
+                fontWeight: isPelegrini ? 700 : layout.sellerFontWeight,
+              }}
             >
               {index + 1}. {shortName}
             </span>
             <span
-              className="mt-1 block whitespace-nowrap font-mono text-foreground"
-              style={{ fontSize: layout.valueFontSize, fontWeight: layout.valueFontWeight }}
+              className={cn("block whitespace-nowrap font-mono text-foreground", isPelegrini ? "mt-0.5" : "mt-1")}
+              style={{
+                fontSize: isPelegrini ? 12 : layout.valueFontSize,
+                fontWeight: isPelegrini ? 800 : layout.valueFontWeight,
+              }}
             >
               {valueLabel}
             </span>

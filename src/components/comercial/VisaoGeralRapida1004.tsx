@@ -86,6 +86,7 @@ export function VisaoGeralRapida1004({
   const isEmpresa1001 = codEmpresaAtiva === '1001';
   const isEmpresaPelegrini = codEmpresaAtiva === '1004' || codEmpresaAtiva === '10041' || isContextoChevrolet10041Ativo;
   const showDevolucoesCard = isEmpresa1001 || isEmpresaPelegrini;
+  const [selectedHeatCell, setSelectedHeatCell] = useState<{ nome: string; dia: number; valor: number } | null>(null);
   const periodoLabel = useMemo(
     () => formatFiltroPeriodoLabel(periodoAplicado, periodoFiltros),
     [periodoAplicado, periodoFiltros],
@@ -473,9 +474,12 @@ export function VisaoGeralRapida1004({
       <Card className={cn(isEmpresaPelegrini && 'pelegrini-compact-card pelegrini-led-card border-border/60 bg-card text-foreground')}>
         <CardContent className={cn(isEmpresaPelegrini ? 'p-2' : 'pt-6')}>
 
-          <div className={cn(isEmpresaPelegrini ? 'h-[210px]' : 'h-72')}>
+          <div className={cn(isEmpresaPelegrini ? 'h-[230px]' : 'h-72')}>
             <ResponsiveContainer width="100%" height="100%">
-              <ComposedChart data={dadosAcumulado} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
+              <ComposedChart
+                data={dadosAcumulado}
+                margin={isEmpresaPelegrini ? { top: 28, right: 12, left: -10, bottom: 8 } : { top: 10, right: 20, left: 0, bottom: 0 }}
+              >
                 <defs>
                   <linearGradient id="gradRealizado" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0%" stopColor={isEmpresaPelegrini ? 'hsl(var(--primary))' : 'hsl(var(--primary))'} stopOpacity={isEmpresaPelegrini ? 0.22 : 0.5} />
@@ -489,6 +493,7 @@ export function VisaoGeralRapida1004({
                   tickFormatter={(v) => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v)}
                 />
                 <Tooltip
+                  cursor={{ stroke: 'hsl(var(--primary))', strokeOpacity: 0.35 }}
                   contentStyle={{
                     background: 'hsl(var(--popover))',
                     border: '1px solid hsl(var(--border))',
@@ -501,7 +506,9 @@ export function VisaoGeralRapida1004({
                 />
                 <Area
                   type="monotone" dataKey="realizado" name="Realizado"
-                  stroke={isEmpresaPelegrini ? 'hsl(var(--primary))' : 'hsl(var(--primary))'} strokeWidth={2} fill="url(#gradRealizado)"
+                  stroke={isEmpresaPelegrini ? 'hsl(var(--primary))' : 'hsl(var(--primary))'} strokeWidth={isEmpresaPelegrini ? 2.5 : 2} fill="url(#gradRealizado)"
+                  dot={isEmpresaPelegrini ? { r: 2, strokeWidth: 1 } : false}
+                  activeDot={isEmpresaPelegrini ? { r: 4, strokeWidth: 2 } : undefined}
                 />
                 <Line
                   type="monotone" dataKey="meta" name="Meta acumulada"
@@ -512,10 +519,10 @@ export function VisaoGeralRapida1004({
                     x={String(diaHoje).padStart(2, '0')}
                     stroke="hsl(var(--destructive))"
                     strokeDasharray="3 3"
-                    label={{ value: 'Hoje', position: 'top', fill: 'hsl(var(--destructive))', fontSize: 13 }}
+                    label={{ value: 'Hoje', position: 'insideTop', fill: 'hsl(var(--destructive))', fontSize: 12 }}
                   />
                 )}
-                <Legend wrapperStyle={{ fontSize: 13 }} />
+                <Legend wrapperStyle={{ fontSize: isEmpresaPelegrini ? 12 : 13 }} />
               </ComposedChart>
             </ResponsiveContainer>
           </div>
@@ -581,27 +588,53 @@ export function VisaoGeralRapida1004({
           <CardContent className={cn(isEmpresaPelegrini ? 'p-2' : 'pt-6')}>
 
             <div className="overflow-x-auto">
-              <div className={cn(isEmpresaPelegrini ? 'min-w-[420px]' : 'min-w-[500px]')}>
+              <div className={cn("space-y-1", isEmpresaPelegrini ? 'min-w-[520px]' : 'min-w-[500px]')}>
                 {/* Cabeçalho dias */}
-                <div className={cn("flex items-center gap-[2px]", isEmpresaPelegrini ? 'mb-0.5 pl-20' : 'mb-1 pl-24')}>
+                <div
+                  className="grid items-center gap-[3px]"
+                  style={{ gridTemplateColumns: `7rem repeat(${totalDiasMes}, minmax(12px, 1fr))` }}
+                >
+                  <div />
                   {Array.from({ length: totalDiasMes }, (_, i) => i + 1).map(d => (
-                    <div key={d} className={cn("flex-1 text-center text-[9px]", isEmpresaPelegrini ? 'text-muted-foreground' : 'text-muted-foreground')}>
+                    <div key={d} className={cn("text-center text-[9px]", isEmpresaPelegrini ? 'text-muted-foreground' : 'text-muted-foreground')}>
                       {d % 5 === 0 || d === 1 ? d : ''}
                     </div>
                   ))}
                 </div>
                 {heatmap.linhas.map(linha => (
-                  <div key={linha.nome} className={cn("flex items-center gap-[2px]", isEmpresaPelegrini ? 'mb-px' : 'mb-[2px]')}>
-                    <div className={cn("truncate uppercase pr-2", isEmpresaPelegrini ? 'w-20 text-[11px]' : 'w-24 text-xs')}>{linha.nome}</div>
+                  <div
+                    key={linha.nome}
+                    className="grid items-center gap-[3px]"
+                    style={{ gridTemplateColumns: `7rem repeat(${totalDiasMes}, minmax(12px, 1fr))` }}
+                  >
+                    <div className={cn("truncate uppercase pr-2 font-semibold leading-none", isEmpresaPelegrini ? 'w-28 text-[12px]' : 'w-24 text-xs')} title={linha.nome}>{linha.nome}</div>
                     {linha.cells.map((val, i) => {
                       const intensity = val / heatmap.maxVal;
                       const dt = new Date(ano, mes - 1, i + 1);
                       const isWeekend = dt.getDay() === 0 || dt.getDay() === 6;
+                      const dia = i + 1;
+                      const isSelected = selectedHeatCell?.nome === linha.nome && selectedHeatCell.dia === dia;
                       return (
                         <div
                           key={i}
-                          title={`Dia ${i + 1}: ${formatCurrency(val)}`}
-                          className={cn("flex-1 rounded-sm transition-all hover:ring-1 hover:ring-primary", isEmpresaPelegrini ? 'h-4' : 'h-5')}
+                          role="button"
+                          tabIndex={0}
+                          aria-label={`${linha.nome}, dia ${dia}, ${formatCurrency(val)}`}
+                          title={`Dia ${dia}: ${formatCurrency(val)}`}
+                          onMouseEnter={() => setSelectedHeatCell({ nome: linha.nome, dia, valor: val })}
+                          onFocus={() => setSelectedHeatCell({ nome: linha.nome, dia, valor: val })}
+                          onClick={() => setSelectedHeatCell({ nome: linha.nome, dia, valor: val })}
+                          onKeyDown={(event) => {
+                            if (event.key === 'Enter' || event.key === ' ') {
+                              event.preventDefault();
+                              setSelectedHeatCell({ nome: linha.nome, dia, valor: val });
+                            }
+                          }}
+                          className={cn(
+                            "rounded-[3px] transition-all hover:-translate-y-0.5 hover:ring-1 hover:ring-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
+                            isEmpresaPelegrini ? 'h-[18px]' : 'h-5',
+                            isSelected && 'ring-2 ring-primary'
+                          )}
                           style={{
                             background: val > 0
                               ? `hsl(var(--primary) / ${0.15 + intensity * 0.85})`
@@ -617,6 +650,16 @@ export function VisaoGeralRapida1004({
                 )}
               </div>
             </div>
+            {isEmpresaPelegrini && (
+              <div className="mt-2 flex min-h-6 items-center justify-between gap-3 border-t border-border/50 pt-1.5 text-xs">
+                <span className="truncate font-semibold text-foreground">
+                  {selectedHeatCell ? `${selectedHeatCell.nome} - dia ${selectedHeatCell.dia}` : 'Passe nos quadrados para ver o dia'}
+                </span>
+                <span className="shrink-0 font-mono font-bold text-primary">
+                  {selectedHeatCell ? formatCurrency(selectedHeatCell.valor) : `${heatmap.linhas.length} vendedores`}
+                </span>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
