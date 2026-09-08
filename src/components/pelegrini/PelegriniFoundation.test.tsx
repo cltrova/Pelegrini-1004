@@ -161,11 +161,10 @@ describe('Pelegrini visual foundation', () => {
     expect(screen.queryByText('Cotacoes')).not.toBeInTheDocument();
   });
 
-  it('composes desktop Home as a branch choice followed by the technical module grid', () => {
+  it('composes desktop Home directly as the technical module grid for the active branch', () => {
     const { container } = render(<MemoryRouter><HomePage /></MemoryRouter>);
 
-    expect(screen.getByRole('heading', { level: 1, name: 'Escolha a filial' })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: /Casa da Transmissão/i }));
+    expect(screen.queryByRole('heading', { level: 1, name: 'Escolha a filial' })).not.toBeInTheDocument();
     expect(screen.getByRole('heading', { level: 2, name: /^M[oó]dulos$/ })).toBeInTheDocument();
     expect(container.querySelector('[data-home-modules]')).toHaveClass('pelegrini-home-module-grid');
     expect(container.querySelectorAll('.pelegrini-home-module-card')).toHaveLength(3);
@@ -186,7 +185,6 @@ describe('Pelegrini visual foundation', () => {
 
     expect(window.innerWidth).toBe(390);
     expect(home).toHaveClass('pelegrini-home', 'overflow-x-clip');
-    fireEvent.click(screen.getByRole('button', { name: /Casa da Transmissão/i }));
     const moduleGrid = container.querySelector('[data-home-modules]');
     const moduleCards = container.querySelectorAll('.pelegrini-home-module-card');
     expect(moduleGrid).toHaveClass('pelegrini-home-module-grid');
@@ -199,12 +197,10 @@ describe('Pelegrini visual foundation', () => {
     expect(container.textContent).not.toMatch(/Lovable|BI Reports/i);
   });
 
-  it('starts with the group theme and installs distinct CT and CCH variables after branch choice', () => {
+  it('installs distinct CT and CCH variables from the active branch', () => {
     const ctDesktop = render(<MemoryRouter><HomePage /></MemoryRouter>);
     const ctHome = ctDesktop.container.firstElementChild as HTMLElement;
 
-    expect(ctHome).toHaveAttribute('data-pelegrini-theme', 'pelegrini');
-    fireEvent.click(screen.getByRole('button', { name: /Casa da Transmissão/i }));
     expect(ctHome).toHaveAttribute('data-pelegrini-theme', 'transmissao');
     expect(ctHome.style.getPropertyValue('--pelegrini-primary')).toBe('#073F73');
     expect(ctHome.style.getPropertyValue('--pelegrini-secondary')).toBe('#0A5291');
@@ -214,16 +210,15 @@ describe('Pelegrini visual foundation', () => {
     const ctMobile = render(<MemoryRouter><HomeMobilePage /></MemoryRouter>);
     const ctMobileHome = ctMobile.container.firstElementChild as HTMLElement;
 
-    fireEvent.click(screen.getByRole('button', { name: /Casa da Transmissão/i }));
     expect(ctMobileHome.style.getPropertyValue('--pelegrini-primary')).toBe('#073F73');
     expect(ctMobileHome.style.getPropertyValue('--pelegrini-secondary')).toBe('#0A5291');
     expect(ctMobileHome.style.getPropertyValue('--pelegrini-accent')).toBe('#49D2FF');
 
     ctMobile.unmount();
+    testState.filialAtiva = 'chevrolet';
     const cchDesktop = render(<MemoryRouter><HomePage /></MemoryRouter>);
     const cchHome = cchDesktop.container.firstElementChild as HTMLElement;
 
-    fireEvent.click(screen.getByRole('button', { name: /Casa do Chevrolet/i }));
     expect(cchHome).toHaveAttribute('data-pelegrini-theme', 'chevrolet');
     expect(cchHome.style.getPropertyValue('--pelegrini-primary')).toBe('#034E99');
     expect(cchHome.style.getPropertyValue('--pelegrini-secondary')).toBe('#0A67BF');
@@ -236,7 +231,6 @@ describe('Pelegrini visual foundation', () => {
     const cchMobile = render(<MemoryRouter><HomeMobilePage /></MemoryRouter>);
     const cchMobileHome = cchMobile.container.firstElementChild as HTMLElement;
 
-    fireEvent.click(screen.getByRole('button', { name: /Casa do Chevrolet/i }));
     expect(cchMobileHome.style.getPropertyValue('--pelegrini-primary')).toBe('#034E99');
     expect(cchMobileHome.style.getPropertyValue('--pelegrini-secondary')).toBe('#0A67BF');
     expect(cchMobileHome.style.getPropertyValue('--pelegrini-accent')).toBe('#E8B923');
