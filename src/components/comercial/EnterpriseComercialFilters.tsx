@@ -128,7 +128,7 @@ export function EnterpriseComercialFilters({
     return (
       <EnterpriseFilterBar
         activeCount={activeCount}
-        applyLabel={hasChanges ? 'Aplicar alteracoes' : 'Aplicar filtros'}
+        applyLabel="Buscar"
         onApply={onApply}
         onClear={onClear}
         resultCount={resultCount}
@@ -165,7 +165,7 @@ export function EnterpriseComercialFilters({
   return (
     <EnterpriseFilterBar
       activeCount={activeCount}
-      applyLabel={hasChanges ? 'Aplicar alteracoes' : 'Aplicar filtros'}
+      applyLabel="Buscar"
       onApply={onApply}
       onClear={onClear}
       resultCount={resultCount}

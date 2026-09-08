@@ -273,6 +273,9 @@ describe('Pelegrini visual foundation', () => {
     const source = readFileSync(join(process.cwd(), 'src/components/comercial/VisaoGeralRapida1004.tsx'), 'utf8');
 
     expect(source).toContain('pelegrini-compact-card');
+    expect(source).toContain('pelegrini-period-chip');
+    expect(source).toContain('h-6 w-6');
+    expect(source).toContain('px-2 py-1');
     expect(source).toContain('isEmpresaPelegrini ? \'h-[230px]\' : \'h-72\'');
     expect(source).toContain('isEmpresaPelegrini ? { top: 28, right: 12, left: -10, bottom: 8 }');
     expect(source).toContain("label={{ value: 'Hoje', position: 'insideTop'");

@@ -22,14 +22,12 @@ export interface EnterpriseFilterBarProps {
 export function EnterpriseFilterBar({
   children,
   activeCount = 0,
-  resultCount,
-  resultLabel = 'resultados',
   isOpen,
   defaultOpen = false,
   onOpenChange,
   onClear,
   onApply,
-  applyLabel = 'Aplicar filtros',
+  applyLabel = 'Buscar',
   className,
 }: EnterpriseFilterBarProps) {
   const [internalOpen, setInternalOpen] = useState(defaultOpen);
@@ -51,18 +49,13 @@ export function EnterpriseFilterBar({
           {activeCount > 0 && <EnterpriseBadge tone="info">{activeCount} ativos</EnterpriseBadge>}
           <ChevronDown aria-hidden="true" className={cn('ml-auto h-3.5 w-3.5 text-muted-foreground transition-transform', open && 'rotate-180')} />
         </button>
-        {typeof resultCount === 'number' && (
-          <EnterpriseBadge className="tabular-nums">
-            {resultCount.toLocaleString('pt-BR')} {resultLabel}
-          </EnterpriseBadge>
-        )}
-        {activeCount > 0 && onClear && (
+        {open && activeCount > 0 && onClear && (
           <Button aria-label="Limpar" className="h-8 gap-1.5 px-2 text-xs" onClick={onClear} size="sm" type="button" variant="ghost">
             <X aria-hidden="true" className="h-3.5 w-3.5" />
             Limpar
           </Button>
         )}
-        {onApply && (
+        {open && onApply && (
           <Button aria-label={applyLabel} className="h-8 gap-1.5 px-2.5 text-xs" onClick={onApply} size="sm" type="button">
             <Search aria-hidden="true" className="h-3.5 w-3.5" />
             {applyLabel}

@@ -374,13 +374,13 @@ export function VisaoGeralRapida1004({
       isEmpresaPelegrini && 'rounded-2xl border border-border/60 bg-card p-3 text-foreground shadow-none md:p-4',
     )}>
       {isEmpresaPelegrini && (
-        <div className="flex items-center justify-between gap-3 rounded-lg border border-border/60 bg-muted/30 px-4 py-3 shadow-none">
+        <div className="pelegrini-period-chip inline-flex max-w-full items-center gap-2 rounded-md border border-border/60 bg-muted/30 px-2 py-1 shadow-none">
           <div className="flex min-w-0 items-center gap-2">
-            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-primary/15 text-primary ring-1 ring-primary/20">
-              <CalendarDays className="h-4 w-4" />
+            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-primary/15 text-primary ring-1 ring-primary/20">
+              <CalendarDays className="h-3.5 w-3.5" />
             </span>
             <div className="min-w-0">
-              <p className="truncate text-sm font-semibold text-foreground">{periodoLabel}</p>
+              <p className="truncate text-xs font-semibold leading-none text-foreground">{periodoLabel}</p>
             </div>
           </div>
         </div>

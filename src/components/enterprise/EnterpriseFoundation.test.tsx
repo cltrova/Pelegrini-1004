@@ -98,7 +98,7 @@ describe('enterprise visual foundation', () => {
     expect(screen.getByText('vs meta')).toBeInTheDocument();
   });
 
-  it('renders a compact filter bar with active count, results, clear and apply', () => {
+  it('keeps filter actions and result counts out of the collapsed bar', () => {
     const onClear = vi.fn();
     const onApply = vi.fn();
     render(
@@ -108,9 +108,15 @@ describe('enterprise visual foundation', () => {
     );
 
     expect(screen.getByText('2 ativos')).toBeInTheDocument();
-    expect(screen.getByText('128 resultados')).toBeInTheDocument();
+    expect(screen.queryByText('128 resultados')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /^limpar$/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /^buscar$/i })).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /expandir filtros/i }));
+
+    expect(screen.queryByText('128 resultados')).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: /^limpar$/i }));
-    fireEvent.click(screen.getByRole('button', { name: /aplicar filtros/i }));
+    fireEvent.click(screen.getByRole('button', { name: /^buscar$/i }));
     expect(onClear).toHaveBeenCalledTimes(1);
     expect(onApply).toHaveBeenCalledTimes(1);
   });
