@@ -268,4 +268,14 @@ describe('Pelegrini visual foundation', () => {
     expect(css).toContain('.pelegrini-page-surface :where([class~=\'p-6\'])');
     expect(css).toContain('.pelegrini-page-surface :where([class*=\'h-[640px]\'])');
   });
+
+  it('keeps the commercial overview cards sized by their actual content for Pelegrini', () => {
+    const source = readFileSync(join(process.cwd(), 'src/components/comercial/VisaoGeralRapida1004.tsx'), 'utf8');
+
+    expect(source).toContain('pelegrini-compact-card');
+    expect(source).toContain('isEmpresaPelegrini ? \'h-[210px]\' : \'h-72\'');
+    expect(source).toContain('isEmpresaPelegrini ? \'h-auto min-h-0\' : isEmpresa1001 ? \'h-96\' : \'h-64\'');
+    expect(source).toContain('isEmpresaPelegrini ? \'min-w-[420px]\' : \'min-w-[500px]\'');
+    expect(source).toContain('isEmpresaPelegrini ? \'h-4\' : \'h-5\'');
+  });
 });

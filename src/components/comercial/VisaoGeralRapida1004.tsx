@@ -470,10 +470,10 @@ export function VisaoGeralRapida1004({
       />
 
       {/* ================= Gráfico Acumulado ================= */}
-      <Card className={cn(isEmpresaPelegrini && 'pelegrini-led-card border-border/60 bg-card text-foreground')}>
-        <CardContent className="pt-6">
+      <Card className={cn(isEmpresaPelegrini && 'pelegrini-compact-card pelegrini-led-card border-border/60 bg-card text-foreground')}>
+        <CardContent className={cn(isEmpresaPelegrini ? 'p-2' : 'pt-6')}>
 
-          <div className="h-72">
+          <div className={cn(isEmpresaPelegrini ? 'h-[210px]' : 'h-72')}>
             <ResponsiveContainer width="100%" height="100%">
               <ComposedChart data={dadosAcumulado} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
                 <defs>
@@ -525,17 +525,17 @@ export function VisaoGeralRapida1004({
 
 
       {/* ================= Grid extras ================= */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div className={cn("grid grid-cols-1 lg:grid-cols-2", isEmpresaPelegrini ? "gap-2" : "gap-4")}>
         {/* Donut participação */}
-        <Card className={cn(isEmpresaPelegrini && 'pelegrini-led-card border-border/60 bg-card text-foreground')}>
-          <CardContent className="pt-6">
+        <Card className={cn(isEmpresaPelegrini && 'pelegrini-compact-card pelegrini-led-card border-border/60 bg-card text-foreground')}>
+          <CardContent className={cn(isEmpresaPelegrini ? 'p-2' : 'pt-6')}>
 
-            <div className={cn("flex flex-col", isEmpresa1001 ? "h-96" : "h-64")}>
-              <div className={cn("flex items-baseline justify-between px-1 pb-2 border-b", isEmpresaPelegrini ? 'border-border/60' : 'border-border/60')}>
+            <div className={cn("flex flex-col", isEmpresaPelegrini ? 'h-auto min-h-0' : isEmpresa1001 ? 'h-96' : 'h-64')}>
+              <div className={cn("flex items-baseline justify-between px-1 border-b", isEmpresaPelegrini ? 'border-border/60 pb-1' : 'border-border/60 pb-2')}>
                 <span className={cn("text-[10px] uppercase tracking-wide", isEmpresaPelegrini ? 'text-muted-foreground' : 'text-muted-foreground')}>Total</span>
                 <span className="text-sm font-bold font-mono">{formatCurrency(kpiDecisao.fat)}</span>
               </div>
-              <div className={cn("flex-1 overflow-y-auto pr-1 mt-1 divide-y", isEmpresaPelegrini ? 'divide-border/40' : 'divide-border/40')}>
+              <div className={cn("overflow-y-auto pr-1 mt-1 divide-y", isEmpresaPelegrini ? 'max-h-[150px] divide-border/40' : 'flex-1 divide-border/40')}>
                 {participacao.length === 0 && (
                   <div className={cn("text-center text-xs py-6", isEmpresaPelegrini ? 'text-muted-foreground' : 'text-muted-foreground')}>Sem dados</div>
                 )}
@@ -545,7 +545,9 @@ export function VisaoGeralRapida1004({
                     key={v.nome}
                     className={cn(
                       "items-center gap-2 text-sm",
-                      isEmpresa1001 ? "flex py-2.5" : "grid grid-cols-[auto_1fr_auto_auto] py-1.5"
+                      isEmpresaPelegrini
+                        ? "grid grid-cols-[auto_1fr_auto_auto] py-1"
+                        : isEmpresa1001 ? "flex py-2.5" : "grid grid-cols-[auto_1fr_auto_auto] py-1.5"
                     )}
                   >
                     <span
@@ -575,13 +577,13 @@ export function VisaoGeralRapida1004({
 
 
         {/* Heatmap dias x vendedores */}
-        <Card className={cn(isEmpresaPelegrini && 'pelegrini-led-card border-border/60 bg-card text-foreground')}>
-          <CardContent className="pt-6">
+        <Card className={cn(isEmpresaPelegrini && 'pelegrini-compact-card pelegrini-led-card border-border/60 bg-card text-foreground')}>
+          <CardContent className={cn(isEmpresaPelegrini ? 'p-2' : 'pt-6')}>
 
             <div className="overflow-x-auto">
-              <div className="min-w-[500px]">
+              <div className={cn(isEmpresaPelegrini ? 'min-w-[420px]' : 'min-w-[500px]')}>
                 {/* Cabeçalho dias */}
-                <div className="flex items-center gap-[2px] mb-1 pl-24">
+                <div className={cn("flex items-center gap-[2px]", isEmpresaPelegrini ? 'mb-0.5 pl-20' : 'mb-1 pl-24')}>
                   {Array.from({ length: totalDiasMes }, (_, i) => i + 1).map(d => (
                     <div key={d} className={cn("flex-1 text-center text-[9px]", isEmpresaPelegrini ? 'text-muted-foreground' : 'text-muted-foreground')}>
                       {d % 5 === 0 || d === 1 ? d : ''}
@@ -589,8 +591,8 @@ export function VisaoGeralRapida1004({
                   ))}
                 </div>
                 {heatmap.linhas.map(linha => (
-                  <div key={linha.nome} className="flex items-center gap-[2px] mb-[2px]">
-                    <div className="w-24 text-xs truncate uppercase pr-2">{linha.nome}</div>
+                  <div key={linha.nome} className={cn("flex items-center gap-[2px]", isEmpresaPelegrini ? 'mb-px' : 'mb-[2px]')}>
+                    <div className={cn("truncate uppercase pr-2", isEmpresaPelegrini ? 'w-20 text-[11px]' : 'w-24 text-xs')}>{linha.nome}</div>
                     {linha.cells.map((val, i) => {
                       const intensity = val / heatmap.maxVal;
                       const dt = new Date(ano, mes - 1, i + 1);
@@ -599,7 +601,7 @@ export function VisaoGeralRapida1004({
                         <div
                           key={i}
                           title={`Dia ${i + 1}: ${formatCurrency(val)}`}
-                          className="flex-1 h-5 rounded-sm transition-all hover:ring-1 hover:ring-primary"
+                          className={cn("flex-1 rounded-sm transition-all hover:ring-1 hover:ring-primary", isEmpresaPelegrini ? 'h-4' : 'h-5')}
                           style={{
                             background: val > 0
                               ? `hsl(var(--primary) / ${0.15 + intensity * 0.85})`
