@@ -257,13 +257,13 @@ export default function DuplicatasPage() {
   };
 
 
-  if (hasSearched && isLoading) return <div className="p-6"><LoadingState message="Carregando duplicatas..." /></div>;
-  if (hasSearched && error) return <div className="p-6"><ErrorState message={(error as Error).message} onRetry={() => refetch()} /></div>;
+  if (hasSearched && isLoading) return <div className="enterprise-page-shell"><LoadingState message="Carregando duplicatas..." /></div>;
+  if (hasSearched && error) return <div className="enterprise-page-shell"><ErrorState message={(error as Error).message} onRetry={() => refetch()} /></div>;
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="enterprise-page-shell">
       {/* Header */}
-      <div className="flex items-end justify-between gap-4 flex-wrap">
+      <div className="flex shrink-0 items-end justify-between gap-4 flex-wrap">
         <div>
           <h1 className="text-2xl font-bold">Duplicatas</h1>
           <p className="text-sm text-muted-foreground">Contas a pagar e a receber — análise financeira detalhada.</p>
@@ -478,9 +478,11 @@ export default function DuplicatasPage() {
       </CollapsibleFilterBar>
 
       {!hasSearched ? (
-        <FinanceiroSearchPrompt />
+        <div className="min-h-0 flex-1">
+          <FinanceiroSearchPrompt />
+        </div>
       ) : (
-      <>
+      <div className="min-h-0 flex-1 space-y-3 overflow-auto pr-1">
 
       {/* Totalizadores — 3 colunas × 4 linhas (Totais, Realizados, Pendentes, Complementares) */}
       {(() => {
@@ -629,7 +631,7 @@ export default function DuplicatasPage() {
 
       {/* Detalhe por Banco — tabela expansível */}
       <BancoDetalheTable records={records} />
-      </>
+      </div>
       )}
 
     </div>

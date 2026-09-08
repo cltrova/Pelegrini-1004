@@ -51,13 +51,15 @@ const MESES = [
   { value: '12', label: 'dezembro' },
 ];
 
+export const COMERCIAL_MESES = MESES;
+
 function normalizeMesValue(value: unknown): string | null {
   const n = Number(value);
   if (!Number.isInteger(n) || n < 1 || n > 12) return null;
   return String(n).padStart(2, '0');
 }
 
-function normalizeMeses(values: unknown[] | undefined): string[] {
+export function normalizeMeses(values: unknown[] | undefined): string[] {
   return Array.from(new Set((values || []).map(normalizeMesValue).filter((v): v is string => !!v))).sort();
 }
 
@@ -67,13 +69,13 @@ function safeParseISO(value: unknown): Date | null {
   return isValid(parsed) ? parsed : null;
 }
 
-function safeFormatISO(value: unknown, pattern: string): string | null {
+export function safeFormatISO(value: unknown, pattern: string): string | null {
   const parsed = safeParseISO(value);
   if (!parsed) return null;
   return format(parsed, pattern, { locale: ptBR });
 }
 
-function getMesLabel(value: unknown): string | null {
+export function getMesLabel(value: unknown): string | null {
   const mes = normalizeMesValue(value);
   if (!mes) return null;
   const label = MESES.find((m) => m.value === mes)?.label;
@@ -275,6 +277,10 @@ interface ComercialFiltersProps {
   monthOnly?: boolean;
   /** Campos adicionais renderizados dentro do grid de filtros. */
   extraFields?: React.ReactNode;
+  /** Renderiza apenas os campos, para uso dentro de uma superfície visual externa. */
+  embedded?: boolean;
+  /** Oculta a linha interna de ações quando a superfície externa já fornece Aplicar/Limpar. */
+  hideActions?: boolean;
 }
 
 // Helper: obter mês atual no formato "01", "02", etc.
@@ -382,6 +388,8 @@ export function ComercialFilters({
   collapsible = false,
   monthOnly = false,
   extraFields,
+  embedded = false,
+  hideActions = false,
 }: ComercialFiltersProps) {
   const { isMaster } = useAuth();
   const { codEmpresaAtiva, empresa } = useEmpresaAtiva();
@@ -523,7 +531,13 @@ export function ComercialFilters({
 
   return (
     <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
-      <div className="rounded-xl border border-border/60 bg-card/50 backdrop-blur-sm p-4 shadow-sm">
+      <div
+        className={cn(
+          embedded
+            ? 'min-w-0 p-0'
+            : 'rounded-lg border border-border/60 bg-card p-4',
+        )}
+      >
         {/* Header com toggle */}
         <CollapsibleTrigger asChild>
           <div className={cn(
@@ -550,7 +564,7 @@ export function ComercialFilters({
 
         <CollapsibleContent className="space-y-4">
           {/* Grid de filtros */}
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+          <div className="grid min-w-0 grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
             {/* Ano — multi-select */}
             <div className="space-y-1.5">
               <FieldLabel icon={Calendar}>Ano</FieldLabel>
@@ -962,6 +976,7 @@ export function ComercialFilters({
           </div>
 
           {/* Ações */}
+          {!hideActions && (
           <div className="mt-4 flex items-center justify-end gap-2 border-t border-border/40 pt-3">
             <Button
               variant="ghost"
@@ -976,13 +991,14 @@ export function ComercialFilters({
               <Button
                 onClick={onBuscar}
                 size="sm"
-                className={cn('shadow-sm', hasChanges && 'animate-pulse ring-2 ring-primary/30')}
+                className={cn(hasChanges && 'animate-pulse ring-2 ring-primary/30')}
               >
                 <Search className="h-4 w-4 mr-2" />
                 Buscar
               </Button>
             )}
           </div>
+          )}
         </CollapsibleContent>
       </div>
     </Collapsible>

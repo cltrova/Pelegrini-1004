@@ -60,7 +60,7 @@ export function QuedaKPIs({ clientes, isLoading }: Props) {
           <Card key={i} className="premium-card">
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
-                <Skeleton className="h-11 w-11 rounded-xl" />
+                <Skeleton className="h-11 w-11 rounded-lg" />
                 <div className="flex-1 space-y-2">
                   <Skeleton className="h-3 w-24" />
                   <Skeleton className="h-5 w-20" />
@@ -80,7 +80,7 @@ export function QuedaKPIs({ clientes, isLoading }: Props) {
         <Card key={i} className="premium-card">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className={`h-11 w-11 shrink-0 rounded-xl flex items-center justify-center ${k.color}`}>
+              <div className={`h-11 w-11 shrink-0 rounded-lg flex items-center justify-center ${k.color}`}>
                 <k.icon className="h-5 w-5" />
               </div>
               <div className="min-w-0">

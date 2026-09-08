@@ -51,7 +51,7 @@ export function LiveHeaderControls() {
         variant="outline"
         onClick={handleRefresh}
         disabled={fetching > 0}
-        className="h-8 px-3 gap-1.5 hover:border-primary/50 hover:bg-primary/5 transition-all"
+        className="h-8 px-3 gap-1.5 hover:border-primary/50 hover:bg-primary/5 transition-colors"
       >
         <RefreshCw className={cn('h-3.5 w-3.5', (spin || fetching > 0) && 'spin-once')} />
         <span className="text-xs">Atualizar</span>

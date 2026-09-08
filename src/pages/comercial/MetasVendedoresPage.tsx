@@ -10,8 +10,10 @@ import {
   Users, FileText, ReceiptText, Trophy, AlertTriangle,
   Sparkles, ChevronUp, ChevronDown, Minus, Crown, Medal, Award, User, Eye
 } from 'lucide-react';
+import { EnterprisePageHeader } from '@/components/enterprise';
 import { VendedorDetailsDialog } from '@/components/comercial/VendedorDetailsDialog';
-import { getDiasUteisNoMes, getDiasUteisDecorridos, type ComercialFilters as ComercialFiltersType } from '@/types/comercial';
+import { getDiasUteisNoMes, getDiasUteisDecorridos, type ComercialFilters as ComercialFiltersType, type Pedido } from '@/types/comercial';
+import type { ProdutoItem } from '@/types/comercialProdutos';
 import { formatCurrency, formatPercent, formatCompactNumber, formatPeriodShort } from '@/utils/formatters';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -24,13 +26,10 @@ import {
 } from 'recharts';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { CollapsibleFilterBar } from '@/components/common/CollapsibleFilterBar';
 import { 
-  ComercialFilters, 
   getDefaultFiltersForEmpresa, 
-  getComercialFiltersSummary, 
-  countActiveFilters 
 } from '@/components/comercial/ComercialFilters';
+import { EnterpriseComercialFilters } from '@/components/comercial/EnterpriseComercialFilters';
 import { LayoutAlternativoComercial } from '@/components/comercial/LayoutAlternativoComercial';
 import { getVendedorAvatar } from '@/config/vendedorAvatars';
 import { getFeriadosComerciaisMeta } from '@/utils/feriadosComerciais';
@@ -60,6 +59,22 @@ import {
 } from '@/utils/vendedores1004';
 import { invalidarConsultasComerciais } from '@/utils/comercialQueryInvalidation';
 import { resolverContagemTotalizadorPelegrini } from '@/utils/comercialKpiFallback';
+
+type VendedorDetalheRow = {
+  codigo: string | number;
+  nome: string;
+  metaMensal: number;
+  faturamentoMesAtual: number;
+  valorPendente: number;
+  valorTotal: number;
+  percentualMetaFaturado: number;
+  percentualMetaTotal: number;
+  diferenca: number;
+  status: 'acima' | 'proximo' | 'abaixo';
+  metaDiaria: number;
+  metaEsperada: number;
+  ticketMedio?: number;
+};
 
 // Metas fixas de fallback para empresas que não possuem MetaVendedor no JSON
 const METAS_VENDEDORES: Record<string | number, number> = {
@@ -102,7 +117,7 @@ export default function MetasVendedoresPage() {
    // Filtros - inicializar como undefined para NÃO filtrar até periodoDisponivel estar disponível
    const [pendingFilters, setPendingFilters] = useState<ComercialFiltersType | undefined>(undefined);
    const [appliedFilters, setAppliedFilters] = useState<ComercialFiltersType | undefined>(undefined);
-  const [filtersOpen, setFiltersOpen] = useState(false);
+  const filtersOpen = true;
 
   const aplicarFiltroPadraoPelegrini = useCallback((filters: ComercialFiltersType | undefined) => {
     return aplicarEquipeContextualPelegrini1004AoFiltro(
@@ -152,7 +167,7 @@ export default function MetasVendedoresPage() {
     keepPreviousData: !isPelegriniPage,
   });
   const [chartView, setChartView] = useState<'mensal' | 'diario'>('diario');
-  const [vendedorDetalhe, setVendedorDetalhe] = useState<{ row: any; ranking: number } | null>(null);
+  const [vendedorDetalhe, setVendedorDetalhe] = useState<{ row: VendedorDetalheRow; ranking: number } | null>(null);
   const [receitaDetalheOpen, setReceitaDetalheOpen] = useState(false);
   const {
     produtos: produtos1004,
@@ -258,7 +273,6 @@ export default function MetasVendedoresPage() {
   const handleBuscar = useCallback(() => {
     setAppliedFilters(aplicarFiltroPadraoPelegrini(pendingFilters));
     invalidarConsultasComerciais(queryClient);
-    setFiltersOpen(false);
   }, [aplicarFiltroPadraoPelegrini, pendingFilters, queryClient]);
 
   const handlePendingFiltersChange = useCallback((filters: ComercialFiltersType) => {
@@ -368,9 +382,9 @@ export default function MetasVendedoresPage() {
       // Pelegrini: base de receita é `ValorLiquidoFinal` (bruto com desconto) - valor_devolucao.
       const faturamentoMesAtual = usaRegraReceitaPelegrini
         ? pedidosVendedor.reduce((acc, p) => {
-            if (p.tipo === 'DEVOLUCAO') return acc - Math.abs((p as any).valor_devolucao_real || p.valor_real || 0);
-            const base = Math.abs(Number((p as any).valor_liquido_final ?? Math.max(0, Math.abs(p.valor_bruto || 0) - Math.abs(p.valor_desconto || 0))));
-            const devolucao = Math.abs(Number((p as any).valor_devolucao_real || 0));
+            if (p.tipo === 'DEVOLUCAO') return acc - Math.abs(p.valor_devolucao_real || p.valor_real || 0);
+            const base = Math.abs(Number(p.valor_liquido_final ?? Math.max(0, Math.abs(p.valor_bruto || 0) - Math.abs(p.valor_desconto || 0))));
+            const devolucao = Math.abs(Number(p.valor_devolucao_real || 0));
             return acc + base - devolucao;
           }, 0)
         : pedidosVendedor.reduce((acc, p) => acc + (p.valor_liquido || 0), 0);
@@ -476,9 +490,9 @@ export default function MetasVendedoresPage() {
       data_faturamento: item.data_faturamento,
       data_pedido: item.data_pedido,
       cliente_codigo: item.cliente_codigo,
-      valor_liquido_final: Number((item as any).valor_liquido_final_item ?? item.valor_total ?? 0),
-      valor_liquido: Number((item as any).valor_liquido_final_item ?? item.valor_total ?? 0),
-      valor_real: Number((item as any).valor_liquido_final_item ?? item.valor_total ?? 0),
+      valor_liquido_final: Number(item.valor_liquido_final_item ?? item.valor_total ?? 0),
+      valor_liquido: Number(item.valor_liquido_final_item ?? item.valor_total ?? 0),
+      valor_real: Number(item.valor_liquido_final_item ?? item.valor_total ?? 0),
       valor_bruto: Number(item.valor_venda_item ?? item.valor_bruto_item ?? 0),
       valor_desconto: Number(item.valor_desconto ?? 0),
       valor_devolucao_real: Number(item.valor_devolucao_item ?? 0),
@@ -634,10 +648,9 @@ export default function MetasVendedoresPage() {
     && (!receita1004PorVendedor || receita1004PorVendedor.size === 0)
       ? []
       : vendedoresComMetaFonteFinal;
-  const pedidosDetalheVisual: any[] = isPelegriniPage ? pedidosFonteFinal : pedidos;
+  const pedidosDetalheVisual: Array<Pedido | ProdutoItem> = isPelegriniPage ? pedidosFonteFinal : pedidos;
   const semVendedores = !vendedoresBaseVisual.length;
   const isCampanhas1004Ativa = isPelegriniPage && activeTab === 'campanhas';
-  const filtersResumo = pendingFilters ? (aplicarFiltroPadraoPelegrini(pendingFilters) ?? pendingFilters) : undefined;
   const tabTriggerClass = cn(
     'flex-none whitespace-nowrap px-4 text-sm',
     isPelegriniPage
@@ -664,39 +677,34 @@ export default function MetasVendedoresPage() {
 
   return (
     <div className={cn(
-      'p-4 md:p-6 space-y-4',
-      isPelegriniPage && 'min-h-screen bg-background text-foreground',
+      'enterprise-page',
+      isPelegriniPage && 'bg-background text-foreground',
     )}>
-      {/* Barra de Filtros */}
+      <EnterprisePageHeader
+        title="Dashboard Comercial"
+        subtitle="Faturamento, margem, devoluções e ranking"
+        metadata={`${kpis.qtdPedidos.toLocaleString('pt-BR')} pedidos | ${kpis.qtdClientes.toLocaleString('pt-BR')} clientes`}
+      />
+
       {!isCampanhas1004Ativa && (
-        <CollapsibleFilterBar
-          title="Filtros"
-           summary={filtersResumo ? getComercialFiltersSummary(filtersResumo, vendedoresParaFiltro1004) : []}
-           activeFiltersCount={filtersResumo ? countActiveFilters(filtersResumo) : 0}
+        <EnterpriseComercialFilters
+          pendingFilters={pendingFilters || getDefaultFiltersForEmpresa(codEmpresaAtiva)}
+          appliedFilters={appliedFilters || getDefaultFiltersForEmpresa(codEmpresaAtiva)}
+          onPendingFiltersChange={handlePendingFiltersChange}
+          onApply={handleBuscar}
           onClear={handleClearFilters}
-          isOpen={filtersOpen}
-          onOpenChange={setFiltersOpen}
-          className={isPelegriniPage ? '[&_>div]:border-border/60 [&_>div]:bg-card [&_>div]:shadow-none [&_>div>button]:text-foreground [&_>div>button:hover]:bg-muted/40' : undefined}
-        >
-          <ComercialFilters
-             filters={pendingFilters || getDefaultFiltersForEmpresa(codEmpresaAtiva)}
-            onFiltersChange={handlePendingFiltersChange}
-            onBuscar={handleBuscar}
-            hasChanges={hasChanges}
-            anos={ANOS_DISPONIVEIS}
-            vendedores={vendedoresParaFiltro1004}
-            showVendedorFilter
-          />
-        </CollapsibleFilterBar>
+          hasChanges={hasChanges}
+          anos={ANOS_DISPONIVEIS}
+          vendedores={vendedoresParaFiltro1004}
+          resultCount={pedidosFonteFinal.length}
+          showVendedorFilter
+          useNativeControls
+        />
       )}
 
-
-
-
-
       {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v); try { sessionStorage.setItem('comercial:metas:tab', v); } catch { /* storage pode estar bloqueado pelo navegador */ } }} className="space-y-6">
-        <div className="w-full overflow-x-auto overscroll-x-contain rounded-md [scrollbar-width:thin]">
+      <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v); try { sessionStorage.setItem('comercial:metas:tab', v); } catch { /* storage pode estar bloqueado pelo navegador */ } }} className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden">
+        <div className="w-full shrink-0 overflow-x-auto overscroll-x-contain rounded-md [scrollbar-width:thin]">
         <TabsList className={cn(
           'flex h-12 w-max min-w-full justify-start',
           isPelegriniPage && 'border border-border/60 bg-muted/40 p-1 text-muted-foreground shadow-none [&_button:hover]:text-foreground [&_button[data-state=active]]:bg-primary [&_button[data-state=active]]:text-primary-foreground [&_button[data-state=active]]:shadow-sm',
@@ -717,7 +725,7 @@ export default function MetasVendedoresPage() {
 
 
         {/* ==================== ABA: VISÃO GERAL ==================== */}
-        <TabsContent value="visao-geral" className="space-y-6">
+        <TabsContent value="visao-geral" className="mt-0 min-h-0 flex-1 space-y-3 overflow-auto">
           {isLayoutPremium ? (
             <VisaoGeralRapida1004
               vendedoresComMeta={vendedoresComMetaFonteFinal}
@@ -748,7 +756,7 @@ export default function MetasVendedoresPage() {
 
         {/* ==================== ABA: DETALHES (antiga Visão Geral 1004) ==================== */}
         {isPelegriniPage && (
-          <TabsContent value="detalhes" className="space-y-6">
+          <TabsContent value="detalhes" className="mt-0 min-h-0 flex-1 space-y-3 overflow-auto">
             <PremiumMetasView
               vendedoresComMeta={vendedoresComMetaFonteFinal}
               pedidos={pedidosFonteFinal}
@@ -761,7 +769,7 @@ export default function MetasVendedoresPage() {
         )}
 
         {/* ==================== ABA: METAS DIÁRIAS ==================== */}
-        <TabsContent value="metas-diarias" className="space-y-6">
+        <TabsContent value="metas-diarias" className="mt-0 min-h-0 flex-1 space-y-3 overflow-auto">
           <MetasDiariasPage />
         </TabsContent>
 
@@ -769,7 +777,7 @@ export default function MetasVendedoresPage() {
 
 
         {/* ==================== ABA: RANKING ==================== */}
-        <TabsContent value="ranking" className="space-y-6">
+        <TabsContent value="ranking" className="mt-0 min-h-0 flex-1 space-y-3 overflow-auto">
           <PremiumSectionCard
             title="Ranking de Vendedores"
             subtitle="Performance por vendedor ordenada por valor líquido"
@@ -871,7 +879,7 @@ export default function MetasVendedoresPage() {
         </TabsContent>
 
         {/* ==================== ABA: COMPARATIVOS ==================== */}
-        <TabsContent value="comparativos" className="space-y-6">
+        <TabsContent value="comparativos" className="mt-0 min-h-0 flex-1 space-y-3 overflow-auto">
           <>
           {/* KPIs Comparativos — padrão premium1004 */}
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
@@ -1141,14 +1149,14 @@ export default function MetasVendedoresPage() {
         </TabsContent>
 
         {/* ==================== ABA: INSIGHTS IA ==================== */}
-        <TabsContent value="insights" className="space-y-6">
+        <TabsContent value="insights" className="mt-0 min-h-0 flex-1 space-y-3 overflow-auto">
           <InsightsIATab vendedores={vendedoresBaseVisual} kpis={kpisGerais} />
         </TabsContent>
 
 
         {/* ==================== ABA: CAMPANHAS ==================== */}
         {isPelegriniPage && (
-          <TabsContent value="campanhas" className="space-y-6">
+          <TabsContent value="campanhas" className="mt-0 min-h-0 flex-1 space-y-3 overflow-auto">
             <CampanhasTab periodoFiltro={periodoCampanhas} />
           </TabsContent>
         )}

@@ -51,7 +51,7 @@ export default function RelatorioPage() {
 
   const content = (
     <div className="flex-1 flex flex-col overflow-hidden">
-      <div className="p-3 sm:p-4 md:p-6 space-y-4 sm:space-y-6 overflow-y-auto">
+      <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden p-4">
         {/* Collapsible Filters */}
         <ReportFiltersComponent
           filters={pendingFilters}
@@ -64,8 +64,8 @@ export default function RelatorioPage() {
         {summary && <KPICards summary={summary} />}
 
         {/* 3 Tabs */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-3 h-auto">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex min-h-0 w-full flex-1 flex-col overflow-hidden">
+          <TabsList className="grid h-auto w-full shrink-0 grid-cols-3">
             <TabsTrigger value="dashboard" className="flex items-center justify-center gap-1.5 px-2 py-2 text-xs sm:text-sm">
               <LayoutDashboard className="h-4 w-4 flex-shrink-0" />
               <span className="truncate">Dashboard</span>
@@ -80,15 +80,15 @@ export default function RelatorioPage() {
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="dashboard" className="mt-4 sm:mt-6">
+          <TabsContent value="dashboard" className="mt-3 min-h-0 flex-1 overflow-auto">
             {summary && <DashboardTab summary={summary} />}
           </TabsContent>
 
-          <TabsContent value="clientes" className="mt-4 sm:mt-6">
+          <TabsContent value="clientes" className="mt-3 min-h-0 flex-1 overflow-auto">
             <ClientsReportTab filters={appliedFilters} />
           </TabsContent>
 
-          <TabsContent value="vendedores" className="mt-4 sm:mt-6">
+          <TabsContent value="vendedores" className="mt-3 min-h-0 flex-1 overflow-auto">
             <AgentsReportTab filters={appliedFilters} />
           </TabsContent>
         </Tabs>
@@ -98,7 +98,7 @@ export default function RelatorioPage() {
 
   if (isMobile) {
     return (
-      <div className="flex flex-col min-h-screen bg-background">
+      <div className="flex h-screen flex-col overflow-hidden bg-background">
         <div className="flex-1 overflow-hidden pb-20">
           {content}
         </div>

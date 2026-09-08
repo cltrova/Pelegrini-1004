@@ -177,7 +177,7 @@ export default function VariacaoPage() {
   // Mobile
   if (isMobile) {
     return (
-      <div className="flex flex-col min-h-screen bg-background pb-20">
+      <div className="flex h-screen flex-col overflow-hidden bg-background pb-20">
         <MobileHeader
           title="Variação"
           subtitle="Fluxo de Caixa"
@@ -313,7 +313,7 @@ export default function VariacaoPage() {
 
   // Desktop
   return (
-    <div className="min-h-screen">
+    <div className="flex h-full min-h-0 flex-1 overflow-hidden">
       <Header
         actions={
           <div className="flex items-center gap-2">
@@ -325,7 +325,7 @@ export default function VariacaoPage() {
         }
       />
 
-      <div className="p-6 space-y-6">
+      <div className="enterprise-page-shell max-w-[1600px]">
         {isLoading && hasSearched ? (
           <LoadingState message="Carregando dados de fluxo de caixa..." />
         ) : isError ? (
@@ -338,7 +338,7 @@ export default function VariacaoPage() {
           <Tabs
             value={activeTab}
             onValueChange={(v) => setActiveTab(v as 'demonstracao' | 'dashboard' | 'assistente' | 'configuracao')}
-            className="space-y-6"
+            className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden"
           >
             {activeTab === 'demonstracao' ? (
               <CollapsibleFilterBar
@@ -386,7 +386,7 @@ export default function VariacaoPage() {
               </CollapsibleFilterBar>
             ) : null}
 
-            <TabsList className="h-11 p-1 bg-muted/40 backdrop-blur border border-border/60 rounded-xl gap-1">
+            <TabsList className="h-10 shrink-0 gap-1 rounded-lg border border-border/60 bg-muted/40 p-1 backdrop-blur">
               <TabsTrigger
                 value="demonstracao"
                 className="gap-2 h-9 px-4 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-md data-[state=active]:text-foreground text-muted-foreground transition-all"
@@ -417,7 +417,7 @@ export default function VariacaoPage() {
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="demonstracao" className="space-y-6 mt-0">
+            <TabsContent value="demonstracao" className="mt-0 min-h-0 flex-1 space-y-3 overflow-auto">
               {!hasSearched ? (
                 <FinanceiroSearchPrompt />
               ) : filterOptions.anos.length < 1 ? (
@@ -435,7 +435,7 @@ export default function VariacaoPage() {
               )}
             </TabsContent>
 
-            <TabsContent value="dashboard" className="space-y-6 mt-0">
+            <TabsContent value="dashboard" className="mt-0 min-h-0 flex-1 space-y-3 overflow-auto">
               {!hasSearched ? (
                 <FinanceiroSearchPrompt />
               ) : filterOptions.anos.length < 1 ? (
@@ -447,7 +447,7 @@ export default function VariacaoPage() {
               )}
             </TabsContent>
 
-            <TabsContent value="assistente" className="space-y-6 mt-0">
+            <TabsContent value="assistente" className="mt-0 min-h-0 flex-1 space-y-3 overflow-auto">
               <VariacaoAssistant 
                 variacaoData={variacaoData || []} 
                 gruposInverterSinal={new Set<string>()}
@@ -457,7 +457,7 @@ export default function VariacaoPage() {
               />
             </TabsContent>
 
-            <TabsContent value="configuracao" className="space-y-6 mt-0">
+            <TabsContent value="configuracao" className="mt-0 min-h-0 flex-1 space-y-3 overflow-auto">
               <DfcConfigTab />
             </TabsContent>
           </Tabs>

@@ -1,10 +1,10 @@
 import { useMemo, useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { formatCurrency, formatPercent } from '@/utils/formatters';
 import {
-  Crown, Trophy, Users, TrendingUp, Flame, Sparkles, Target,
+  Trophy, TrendingUp, Flame, Target,
 } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Cell, ResponsiveContainer,
@@ -17,50 +17,39 @@ import {
 import { RankingVendedoresLabels } from './RankingVendedoresLabels';
 
 interface VendedorRow {
-  codigo: any;
+  codigo: string | number;
   nome: string;
   mes: number;
   meta: number;
   metaDiaria?: number;
   status?: 'acima' | 'proximo' | 'abaixo' | string;
-  _row: any;
+  _row: unknown;
 }
 
 interface Props {
   data: VendedorRow[];
   periodo?: PeriodoFiltroRanking;
-  onClick?: (row: any) => void;
+  onClick?: (row: unknown) => void;
   variant?: 'default' | 'pelegriniBlue';
 }
 
 type Modo = 'faturamento' | 'meta';
-
-const STATUS_COLORS: Record<string, { grad: string; solid: string; text: string; ring: string; glow: string }> = {
-  acima:   { grad: 'from-emerald-400 via-emerald-500 to-teal-600',   solid: 'hsl(142 71% 45%)', text: 'text-emerald-400', ring: 'ring-emerald-500/40', glow: 'shadow-[0_0_30px_-8px_hsl(142_71%_45%/0.6)]' },
-  proximo: { grad: 'from-amber-300 via-amber-500 to-orange-600',     solid: 'hsl(38 92% 50%)',  text: 'text-amber-400',   ring: 'ring-amber-500/40',   glow: 'shadow-[0_0_30px_-8px_hsl(38_92%_50%/0.6)]' },
-  abaixo:  { grad: 'from-emerald-400 via-green-500 to-emerald-700', solid: 'hsl(142 71% 45%)', text: 'text-emerald-400', ring: 'ring-emerald-500/40', glow: 'shadow-[0_0_30px_-8px_hsl(142_71%_45%/0.6)]' },
-  default: { grad: 'from-primary/70 via-primary to-primary/60',      solid: 'hsl(var(--primary))', text: 'text-primary',   ring: 'ring-primary/40',     glow: 'shadow-[0_0_30px_-8px_hsl(var(--primary)/0.6)]' },
+type StatusKey = 'acima' | 'proximo' | 'abaixo' | 'default';
+type EnrichedVendedorRow = VendedorRow & {
+  pct: number;
+  metaReferencia: number;
+  metaLabel: string;
+  pctMeta: number;
+  gap: number;
+  rank: number;
 };
 
-function getStatusPalette(row: any, modo: Modo) {
-  if (modo === 'meta') {
-    if (row.pctMeta >= 100) return STATUS_COLORS.acima;
-    if (row.pctMeta >= 90)  return STATUS_COLORS.proximo;
-    if (row.pctMeta > 0)    return STATUS_COLORS.abaixo;
-    return STATUS_COLORS.default;
-  }
-  return STATUS_COLORS[row.status as string] || STATUS_COLORS.default;
-}
-
-function getIniciais(nome: string) {
-  return nome
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map(n => n[0])
-    .join('')
-    .toUpperCase();
-}
+const STATUS_COLORS: Record<StatusKey, { solid: string }> = {
+  acima: { solid: 'hsl(142 71% 45%)' },
+  proximo: { solid: 'hsl(38 92% 50%)' },
+  abaixo: { solid: 'hsl(142 71% 45%)' },
+  default: { solid: 'hsl(var(--primary))' },
+};
 
 export function RankingVendedoresChart({ data, periodo, onClick, variant = 'default' }: Props) {
   const [modo, setModo] = useState<Modo>('faturamento');
@@ -102,15 +91,8 @@ export function RankingVendedoresChart({ data, periodo, onClick, variant = 'defa
       'overflow-hidden relative transition-shadow duration-300',
       isBlue
         ? 'pelegrini-led-card border-border/60 bg-card text-foreground'
-        : 'border-border/60 bg-gradient-to-br from-card via-card to-primary/[0.03]',
+        : 'border-border/60 bg-card',
     )}>
-      {!isBlue && (
-        <>
-          <div className="pointer-events-none absolute -top-24 -right-24 h-64 w-64 rounded-full bg-primary/10 blur-3xl" />
-          <div className="pointer-events-none absolute -bottom-24 -left-24 h-64 w-64 rounded-full bg-amber-500/5 blur-3xl" />
-        </>
-      )}
-
       <CardHeader className="pb-3 relative">
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div />
@@ -154,21 +136,21 @@ export function RankingVendedoresChart({ data, periodo, onClick, variant = 'defa
             label="Líder"
             value={lider?.nome || '—'}
             hint={lider ? formatCurrency(lider.mes) : ''}
-            accent={isBlue ? 'pelegrini-led-card bg-background/35 text-foreground border-border/50' : 'bg-gradient-to-br from-amber-500/15 to-transparent'}
+            accent={isBlue ? 'pelegrini-led-card bg-background/35 text-foreground border-border/50' : 'bg-amber-500/10'}
           />
           <StatChip
             icon={<TrendingUp className={cn('h-3.5 w-3.5', isBlue ? 'text-primary' : 'text-violet-400')} />}
             label="Média por vendedor"
             value={formatCurrency(media)}
             hint={`${enriched.length} vendedor(es)`}
-            accent={isBlue ? 'pelegrini-led-card bg-primary/5 text-foreground border-border/50' : 'bg-gradient-to-br from-violet-500/15 to-transparent'}
+            accent={isBlue ? 'pelegrini-led-card bg-primary/5 text-foreground border-border/50' : 'bg-violet-500/10'}
           />
           <StatChip
             icon={<Flame className={cn('h-3.5 w-3.5', isBlue ? 'text-primary' : 'text-emerald-400')} />}
             label="Bateram meta"
             value={`${acima}/${enriched.length}`}
             hint={enriched.length ? `${((acima / enriched.length) * 100).toFixed(0)}%` : ''}
-            accent={isBlue ? 'pelegrini-led-card bg-primary/5 text-foreground border-border/50' : 'bg-gradient-to-br from-emerald-500/15 to-transparent'}
+            accent={isBlue ? 'pelegrini-led-card bg-primary/5 text-foreground border-border/50' : 'bg-emerald-500/10'}
           />
         </div>
       </CardHeader>
@@ -188,25 +170,6 @@ export function RankingVendedoresChart({ data, periodo, onClick, variant = 'defa
                     margin={{ top: 24, right: 16, left: 8, bottom: 12 }}
                     onMouseLeave={() => setHoverKey(null)}
                   >
-                <defs>
-                  <linearGradient id="grad-acima" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor={isBlue ? '#2563eb' : 'hsl(160 84% 55%)'} stopOpacity={1} />
-                    <stop offset="100%" stopColor={isBlue ? '#1e40af' : 'hsl(160 84% 35%)'} stopOpacity={0.9} />
-                  </linearGradient>
-                  <linearGradient id="grad-proximo" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor={isBlue ? '#1d4ed8' : 'hsl(38 92% 60%)'} stopOpacity={1} />
-                    <stop offset="100%" stopColor={isBlue ? '#1e3a8a' : 'hsl(28 92% 45%)'} stopOpacity={0.88} />
-                  </linearGradient>
-                  <linearGradient id="grad-abaixo" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor={isBlue ? '#0ea5e9' : 'hsl(142 71% 55%)'} stopOpacity={1} />
-                    <stop offset="100%" stopColor={isBlue ? '#075985' : 'hsl(150 71% 32%)'} stopOpacity={0.88} />
-                  </linearGradient>
-                  <linearGradient id="grad-default" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor={isBlue ? '#3b82f6' : 'hsl(var(--primary))'} stopOpacity={1} />
-                    <stop offset="100%" stopColor={isBlue ? '#1d4ed8' : 'hsl(var(--primary))'} stopOpacity={0.75} />
-                  </linearGradient>
-                </defs>
-
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} opacity={isBlue ? 0.42 : 0.4} />
                 <XAxis
                   dataKey="nome"
@@ -247,8 +210,8 @@ export function RankingVendedoresChart({ data, periodo, onClick, variant = 'defa
                 <Bar
                   dataKey={modo === 'faturamento' ? 'mes' : 'pctMeta'}
                   radius={[10, 10, 4, 4]}
-                  onMouseOver={(d: any) => setHoverKey(String(d?.codigo))}
-                  onClick={(d: any) => onClick?.(d?._row)}
+                  onMouseOver={(d: EnrichedVendedorRow) => setHoverKey(String(d.codigo))}
+                  onClick={(d: EnrichedVendedorRow) => onClick?.(d._row)}
                   animationDuration={700}
                   cursor="pointer"
                 >
@@ -259,7 +222,7 @@ export function RankingVendedoresChart({ data, periodo, onClick, variant = 'defa
                     return (
                       <Cell
                         key={String(v.codigo)}
-                        fill={`url(#grad-${key})`}
+                        fill={isBlue ? 'hsl(var(--primary))' : STATUS_COLORS[key].solid}
                         opacity={dim ? 0.35 : 1}
                         stroke={isHover ? 'hsl(var(--foreground))' : 'transparent'}
                         strokeWidth={isHover ? 1.5 : 0}
@@ -279,7 +242,7 @@ export function RankingVendedoresChart({ data, periodo, onClick, variant = 'defa
   );
 }
 
-function paletteKey(row: any, modo: Modo): 'acima' | 'proximo' | 'abaixo' | 'default' {
+function paletteKey(row: EnrichedVendedorRow, modo: Modo): StatusKey {
   if (modo === 'meta') {
     if (row.pctMeta >= 100) return 'acima';
     if (row.pctMeta >= 90) return 'proximo';
@@ -297,51 +260,23 @@ function compactCurrency(v: number) {
   return `R$ ${Math.round(v)}`;
 }
 
-function VendedorTick(props: any) {
-  const { x, y, payload, index, data, modo, variant = 'default' } = props;
-  const isBlue = variant === 'pelegriniBlue';
-  const row = Array.isArray(data) ? data[index] : null;
-  const nome: string = payload?.value || '';
-  const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '';
-  const short = nome.length > 10 ? nome.slice(0, 9) + '…' : nome;
-  const valueLabel = row
-    ? modo === 'meta'
-      ? formatPercent(row.pctMeta || 0)
-      : formatCurrency(row.mes || 0)
-    : '';
-  return (
-    <g transform={`translate(${x},${y + 4})`}>
-      <text
-        textAnchor="middle"
-        fontSize={11}
-        fill={isBlue ? 'hsl(var(--muted-foreground))' : 'hsl(var(--muted-foreground))'}
-        className="font-medium"
-      >
-        {medal ? `${medal} ` : ''}{short}
-      </text>
-      {valueLabel && (
-        <text
-          y={18}
-          textAnchor="middle"
-          fontSize={10}
-          fill={isBlue ? 'hsl(var(--foreground))' : 'hsl(var(--foreground))'}
-          className="font-mono font-semibold tabular-nums"
-        >
-          {valueLabel}
-        </text>
-      )}
-    </g>
-  );
-}
-
-function CustomTooltip({ active, payload, modo, variant = 'default' }: any) {
+function CustomTooltip({
+  active,
+  payload,
+  variant = 'default',
+}: {
+  active?: boolean;
+  payload?: Array<{ payload: EnrichedVendedorRow }>;
+  modo: Modo;
+  variant?: Props['variant'];
+}) {
   if (!active || !payload?.length) return null;
   const v = payload[0].payload;
   const medal = v.rank === 1 ? '🥇' : v.rank === 2 ? '🥈' : v.rank === 3 ? '🥉' : `#${v.rank}`;
   return (
     <div className={cn(
-      'rounded-xl border backdrop-blur-md shadow-xl p-3 min-w-[220px]',
-      variant === 'pelegriniBlue' ? 'border-border/70 bg-popover/95 text-popover-foreground shadow-xl' : 'border-border/70 bg-popover/95',
+      'rounded-lg border p-3 min-w-[220px]',
+      variant === 'pelegriniBlue' ? 'border-border/70 bg-popover text-popover-foreground' : 'border-border/70 bg-popover',
     )}>
       <div className="flex items-center justify-between gap-3 mb-2">
         <span className="text-xs font-bold uppercase tracking-wide">{v.nome}</span>

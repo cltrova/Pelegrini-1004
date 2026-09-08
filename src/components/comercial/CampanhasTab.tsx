@@ -1,4 +1,4 @@
-﻿import { useMemo, useState, useEffect } from 'react';
+import { useCallback, useMemo, useState, useEffect } from 'react';
 import { useCampanhas, type Campanha, type CampanhaInput, type CampanhaMarca } from '@/hooks/useCampanhas';
 import { useComercialProdutos } from '@/hooks/useComercialProdutos';
 import { supabase } from '@/integrations/supabase/client';
@@ -59,6 +59,26 @@ const VENDEDORES_CT_CAMPANHA_1004_LABELS = [
   { codigo: '71', nome: 'PAULO HENRIQUE' },
 ];
 
+type CampanhaItem = Record<string, unknown> & {
+  tipo?: string;
+  data_faturamento?: string;
+  data_pedido?: string;
+  nome_externo?: string;
+  nome_interno?: string;
+  vendedor_nome?: string;
+  marca?: string;
+  descricao?: string;
+  produto?: string;
+  grupo?: string;
+  grupo_produto?: string;
+  cliente_razao?: string;
+  nome_grupo?: string;
+  cod_produto?: string | number;
+  quantidade?: number;
+  cod_pedido?: string | number;
+  id?: string | number;
+};
+
 // Input monetário BRL: digita como cents, mostra 1.234.567,89
 function MoneyInputBRL({
   value,
@@ -114,7 +134,7 @@ interface CampanhaCalculada extends Campanha {
   encerrada: boolean;
   vendedoresContrib: { nome: string; valor: number }[];
   statusVisual: 'on-track' | 'risk' | 'achieved' | 'expired';
-  itensPeriodo: any[];
+  itensPeriodo: CampanhaItem[];
   rankingCodEmpresaBi?: string | null;
   rankingFilialAtiva?: string | null;
   rankingVendedoresExtras1004?: string[];
@@ -137,7 +157,7 @@ function campanhaEstaEncerrada(campanha: Pick<Campanha, 'data_fim' | 'status'> &
 }
 
 function valorBrutoCampanha(
-  p: any,
+  p: CampanhaItem,
   _codEmpresaBi?: string | null,
   marcasCampanha?: Array<Pick<CampanhaMarca, 'marca'>>,
 ) {
@@ -171,23 +191,23 @@ function dateKeyCampanha(value: unknown) {
 
 function dateLocalCampanha(value: unknown, fimDoDia = false) {
   const key = dateKeyCampanha(value);
-  if (!key) return new Date(value as any);
+  if (!key) return new Date(String(value ?? ''));
   const [y, m, d] = key.split('-').map(Number);
   return new Date(y, m - 1, d, fimDoDia ? 23 : 0, fimDoDia ? 59 : 0, fimDoDia ? 59 : 0, fimDoDia ? 999 : 0);
 }
 
-function itemFaturadoNoPeriodoCampanha(p: any, inicioKey: string, fimKey: string) {
+function itemFaturadoNoPeriodoCampanha(p: CampanhaItem, inicioKey: string, fimKey: string) {
   // Inclui PEDIDO e DEVOLUCAO; o tratamento do valor depende da empresa.
   if (p.tipo !== 'PEDIDO' && p.tipo !== 'DEVOLUCAO') return false;
   const dt = dateKeyCampanha(p.data_faturamento);
   return !!dt && dt >= inicioKey && dt <= fimKey;
 }
 
-function nomeVendedorCampanha(p: any) {
+function nomeVendedorCampanha(p: CampanhaItem) {
   return (p.nome_externo || p.nome_interno || p.vendedor_nome || '').toString().trim();
 }
 
-function pertenceEquipeCampanha(p: any, codEmpresaBi?: string | null, filialAtiva?: string | null) {
+function pertenceEquipeCampanha(p: CampanhaItem, codEmpresaBi?: string | null, filialAtiva?: string | null) {
   const nome = nomeVendedorCampanha(p);
   return !!nome && nomePertenceEquipe(nome, codEmpresaBi, filialAtiva);
 }
@@ -233,7 +253,7 @@ function vendedoresExtrasEfetivosCampanha1004(
 }
 
 function itemElegivelTotalCampanha(
-  p: any,
+  p: CampanhaItem,
   codEmpresaBi?: string | null,
   vendedoresExtrasSelecionados1004?: Set<string>,
 ) {
@@ -247,7 +267,7 @@ function itemElegivelTotalCampanha(
 }
 
 function itemPertenceEscopoCampanha(
-  p: any,
+  p: CampanhaItem,
   codEmpresaBi?: string | null,
   filialAtiva?: string | null,
   vendedoresExtrasSelecionados1004?: Set<string>,
@@ -260,7 +280,7 @@ function itemPertenceEscopoCampanha(
 }
 
 function itemPertenceMarcaCampanha(
-  p: any,
+  p: CampanhaItem,
   marca: string,
   codEmpresaBi?: string | null,
 ) {
@@ -674,7 +694,7 @@ export function CampanhasTab({ periodoFiltro }: CampanhasTabProps = {}) {
               isPending={isMutating}
               marcasDisponiveis={marcasDisponiveis}
               trigger={
-                <Button size="sm" className="h-9 gap-1.5 rounded-lg shadow-md hover:shadow-lg transition-all">
+                <Button size="sm" className="h-9 gap-1.5 rounded-lg">
                   <Plus className="h-4 w-4" /> Nova Campanha
                 </Button>
               }
@@ -696,7 +716,7 @@ export function CampanhasTab({ periodoFiltro }: CampanhasTabProps = {}) {
 
         {/* INSIGHTS IA */}
         {(insightsQuery.data && insightsQuery.data.length > 0) && (
-          <Card className="border-primary/20 bg-gradient-to-br from-primary/5 via-transparent to-transparent rounded-2xl shadow-sm">
+          <Card className="rounded-lg border-primary/20 bg-card">
             <CardHeader className="pb-3">
               <CardTitle className="text-base flex items-center gap-2">
                 <div className="p-1.5 rounded-lg bg-primary/10"><Sparkles className="h-4 w-4 text-primary" /></div>
@@ -707,7 +727,7 @@ export function CampanhasTab({ periodoFiltro }: CampanhasTabProps = {}) {
             <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
               {insightsQuery.data.map((ins, i) => (
                 <div key={i} className={cn(
-                  'p-4 rounded-xl border transition-all hover:shadow-md hover:-translate-y-0.5 duration-300 animate-fade-in',
+                  'rounded-lg border p-4 transition-colors animate-fade-in',
                   ins.tipo === 'alerta' && 'bg-destructive/5 border-destructive/20',
                   ins.tipo === 'oportunidade' && 'bg-emerald-500/5 border-emerald-500/20',
                   (ins.tipo !== 'alerta' && ins.tipo !== 'oportunidade') && 'bg-primary/5 border-primary/20',
@@ -825,7 +845,7 @@ function getCampaignProgressTone(progresso: number) {
       ring: 'stroke-emerald-500',
       text: 'text-emerald-400',
       label: 'Excelente',
-      grad: 'from-emerald-500 via-emerald-600 to-teal-600',
+      bar: 'bg-emerald-500',
     };
   }
   if (progresso >= 40) {
@@ -833,14 +853,14 @@ function getCampaignProgressTone(progresso: number) {
       ring: 'stroke-amber-400',
       text: 'text-amber-400',
       label: 'Atenção',
-      grad: 'from-amber-500 via-orange-500 to-amber-600',
+      bar: 'bg-amber-500',
     };
   }
   return {
     ring: 'stroke-red-500',
     text: 'text-red-400',
     label: 'Crítico',
-    grad: 'from-red-500 via-rose-600 to-red-700',
+    bar: 'bg-red-500',
   };
 }
 
@@ -869,8 +889,8 @@ function CampaignSummaryCard({
   const progressBarClass = progresso >= 80 ? 'bg-emerald-500' : progresso >= 40 ? 'bg-amber-500' : 'bg-red-500';
 
   return (
-    <Card className="relative overflow-hidden border-border/60 bg-card/80 transition-all duration-300 hover:ring-1 hover:ring-primary/20">
-      <div className={cn('absolute inset-x-0 top-0 h-1 bg-gradient-to-r', tone.grad)} />
+    <Card className="relative overflow-hidden border-border/60 bg-card/80 transition-colors hover:ring-1 hover:ring-primary/20">
+      <div className={cn('absolute inset-x-0 top-0 h-1', tone.bar)} />
       <CardContent className="relative p-5 lg:p-6">
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
@@ -923,9 +943,9 @@ function CampaignSummaryCard({
 
 function KpiCard({ icon, label, value, sub, color, trendPositive }: { icon: React.ReactNode; label: string; value: string; sub?: string; color: string; trendPositive?: boolean; }) {
   return (
-    <Card className="rounded-2xl shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5 overflow-hidden group backdrop-blur-sm">
+    <Card className="overflow-hidden rounded-lg border-border/60 bg-card">
       <CardContent className="p-5">
-        <div className={cn('p-2.5 rounded-xl bg-gradient-to-br text-white shadow-md group-hover:scale-110 transition-transform inline-block mb-3', color)}>{icon}</div>
+        <div className={cn('mb-3 inline-block rounded-lg p-2.5 text-white', color)}>{icon}</div>
         <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">{label}</p>
         <p className="text-2xl font-bold mt-1 tabular-nums">{value}</p>
         {sub && (
@@ -974,12 +994,11 @@ function KpiCardPremium({ icon, label, value, sub, campanhas, premioTotal }: { i
   return (
     <>
       <button type="button" onClick={() => setOpen(true)} className="text-left w-full">
-        <Card className="rounded-2xl overflow-hidden group hover:-translate-y-0.5 transition-all duration-300 border-amber-500/30 bg-gradient-to-br from-amber-500/10 via-amber-500/5 to-transparent shadow-[0_0_30px_-10px_hsl(45_100%_50%/0.4)] hover:shadow-[0_0_40px_-5px_hsl(45_100%_50%/0.5)] relative cursor-pointer">
-          <div className="absolute -top-10 -right-10 w-32 h-32 rounded-full bg-amber-400/20 blur-3xl group-hover:bg-amber-400/30 transition-all" />
+        <Card className="relative cursor-pointer overflow-hidden rounded-lg border-amber-500/30 bg-card transition-colors hover:border-amber-500/45">
           <CardContent className="p-5 relative">
-            <div className="p-3 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 text-white shadow-lg group-hover:scale-110 transition-transform inline-block mb-3 ring-2 ring-amber-300/30">{icon}</div>
+            <div className="mb-3 inline-block rounded-lg bg-amber-500/10 p-3 text-amber-500 ring-1 ring-amber-500/25">{icon}</div>
             <p className="text-[11px] uppercase tracking-wider text-amber-700 dark:text-amber-300 font-bold">{label}</p>
-            <p className="text-2xl font-extrabold mt-1 tabular-nums text-amber-700 dark:text-amber-300 drop-shadow-sm">{value}</p>
+            <p className="text-2xl font-extrabold mt-1 tabular-nums text-amber-700 dark:text-amber-300">{value}</p>
             {sub && <p className="text-xs text-muted-foreground mt-0.5 truncate">{sub}</p>}
           </CardContent>
         </Card>
@@ -994,7 +1013,7 @@ function KpiCardPremium({ icon, label, value, sub, campanhas, premioTotal }: { i
             </DialogTitle>
           </DialogHeader>
 
-          <div className="rounded-xl border border-amber-500/30 bg-gradient-to-br from-amber-500/10 to-transparent p-4">
+          <div className="rounded-lg border border-amber-500/30 bg-card p-4">
             <p className="text-xs uppercase tracking-wider text-amber-700 dark:text-amber-300 font-bold">Potencial total a ganhar</p>
             <p className="text-3xl font-extrabold tabular-nums text-amber-700 dark:text-amber-300 mt-1">{formatCurrency(premioTotal)}</p>
             <p className="text-xs text-muted-foreground mt-2">
@@ -1002,7 +1021,7 @@ function KpiCardPremium({ icon, label, value, sub, campanhas, premioTotal }: { i
             </p>
           </div>
 
-          <div className="rounded-xl border bg-muted/30 p-4 space-y-2">
+          <div className="rounded-lg border bg-muted/30 p-4 space-y-2">
             <p className="text-sm font-semibold flex items-center gap-1.5">
               <Info className="h-4 w-4 text-primary" /> Como a premiação é calculada
             </p>
@@ -1021,7 +1040,7 @@ function KpiCardPremium({ icon, label, value, sub, campanhas, premioTotal }: { i
             const totalCamp = marcas.reduce((a, m) => a + m.premioPotencial, 0) + bonusGeral;
             const totalGanho = marcas.reduce((a, m) => a + m.premioAtual, 0) + (bonusGanho ? bonusGeral : 0);
             return (
-              <div key={campanha.id} className="rounded-xl border p-4 space-y-3">
+              <div key={campanha.id} className="rounded-lg border p-4 space-y-3">
                 <div className="flex items-start justify-between gap-3 flex-wrap">
                   <div>
                     <p className="font-semibold">{campanha.nome}</p>
@@ -1099,15 +1118,15 @@ function KpiCardPremium({ icon, label, value, sub, campanhas, premioTotal }: { i
 
 function KpiCardProgress({ icon, label, value, sub, progress }: { icon: React.ReactNode; label: string; value: string; sub?: string; progress: number; }) {
   return (
-    <Card className="rounded-2xl shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5 overflow-hidden group">
+    <Card className="overflow-hidden rounded-lg border-border/60 bg-card">
       <CardContent className="p-5">
         <div className="flex items-start justify-between mb-3">
-          <div className="p-2.5 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-700 text-white shadow-md group-hover:scale-110 transition-transform">{icon}</div>
+          <div className="rounded-lg bg-emerald-500/10 p-2.5 text-emerald-500 ring-1 ring-emerald-500/20">{icon}</div>
           <span className="text-xs font-bold text-emerald-600">{value}</span>
         </div>
         <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">{label}</p>
         <div className="h-2 bg-muted rounded-full mt-2 overflow-hidden">
-          <div className="h-full bg-gradient-to-r from-emerald-500 to-emerald-600 rounded-full transition-all duration-1000 ease-out" style={{ width: `${progress}%` }} />
+          <div className="h-full rounded-full bg-emerald-500 transition-all duration-1000 ease-out" style={{ width: `${progress}%` }} />
         </div>
         {sub && <p className="text-xs text-muted-foreground mt-2 truncate">{sub}</p>}
       </CardContent>
@@ -1188,7 +1207,7 @@ function CampanhaVendedoresFiltro1004({
                     className={cn(
                       'flex items-center gap-2 rounded-lg border px-3 py-2 text-left text-xs transition-all',
                       checked
-                        ? 'border-primary/50 bg-primary/15 text-primary shadow-sm'
+                        ? 'border-primary/50 bg-primary/15 text-primary'
                         : 'border-border/70 bg-background/60 text-muted-foreground hover:bg-muted/50 hover:text-foreground hover:border-primary/30',
                     )}
                   >
@@ -1235,8 +1254,8 @@ function CampanhaFullCard({
   const progressoCompacto = Math.min(100, Math.max(0, c.progressoGeral || 0));
   return (
     <Card className={cn(
-      'group relative overflow-hidden border-border/60 bg-card transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:ring-1 hover:ring-primary/20',
-      expanded && 'ring-1 ring-primary/25 shadow-primary/10',
+      'group relative overflow-hidden border-border/60 bg-card transition-colors hover:ring-1 hover:ring-primary/20',
+      expanded && 'ring-1 ring-primary/25',
       c.statusVisual === 'expired' && 'opacity-80',
     )}>
       <button
@@ -1244,12 +1263,6 @@ function CampanhaFullCard({
         onClick={onToggle}
         className="w-full px-5 py-4 relative overflow-hidden text-left transition-all"
       >
-        <div className={cn(
-          'absolute inset-0 bg-gradient-to-br opacity-70 pointer-events-none',
-          c.statusVisual === 'achieved' ? 'from-emerald-500/10 via-transparent to-transparent'
-            : c.statusVisual === 'risk' ? 'from-red-500/10 via-transparent to-transparent'
-            : 'from-primary/10 via-transparent to-transparent',
-        )} />
         <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 relative">
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 flex-wrap">
@@ -1299,14 +1312,14 @@ function CampanhaFullCard({
               <AlertDialogTrigger asChild>
                 <Button size="icon" variant="ghost" className="h-8 w-8 hover:bg-muted"><Trash2 className="h-3.5 w-3.5" /></Button>
               </AlertDialogTrigger>
-              <AlertDialogContent className="rounded-2xl">
+              <AlertDialogContent className="rounded-lg">
                 <AlertDialogHeader>
                   <AlertDialogTitle>Excluir campanha?</AlertDialogTitle>
                   <AlertDialogDescription>"{c.nome}" será removida permanentemente.</AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                  <AlertDialogCancel className="rounded-xl">Cancelar</AlertDialogCancel>
-                  <AlertDialogAction onClick={onDelete} className="bg-destructive hover:bg-destructive/90 rounded-xl">Excluir</AlertDialogAction>
+                  <AlertDialogCancel className="rounded-lg">Cancelar</AlertDialogCancel>
+                  <AlertDialogAction onClick={onDelete} className="rounded-lg bg-destructive hover:bg-destructive/90">Excluir</AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
@@ -1371,19 +1384,19 @@ function computeMesCalc(c: CampanhaCalculada, mesInicio: Date, mesFim: Date): Ca
   );
   const fimKey = dateKeyCampanha(mesFimConsolidado);
   const vendedoresExtras1004 = getVendedoresExtrasCampanha1004(c);
-  const itensMes = c.itensPeriodo.filter((p: any) => {
+  const itensMes = c.itensPeriodo.filter((p: CampanhaItem) => {
     return itemFaturadoNoPeriodoCampanha(p, inicioKey, fimKey);
   });
-  const itensMesCampanha = itensMes.filter((p: any) => itemElegivelTotalCampanha(p, c.rankingCodEmpresaBi, vendedoresExtras1004)
+  const itensMesCampanha = itensMes.filter((p: CampanhaItem) => itemElegivelTotalCampanha(p, c.rankingCodEmpresaBi, vendedoresExtras1004)
     && itemPertenceEscopoCampanha(p, c.rankingCodEmpresaBi, c.rankingFilialAtiva, vendedoresExtras1004)
     && c.marcasCalc.some(m => itemPertenceMarcaCampanha(p, m.marca, c.rankingCodEmpresaBi)));
-  const itensTotalMes = itensMes.filter((p: any) => itemElegivelTotalCampanha(p, c.rankingCodEmpresaBi, vendedoresExtras1004)
+  const itensTotalMes = itensMes.filter((p: CampanhaItem) => itemElegivelTotalCampanha(p, c.rankingCodEmpresaBi, vendedoresExtras1004)
     && itemPertenceEscopoCampanha(p, c.rankingCodEmpresaBi, c.rankingFilialAtiva, vendedoresExtras1004));
   const itensMesRanking = itensMesCampanha;
   const marcasCalc: MarcaCalculada[] = c.marcasCalc.map(m => {
     const marcaUpper = m.marca.trim().toUpperCase();
-    const itensMarca = itensMesCampanha.filter((p: any) => itemPertenceMarcaCampanha(p, marcaUpper, c.rankingCodEmpresaBi));
-    const realizado = itensMarca.reduce((acc, p: any) => acc + valorBrutoCampanha(p, c.rankingCodEmpresaBi, c.marcasCalc), 0);
+    const itensMarca = itensMesCampanha.filter((p: CampanhaItem) => itemPertenceMarcaCampanha(p, marcaUpper, c.rankingCodEmpresaBi));
+    const realizado = itensMarca.reduce((acc, p: CampanhaItem) => acc + valorBrutoCampanha(p, c.rankingCodEmpresaBi, c.marcasCalc), 0);
     const metaMes = Number(m.meta_mensal);
     const progresso = metaMes > 0 ? Math.min(150, (realizado / metaMes) * 100) : 0;
     const atingiu = realizado >= metaMes && metaMes > 0;
@@ -1392,14 +1405,14 @@ function computeMesCalc(c: CampanhaCalculada, mesInicio: Date, mesFim: Date): Ca
     const premio = atingiu ? (percent > 0 ? metaMes * (percent / 100) : fixo) : 0;
     return { ...m, realizado, progresso, premio, atingiu };
   });
-  const realizadoTotal = itensMesCampanha.reduce((acc, p: any) => acc + valorBrutoCampanha(p, c.rankingCodEmpresaBi, c.marcasCalc), 0);
-  const vendasTotaisMes = itensTotalMes.reduce((acc, p: any) => acc + valorBrutoCampanha(p, c.rankingCodEmpresaBi, c.marcasCalc), 0);
+  const realizadoTotal = itensMesCampanha.reduce((acc, p: CampanhaItem) => acc + valorBrutoCampanha(p, c.rankingCodEmpresaBi, c.marcasCalc), 0);
+  const vendasTotaisMes = itensTotalMes.reduce((acc, p: CampanhaItem) => acc + valorBrutoCampanha(p, c.rankingCodEmpresaBi, c.marcasCalc), 0);
   const metaMesGeral = Number(c.meta_geral_mensal || 0);
   const progressoGeral = metaMesGeral > 0 ? Math.min(150, (vendasTotaisMes / metaMesGeral) * 100) : 0;
   const bonusGanho = vendasTotaisMes >= metaMesGeral && metaMesGeral > 0;
   const premioTotal = marcasCalc.reduce((a, m) => a + m.premio, 0) + (bonusGanho ? Number(c.bonus_meta_geral || 0) : 0);
   const vendMap = new Map<string, number>();
-  itensMesRanking.forEach((p: any) => {
+  itensMesRanking.forEach((p: CampanhaItem) => {
     const nome = nomeVendedorCampanha(p);
     if (!nome) return;
     vendMap.set(nome, (vendMap.get(nome) || 0) + valorBrutoCampanha(p, c.rankingCodEmpresaBi, c.marcasCalc));
@@ -1459,7 +1472,7 @@ function CampanhaMesesTabs({ cOrig }: { cOrig: CampanhaCalculada }) {
     <Tabs defaultValue={defaultKey} className="space-y-4">
       <TabsList className="flex flex-wrap h-auto gap-1 rounded-lg border border-border/60 bg-muted/25 p-1">
         {meses.map(m => (
-          <TabsTrigger key={m.key} value={m.key} className="gap-2 rounded-md px-4 py-2 data-[state=active]:bg-background data-[state=active]:shadow-sm">
+          <TabsTrigger key={m.key} value={m.key} className="gap-2 rounded-md px-4 py-2 data-[state=active]:bg-background">
             <span className="font-semibold capitalize">{m.label}</span>
             <Badge variant="outline" className={cn('text-[9px] px-1.5 py-0 h-4', statusStyle(m.status))}>
               {statusLabel(m.status)}
@@ -1521,7 +1534,6 @@ function CampanhaMesView({
 
       <div className="grid grid-cols-1 xl:grid-cols-[1.3fr_0.9fr] gap-4">
         <div className={cn('rounded-lg border border-border/60 bg-card p-5 relative overflow-hidden', campanhaTone.bg)}>
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent pointer-events-none" />
           <div className="relative flex flex-col md:flex-row md:items-center gap-5">
             <div className="grid h-24 w-24 shrink-0 place-items-center rounded-full bg-background/50 ring-[12px] ring-muted/50">
               <div className="text-center">
@@ -1672,46 +1684,46 @@ function MarcaInteractiveCard({ c, m, index }: { c: CampanhaCalculada; m: MarcaC
   const [open, setOpen] = useState(false);
   const ini = new Date(c.data_inicio);
   const fim = new Date(c.data_fim);
-  const hoje = new Date();
   const meses = monthsBetween(ini, fim);
   const metaPeriodo = Number(m.meta_mensal) * meses;
   const faltaMeta = Math.max(0, metaPeriodo - m.realizado);
   const colors = m.atingiu
-    ? { bar: 'from-emerald-500 to-emerald-600', text: 'text-emerald-600', dot: 'bg-emerald-500', label: 'Excelente', grad: 'from-emerald-500 via-emerald-600 to-teal-700', glow: 'bg-emerald-400/30' }
+    ? { bar: 'bg-emerald-500', text: 'text-emerald-600', dot: 'bg-emerald-500', label: 'Excelente' }
     : m.progresso >= 60
-      ? { bar: 'from-amber-500 to-amber-600', text: 'text-amber-600', dot: 'bg-amber-500', label: 'Médio', grad: 'from-amber-500 via-orange-500 to-amber-700', glow: 'bg-amber-400/30' }
-      : { bar: 'from-red-500 to-red-600', text: 'text-red-600', dot: 'bg-red-500', label: 'Baixo', grad: 'from-red-500 via-rose-600 to-red-700', glow: 'bg-red-400/30' };
+      ? { bar: 'bg-amber-500', text: 'text-amber-600', dot: 'bg-amber-500', label: 'Médio' }
+      : { bar: 'bg-red-500', text: 'text-red-600', dot: 'bg-red-500', label: 'Baixo' };
+  const vendedoresExtrasCampanha = useMemo(() => getVendedoresExtrasCampanha1004(c), [c]);
 
   const itensMarca = useMemo(
-    () => c.itensPeriodo.filter((p: any) => itemElegivelTotalCampanha(p, c.rankingCodEmpresaBi, getVendedoresExtrasCampanha1004(c))
-      && itemPertenceEscopoCampanha(p, c.rankingCodEmpresaBi, c.rankingFilialAtiva, getVendedoresExtrasCampanha1004(c))
+    () => c.itensPeriodo.filter((p: CampanhaItem) => itemElegivelTotalCampanha(p, c.rankingCodEmpresaBi, vendedoresExtrasCampanha)
+      && itemPertenceEscopoCampanha(p, c.rankingCodEmpresaBi, c.rankingFilialAtiva, vendedoresExtrasCampanha)
       && itemPertenceMarcaCampanha(p, m.marca, c.rankingCodEmpresaBi)),
-    [c.itensPeriodo, m.marca, c.rankingCodEmpresaBi, c.rankingFilialAtiva, c.rankingVendedoresExtras1004]
+    [c.itensPeriodo, m.marca, c.rankingCodEmpresaBi, c.rankingFilialAtiva, vendedoresExtrasCampanha]
   );
 
   const topVendedores = useMemo(() => {
     const map = new Map<string, number>();
-    itensMarca.forEach((p: any) => {
+    itensMarca.forEach((p: CampanhaItem) => {
       const nome = (p.nome_externo || p.nome_interno || p.vendedor_nome || '').toString().trim();
       if (!nome) return;
       map.set(nome, (map.get(nome) || 0) + valorBrutoCampanha(p, c.rankingCodEmpresaBi, c.marcasCalc));
     });
     return Array.from(map.entries()).map(([nome, valor]) => ({ nome, valor })).sort((a, b) => b.valor - a.valor).slice(0, 5);
-  }, [itensMarca]);
+  }, [itensMarca, c.rankingCodEmpresaBi, c.marcasCalc]);
 
   const topClientes = useMemo(() => {
     const map = new Map<string, number>();
-    itensMarca.forEach((p: any) => {
+    itensMarca.forEach((p: CampanhaItem) => {
       const nome = (p.cliente_razao || p.nome_grupo || '').toString().trim();
       if (!nome) return;
       map.set(nome, (map.get(nome) || 0) + valorBrutoCampanha(p, c.rankingCodEmpresaBi, c.marcasCalc));
     });
     return Array.from(map.entries()).map(([nome, valor]) => ({ nome, valor })).sort((a, b) => b.valor - a.valor).slice(0, 5);
-  }, [itensMarca]);
+  }, [itensMarca, c.rankingCodEmpresaBi, c.marcasCalc]);
 
   const topProdutos = useMemo(() => {
     const map = new Map<string, { valor: number; qtd: number }>();
-    itensMarca.forEach((p: any) => {
+    itensMarca.forEach((p: CampanhaItem) => {
       const nome = (p.descricao || p.cod_produto || '').toString().trim();
       if (!nome) return;
       const cur = map.get(nome) || { valor: 0, qtd: 0 };
@@ -1720,11 +1732,11 @@ function MarcaInteractiveCard({ c, m, index }: { c: CampanhaCalculada; m: MarcaC
       map.set(nome, cur);
     });
     return Array.from(map.entries()).map(([nome, v]) => ({ nome, ...v })).sort((a, b) => b.valor - a.valor).slice(0, 5);
-  }, [itensMarca]);
+  }, [itensMarca, c.rankingCodEmpresaBi, c.marcasCalc]);
 
   const evolucaoMensal = useMemo(() => {
     const map = new Map<string, number>();
-    itensMarca.forEach((p: any) => {
+    itensMarca.forEach((p: CampanhaItem) => {
       const dt = p.data_faturamento || p.data_pedido;
       if (!dt) return;
       const d = new Date(dt);
@@ -1733,7 +1745,7 @@ function MarcaInteractiveCard({ c, m, index }: { c: CampanhaCalculada; m: MarcaC
       map.set(key, (map.get(key) || 0) + valorBrutoCampanha(p, c.rankingCodEmpresaBi, c.marcasCalc));
     });
     return Array.from(map.entries()).sort(([a], [b]) => a.localeCompare(b));
-  }, [itensMarca]);
+  }, [itensMarca, c.rankingCodEmpresaBi, c.marcasCalc]);
 
   const maxMes = Math.max(1, ...evolucaoMensal.map(([, v]) => v));
   const totalVendedores = topVendedores.reduce((a, v) => a + v.valor, 0) || 1;
@@ -1744,10 +1756,9 @@ function MarcaInteractiveCard({ c, m, index }: { c: CampanhaCalculada; m: MarcaC
       <DialogTrigger asChild>
         <button
           type="button"
-          className="p-4 rounded-lg border border-border/60 bg-card hover:shadow-lg hover:-translate-y-0.5 hover:ring-1 hover:ring-primary/20 transition-all text-left group relative overflow-hidden animate-fade-in"
+          className="group relative overflow-hidden rounded-lg border border-border/60 bg-card p-4 text-left transition-colors hover:ring-1 hover:ring-primary/20 animate-fade-in"
           style={{ animationDelay: `${index * 80}ms` }}
         >
-          <div className={cn('absolute inset-0 opacity-60 pointer-events-none bg-gradient-to-br', m.atingiu ? 'from-emerald-500/10 via-transparent to-transparent' : m.progresso >= 60 ? 'from-amber-500/10 via-transparent to-transparent' : 'from-red-500/10 via-transparent to-transparent')} />
           <div className="flex items-center justify-between gap-2 mb-2 relative">
             <div className="flex items-center gap-2">
               <span className={cn('w-2 h-2 rounded-full', colors.dot)} />
@@ -1756,7 +1767,7 @@ function MarcaInteractiveCard({ c, m, index }: { c: CampanhaCalculada; m: MarcaC
             </div>
             <div className="flex items-center gap-2">
               <span className={cn('text-lg font-bold tabular-nums', colors.text)}>{m.progresso.toFixed(0)}%</span>
-              <ArrowUpRight className="h-3.5 w-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
+              <ArrowUpRight className="h-3.5 w-3.5 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
             </div>
           </div>
           <div className="h-2 bg-muted/60 rounded-full overflow-hidden mb-3 relative">
@@ -1781,8 +1792,7 @@ function MarcaInteractiveCard({ c, m, index }: { c: CampanhaCalculada; m: MarcaC
         </button>
       </DialogTrigger>
       <DialogContent className="max-w-3xl rounded-lg p-0 overflow-hidden border border-border/60 shadow-xl">
-        <div className="relative px-6 pt-6 pb-7 bg-card overflow-hidden border-b border-border/60">
-          <div className={cn('absolute inset-0 opacity-70 pointer-events-none bg-gradient-to-br', m.atingiu ? 'from-emerald-500/10 via-transparent to-transparent' : m.progresso >= 60 ? 'from-amber-500/10 via-transparent to-transparent' : 'from-red-500/10 via-transparent to-transparent')} />
+        <div className="relative overflow-hidden border-b border-border/60 bg-card px-6 pb-7 pt-6">
           <DialogHeader className="relative">
             <DialogTitle className="flex items-center gap-3">
               <span className="p-2.5 rounded-md bg-primary/10 ring-1 ring-primary/20 text-primary">
@@ -1834,7 +1844,7 @@ function MarcaInteractiveCard({ c, m, index }: { c: CampanhaCalculada; m: MarcaC
                           </div>
                           <div className="w-full bg-muted rounded-t-md relative overflow-hidden" style={{ height: '100%' }}>
                             <div
-                              className={cn('absolute bottom-0 left-0 right-0 bg-gradient-to-t rounded-t-md transition-all duration-700 group-hover/bar:opacity-90', colors.bar)}
+                              className={cn('absolute bottom-0 left-0 right-0 rounded-t-md transition-all duration-700 group-hover/bar:opacity-90', colors.bar)}
                               style={{ height: `${h}%` }}
                             />
                           </div>
@@ -1870,7 +1880,7 @@ function MarcaInteractiveCard({ c, m, index }: { c: CampanhaCalculada; m: MarcaC
                         <span className="font-semibold tabular-nums shrink-0">{formatCurrency(v.valor)}</span>
                       </div>
                       <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-                        <div className={cn('h-full bg-gradient-to-r', colors.bar)} style={{ width: `${(v.valor / totalVendedores) * 100}%` }} />
+                        <div className={cn('h-full', colors.bar)} style={{ width: `${(v.valor / totalVendedores) * 100}%` }} />
                       </div>
                     </div>
                   ))}
@@ -1895,7 +1905,7 @@ function MarcaInteractiveCard({ c, m, index }: { c: CampanhaCalculada; m: MarcaC
                         <span className="font-semibold tabular-nums shrink-0">{formatCurrency(v.valor)}</span>
                       </div>
                       <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-                        <div className="h-full bg-gradient-to-r from-primary to-primary/70" style={{ width: `${(v.valor / totalClientes) * 100}%` }} />
+                        <div className="h-full bg-primary" style={{ width: `${(v.valor / totalClientes) * 100}%` }} />
                       </div>
                     </div>
                   ))}
@@ -1910,7 +1920,7 @@ function MarcaInteractiveCard({ c, m, index }: { c: CampanhaCalculada; m: MarcaC
               <h4 className="text-sm font-semibold mb-2 flex items-center gap-2">
                 <Sparkles className="h-4 w-4 text-primary" /> Top Produtos
               </h4>
-              <div className="rounded-xl border overflow-hidden">
+              <div className="overflow-hidden rounded-lg border">
                 {topProdutos.map((p, i) => (
                   <div key={p.nome} className={cn('flex items-center justify-between gap-2 px-3 py-2 text-xs', i % 2 === 0 ? 'bg-muted/30' : '')}>
                     <span className="flex items-center gap-2 truncate min-w-0">
@@ -1946,14 +1956,8 @@ function ResumoBox({ label, valor, sub, icon, highlight, premium, details }: { l
       'group relative overflow-hidden rounded-lg border border-border/60 bg-card p-4 h-full transition-all',
       premium && 'border-amber-500/25',
       highlight && 'border-emerald-500/25',
-      clickable && 'hover:shadow-lg hover:-translate-y-0.5 hover:ring-1 hover:ring-primary/20 cursor-pointer text-left',
+      clickable && 'cursor-pointer text-left hover:ring-1 hover:ring-primary/20',
     )}>
-      <div className={cn(
-        'absolute inset-0 opacity-70 pointer-events-none bg-gradient-to-br',
-        premium ? 'from-amber-500/10 via-transparent to-transparent'
-          : highlight ? 'from-emerald-500/10 via-transparent to-transparent'
-          : 'from-primary/5 via-transparent to-transparent',
-      )} />
       <div className="relative">
       <div className="flex items-center gap-2 mb-1.5">
         <span className={cn('p-1.5 rounded-md ring-1', premium ? 'bg-amber-500/10 text-amber-500 ring-amber-500/20' : highlight ? 'bg-emerald-500/10 text-emerald-500 ring-emerald-500/20' : 'bg-primary/10 text-primary ring-primary/20')}>{icon}</span>
@@ -1979,8 +1983,7 @@ function ResumoBox({ label, valor, sub, icon, highlight, premium, details }: { l
         <button type="button" className="block w-full">{content}</button>
       </DialogTrigger>
       <DialogContent className="max-w-2xl rounded-lg p-0 overflow-hidden border border-border/60 shadow-xl">
-        <div className="relative px-6 pt-6 pb-8 bg-card overflow-hidden border-b border-border/60">
-          <div className={cn('absolute inset-0 opacity-70 pointer-events-none bg-gradient-to-br', premium ? 'from-amber-500/10 via-transparent to-transparent' : highlight ? 'from-emerald-500/10 via-transparent to-transparent' : 'from-primary/10 via-transparent to-transparent')} />
+        <div className="relative overflow-hidden border-b border-border/60 bg-card px-6 pb-8 pt-6">
           <DialogHeader className="relative">
             <DialogTitle className="flex items-center gap-3">
               <span className={cn('p-2.5 rounded-md ring-1', theme.icon)}>{icon}</span>
@@ -2018,9 +2021,8 @@ function TopVendedorCard({ v, position, onClick }: { v: { nome: string; valor: n
     <button
       type="button"
       onClick={onClick}
-      className="text-left w-full rounded-lg p-4 border border-border/60 bg-card hover:-translate-y-0.5 hover:shadow-lg hover:ring-1 hover:ring-primary/20 transition-all duration-300 relative overflow-hidden cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/30"
+      className="relative w-full cursor-pointer overflow-hidden rounded-lg border border-border/60 bg-card p-4 text-left transition-colors hover:ring-1 hover:ring-primary/20 focus:outline-none focus:ring-2 focus:ring-primary/30"
     >
-      <div className={cn('absolute inset-0 bg-gradient-to-br opacity-80 pointer-events-none', styles.accent)} />
       <div className="relative">
         <div className="flex items-center gap-2 mb-2">
           <span className={cn('grid h-7 w-7 place-items-center rounded-md ring-1', styles.ring, styles.text)}>
@@ -2049,20 +2051,24 @@ function VendedorDetalheDialog({
   mesLabel: string;
   status: 'fechado' | 'ativo' | 'futuro';
 }) {
-  const nomeMatch = (p: any) => nomeVendedorCampanha(p) === vendedorNome;
+  const nomeMatch = useCallback((p: CampanhaItem) => nomeVendedorCampanha(p) === vendedorNome, [vendedorNome]);
+  const vendedoresExtrasMes = useMemo(
+    () => getVendedoresExtrasCampanha1004(campanhaMes),
+    [campanhaMes],
+  );
 
   // Itens do vendedor no mês (já filtrados por marcas da campanha em campanhaMes.itensPeriodo? Não — itensPeriodo em computeMesCalc é itensMes, não itensMesCampanha.)
   // Precisamos filtrar por marcas da campanha aqui:
   const itensVend = useMemo(
-    () => campanhaMes.itensPeriodo.filter((p: any) => nomeMatch(p)
-      && itemElegivelTotalCampanha(p, campanhaMes.rankingCodEmpresaBi, getVendedoresExtrasCampanha1004(campanhaMes))
-      && itemPertenceEscopoCampanha(p, campanhaMes.rankingCodEmpresaBi, campanhaMes.rankingFilialAtiva, getVendedoresExtrasCampanha1004(campanhaMes))
+    () => campanhaMes.itensPeriodo.filter((p: CampanhaItem) => nomeMatch(p)
+      && itemElegivelTotalCampanha(p, campanhaMes.rankingCodEmpresaBi, vendedoresExtrasMes)
+      && itemPertenceEscopoCampanha(p, campanhaMes.rankingCodEmpresaBi, campanhaMes.rankingFilialAtiva, vendedoresExtrasMes)
       && campanhaMes.marcasCalc.some(m => itemPertenceMarcaCampanha(p, m.marca, campanhaMes.rankingCodEmpresaBi))),
-    [campanhaMes.itensPeriodo, campanhaMes.marcasCalc, campanhaMes.rankingVendedoresExtras1004, vendedorNome]
+    [campanhaMes.itensPeriodo, campanhaMes.marcasCalc, campanhaMes.rankingCodEmpresaBi, campanhaMes.rankingFilialAtiva, nomeMatch, vendedoresExtrasMes]
   );
 
-  const totalVend = itensVend.reduce((a, p: any) => a + valorBrutoCampanha(p, campanhaMes.rankingCodEmpresaBi, campanhaMes.marcasCalc), 0);
-  const pedidosSet = new Set(itensVend.map((p: any) => p.cod_pedido || p.id).filter(Boolean));
+  const totalVend = itensVend.reduce((a, p: CampanhaItem) => a + valorBrutoCampanha(p, campanhaMes.rankingCodEmpresaBi, campanhaMes.marcasCalc), 0);
+  const pedidosSet = new Set(itensVend.map((p: CampanhaItem) => p.cod_pedido || p.id).filter(Boolean));
   const nPedidos = pedidosSet.size || itensVend.length;
   const ticketMedio = nPedidos > 0 ? totalVend / nPedidos : 0;
   const usaPedido = pedidosSet.size > 0;
@@ -2071,8 +2077,8 @@ function VendedorDetalheDialog({
   const breakdown = campanhaMes.marcasCalc.map(m => {
     const marcaUpper = m.marca.trim().toUpperCase();
     const vendidoMarca = itensVend
-      .filter((p: any) => itemPertenceMarcaCampanha(p, marcaUpper, campanhaMes.rankingCodEmpresaBi))
-      .reduce((a: number, p: any) => a + valorBrutoCampanha(p, campanhaMes.rankingCodEmpresaBi, campanhaMes.marcasCalc), 0);
+      .filter((p: CampanhaItem) => itemPertenceMarcaCampanha(p, marcaUpper, campanhaMes.rankingCodEmpresaBi))
+      .reduce((a: number, p: CampanhaItem) => a + valorBrutoCampanha(p, campanhaMes.rankingCodEmpresaBi, campanhaMes.marcasCalc), 0);
     const contrib = m.realizado > 0 ? (vendidoMarca / m.realizado) * 100 : 0;
     const premioPotencial = m.percentual_premio > 0
       ? Number(m.meta_mensal) * (m.percentual_premio / 100)
@@ -2105,7 +2111,7 @@ function VendedorDetalheDialog({
     const meses = enumerarMeses(cOrig);
     return meses.map(m => {
       const calc = computeMesCalc(cOrig, m.inicio, m.fim);
-      const itensV = calc.itensPeriodo.filter((p: any) => {
+      const itensV = calc.itensPeriodo.filter((p: CampanhaItem) => {
         const nome = nomeVendedorCampanha(p);
         const marcaOk = calc.marcasCalc.some(x => itemPertenceMarcaCampanha(p, x.marca, calc.rankingCodEmpresaBi));
         return nome === vendedorNome
@@ -2113,13 +2119,13 @@ function VendedorDetalheDialog({
           && itemPertenceEscopoCampanha(p, calc.rankingCodEmpresaBi, calc.rankingFilialAtiva, getVendedoresExtrasCampanha1004(calc))
           && marcaOk;
       });
-      const total = itensV.reduce((a: number, p: any) => a + valorBrutoCampanha(p, calc.rankingCodEmpresaBi, calc.marcasCalc), 0);
+      const total = itensV.reduce((a: number, p: CampanhaItem) => a + valorBrutoCampanha(p, calc.rankingCodEmpresaBi, calc.marcasCalc), 0);
       const pos = calc.vendedoresContrib.findIndex(v => v.nome === vendedorNome) + 1;
       const premio = calc.marcasCalc.reduce((acc, mm) => {
         if (!mm.atingiu || mm.realizado <= 0) return acc;
         const vendMarca = itensV
-          .filter((p: any) => itemPertenceMarcaCampanha(p, mm.marca, calc.rankingCodEmpresaBi))
-          .reduce((a: number, p: any) => a + valorBrutoCampanha(p, calc.rankingCodEmpresaBi, calc.marcasCalc), 0);
+          .filter((p: CampanhaItem) => itemPertenceMarcaCampanha(p, mm.marca, calc.rankingCodEmpresaBi))
+          .reduce((a: number, p: CampanhaItem) => a + valorBrutoCampanha(p, calc.rankingCodEmpresaBi, calc.marcasCalc), 0);
         return acc + mm.premio * (vendMarca / mm.realizado);
       }, 0) + (calc.bonusGanho && calc.realizadoTotal > 0 ? Number(cOrig.bonus_meta_geral || 0) * (total / calc.realizadoTotal) : 0);
       return { label: m.label, status: m.status, total, pos, premio };
@@ -2139,7 +2145,6 @@ function VendedorDetalheDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-hidden p-0 rounded-lg border-border/70">
         <div className="relative overflow-hidden border-b border-border/60 bg-card px-6 py-5">
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-amber-500/5 pointer-events-none" />
           <DialogHeader className="relative">
             <DialogTitle className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
               <div className="flex min-w-0 items-center gap-3">
@@ -2331,15 +2336,15 @@ function VendedorDetalheDialog({
 
 function EmptyCampanhas({ onCreate, isPending }: { onCreate: (i: CampanhaInput) => Promise<void>; isPending: boolean }) {
   return (
-    <Card className="rounded-2xl border-dashed">
+    <Card className="rounded-lg border-dashed">
       <CardContent className="py-14 flex flex-col items-center text-center gap-3">
-        <div className="p-4 rounded-2xl bg-primary/5"><Trophy className="h-10 w-10 text-primary/40" /></div>
+        <div className="rounded-lg bg-primary/5 p-4"><Trophy className="h-10 w-10 text-primary/40" /></div>
         <div>
           <p className="font-semibold">Nenhuma campanha ainda</p>
           <p className="text-sm text-muted-foreground">Crie sua primeira campanha por marca para engajar o time.</p>
         </div>
         <CampanhaDialog onSubmit={onCreate} isPending={isPending}
-          trigger={<Button size="sm" className="gap-1.5 rounded-xl"><Plus className="h-4 w-4" /> Criar campanha</Button>} />
+          trigger={<Button size="sm" className="gap-1.5 rounded-lg"><Plus className="h-4 w-4" /> Criar campanha</Button>} />
       </CardContent>
     </Card>
   );
@@ -2430,7 +2435,7 @@ function CampanhaDialog({ initial, onSubmit, isPending, trigger, marcasDisponive
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>{trigger}</DialogTrigger>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl">
+      <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto rounded-lg">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-lg">
             <Trophy className="h-5 w-5 text-primary" />
@@ -2447,16 +2452,16 @@ function CampanhaDialog({ initial, onSubmit, isPending, trigger, marcasDisponive
             </h3>
             <div>
               <Label className="text-xs">Nome da campanha *</Label>
-              <Input className="rounded-xl" value={form.nome} onChange={e => setForm({ ...form, nome: e.target.value })} placeholder="Ex: Força Total — MWM + Eaton" />
+              <Input className="rounded-lg" value={form.nome} onChange={e => setForm({ ...form, nome: e.target.value })} placeholder="Ex: Força Total — MWM + Eaton" />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label className="text-xs">Início</Label>
-                <Input className="rounded-xl" type="date" value={form.data_inicio} onChange={e => setForm({ ...form, data_inicio: e.target.value })} />
+                <Input className="rounded-lg" type="date" value={form.data_inicio} onChange={e => setForm({ ...form, data_inicio: e.target.value })} />
               </div>
               <div>
                 <Label className="text-xs">Fim</Label>
-                <Input className="rounded-xl" type="date" value={form.data_fim} onChange={e => setForm({ ...form, data_fim: e.target.value })} />
+                <Input className="rounded-lg" type="date" value={form.data_fim} onChange={e => setForm({ ...form, data_fim: e.target.value })} />
               </div>
             </div>
           </section>
@@ -2472,14 +2477,14 @@ function CampanhaDialog({ initial, onSubmit, isPending, trigger, marcasDisponive
                 <Label className="text-xs flex items-center gap-1"><DollarSign className="h-3 w-3 text-emerald-600" /> Meta mensal geral</Label>
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground font-semibold">R$</span>
-                  <MoneyInputBRL className="rounded-xl pl-8" value={form.meta_geral_mensal} onChange={n => setForm({ ...form, meta_geral_mensal: n })} placeholder="1.500.000,00" />
+                  <MoneyInputBRL className="rounded-lg pl-8" value={form.meta_geral_mensal} onChange={n => setForm({ ...form, meta_geral_mensal: n })} placeholder="1.500.000,00" />
                 </div>
               </div>
               <div>
                 <Label className="text-xs flex items-center gap-1"><Gift className="h-3 w-3 text-amber-500" /> Bônus se bater meta geral</Label>
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground font-semibold">R$</span>
-                  <MoneyInputBRL className="rounded-xl pl-8" value={form.bonus_meta_geral} onChange={n => setForm({ ...form, bonus_meta_geral: n })} placeholder="2.000,00" />
+                  <MoneyInputBRL className="rounded-lg pl-8" value={form.bonus_meta_geral} onChange={n => setForm({ ...form, bonus_meta_geral: n })} placeholder="2.000,00" />
                 </div>
               </div>
             </div>
@@ -2506,7 +2511,7 @@ function CampanhaDialog({ initial, onSubmit, isPending, trigger, marcasDisponive
                   ? metaPeriodo * (Number(m.percentual_premio) / 100)
                   : Number(m.premio_fixo || 0);
                 return (
-                  <div key={idx} className="p-3 rounded-xl bg-muted/30 border space-y-2">
+                  <div key={idx} className="space-y-2 rounded-lg border bg-muted/30 p-3">
                     <div className="grid grid-cols-12 gap-2 items-end">
                       <div className="col-span-12 sm:col-span-5">
                         <Label className="text-[10px]">Marca</Label>
@@ -2593,7 +2598,7 @@ function CampanhaDialog({ initial, onSubmit, isPending, trigger, marcasDisponive
             <div>
               <Label className="text-xs">Como a premiação será paga / entregue</Label>
               <Textarea
-                className="rounded-xl"
+                className="rounded-lg"
                 rows={3}
                 value={form.premiacao || ''}
                 onChange={e => setForm({ ...form, premiacao: e.target.value })}
@@ -2613,16 +2618,16 @@ function CampanhaDialog({ initial, onSubmit, isPending, trigger, marcasDisponive
             </h3>
             <div>
               <Label className="text-xs">Mensagem para a equipe</Label>
-              <Textarea className="rounded-xl" rows={3} value={form.mensagem_equipe || ''} onChange={e => setForm({ ...form, mensagem_equipe: e.target.value })} placeholder="Pessoal, estamos lançando a campanha..." />
+              <Textarea className="rounded-lg" rows={3} value={form.mensagem_equipe || ''} onChange={e => setForm({ ...form, mensagem_equipe: e.target.value })} placeholder="Pessoal, estamos lançando a campanha..." />
             </div>
             <div>
               <Label className="text-xs">Observações finais / regras</Label>
-              <Textarea className="rounded-xl" rows={2} value={form.observacoes || ''} onChange={e => setForm({ ...form, observacoes: e.target.value })} placeholder="Ex: bônus pago mesmo se metas específicas não atingidas..." />
+              <Textarea className="rounded-lg" rows={2} value={form.observacoes || ''} onChange={e => setForm({ ...form, observacoes: e.target.value })} placeholder="Ex: bônus pago mesmo se metas específicas não atingidas..." />
             </div>
             <div>
               <Label className="text-xs">Status</Label>
               <Select value={form.status} onValueChange={v => setForm({ ...form, status: v })}>
-                <SelectTrigger className="rounded-xl"><SelectValue /></SelectTrigger>
+                <SelectTrigger className="rounded-lg"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="ativa">Ativa</SelectItem>
                   <SelectItem value="pausada">Rascunho</SelectItem>
@@ -2634,8 +2639,8 @@ function CampanhaDialog({ initial, onSubmit, isPending, trigger, marcasDisponive
         </div>
 
         <DialogFooter>
-          <Button variant="outline" className="rounded-xl" onClick={() => setOpen(false)}>Cancelar</Button>
-          <Button className="rounded-xl" onClick={handleSave} disabled={isPending || !form.nome.trim()}>
+          <Button variant="outline" className="rounded-lg" onClick={() => setOpen(false)}>Cancelar</Button>
+          <Button className="rounded-lg" onClick={handleSave} disabled={isPending || !form.nome.trim()}>
             {isPending ? 'Salvando...' : 'Salvar campanha'}
           </Button>
         </DialogFooter>
@@ -2648,8 +2653,8 @@ function CampanhasSkeleton() {
   return (
     <div className="space-y-5">
       <div className="flex justify-between items-center"><Skeleton className="h-8 w-48" /><Skeleton className="h-9 w-36" /></div>
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">{[0, 1, 2, 3].map(i => <Skeleton key={i} className="h-28 rounded-2xl" />)}</div>
-      <Skeleton className="h-64 rounded-2xl" />
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">{[0, 1, 2, 3].map(i => <Skeleton key={i} className="h-28 rounded-lg" />)}</div>
+      <Skeleton className="h-64 rounded-lg" />
     </div>
   );
 }

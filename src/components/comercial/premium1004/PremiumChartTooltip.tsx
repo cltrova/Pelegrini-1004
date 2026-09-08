@@ -5,13 +5,13 @@ interface TooltipEntry {
   value?: number;
   color?: string;
   dataKey?: string;
-  payload?: any;
+  payload?: unknown;
 }
 
 interface PremiumChartTooltipProps {
   active?: boolean;
   payload?: TooltipEntry[];
-  label?: any;
+  label?: string | number;
   /** Prefixo do label (ex: 'Dia', 'Mês'). */
   labelPrefix?: string;
   /** Formatação por dataKey — padrão: currency. */
@@ -42,7 +42,7 @@ export function PremiumChartTooltip({
 
   return (
     <div
-      className="rounded-md border border-border bg-card px-3 py-2 shadow-lg text-xs"
+      className="rounded-md border border-border bg-card px-3 py-2 text-xs"
       style={{ minWidth: 160 }}
     >
       {label != null && (

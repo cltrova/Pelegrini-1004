@@ -74,12 +74,12 @@ function Sparkline({ values, color = 'hsl(var(--primary))', height = 28 }: { val
 function PremiumTooltip({ active, payload, label, isCurrency = true }: any) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="rounded-xl border border-border/60 bg-card/95 backdrop-blur-xl px-3 py-2.5 shadow-2xl shadow-primary/10 animate-in fade-in-0 zoom-in-95 duration-150">
+    <div className="rounded-lg border border-border/60 bg-card px-3 py-2.5 animate-in fade-in-0 zoom-in-95 duration-150">
       <p className="text-[11px] font-semibold text-muted-foreground mb-1.5 uppercase tracking-wider">{label}</p>
       <div className="space-y-1">
         {payload.map((entry: any, i: number) => (
           <div key={i} className="flex items-center gap-2 text-xs">
-            <span className="h-2 w-2 rounded-full ring-2 ring-offset-1 ring-offset-card" style={{ backgroundColor: entry.color, boxShadow: `0 0 8px ${entry.color}` }} />
+            <span className="h-2 w-2 rounded-full ring-2 ring-offset-1 ring-offset-card" style={{ backgroundColor: entry.color }} />
             <span className="text-muted-foreground">{entry.name}:</span>
             <span className="font-bold tabular-nums">
               {isCurrency && typeof entry.value === 'number' ? formatCurrency(entry.value) : formatInteger(entry.value)}
@@ -557,8 +557,7 @@ export function EvolucaoTabPremium({ pedidos, devolucoes, vendedoresPerformance,
       {/* ============== KPIs Premium ============== */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
         {/* Total */}
-        <Card className="group relative overflow-hidden border-primary/20 bg-gradient-to-br from-primary/15 via-primary/5 to-transparent backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:shadow-primary/20 cursor-default animate-in fade-in-0 slide-in-from-bottom-2">
-          <div className="absolute -top-8 -right-8 h-24 w-24 rounded-full bg-primary/10 blur-2xl group-hover:bg-primary/20 transition-colors" />
+        <Card className="group relative overflow-hidden border-primary/30 bg-card transition-colors duration-200 hover:bg-muted/30 cursor-default animate-in fade-in-0 slide-in-from-bottom-2">
           <CardContent className="relative p-4">
             <div className="flex items-center gap-2 mb-2">
               <div className="h-7 w-7 rounded-lg bg-primary/15 flex items-center justify-center ring-1 ring-primary/20">
@@ -575,7 +574,7 @@ export function EvolucaoTabPremium({ pedidos, devolucoes, vendedoresPerformance,
         </Card>
 
         {/* Média */}
-        <Card className="group relative overflow-hidden border-border/50 backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:border-chart-2/40 cursor-default animate-in fade-in-0 slide-in-from-bottom-2 [animation-delay:60ms]">
+        <Card className="group relative overflow-hidden border-border/60 bg-card transition-colors duration-200 hover:border-chart-2/40 hover:bg-muted/30 cursor-default animate-in fade-in-0 slide-in-from-bottom-2 [animation-delay:60ms]">
           <CardContent className="p-4">
             <div className="flex items-center gap-2 mb-2">
               <div className="h-7 w-7 rounded-lg bg-chart-2/15 flex items-center justify-center ring-1 ring-chart-2/20">
@@ -598,7 +597,7 @@ export function EvolucaoTabPremium({ pedidos, devolucoes, vendedoresPerformance,
           className="text-left"
           aria-label="Selecionar melhor dia"
         >
-          <Card className="group relative overflow-hidden border-success/30 bg-gradient-to-br from-success/10 via-success/5 to-transparent backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-success/20 cursor-pointer animate-in fade-in-0 slide-in-from-bottom-2 [animation-delay:120ms]">
+          <Card className="group relative overflow-hidden border-success/30 bg-card transition-colors duration-200 hover:bg-muted/30 cursor-pointer animate-in fade-in-0 slide-in-from-bottom-2 [animation-delay:120ms]">
             <CardContent className="p-4">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
@@ -629,7 +628,7 @@ export function EvolucaoTabPremium({ pedidos, devolucoes, vendedoresPerformance,
           className="text-left"
           aria-label="Selecionar pior dia"
         >
-          <Card className="group relative overflow-hidden border-destructive/30 bg-gradient-to-br from-destructive/10 via-destructive/5 to-transparent backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-destructive/20 cursor-pointer animate-in fade-in-0 slide-in-from-bottom-2 [animation-delay:180ms]">
+          <Card className="group relative overflow-hidden border-destructive/30 bg-card transition-colors duration-200 hover:bg-muted/30 cursor-pointer animate-in fade-in-0 slide-in-from-bottom-2 [animation-delay:180ms]">
             <CardContent className="p-4">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
@@ -655,10 +654,10 @@ export function EvolucaoTabPremium({ pedidos, devolucoes, vendedoresPerformance,
 
         {/* Tendência */}
         <Card className={cn(
-          "group relative overflow-hidden backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl cursor-default animate-in fade-in-0 slide-in-from-bottom-2 [animation-delay:240ms]",
-          kpisEvolucao.tendencia > 0 && "border-success/30 bg-gradient-to-br from-success/10 to-transparent hover:shadow-success/20",
-          kpisEvolucao.tendencia < 0 && "border-destructive/30 bg-gradient-to-br from-destructive/10 to-transparent hover:shadow-destructive/20",
-          kpisEvolucao.tendencia === 0 && "border-border/50",
+          "group relative overflow-hidden bg-card transition-colors duration-200 hover:bg-muted/30 cursor-default animate-in fade-in-0 slide-in-from-bottom-2 [animation-delay:240ms]",
+          kpisEvolucao.tendencia > 0 && "border-success/30",
+          kpisEvolucao.tendencia < 0 && "border-destructive/30",
+          kpisEvolucao.tendencia === 0 && "border-border/60",
         )}>
           <CardContent className="p-4">
             <div className="flex items-center gap-2 mb-2">
@@ -668,8 +667,8 @@ export function EvolucaoTabPremium({ pedidos, devolucoes, vendedoresPerformance,
                 kpisEvolucao.tendencia < 0 && "bg-destructive/15 ring-destructive/20",
                 kpisEvolucao.tendencia === 0 && "bg-muted/30 ring-border/30",
               )}>
-                {kpisEvolucao.tendencia > 0 ? <TrendingUp className="h-3.5 w-3.5 text-success animate-pulse" />
-                  : kpisEvolucao.tendencia < 0 ? <TrendingDown className="h-3.5 w-3.5 text-destructive animate-pulse" />
+                {kpisEvolucao.tendencia > 0 ? <TrendingUp className="h-3.5 w-3.5 text-success" />
+                  : kpisEvolucao.tendencia < 0 ? <TrendingDown className="h-3.5 w-3.5 text-destructive" />
                   : <Minus className="h-3.5 w-3.5 text-muted-foreground" />}
               </div>
               <span className="text-xs text-muted-foreground font-medium">Tendência 7d</span>
@@ -691,11 +690,10 @@ export function EvolucaoTabPremium({ pedidos, devolucoes, vendedoresPerformance,
 
       {/* ============== Insights interativos ============== */}
       {insights.length > 0 && (
-        <Card className="border-primary/20 bg-gradient-to-r from-primary/8 via-primary/3 to-transparent backdrop-blur-sm overflow-hidden relative">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,hsl(var(--primary)/0.08),transparent_50%)] pointer-events-none" />
+        <Card className="border-border/60 bg-card overflow-hidden relative">
           <CardHeader className="pb-3 relative">
             <CardTitle className="text-sm flex items-center gap-2">
-              <Sparkles className="h-4 w-4 text-primary animate-pulse" />
+              <Sparkles className="h-4 w-4 text-primary" />
               Insights Automáticos
               {filterDayOfWeek !== null && (
                 <Badge variant="outline" className="ml-2 cursor-pointer border-primary/40 text-primary" onClick={() => setFilterDayOfWeek(null)}>
@@ -713,18 +711,18 @@ export function EvolucaoTabPremium({ pedidos, devolucoes, vendedoresPerformance,
                   onClick={insight.action}
                   disabled={!insight.action}
                   className={cn(
-                    "text-left p-3 rounded-xl border transition-all duration-300 group",
-                    insight.action ? "cursor-pointer hover:-translate-y-0.5 hover:shadow-lg" : "cursor-default",
-                    insight.tipo === 'positivo' && "bg-success/8 border-success/30 hover:bg-success/12 hover:border-success/50 hover:shadow-success/20",
-                    insight.tipo === 'negativo' && "bg-destructive/8 border-destructive/30 hover:bg-destructive/12 hover:border-destructive/50 hover:shadow-destructive/20",
-                    insight.tipo === 'neutro' && "bg-primary/8 border-primary/30 hover:bg-primary/12 hover:border-primary/50 hover:shadow-primary/20",
+                    "text-left p-3 rounded-lg border transition-colors duration-200 group",
+                    insight.action ? "cursor-pointer" : "cursor-default",
+                    insight.tipo === 'positivo' && "bg-success/8 border-success/30 hover:bg-success/12 hover:border-success/50",
+                    insight.tipo === 'negativo' && "bg-destructive/8 border-destructive/30 hover:bg-destructive/12 hover:border-destructive/50",
+                    insight.tipo === 'neutro' && "bg-primary/8 border-primary/30 hover:bg-primary/12 hover:border-primary/50",
                     "animate-in fade-in-0 slide-in-from-left-2",
                   )}
                   style={{ animationDelay: `${i * 80}ms` }}
                 >
                   <div className="flex items-start gap-2">
                     <div className={cn(
-                      "h-7 w-7 rounded-lg flex items-center justify-center shrink-0 transition-transform group-hover:scale-110",
+                      "h-7 w-7 rounded-lg flex items-center justify-center shrink-0",
                       insight.tipo === 'positivo' && "bg-success/15",
                       insight.tipo === 'negativo' && "bg-destructive/15",
                       insight.tipo === 'neutro' && "bg-primary/15",
@@ -747,7 +745,7 @@ export function EvolucaoTabPremium({ pedidos, devolucoes, vendedoresPerformance,
 
       {/* ============== Sub-tabs ============== */}
       <Tabs value={subTab} onValueChange={(v) => setSubTab(v as typeof subTab)}>
-        <TabsList className="grid w-full grid-cols-4 bg-muted/40 backdrop-blur-sm border border-border/50 p-1 h-auto">
+        <TabsList className="grid w-full grid-cols-4 bg-muted/40 border border-border/50 p-1 h-auto">
           <TabsTrigger value="diaria" className="text-xs gap-1.5 data-[state=active]:bg-card data-[state=active]:shadow-md data-[state=active]:shadow-primary/10 transition-all">
             <CalendarDays className="h-3.5 w-3.5 hidden sm:inline" /> Diária
           </TabsTrigger>
@@ -768,11 +766,10 @@ export function EvolucaoTabPremium({ pedidos, devolucoes, vendedoresPerformance,
             {/* Coluna principal: gráfico + detalhamento */}
             <div className="lg:col-span-2 flex flex-col gap-6">
             {/* Detalhamento Diário interativo (movido para baixo do gráfico) */}
-            <Card ref={detailsRef} className="relative overflow-hidden rounded-3xl border border-border/40 bg-card/40 backdrop-blur-xl shadow-2xl shadow-black/30">
-              <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-primary/[0.04] via-transparent to-chart-2/[0.04]" />
+            <Card ref={detailsRef} className="relative overflow-hidden rounded-lg border border-border/60 bg-card">
               <CardHeader className="relative pb-3 flex flex-row items-center justify-between">
                 <div className="flex items-start gap-3">
-                  <div className="p-2 rounded-xl bg-chart-3/10 border border-chart-3/20 shrink-0">
+                  <div className="p-2 rounded-lg bg-chart-3/10 border border-chart-3/20 shrink-0">
                     <CalendarDays className="h-4 w-4 text-chart-3" />
                   </div>
                   <div>
@@ -799,22 +796,19 @@ export function EvolucaoTabPremium({ pedidos, devolucoes, vendedoresPerformance,
                   const totalPeriodo = chartData.reduce((s, d) => s + (d.vendas > 0 ? d.vendas : 0), 0);
                   const mediaPeriodo = chartData.length ? totalPeriodo / chartData.length : 0;
                   return (
-                    <div className="relative h-[260px] w-full rounded-2xl border border-border/40 bg-gradient-to-br from-card/60 via-card/40 to-card/60 backdrop-blur-xl p-3 shadow-inner shadow-black/20 overflow-hidden">
-                      <div className="pointer-events-none absolute -top-20 -right-20 h-48 w-48 rounded-full bg-primary/10 blur-3xl opacity-60" />
-                      <div className="pointer-events-none absolute -bottom-20 -left-20 h-48 w-48 rounded-full bg-chart-3/10 blur-3xl opacity-50" />
-
+                    <div className="relative h-[260px] w-full rounded-lg border border-border/60 bg-card p-3 overflow-hidden">
                       <div className="absolute top-3 left-4 right-4 flex items-center justify-between z-10 pointer-events-none">
                         <div className="flex items-center gap-3 text-[10px]">
                           <div className="flex items-center gap-1.5">
-                            <span className="h-2 w-2 rounded-full bg-success shadow-[0_0_8px_hsl(var(--success))]" />
+                            <span className="h-2 w-2 rounded-full bg-success" />
                             <span className="text-muted-foreground">Melhor</span>
                           </div>
                           <div className="flex items-center gap-1.5">
-                            <span className="h-2 w-2 rounded-full bg-destructive shadow-[0_0_8px_hsl(var(--destructive))]" />
+                            <span className="h-2 w-2 rounded-full bg-destructive" />
                             <span className="text-muted-foreground">Pior</span>
                           </div>
                           <div className="flex items-center gap-1.5">
-                            <span className="h-0.5 w-3 bg-[hsl(var(--chart-2))] shadow-[0_0_8px_hsl(var(--chart-2)/0.9)]" />
+                            <span className="h-0.5 w-3 bg-[hsl(var(--chart-2))]" />
                             <span className="text-muted-foreground">Média</span>
                           </div>
                         </div>
@@ -871,7 +865,7 @@ export function EvolucaoTabPremium({ pedidos, devolucoes, vendedoresPerformance,
                               const vsMedia = mediaPeriodo > 0 ? ((p.vendas - mediaPeriodo) / mediaPeriodo) * 100 : 0;
                               const isPos = vsMedia >= 0;
                               return (
-                                <div className="rounded-xl border border-border/60 bg-card/95 backdrop-blur-xl shadow-2xl shadow-black/50 px-3 py-2 text-xs animate-in fade-in-0 zoom-in-95 duration-150">
+                                <div className="rounded-lg border border-border/60 bg-card px-3 py-2 text-xs animate-in fade-in-0 zoom-in-95 duration-150">
                                   <p className="text-[10px] uppercase tracking-wider text-muted-foreground capitalize mb-1">{p.diaSemana} · {p.label}</p>
                                   <p className="text-base font-bold tabular-nums text-foreground">{formatCurrency(p.vendas)}</p>
                                   <div className="flex items-center justify-between gap-4 mt-1 pt-1 border-t border-border/40">
@@ -913,15 +907,6 @@ export function EvolucaoTabPremium({ pedidos, devolucoes, vendedoresPerformance,
                                   stroke={strokeColor}
                                   strokeWidth={isSelected ? 2 : isTop || isLow ? 1 : 0}
                                   style={{
-                                    filter: isSelected
-                                      ? 'drop-shadow(0 0 12px hsl(var(--primary) / 0.7))'
-                                      : isHovered
-                                        ? 'drop-shadow(0 0 10px hsl(var(--chart-2) / 0.6))'
-                                        : isTop
-                                          ? 'drop-shadow(0 0 8px hsl(var(--success) / 0.5))'
-                                          : isLow
-                                            ? 'drop-shadow(0 0 8px hsl(var(--destructive) / 0.4))'
-                                            : 'none',
                                     transition: 'filter 200ms ease',
                                   }}
                                 />
@@ -936,7 +921,6 @@ export function EvolucaoTabPremium({ pedidos, devolucoes, vendedoresPerformance,
                               strokeDasharray="2 6"
                               strokeWidth={1.5}
                               ifOverflow="extendDomain"
-                              style={{ filter: 'drop-shadow(0 0 4px hsl(var(--chart-2) / 0.9))' }}
                               label={(props: any) => {
                                 const { viewBox } = props;
                                 if (!viewBox) return null;
@@ -1009,32 +993,22 @@ export function EvolucaoTabPremium({ pedidos, devolucoes, vendedoresPerformance,
                         onClick={() => { setSelectedDate(dia.data); setDrillDate(dia.data); }}
                         title={`${dia.diaSemana} ${dia.dataFormatada}\n${formatCurrency(dia.vendas)} · ${dia.pedidos} pedidos\nTicket médio: ${formatCurrency(ticket)}\n${acima ? '+' : ''}${vsMedia.toFixed(1)}% vs média`}
                         className={cn(
-                          "relative p-2.5 rounded-xl border text-center transition-all duration-300 cursor-pointer group overflow-hidden backdrop-blur-sm",
-                          "hover:-translate-y-1.5 hover:scale-[1.03] hover:shadow-xl hover:z-10",
+                          "relative p-2.5 rounded-lg border text-center transition-colors duration-200 cursor-pointer group overflow-hidden",
+                          "hover:bg-muted/30 hover:z-10",
                           "animate-in fade-in-0 zoom-in-95",
                           isSelected
-                            ? "ring-2 ring-primary ring-offset-2 ring-offset-background shadow-2xl shadow-primary/40 scale-[1.04] border-primary/60"
+                            ? "ring-2 ring-primary ring-offset-2 ring-offset-background border-primary/60"
                             : isToday
-                              ? "border-amber-500/50 shadow-lg shadow-amber-500/20"
+                              ? "border-amber-500/50"
                               : "border-border/50",
                         )}
                         style={{
                           animationDelay: `${i * 30}ms`,
-                          background: isEmpty
-                            ? 'hsl(var(--muted) / 0.15)'
-                            : `linear-gradient(145deg, ${tierColor.replace(')', ' / 0.14)')}, ${tierColor.replace(')', ' / 0.03)')} 60%, transparent)`,
-                          boxShadow: isSelected ? undefined : `inset 0 0 0 1px ${tierColor.replace(')', ' / 0.08)')}`,
+                          background: isEmpty ? 'hsl(var(--muted) / 0.15)' : 'hsl(var(--card))',
+                          borderColor: isEmpty || isSelected || isToday ? undefined : tierColor,
                           containerType: 'inline-size',
                         }}
                       >
-                        {/* glow radial no hover */}
-                        <div
-                          className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
-                          style={{ background: `radial-gradient(circle at 50% 0%, ${tierColor.replace(')', ' / 0.25)')}, transparent 70%)` }}
-                        />
-                        {/* shimmer */}
-                        <div className="pointer-events-none absolute -inset-x-10 -top-10 h-20 rotate-12 bg-gradient-to-r from-transparent via-white/10 to-transparent translate-x-[-150%] group-hover:translate-x-[150%] transition-transform duration-[1200ms] ease-out" />
-
                         {/* badges canto */}
                         <div className="absolute top-1 left-1 flex items-center gap-1">
                           {isToday && (
@@ -1046,7 +1020,7 @@ export function EvolucaoTabPremium({ pedidos, devolucoes, vendedoresPerformance,
                         </div>
                         <div className="absolute top-1 right-1 flex items-center gap-1">
                           {isTop ? (
-                            <Trophy className="h-3.5 w-3.5 text-amber-500 drop-shadow-[0_0_4px_hsl(var(--amber-500))]" />
+                            <Trophy className="h-3.5 w-3.5 text-amber-500" />
                           ) : rank > 0 && rank <= 3 && !isEmpty ? (
                             <span className="text-[8px] font-black text-muted-foreground/70 tabular-nums">#{rank}</span>
                           ) : null}
@@ -1068,7 +1042,7 @@ export function EvolucaoTabPremium({ pedidos, devolucoes, vendedoresPerformance,
 
                         {/* linha de pedidos / delta (swap no hover) */}
                         <div className="relative h-[14px] mt-0.5">
-                          <p className="absolute inset-0 text-[10px] text-muted-foreground tabular-nums transition-all duration-200 group-hover:opacity-0 group-hover:-translate-y-1">
+                          <p className="absolute inset-0 text-[10px] text-muted-foreground tabular-nums transition-opacity duration-200 group-hover:opacity-0">
                             {formatInteger(dia.pedidos)} ped.
                           </p>
                           {!isEmpty && mediaPeriodo > 0 && (
@@ -1088,8 +1062,7 @@ export function EvolucaoTabPremium({ pedidos, devolucoes, vendedoresPerformance,
                             className="h-full transition-all duration-700 ease-out"
                             style={{
                               width: `${Math.max(0, Math.min(100, ratio))}%`,
-                              background: `linear-gradient(90deg, ${tierColor.replace(')', ' / 0.5)')}, ${tierColor})`,
-                              boxShadow: isTop || isSelected ? `0 0 8px ${tierColor.replace(')', ' / 0.7)')}` : undefined,
+                              background: tierColor,
                             }}
                           />
                         </div>
@@ -1105,11 +1078,10 @@ export function EvolucaoTabPremium({ pedidos, devolucoes, vendedoresPerformance,
             {/* fim coluna principal */}
 
             {/* Dia da semana - Neo-Glass */}
-            <Card className="relative overflow-hidden rounded-3xl border border-border/40 bg-card/40 backdrop-blur-xl shadow-2xl shadow-black/30 flex flex-col">
-              <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-chart-2/[0.06] via-transparent to-primary/[0.04]" />
+            <Card className="relative overflow-hidden rounded-lg border border-border/60 bg-card flex flex-col">
               <CardHeader className="relative pb-3">
                 <div className="flex items-start gap-3">
-                  <div className="p-2 rounded-xl bg-chart-2/10 border border-chart-2/20 shrink-0">
+                  <div className="p-2 rounded-lg bg-chart-2/10 border border-chart-2/20 shrink-0">
                     <Calendar className="h-4 w-4 text-chart-2" />
                   </div>
                   <div>
@@ -1133,8 +1105,8 @@ export function EvolucaoTabPremium({ pedidos, devolucoes, vendedoresPerformance,
                         type="button"
                         onClick={() => setFilterDayOfWeek(prev => prev === dia.idx ? null : dia.idx)}
                         className={cn(
-                          "w-full text-left transition-all duration-300 rounded-xl px-3 py-2 -mx-1 group relative",
-                          isSelected && "bg-primary/[0.07] ring-1 ring-primary/30 shadow-inner",
+                          "w-full text-left transition-colors duration-200 rounded-lg px-3 py-2 -mx-1 group relative",
+                          isSelected && "bg-primary/[0.07] ring-1 ring-primary/30",
                           isDimmed && "opacity-40",
                           !isDimmed && !isSelected && "hover:bg-muted/30",
                         )}
@@ -1165,10 +1137,7 @@ export function EvolucaoTabPremium({ pedidos, devolucoes, vendedoresPerformance,
                           <div
                             className={cn(
                               "h-full rounded-full transition-all duration-700",
-                              isMax
-                                ? "bg-primary shadow-[0_0_15px_hsl(var(--primary)/0.5)]"
-                                : "bg-gradient-to-r from-chart-2 to-chart-2/60",
-                              isSelected && !isMax && "shadow-[0_0_10px_hsl(var(--primary)/0.4)]",
+                              isMax ? "bg-primary" : "bg-chart-2/70",
                             )}
                             style={{ width: `${widthPct}%` }}
                           />
@@ -1190,7 +1159,7 @@ export function EvolucaoTabPremium({ pedidos, devolucoes, vendedoresPerformance,
                 </div>
                 {/* Total da semana */}
                 <div className="mt-auto pt-5">
-                  <div className="p-3.5 rounded-2xl bg-background/40 border border-border/50 backdrop-blur-md text-center">
+                  <div className="p-3.5 rounded-lg bg-background/40 border border-border/50 text-center">
                     <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">Total da Semana</p>
                     <p className="text-xl font-black tabular-nums tracking-tight">
                       {formatCurrency(analiseDiaSemana.reduce((sum, d) => sum + (d.vendas || 0), 0), true)}
@@ -1205,11 +1174,10 @@ export function EvolucaoTabPremium({ pedidos, devolucoes, vendedoresPerformance,
         {/* ============== MENSAL ============== */}
         <TabsContent value="mensal" className="mt-6 space-y-6 animate-in fade-in-0 slide-in-from-bottom-1 duration-300">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <Card className="lg:col-span-2 relative overflow-hidden rounded-3xl border border-border/40 bg-card/40 backdrop-blur-xl shadow-2xl shadow-black/30">
-              <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-primary/[0.06] via-transparent to-chart-3/[0.04]" />
+            <Card className="lg:col-span-2 relative overflow-hidden rounded-lg border border-border/60 bg-card">
               <CardHeader className="relative pb-3 flex flex-row items-start justify-between gap-3 flex-wrap">
                 <div className="flex items-start gap-3">
-                  <div className="p-2 rounded-xl bg-primary/10 border border-primary/20 shrink-0">
+                  <div className="p-2 rounded-lg bg-primary/10 border border-primary/20 shrink-0">
                     <BarChart3 className="h-4 w-4 text-primary" />
                   </div>
                   <div>
@@ -1224,7 +1192,7 @@ export function EvolucaoTabPremium({ pedidos, devolucoes, vendedoresPerformance,
                 </div>
                 <div className="flex items-center gap-2 flex-wrap">
                   {/* Seletor de métrica */}
-                  <div className="flex items-center gap-1 bg-background/40 border border-border/50 p-1 rounded-xl backdrop-blur-md">
+                  <div className="flex items-center gap-1 bg-background/40 border border-border/50 p-1 rounded-lg">
                     {([
                       { k: 'vendas', label: 'Vendas', color: 'hsl(var(--primary))' },
                       { k: 'liquido', label: 'Líquido', color: 'hsl(var(--chart-2))' },
@@ -1246,16 +1214,16 @@ export function EvolucaoTabPremium({ pedidos, devolucoes, vendedoresPerformance,
                       >{m.label}</button>
                     ))}
                   </div>
-                  <div className="flex items-center gap-1 bg-background/40 border border-border/50 p-1 rounded-xl backdrop-blur-md">
+                  <div className="flex items-center gap-1 bg-background/40 border border-border/50 p-1 rounded-lg">
                     <button
                       type="button"
                       onClick={() => setAcumuladoMensal(false)}
-                      className={cn("px-3 py-1 text-[11px] font-bold rounded-lg transition-all", !acumuladoMensal ? "bg-primary text-primary-foreground shadow-md shadow-primary/30" : "text-muted-foreground hover:text-foreground")}
+                      className={cn("px-3 py-1 text-[11px] font-bold rounded-lg transition-colors", !acumuladoMensal ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground")}
                     >Mensal</button>
                     <button
                       type="button"
                       onClick={() => setAcumuladoMensal(true)}
-                      className={cn("px-3 py-1 text-[11px] font-bold rounded-lg transition-all", acumuladoMensal ? "bg-primary text-primary-foreground shadow-md shadow-primary/30" : "text-muted-foreground hover:text-foreground")}
+                      className={cn("px-3 py-1 text-[11px] font-bold rounded-lg transition-colors", acumuladoMensal ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground")}
                     >Acumulado</button>
                   </div>
                 </div>
@@ -1346,9 +1314,6 @@ export function EvolucaoTabPremium({ pedidos, devolucoes, vendedoresPerformance,
                                 key={i}
                                 fill={hoveredMonth?.mesKey === m.mesKey ? 'url(#mensalDynGradActive)' : 'url(#mensalDynGrad)'}
                                 style={{
-                                  filter: hoveredMonth?.mesKey === m.mesKey
-                                    ? `drop-shadow(0 0 10px ${cfg.color})`
-                                    : undefined,
                                   transition: 'filter 0.2s',
                                 }}
                               />
@@ -1399,11 +1364,10 @@ export function EvolucaoTabPremium({ pedidos, devolucoes, vendedoresPerformance,
               </CardContent>
             </Card>
 
-            <Card className="relative overflow-hidden rounded-3xl border border-border/40 bg-card/40 backdrop-blur-xl shadow-2xl shadow-black/30">
-              <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-primary/[0.05] via-transparent to-transparent" />
+            <Card className="relative overflow-hidden rounded-lg border border-border/60 bg-card">
               <CardHeader className="relative pb-3">
                 <div className="flex items-start gap-3">
-                  <div className="p-2 rounded-xl bg-primary/10 border border-primary/20 shrink-0">
+                  <div className="p-2 rounded-lg bg-primary/10 border border-primary/20 shrink-0">
                     <CalendarRange className="h-4 w-4 text-primary" />
                   </div>
                   <div>
@@ -1428,7 +1392,7 @@ export function EvolucaoTabPremium({ pedidos, devolucoes, vendedoresPerformance,
                       onMouseEnter={() => setHoveredMonth(mes)}
                       className={cn(
                         "w-full text-left space-y-1 rounded-lg p-2 transition-all duration-200",
-                        isActive ? "bg-primary/10 ring-1 ring-primary/40 shadow-md shadow-primary/10" : "hover:bg-muted/40",
+                        isActive ? "bg-primary/10 ring-1 ring-primary/40" : "hover:bg-muted/40",
                       )}
                     >
                       <div className="flex justify-between items-center text-sm">
@@ -1449,7 +1413,7 @@ export function EvolucaoTabPremium({ pedidos, devolucoes, vendedoresPerformance,
                       <div className="relative h-1.5 rounded-full bg-muted/40 overflow-hidden">
                         <div className={cn(
                           "absolute inset-y-0 left-0 rounded-full transition-all duration-700",
-                          isActive ? "bg-gradient-to-r from-primary via-primary/80 to-primary/60 shadow-[0_0_10px] shadow-primary/50" : "bg-gradient-to-r from-primary to-primary/60",
+                          "bg-primary",
                         )} style={{ width: `${progresso}%` }} />
                       </div>
                       <div className="flex justify-between text-[10px] text-muted-foreground">
@@ -1464,11 +1428,10 @@ export function EvolucaoTabPremium({ pedidos, devolucoes, vendedoresPerformance,
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card className="relative overflow-hidden rounded-3xl border border-border/40 bg-card/40 backdrop-blur-xl shadow-2xl shadow-black/30">
-              <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-chart-3/[0.06] via-transparent to-transparent" />
+            <Card className="relative overflow-hidden rounded-lg border border-border/60 bg-card">
               <CardHeader className="relative pb-3">
                 <div className="flex items-start gap-3">
-                  <div className="p-2 rounded-xl bg-chart-3/10 border border-chart-3/20 shrink-0">
+                  <div className="p-2 rounded-lg bg-chart-3/10 border border-chart-3/20 shrink-0">
                     <Target className="h-4 w-4 text-chart-3" />
                   </div>
                   <div>
@@ -1498,11 +1461,10 @@ export function EvolucaoTabPremium({ pedidos, devolucoes, vendedoresPerformance,
               </CardContent>
             </Card>
 
-            <Card className="relative overflow-hidden rounded-3xl border border-border/40 bg-card/40 backdrop-blur-xl shadow-2xl shadow-black/30">
-              <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-chart-4/[0.06] via-transparent to-transparent" />
+            <Card className="relative overflow-hidden rounded-lg border border-border/60 bg-card">
               <CardHeader className="relative pb-3">
                 <div className="flex items-start gap-3">
-                  <div className="p-2 rounded-xl bg-chart-4/10 border border-chart-4/20 shrink-0">
+                  <div className="p-2 rounded-lg bg-chart-4/10 border border-chart-4/20 shrink-0">
                     <Users className="h-4 w-4 text-chart-4" />
                   </div>
                   <div>
@@ -1541,11 +1503,10 @@ export function EvolucaoTabPremium({ pedidos, devolucoes, vendedoresPerformance,
             devolucoes={devolucoes}
             onSelectVendedor={(nome) => setSellerDrill(nome)}
           />
-          <Card className="relative overflow-hidden rounded-3xl border border-border/40 bg-card/40 backdrop-blur-xl shadow-2xl shadow-black/30">
-            <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-primary/[0.06] via-transparent to-chart-4/[0.04]" />
+          <Card className="relative overflow-hidden rounded-lg border border-border/60 bg-card">
             <CardHeader className="relative pb-3 flex flex-row items-start justify-between gap-3">
               <div className="flex items-start gap-3">
-                <div className="p-2 rounded-xl bg-primary/10 border border-primary/20 shrink-0">
+                <div className="p-2 rounded-lg bg-primary/10 border border-primary/20 shrink-0">
                   <Users className="h-4 w-4 text-primary" />
                 </div>
                 <div>
@@ -1554,16 +1515,16 @@ export function EvolucaoTabPremium({ pedidos, devolucoes, vendedoresPerformance,
                 </div>
               </div>
               {hiddenSellers.size > 0 && (
-                <Button size="sm" variant="outline" className="h-8 text-[11px] font-bold gap-1.5 rounded-xl border-primary/30 text-primary hover:bg-primary/10" onClick={showAllSellers}>
+                <Button size="sm" variant="outline" className="h-8 text-[11px] font-bold gap-1.5 rounded-lg border-primary/30 text-primary hover:bg-primary/10" onClick={showAllSellers}>
                   <Sparkles className="h-3 w-3" /> Mostrar todos
                 </Button>
               )}
             </CardHeader>
             <CardContent className="relative">
               <div className={cn(
-                "mb-5 rounded-2xl border transition-all duration-300 overflow-hidden",
+                "mb-5 rounded-lg border transition-colors duration-200 overflow-hidden",
                 hoveredSeller
-                  ? "border-primary/30 bg-background/40 backdrop-blur-md shadow-lg shadow-primary/10"
+                  ? "border-primary/30 bg-background/40"
                   : "border-border/40 bg-muted/10 border-dashed"
               )}>
                 <div className="px-4 py-3 flex items-center justify-between gap-4 flex-wrap">
@@ -1585,10 +1546,10 @@ export function EvolucaoTabPremium({ pedidos, devolucoes, vendedoresPerformance,
                         </div>
                       </div>
                       <div className="flex items-center gap-2 shrink-0">
-                        <Button size="sm" variant="outline" className="h-9 px-3 text-xs font-bold gap-1.5 rounded-xl" onClick={() => soloOnly(hoveredSeller.nome)}>
+                        <Button size="sm" variant="outline" className="h-9 px-3 text-xs font-bold gap-1.5 rounded-lg" onClick={() => soloOnly(hoveredSeller.nome)}>
                           <Zap className="h-3.5 w-3.5" /> Solo
                         </Button>
-                        <Button size="sm" className="h-9 px-4 text-xs font-bold gap-1.5 shadow-lg shadow-primary/20 active:scale-95 transition" onClick={() => setSellerDrill(hoveredSeller.nome)}>
+                        <Button size="sm" className="h-9 px-4 text-xs font-bold gap-1.5 transition-colors" onClick={() => setSellerDrill(hoveredSeller.nome)}>
                           Detalhes <MousePointerClick className="h-3.5 w-3.5" />
                         </Button>
                       </div>
@@ -1622,7 +1583,7 @@ export function EvolucaoTabPremium({ pedidos, devolucoes, vendedoresPerformance,
                           strokeOpacity={isHidden ? 0 : (hoveredSeller && !isFocused ? 0.25 : 1)}
                           dot={{ r: isFocused ? 4 : 3 }}
                           activeDot={{ r: 7, cursor: 'pointer', onClick: () => setSellerDrill(v.nome) }}
-                          style={isFocused ? { filter: `drop-shadow(0 0 8px ${CHART_COLORS[i % CHART_COLORS.length]})` } : undefined}
+                          style={undefined}
                         />
                       );
                     })}
@@ -1647,13 +1608,12 @@ export function EvolucaoTabPremium({ pedidos, devolucoes, vendedoresPerformance,
                   className={cn("transition-all duration-300", isHidden && "opacity-40")}
                 >
                   <Card className={cn(
-                    "relative overflow-hidden rounded-2xl border border-border/40 bg-card/40 backdrop-blur-xl shadow-xl shadow-black/20 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl",
-                    !isHidden && "hover:shadow-primary/20",
-                    isFocused && "ring-2 ring-primary/50 shadow-2xl shadow-primary/30",
+                    "relative overflow-hidden rounded-lg border border-border/60 bg-card transition-colors duration-200 hover:bg-muted/30",
+                    isFocused && "ring-2 ring-primary/50",
                   )}>
                     <div
                       className="absolute top-0 left-0 h-full transition-all"
-                      style={{ backgroundColor: color, boxShadow: `0 0 12px ${color}`, width: isFocused ? 3 : 4 }}
+                      style={{ backgroundColor: color, width: isFocused ? 3 : 4 }}
                     />
                     <CardContent className="p-4">
                       <div className="flex items-center justify-between gap-2 mb-2">
@@ -1705,11 +1665,10 @@ export function EvolucaoTabPremium({ pedidos, devolucoes, vendedoresPerformance,
         {/* ============== COMPARATIVO ============== */}
         <TabsContent value="comparativo" className="mt-6 space-y-6 animate-in fade-in-0 slide-in-from-bottom-1 duration-300">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-            <Card className="relative overflow-hidden rounded-3xl border border-border/40 bg-card/40 backdrop-blur-xl shadow-2xl shadow-black/30">
-              <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-primary/[0.06] via-transparent to-success/[0.04]" />
+            <Card className="relative overflow-hidden rounded-lg border border-border/60 bg-card">
               <CardHeader className="relative pb-3">
                 <div className="flex items-start gap-3">
-                  <div className="p-2 rounded-xl bg-primary/10 border border-primary/20 shrink-0">
+                  <div className="p-2 rounded-lg bg-primary/10 border border-primary/20 shrink-0">
                     <BarChart3 className="h-4 w-4 text-primary" />
                   </div>
                   <div>
@@ -1730,9 +1689,9 @@ export function EvolucaoTabPremium({ pedidos, devolucoes, vendedoresPerformance,
                         type="button"
                         onClick={() => setHalfFocus(prev => prev === key ? null : key)}
                         className={cn(
-                          "relative p-4 rounded-xl text-center border transition-all duration-300 hover:-translate-y-0.5",
-                          isP2 ? "bg-gradient-to-br from-primary/15 to-primary/5 border-primary/30" : "bg-gradient-to-br from-muted/50 to-muted/20 border-border/40",
-                          isActive && "ring-2 ring-primary/60 shadow-xl shadow-primary/20 -translate-y-0.5",
+                          "relative p-4 rounded-lg text-center border transition-colors duration-200 hover:bg-muted/30",
+                          isP2 ? "bg-primary/10 border-primary/30" : "bg-muted/30 border-border/40",
+                          isActive && "ring-2 ring-primary/60",
                         )}
                       >
                         <p className="text-xs text-muted-foreground mb-1 font-medium">{key === 'p1' ? '1ª Metade' : '2ª Metade'}</p>
@@ -1749,9 +1708,9 @@ export function EvolucaoTabPremium({ pedidos, devolucoes, vendedoresPerformance,
                 </div>
                 {/* Medidor radial */}
                 <div className={cn(
-                  "p-5 rounded-xl text-center border backdrop-blur-sm relative overflow-hidden transition-all",
-                  comparativoPeriodos.variacao > 0 ? "bg-gradient-to-br from-success/15 to-success/5 border-success/30" :
-                  comparativoPeriodos.variacao < 0 ? "bg-gradient-to-br from-destructive/15 to-destructive/5 border-destructive/30" :
+                  "p-5 rounded-lg text-center border relative overflow-hidden transition-colors",
+                  comparativoPeriodos.variacao > 0 ? "bg-success/10 border-success/30" :
+                  comparativoPeriodos.variacao < 0 ? "bg-destructive/10 border-destructive/30" :
                   "bg-muted/30 border-border/40",
                 )}>
                   <div className="flex items-center justify-center gap-4">
@@ -1774,7 +1733,7 @@ export function EvolucaoTabPremium({ pedidos, devolucoes, vendedoresPerformance,
                             strokeLinecap="round"
                             strokeDasharray={`${dash} ${c}`}
                             transform="rotate(-90 40 40)"
-                            style={{ transition: 'stroke-dasharray 800ms cubic-bezier(.2,.8,.2,1)', filter: `drop-shadow(0 0 6px ${stroke})` }}
+                            style={{ transition: 'stroke-dasharray 800ms cubic-bezier(.2,.8,.2,1)' }}
                           />
                           <text x="40" y="44" textAnchor="middle" className="fill-foreground" style={{ fontSize: '13px', fontWeight: 700 }}>
                             {Math.round(pct)}%
@@ -1888,11 +1847,10 @@ export function EvolucaoTabPremium({ pedidos, devolucoes, vendedoresPerformance,
               };
 
               return (
-                <Card className="relative overflow-hidden rounded-3xl border border-border/40 bg-card/40 backdrop-blur-xl shadow-2xl shadow-black/30">
-                  <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-chart-3/[0.06] via-transparent to-success/[0.04]" />
+                <Card className="relative overflow-hidden rounded-lg border border-border/60 bg-card">
                   <CardHeader className="relative pb-3">
                     <div className="flex items-start gap-3">
-                      <div className="p-2 rounded-xl bg-chart-3/10 border border-chart-3/20 shrink-0">
+                      <div className="p-2 rounded-lg bg-chart-3/10 border border-chart-3/20 shrink-0">
                         <Sparkles className="h-4 w-4 text-chart-3" />
                       </div>
                       <div>
@@ -1909,7 +1867,7 @@ export function EvolucaoTabPremium({ pedidos, devolucoes, vendedoresPerformance,
                         <div
                           key={i}
                           className={cn(
-                            "flex items-center gap-3 p-3 rounded-xl border bg-card/40 transition-all hover:-translate-y-0.5 hover:shadow-lg",
+                            "flex items-center gap-3 p-3 rounded-lg border bg-card transition-colors hover:bg-muted/30",
                             cls.border,
                           )}
                         >
@@ -1931,11 +1889,10 @@ export function EvolucaoTabPremium({ pedidos, devolucoes, vendedoresPerformance,
           </div>
 
           {/* Distribuição Semanal — full width */}
-          <Card className="relative overflow-hidden rounded-3xl border border-border/40 bg-card/40 backdrop-blur-xl shadow-2xl shadow-black/30">
-            <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-chart-2/[0.06] via-transparent to-transparent" />
+          <Card className="relative overflow-hidden rounded-lg border border-border/60 bg-card">
             <CardHeader className="relative pb-3">
               <div className="flex items-start gap-3">
-                <div className="p-2 rounded-xl bg-chart-2/10 border border-chart-2/20 shrink-0">
+                <div className="p-2 rounded-lg bg-chart-2/10 border border-chart-2/20 shrink-0">
                   <Calendar className="h-4 w-4 text-chart-2" />
                 </div>
                 <div>
@@ -1978,7 +1935,7 @@ export function EvolucaoTabPremium({ pedidos, devolucoes, vendedoresPerformance,
                       <div className="relative h-2 rounded-full bg-muted/40 overflow-hidden mt-1">
                         <div className={cn(
                           "absolute inset-y-0 left-0 rounded-full transition-all duration-500",
-                          isMax ? "bg-gradient-to-r from-primary to-primary/70 group-hover:shadow-[0_0_8px] group-hover:shadow-primary/50" : "bg-gradient-to-r from-chart-2 to-chart-2/60 group-hover:shadow-[0_0_6px] group-hover:shadow-chart-2/40",
+                          isMax ? "bg-primary" : "bg-chart-2/70",
                         )} style={{ width: `${dia.percentual}%` }} />
                       </div>
                     </button>
@@ -1998,12 +1955,11 @@ export function EvolucaoTabPremium({ pedidos, devolucoes, vendedoresPerformance,
             const poucoDado = dadosAtivos.length <= 2;
             const showLabels = dadosAtivos.length <= 10;
             return (
-              <Card className="relative overflow-hidden rounded-3xl border border-border/40 bg-card/40 backdrop-blur-xl shadow-2xl shadow-black/30">
-                <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-chart-3/[0.05] via-transparent to-primary/[0.04]" />
+              <Card className="relative overflow-hidden rounded-lg border border-border/60 bg-card">
                 <CardHeader className="relative pb-3">
                   <div className="flex items-start justify-between gap-3 flex-wrap">
                     <div className="flex items-start gap-3">
-                      <div className="p-2 rounded-xl bg-chart-3/10 border border-chart-3/20 shrink-0">
+                      <div className="p-2 rounded-lg bg-chart-3/10 border border-chart-3/20 shrink-0">
                         <LineChartIcon className="h-4 w-4 text-chart-3" />
                       </div>
                       <div>
@@ -2106,7 +2062,7 @@ export function EvolucaoTabPremium({ pedidos, devolucoes, vendedoresPerformance,
                                 <Cell
                                   key={i}
                                   fill={fill}
-                                  style={{ filter: isHover ? 'drop-shadow(0 0 8px hsl(var(--primary)/0.55))' : undefined, transition: 'filter 200ms' }}
+                                  style={{ transition: 'filter 200ms' }}
                                 />
                               );
                             })}
@@ -2144,8 +2100,7 @@ export function EvolucaoTabPremium({ pedidos, devolucoes, vendedoresPerformance,
               </DialogHeader>
               <div className="space-y-4">
                 {/* Card destaque faturamento */}
-                <div className="relative p-5 rounded-xl bg-gradient-to-br from-primary/15 via-primary/5 to-transparent border border-primary/30 overflow-hidden">
-                  <div className="absolute -top-8 -right-8 h-32 w-32 rounded-full bg-primary/15 blur-3xl" />
+                <div className="relative p-5 rounded-lg bg-card border border-primary/30 overflow-hidden">
                   <p className="text-xs text-muted-foreground mb-1">Faturamento do dia</p>
                   <p className="text-3xl font-bold tabular-nums">{formatCurrency(drillData.dia.vendas)}</p>
                   {drillData.dia.devolucoes > 0 && (

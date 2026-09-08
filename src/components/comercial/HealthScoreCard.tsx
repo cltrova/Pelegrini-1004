@@ -1,6 +1,5 @@
 import { useMemo } from 'react';
 import { Heart, TrendingUp, TrendingDown, Activity } from 'lucide-react';
-import { cn } from '@/lib/utils';
 import type { ComercialKPIs, VendedorPerformance } from '@/types/comercial';
 
 interface Props {
@@ -99,18 +98,14 @@ export function HealthScoreCard({ kpis, vendedores }: Props) {
     : 'Crítico';
 
   const Icon = score >= 60 ? TrendingUp : TrendingDown;
+  const getItemColor = (itemScore: number) =>
+    itemScore >= 60 ? 'hsl(var(--success))' : itemScore >= 40 ? 'hsl(38 92% 50%)' : 'hsl(var(--destructive))';
 
   const circumference = 2 * Math.PI * 52;
   const offset = circumference - (score / 100) * circumference;
 
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-border/50 bg-card/60 backdrop-blur-md p-5 group hover:border-primary/40 transition-all duration-300"
-      style={{ boxShadow: `0 4px 30px -10px ${color}30` }}
-    >
-      {/* glow */}
-      <div className="absolute -top-20 -right-20 w-56 h-56 rounded-full opacity-25 blur-3xl pointer-events-none"
-        style={{ background: color }} />
-
+    <div className="relative overflow-hidden rounded-lg border border-border/50 bg-card p-5 transition-colors duration-300 hover:border-primary/40">
       <div className="relative flex items-start gap-5">
         {/* Circular gauge */}
         <div className="relative shrink-0">
@@ -126,7 +121,6 @@ export function HealthScoreCard({ kpis, vendedores }: Props) {
               strokeDashoffset={offset}
               style={{
                 transition: 'stroke-dashoffset 1.5s cubic-bezier(0.4,0,0.2,1)',
-                filter: `drop-shadow(0 0 8px ${color})`,
               }}
             />
           </svg>
@@ -159,11 +153,10 @@ export function HealthScoreCard({ kpis, vendedores }: Props) {
                 </div>
                 <div className="h-1 rounded-full bg-muted overflow-hidden">
                   <div
-                    className="h-full rounded-full transition-all duration-1000"
+                    className="h-full rounded-full transition-[width] duration-1000"
                     style={{
                       width: `${it.score}%`,
-                      background: `linear-gradient(90deg, ${it.score >= 60 ? 'hsl(var(--success))' : it.score >= 40 ? 'hsl(38 92% 50%)' : 'hsl(var(--destructive))'}, ${color})`,
-                      boxShadow: `0 0 6px ${color}80`,
+                      backgroundColor: getItemColor(it.score),
                     }}
                   />
                 </div>

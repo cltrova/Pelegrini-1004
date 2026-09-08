@@ -69,8 +69,10 @@ export default function ProdutosPage() {
   }, [periodoDisponivel, codEmpresaAtiva]);
 
   // Filtros locais (busca + marca selecionada via clique)
-  const matchMarca = (m?: string) =>
-    !selectedMarca || (m || '').toUpperCase().trim() === selectedMarca.toUpperCase().trim();
+  const matchMarca = useCallback(
+    (m?: string) => !selectedMarca || (m || '').toUpperCase().trim() === selectedMarca.toUpperCase().trim(),
+    [selectedMarca]
+  );
 
   const topFiltrado = useMemo(
     () => topProdutos.filter(p =>
@@ -80,7 +82,7 @@ export default function ProdutosPage() {
         String(p.cod_produto).includes(searchTerm)
       )
     ),
-    [topProdutos, searchTerm, selectedMarca]
+    [topProdutos, searchTerm, matchMarca]
   );
 
   const resumoFiltrado = useMemo(
@@ -93,7 +95,7 @@ export default function ProdutosPage() {
         String(r.num_nf || '').includes(searchTerm)
       )
     ).slice(0, 500),
-    [resumoVendas, searchTerm, selectedMarca]
+    [resumoVendas, searchTerm, matchMarca]
   );
 
   const categoriaFiltrada = useMemo(
@@ -116,7 +118,7 @@ export default function ProdutosPage() {
   const totalQtd = useMemo(() => marcasFiltradas.reduce((a, m) => a + m.quantidade, 0), [marcasFiltradas]);
   const totalProdutos = useMemo(
     () => selectedMarca ? topProdutos.filter(p => matchMarca(p.marca)).length : topProdutos.length,
-    [topProdutos, selectedMarca]
+    [topProdutos, selectedMarca, matchMarca]
   );
 
   const shareReceita = totalReceitaGeral > 0 ? (totalReceita / totalReceitaGeral) * 100 : 0;
@@ -126,7 +128,7 @@ export default function ProdutosPage() {
 
   if (!hasSource) {
     return (
-      <div className="p-6 max-w-3xl mx-auto">
+      <div className="enterprise-page-shell max-w-3xl">
         <Card className="border-warning/40">
           <CardContent className="p-8 text-center">
             <AlertTriangle className="h-10 w-10 text-warning mx-auto mb-3" />
@@ -143,7 +145,7 @@ export default function ProdutosPage() {
   if (isLoading || loadingBase) return <LoadingState message="Carregando produtos..." />;
 
   return (
-    <div className="p-4 md:p-6 space-y-5">
+    <div className="enterprise-page-shell">
       {/* Filtros */}
       <CollapsibleFilterBar
         title="Filtros"
@@ -240,8 +242,8 @@ export default function ProdutosPage() {
       </div>
 
       {/* Tabs principais */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid grid-cols-5 w-full lg:w-fit">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden">
+        <TabsList className="grid shrink-0 grid-cols-5 w-full lg:w-fit">
           <TabsTrigger value="marcas" className="gap-1.5"><Award className="h-3.5 w-3.5" /> Marcas</TabsTrigger>
           <TabsTrigger value="top" className="gap-1.5"><TrendingUp className="h-3.5 w-3.5" /> Top Produtos</TabsTrigger>
           <TabsTrigger value="categoria" className="gap-1.5"><Tag className="h-3.5 w-3.5" /> Categorias</TabsTrigger>
@@ -252,7 +254,7 @@ export default function ProdutosPage() {
         </TabsList>
 
         {/* MARCAS */}
-        <TabsContent value="marcas" className="space-y-4">
+        <TabsContent value="marcas" className="mt-0 min-h-0 flex-1 space-y-3 overflow-auto">
           {isLayoutPremium ? (
             <PremiumMarcasView
               porMarca={porMarca}
@@ -270,7 +272,7 @@ export default function ProdutosPage() {
         </TabsContent>
 
         {/* TOP PRODUTOS */}
-        <TabsContent value="top">
+        <TabsContent value="top" className="mt-0 min-h-0 flex-1 overflow-auto">
           {isLayoutPremium ? (
             <PremiumTopProdutos
               produtos={topFiltrado}
@@ -289,7 +291,7 @@ export default function ProdutosPage() {
         </TabsContent>
 
         {/* CATEGORIAS */}
-        <TabsContent value="categoria">
+        <TabsContent value="categoria" className="mt-0 min-h-0 flex-1 overflow-auto">
           {isLayoutPremium ? (
             <PremiumCategoriasView
               porCategoria={porCategoria}
@@ -307,7 +309,7 @@ export default function ProdutosPage() {
         </TabsContent>
 
         {/* SEM GIRO */}
-        <TabsContent value="sem-giro">
+        <TabsContent value="sem-giro" className="mt-0 min-h-0 flex-1 overflow-auto">
           <Card className="premium-card">
             <CardHeader className="pb-2">
               <CardTitle className="text-base flex items-center gap-2">
@@ -319,9 +321,9 @@ export default function ProdutosPage() {
               {produtosSemGiro.length === 0 ? (
                 <p className="text-sm text-muted-foreground py-8 text-center">Todos os produtos do catálogo movimentaram no período. 🎯</p>
               ) : (
-                <div className="overflow-y-auto max-h-[600px] rounded-md border border-border">
+                <div className="overflow-y-auto max-h-[min(320px,calc(100dvh-21rem))] rounded-md border border-border">
                   <table className="w-full text-sm">
-                    <thead className="sticky top-0 bg-muted/80 backdrop-blur z-10">
+                    <thead className="sticky top-0 bg-muted z-10">
                       <tr className="text-left text-xs text-muted-foreground">
                         <th className="px-3 py-2">Produto</th>
                         <th className="px-3 py-2">Marca/Categoria</th>
@@ -363,7 +365,7 @@ export default function ProdutosPage() {
         </TabsContent>
 
         {/* RESUMO POR NF (linha-a-linha estilo Power BI) */}
-        <TabsContent value="resumo">
+        <TabsContent value="resumo" className="mt-0 min-h-0 flex-1 overflow-auto">
           <Card className="premium-card">
             <CardHeader className="pb-2">
               <CardTitle className="text-base flex items-center gap-2">
@@ -377,7 +379,7 @@ export default function ProdutosPage() {
             <CardContent>
               <div className="overflow-auto max-h-[700px] rounded-md border border-border">
                 <table className="w-full text-xs">
-                  <thead className="sticky top-0 bg-muted/80 backdrop-blur z-10">
+                  <thead className="sticky top-0 bg-muted z-10">
                     <tr className="text-left text-[11px] text-muted-foreground">
                       <th className="px-2 py-2">Data</th>
                       <th className="px-2 py-2">NF</th>
@@ -466,16 +468,16 @@ function useAnimatedNumber(target: number, duration = 600) {
 const KpiMini = React.forwardRef<HTMLDivElement, KpiMiniProps>(
   ({ icon, label, value, formatter, color, isFiltered, onClearFilter, subInfo, progress }, ref) => {
     const colorMap: Record<KpiColor, string> = {
-      primary: 'from-primary/15 to-primary/5 border-primary/30 text-primary',
-      success: 'from-success/15 to-success/5 border-success/30 text-success',
-      warning: 'from-warning/15 to-warning/5 border-warning/30 text-warning',
-      accent: 'from-accent/15 to-accent/5 border-accent/30 text-accent',
+      primary: 'border-primary/30 bg-primary/10 text-primary',
+      success: 'border-success/30 bg-success/10 text-success',
+      warning: 'border-warning/30 bg-warning/10 text-warning',
+      accent: 'border-accent/30 bg-accent/10 text-accent',
     };
     const ringMap: Record<KpiColor, string> = {
-      primary: 'ring-primary/50 shadow-[0_8px_28px_-6px_hsl(var(--primary)/0.45)]',
-      success: 'ring-success/50 shadow-[0_8px_28px_-6px_hsl(var(--success)/0.45)]',
-      warning: 'ring-warning/50 shadow-[0_8px_28px_-6px_hsl(var(--warning)/0.45)]',
-      accent: 'ring-accent/50 shadow-[0_8px_28px_-6px_hsl(var(--accent)/0.45)]',
+      primary: 'ring-primary/40',
+      success: 'ring-success/40',
+      warning: 'ring-warning/40',
+      accent: 'ring-accent/40',
     };
     const barMap: Record<KpiColor, string> = {
       primary: 'bg-primary',
@@ -504,8 +506,8 @@ const KpiMini = React.forwardRef<HTMLDivElement, KpiMiniProps>(
           role={clickable ? 'button' : undefined}
           aria-label={clickable ? `Limpar filtro de marca` : undefined}
           className={cn(
-            'group relative overflow-hidden h-full bg-card/60 backdrop-blur-sm border transition-all duration-300',
-            'hover:-translate-y-0.5 hover:bg-card/80',
+            'group relative overflow-hidden h-full bg-card border transition-colors duration-200',
+            'hover:bg-muted/30',
             isFiltered ? colorMap[color] : 'border-border/60',
             isFiltered && `ring-1 ring-offset-0 ${ringMap[color]}`,
             clickable && 'cursor-pointer'
@@ -522,7 +524,7 @@ const KpiMini = React.forwardRef<HTMLDivElement, KpiMiniProps>(
               </p>
               <div
                 className={cn(
-                  'h-7 w-7 shrink-0 rounded-md flex items-center justify-center transition-transform duration-300 group-hover:scale-110',
+                  'h-7 w-7 shrink-0 rounded-md flex items-center justify-center',
                   `bg-${color}/15 text-${color}`
                 )}
               >

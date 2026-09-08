@@ -75,7 +75,7 @@ export function TopInadimplentes({ clientes, limit = 10 }: Props) {
                     <TableCell>
                       <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
                         <div
-                          className="h-full bg-gradient-to-r from-rose-500 to-amber-500"
+                          className="h-full bg-rose-500"
                           style={{ width: `${pct}%` }}
                         />
                       </div>

@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Activity, RefreshCw, AlertCircle } from 'lucide-react';
+import { AlertCircle, RefreshCw, Wallet } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -20,10 +20,9 @@ import { AcompanhamentoTab } from '@/components/resumo/AcompanhamentoTab';
 import { PedidosAbertosTable } from '@/components/resumo/PedidosAbertosTable';
 import { useEmpresaAtiva } from '@/hooks/useEmpresaAtiva';
 import { useCobrancaIntervencoes } from '@/hooks/useCobrancaIntervencoes';
-import { Badge } from '@/components/ui/badge';
+import { EnterpriseBadge, EnterprisePageHeader } from '@/components/enterprise';
 import { FinanceiroSearchPrompt } from '@/components/financeiro/FinanceiroSearchPrompt';
 import { useFinanceiroSearch } from '@/contexts/FinanceiroSearchContext';
-import { PelegriniModuleHeader } from '@/components/pelegrini';
 
 
 const initialFilters: ResumoFilters = {
@@ -71,14 +70,13 @@ export default function ResumoPage() {
   ), [duplicatas]);
 
   return (
-    <div className="p-4 md:p-6 space-y-5 max-w-[1600px] mx-auto">
-      <PelegriniModuleHeader
+    <div className="enterprise-page-shell max-w-[1600px]">
+      <EnterprisePageHeader
         title="Resumo Financeiro"
         subtitle="Monitoramento de liquidez e contas a receber"
-        moduleKey="financeiro"
-      />
-      <div className="flex flex-wrap items-center justify-end gap-3">
-        <div className="flex items-center gap-2">
+        icon={Wallet}
+        actions={
+          <div className="flex min-w-0 flex-wrap items-center justify-end gap-2">
           {hasSearched && !isLoading && hasSource && !error && alertas.length > 0 && (
             <AlertasCriticosBanner alertas={alertas} />
           )}
@@ -92,8 +90,9 @@ export default function ResumoPage() {
             <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
             Atualizar
           </Button>
-        </div>
-      </div>
+          </div>
+        }
+      />
 
       {hasSearched && !hasSource && (
         <Alert>
@@ -141,8 +140,8 @@ export default function ResumoPage() {
 
           
 
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full max-w-[1200px] grid-cols-6">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="flex min-h-0 w-full flex-1 flex-col overflow-hidden">
+            <TabsList className="grid w-full max-w-[1200px] shrink-0 grid-cols-6">
               <TabsTrigger value="diagnostico">Diagnóstico</TabsTrigger>
               <TabsTrigger value="clientes">Análise de Cliente</TabsTrigger>
               <TabsTrigger value="duplicatas">
@@ -155,12 +154,12 @@ export default function ResumoPage() {
               <TabsTrigger value="acompanhamento" className="relative">
                 📥 Acompanhamento
                 {pendentes.length > 0 && (
-                  <Badge variant="destructive" className="ml-1 h-5 px-1.5">{pendentes.length}</Badge>
+                  <EnterpriseBadge tone="negative" className="ml-1 h-5 px-1.5">{pendentes.length}</EnterpriseBadge>
                 )}
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="diagnostico" className="space-y-4 mt-4">
+            <TabsContent value="diagnostico" className="mt-3 min-h-0 flex-1 overflow-auto">
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
                 <div className="lg:col-span-7 space-y-4">
                   <ProjecaoRecebimentosChart buckets={projecao} />
@@ -173,11 +172,11 @@ export default function ResumoPage() {
               </div>
             </TabsContent>
 
-            <TabsContent value="clientes" className="mt-4">
+            <TabsContent value="clientes" className="mt-3 min-h-0 flex-1 overflow-auto">
               <AnaliseClienteTab clientes={clientesAnalytics} duplicatas={duplicatas} pedidos={pedidos} empresas={empresasDisponiveis} />
             </TabsContent>
 
-            <TabsContent value="duplicatas" className="space-y-4 mt-4">
+            <TabsContent value="duplicatas" className="mt-3 min-h-0 flex-1 space-y-3 overflow-auto">
               <ResumoFiltersBar
                 filters={filters}
                 onChange={setFilters}
@@ -187,15 +186,15 @@ export default function ResumoPage() {
               <ResumoDuplicatasTable duplicatas={filtradas} />
             </TabsContent>
 
-            <TabsContent value="pedidos" className="mt-4">
+            <TabsContent value="pedidos" className="mt-3 min-h-0 flex-1 overflow-auto">
               <PedidosAbertosTable pedidos={pedidos} />
             </TabsContent>
 
-            <TabsContent value="agente" className="mt-4">
+            <TabsContent value="agente" className="mt-3 min-h-0 flex-1 overflow-auto">
               <AgenteCobrancaTab duplicatas={duplicatas} />
             </TabsContent>
 
-            <TabsContent value="acompanhamento" className="mt-4">
+            <TabsContent value="acompanhamento" className="mt-3 min-h-0 flex-1 overflow-auto">
               <AcompanhamentoTab />
             </TabsContent>
           </Tabs>

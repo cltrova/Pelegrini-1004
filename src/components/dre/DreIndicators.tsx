@@ -1,9 +1,7 @@
 import { TrendingUp, TrendingDown, DollarSign, Percent } from 'lucide-react';
-import { StatCard } from '@/components/common/StatCard';
+import { EnterpriseMetricCard } from '@/components/enterprise';
 import { DreIndicator } from '@/types/dre';
 import { formatCurrency, formatPercent } from '@/utils/formatters';
-
-type StatCardColor = 'default' | 'positive' | 'negative' | 'primary' | 'accent';
 
 interface DreIndicatorsProps {
   indicators: DreIndicator[];
@@ -30,24 +28,22 @@ export function DreIndicators({ indicators }: DreIndicatorsProps) {
     return formatCurrency(indicator.value);
   };
 
-  const mapColor = (color?: string): StatCardColor => {
-    if (color === 'positive' || color === 'negative' || color === 'primary' || color === 'accent') {
-      return color;
-    }
-    return 'default';
+  const mapTone = (color?: string) => {
+    if (color === 'positive') return 'positive';
+    if (color === 'negative') return 'negative';
+    return 'neutral';
   };
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="enterprise-grid-metrics">
       {indicators.map((indicator, index) => (
-        <StatCard
+        <EnterpriseMetricCard
           key={index}
-          title={indicator.label}
-          value={formatValue(indicator)}
-          color={mapColor(indicator.color)}
-          trend={indicator.trend}
-          trendValue={indicator.trend === 'up' ? 'Positivo' : indicator.trend === 'down' ? 'Negativo' : undefined}
           icon={getIcon(indicator.label)}
+          label={indicator.label}
+          context={indicator.trend === 'up' ? 'Positivo' : indicator.trend === 'down' ? 'Negativo' : undefined}
+          tone={mapTone(indicator.color)}
+          value={formatValue(indicator)}
         />
       ))}
     </div>

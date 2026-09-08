@@ -6,7 +6,6 @@ import { LoadingState } from '@/components/common/LoadingState';
 import { ErrorState } from '@/components/common/ErrorState';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
@@ -14,7 +13,6 @@ import {
   UserCheck, 
   Trophy,
   Medal,
-  Search,
   TrendingUp,
   TrendingDown,
   Target,
@@ -60,13 +58,19 @@ import {
   Pie,
 } from 'recharts';
 import { cn } from '@/lib/utils';
-import { CollapsibleFilterBar } from '@/components/common/CollapsibleFilterBar';
-import { 
-  ComercialFilters, 
-  getDefaultFiltersForEmpresa, 
-  getComercialFiltersSummary, 
-  countActiveFilters 
-} from '@/components/comercial/ComercialFilters';
+import {
+  EnterpriseMetricCard,
+  EnterprisePageHeader,
+  EnterpriseSearchFilter,
+  EnterpriseTable,
+  EnterpriseTbody,
+  EnterpriseTd,
+  EnterpriseTh,
+  EnterpriseThead,
+  EnterpriseTr,
+} from '@/components/enterprise';
+import { getDefaultFiltersForEmpresa } from '@/components/comercial/ComercialFilters';
+import { EnterpriseComercialFilters } from '@/components/comercial/EnterpriseComercialFilters';
 import type { ComercialFilters as ComercialFiltersType } from '@/types/comercial';
 
 // Metas simuladas por vendedor (em produção viriam do backend)
@@ -113,7 +117,6 @@ export default function VendedoresPage() {
   // Filtros - estado pendente e aplicado
   const [pendingFilters, setPendingFilters] = useState<ComercialFiltersType>(() => getDefaultFiltersForEmpresa(codEmpresaAtiva));
   const [appliedFilters, setAppliedFilters] = useState<ComercialFiltersType>(() => getDefaultFiltersForEmpresa(codEmpresaAtiva));
-  const [filtersOpen, setFiltersOpen] = useState(false);
   
   const { 
     vendedoresPerformance, 
@@ -143,7 +146,6 @@ export default function VendedoresPage() {
   // Aplicar filtros
   const handleBuscar = useCallback(() => {
     setAppliedFilters(pendingFilters);
-    setFiltersOpen(false);
   }, [pendingFilters]);
 
   // Limpar filtros
@@ -371,55 +373,40 @@ export default function VendedoresPage() {
   if (error) return <ErrorState message="Erro ao carregar vendedores" />;
 
   return (
-    <div className="p-4 md:p-6 space-y-6">
-      {/* Barra de Filtros */}
-      <CollapsibleFilterBar
-        title="Filtros"
-        summary={getComercialFiltersSummary(appliedFilters, vendedoresDisponiveis)}
-        activeFiltersCount={countActiveFilters(appliedFilters)}
-        onClear={handleClearFilters}
-        isOpen={filtersOpen}
-        onOpenChange={setFiltersOpen}
-      >
-        <ComercialFilters
-          filters={pendingFilters}
-          onFiltersChange={setPendingFilters}
-          onBuscar={handleBuscar}
-          hasChanges={hasChanges}
-          anos={ANOS_DISPONIVEIS}
-          vendedores={vendedoresDisponiveis}
-          showVendedorFilter
-        />
-      </CollapsibleFilterBar>
-
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-2">
-            <UserCheck className="h-7 w-7 text-primary" />
-            Painel de Vendedores
-          </h1>
-          <p className="text-muted-foreground">Performance, metas, ranking e inteligência comercial</p>
-        </div>
-        <div className="flex gap-2">
-          <div className="relative w-full md:w-64">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
+    <div className="enterprise-page">
+      <EnterprisePageHeader
+        title="Painel de Vendedores"
+        subtitle="Performance, metas, ranking e inteligência comercial"
+        metadata={`${vendedoresFiltrados.length.toLocaleString('pt-BR')} vendedores visíveis`}
+        actions={
+          <div className="flex min-w-0 items-end gap-2">
+            <EnterpriseSearchFilter
+              label="Busca"
+              onChange={setSearchTerm}
               placeholder="Buscar vendedor..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-9"
             />
           </div>
-          <Button variant="outline" size="icon">
-            <Download className="h-4 w-4" />
-          </Button>
-        </div>
-      </div>
+        }
+      />
+
+      <EnterpriseComercialFilters
+        pendingFilters={pendingFilters}
+        appliedFilters={appliedFilters}
+        onPendingFiltersChange={setPendingFilters}
+        onApply={handleBuscar}
+        onClear={handleClearFilters}
+        hasChanges={hasChanges}
+        anos={ANOS_DISPONIVEIS}
+        vendedores={vendedoresDisponiveis}
+        resultCount={vendedoresPerformance.length}
+        showVendedorFilter
+        useNativeControls
+      />
 
       {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:inline-grid">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden">
+        <TabsList className="grid w-full shrink-0 grid-cols-4 lg:w-auto lg:inline-grid">
           <TabsTrigger value="visao-geral">Visão Geral</TabsTrigger>
           <TabsTrigger value="ranking">Ranking</TabsTrigger>
           <TabsTrigger value="comparativo">Comparativo</TabsTrigger>
@@ -427,92 +414,15 @@ export default function VendedoresPage() {
         </TabsList>
 
         {/* TAB: Visão Geral */}
-        <TabsContent value="visao-geral" className="space-y-6">
+        <TabsContent value="visao-geral" className="mt-0 min-h-0 flex-1 space-y-3 overflow-auto">
           {/* KPIs Principais */}
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-            <Card className="bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-lg bg-primary/20 flex items-center justify-center">
-                    <Target className="h-5 w-5 text-primary" />
-                  </div>
-                  <div>
-                    <p className="text-lg font-bold mono-value">{formatCurrency(vendedoresKPIs.totalMeta, true)}</p>
-                    <p className="text-xs text-muted-foreground">Meta Total</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card className="bg-gradient-to-br from-success/10 to-success/5 border-success/20">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-lg bg-success/20 flex items-center justify-center">
-                    <DollarSign className="h-5 w-5 text-success" />
-                  </div>
-                  <div>
-                    <p className="text-lg font-bold mono-value text-success">{formatCurrency(vendedoresKPIs.totalFaturado, true)}</p>
-                    <p className="text-xs text-muted-foreground">Faturado</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card className="bg-gradient-to-br from-destructive/10 to-destructive/5 border-destructive/20">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-lg bg-destructive/20 flex items-center justify-center">
-                    <TrendingDown className="h-5 w-5 text-destructive" />
-                  </div>
-                  <div>
-                    <p className="text-lg font-bold mono-value text-destructive">{formatCurrency(vendedoresKPIs.totalDevolucoes, true)}</p>
-                    <p className="text-xs text-muted-foreground">Devoluções</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-lg bg-accent/10 flex items-center justify-center">
-                    <Users className="h-5 w-5 text-accent-foreground" />
-                  </div>
-                  <div>
-                    <p className="text-lg font-bold mono-value">{vendedoresKPIs.clientesAtendidos}</p>
-                    <p className="text-xs text-muted-foreground">Clientes Atendidos</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-lg bg-secondary flex items-center justify-center">
-                    <Sparkles className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <p className="text-lg font-bold mono-value">{vendedoresKPIs.clientesAtivos}</p>
-                    <p className="text-xs text-muted-foreground">Clientes Ativos</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center">
-                    <UserCheck className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <p className="text-lg font-bold mono-value">{vendedoresKPIs.qtdVendedores}</p>
-                    <p className="text-xs text-muted-foreground">Vendedores</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+          <div className="enterprise-grid-metrics">
+            <EnterpriseMetricCard label="Meta total" value={formatCurrency(vendedoresKPIs.totalMeta, true)} context="Meta acumulada dos vendedores" target={`${formatPercent(vendedoresKPIs.percentualMeta)} atingido`} icon={<Target className="h-4 w-4" />} tone="info" />
+            <EnterpriseMetricCard label="Faturado" value={formatCurrency(vendedoresKPIs.totalFaturado, true)} context="Faturamento líquido no período" target={`${formatCurrency(vendedoresKPIs.faltaMeta, true)} para a meta`} icon={<DollarSign className="h-4 w-4" />} tone="positive" />
+            <EnterpriseMetricCard label="Devoluções" value={formatCurrency(vendedoresKPIs.totalDevolucoes, true)} context="Valor devolvido no período" icon={<TrendingDown className="h-4 w-4" />} tone="negative" />
+            <EnterpriseMetricCard label="Clientes atendidos" value={formatNumber(vendedoresKPIs.clientesAtendidos)} context={`${formatNumber(vendedoresKPIs.clientesAtivos)} ativos nos últimos 3 meses`} icon={<Users className="h-4 w-4" />} tone="neutral" />
+            <EnterpriseMetricCard label="Clientes ativos" value={formatNumber(vendedoresKPIs.clientesAtivos)} context="Carteira com compra recente" icon={<Sparkles className="h-4 w-4" />} tone="info" />
+            <EnterpriseMetricCard label="Vendedores" value={formatNumber(vendedoresKPIs.qtdVendedores)} context="Vendedores no período" icon={<UserCheck className="h-4 w-4" />} tone="neutral" />
           </div>
 
           {/* Barra de Progresso da Meta */}
@@ -547,8 +457,8 @@ export default function VendedoresPage() {
               <Card 
                 key={v.codigo}
                 className={cn(
-                  'cursor-pointer transition-all hover:shadow-lg',
-                  i === 0 && 'md:order-2 ring-2 ring-yellow-500/50 bg-gradient-to-br from-yellow-500/10 to-amber-500/5',
+                  'cursor-pointer transition-colors hover:bg-muted/30',
+                  i === 0 && 'md:order-2 ring-2 ring-yellow-500/50 bg-muted/20',
                   i === 1 && 'md:order-1 ring-1 ring-gray-400/30',
                   i === 2 && 'md:order-3 ring-1 ring-orange-400/30',
                   selectedVendedor === v.codigo && 'ring-2 ring-primary'
@@ -557,11 +467,11 @@ export default function VendedoresPage() {
               >
                 <CardContent className="p-5">
                   <div className="flex items-start justify-between mb-4">
-                    <div className={cn(
-                      'h-12 w-12 rounded-full flex items-center justify-center',
-                      i === 0 && 'bg-gradient-to-br from-yellow-400 to-amber-500',
-                      i === 1 && 'bg-gradient-to-br from-gray-300 to-gray-400',
-                      i === 2 && 'bg-gradient-to-br from-orange-400 to-amber-600'
+                  <div className={cn(
+                    'h-12 w-12 rounded-full flex items-center justify-center',
+                      i === 0 && 'bg-yellow-500',
+                      i === 1 && 'bg-slate-400',
+                      i === 2 && 'bg-orange-500'
                     )}>
                       {i === 0 ? (
                         <Trophy className="h-6 w-6 text-white" />
@@ -739,7 +649,7 @@ export default function VendedoresPage() {
         </TabsContent>
 
         {/* TAB: Ranking */}
-        <TabsContent value="ranking" className="space-y-6">
+        <TabsContent value="ranking" className="mt-0 min-h-0 flex-1 space-y-3 overflow-auto">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -751,38 +661,37 @@ export default function VendedoresPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-border">
-                      <th className="text-left py-3 px-2 font-medium text-muted-foreground">#</th>
-                      <th className="text-left py-3 px-2 font-medium text-muted-foreground">Vendedor</th>
-                      <th className="text-right py-3 px-2 font-medium text-muted-foreground">Faturamento</th>
-                      <th className="text-right py-3 px-2 font-medium text-muted-foreground">% Atingido</th>
-                      <th className="text-right py-3 px-2 font-medium text-muted-foreground">Pendente</th>
-                      <th className="text-right py-3 px-2 font-medium text-muted-foreground">% Pendente</th>
-                      <th className="text-right py-3 px-2 font-medium text-muted-foreground">Meta</th>
-                      <th className="text-right py-3 px-2 font-medium text-muted-foreground">Falta</th>
-                      <th className="text-right py-3 px-2 font-medium text-muted-foreground">Devoluções</th>
-                      <th className="text-right py-3 px-2 font-medium text-muted-foreground">Líquido</th>
-                      <th className="text-right py-3 px-2 font-medium text-muted-foreground">Part. %</th>
-                    </tr>
-                  </thead>
-                  <tbody>
+              <EnterpriseTable>
+                <EnterpriseThead>
+                  <EnterpriseTr>
+                    <EnterpriseTh>#</EnterpriseTh>
+                    <EnterpriseTh>Vendedor</EnterpriseTh>
+                    <EnterpriseTh numeric>Faturamento</EnterpriseTh>
+                    <EnterpriseTh numeric>% Atingido</EnterpriseTh>
+                    <EnterpriseTh numeric>Pendente</EnterpriseTh>
+                    <EnterpriseTh numeric>% Pendente</EnterpriseTh>
+                    <EnterpriseTh numeric>Meta</EnterpriseTh>
+                    <EnterpriseTh numeric>Falta</EnterpriseTh>
+                    <EnterpriseTh numeric>Devoluções</EnterpriseTh>
+                    <EnterpriseTh numeric>Líquido</EnterpriseTh>
+                    <EnterpriseTh numeric>Part. %</EnterpriseTh>
+                  </EnterpriseTr>
+                </EnterpriseThead>
+                <EnterpriseTbody>
                     {vendedoresFiltrados.map((v, i) => {
                       const detalhado = rankingDetalhado.find(r => r.codigo === v.codigo);
                       if (!detalhado) return null;
                       
                       return (
-                        <tr 
+                        <EnterpriseTr
                           key={v.codigo} 
                           className={cn(
-                            'border-b border-border/50 hover:bg-muted/30 cursor-pointer transition-colors',
+                            'cursor-pointer',
                             selectedVendedor === v.codigo && 'bg-primary/5'
                           )}
                           onClick={() => setSelectedVendedor(v.codigo === selectedVendedor ? null : v.codigo)}
                         >
-                          <td className="py-3 px-2">
+                          <EnterpriseTd>
                             {i < 3 ? (
                               <Badge variant={i === 0 ? 'default' : 'secondary'} className="w-6 h-6 rounded-full p-0 flex items-center justify-center">
                                 {i + 1}
@@ -790,12 +699,12 @@ export default function VendedoresPage() {
                             ) : (
                               <span className="text-muted-foreground">{i + 1}</span>
                             )}
-                          </td>
-                          <td className="py-3 px-2 font-medium">{v.nome}</td>
-                          <td className="py-3 px-2 text-right mono-value text-success">
+                          </EnterpriseTd>
+                          <EnterpriseTd className="font-medium">{v.nome}</EnterpriseTd>
+                          <EnterpriseTd numeric className="mono-value text-success">
                             {formatCurrency(v.faturamentoLiquido)}
-                          </td>
-                          <td className="py-3 px-2 text-right">
+                          </EnterpriseTd>
+                          <EnterpriseTd numeric>
                             <span className={cn(
                               'inline-flex items-center gap-1 font-medium',
                               detalhado.percentualAtingido >= 100 ? 'text-success' : 
@@ -804,44 +713,43 @@ export default function VendedoresPage() {
                               {detalhado.percentualAtingido >= 100 && <CheckCircle className="h-3 w-3" />}
                               {formatPercent(detalhado.percentualAtingido)}
                             </span>
-                          </td>
-                          <td className="py-3 px-2 text-right mono-value text-warning">
+                          </EnterpriseTd>
+                          <EnterpriseTd numeric className="mono-value text-warning">
                             {detalhado.pendente > 0 ? formatCurrency(detalhado.pendente) : '-'}
-                          </td>
-                          <td className="py-3 px-2 text-right mono-value text-muted-foreground">
+                          </EnterpriseTd>
+                          <EnterpriseTd numeric className="mono-value text-muted-foreground">
                             {formatPercent(detalhado.percentualPendente)}
-                          </td>
-                          <td className="py-3 px-2 text-right mono-value">
+                          </EnterpriseTd>
+                          <EnterpriseTd numeric className="mono-value">
                             {formatCurrency(detalhado.meta)}
-                          </td>
-                          <td className="py-3 px-2 text-right mono-value">
+                          </EnterpriseTd>
+                          <EnterpriseTd numeric className="mono-value">
                             {detalhado.faltaMeta > 0 ? (
                               <span className="text-destructive">{formatCurrency(detalhado.faltaMeta)}</span>
                             ) : (
                               <span className="text-success">✓</span>
                             )}
-                          </td>
-                          <td className="py-3 px-2 text-right mono-value text-destructive">
+                          </EnterpriseTd>
+                          <EnterpriseTd numeric className="mono-value text-destructive">
                             {v.totalDevolucoes > 0 ? formatCurrency(v.totalDevolucoes) : '-'}
-                          </td>
-                          <td className="py-3 px-2 text-right mono-value font-medium">
+                          </EnterpriseTd>
+                          <EnterpriseTd numeric className="mono-value font-medium">
                             {formatCurrency(v.faturamentoLiquido - v.totalDevolucoes)}
-                          </td>
-                          <td className="py-3 px-2 text-right">
+                          </EnterpriseTd>
+                          <EnterpriseTd numeric>
                             {formatPercent(v.participacao)}
-                          </td>
-                        </tr>
+                          </EnterpriseTd>
+                        </EnterpriseTr>
                       );
                     })}
-                  </tbody>
-                </table>
-              </div>
+                </EnterpriseTbody>
+              </EnterpriseTable>
             </CardContent>
           </Card>
         </TabsContent>
 
         {/* TAB: Comparativo */}
-        <TabsContent value="comparativo" className="space-y-6">
+        <TabsContent value="comparativo" className="mt-0 min-h-0 flex-1 space-y-3 overflow-auto">
           {/* Projeções por Cenário */}
           <Card>
             <CardHeader>
@@ -854,30 +762,29 @@ export default function VendedoresPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-border">
-                      <th className="text-left py-3 px-2 font-medium text-muted-foreground">Vendedor</th>
-                      <th className="text-right py-3 px-2 font-medium text-muted-foreground">Atual (mês)</th>
-                      <th className="text-right py-3 px-2 font-medium text-muted-foreground">Meta Mensal</th>
-                      <th className="text-right py-3 px-2 font-medium text-muted-foreground">Projeção (ritmo)</th>
-                      <th className="text-center py-3 px-2 font-medium text-muted-foreground">Bate Meta?</th>
-                      <th className="text-right py-3 px-2 font-medium text-muted-foreground">Mês Anterior</th>
-                      <th className="text-right py-3 px-2 font-medium text-muted-foreground">Var. %</th>
-                      <th className="text-right py-3 px-2 font-medium text-muted-foreground">Mesmo Mês (ano ant.)</th>
-                      <th className="text-right py-3 px-2 font-medium text-muted-foreground">Var. %</th>
-                      <th className="text-right py-3 px-2 font-medium text-muted-foreground">Gap Meta</th>
-                    </tr>
-                  </thead>
-                  <tbody>
+              <EnterpriseTable>
+                <EnterpriseThead>
+                  <EnterpriseTr>
+                    <EnterpriseTh>Vendedor</EnterpriseTh>
+                    <EnterpriseTh numeric>Atual (mês)</EnterpriseTh>
+                    <EnterpriseTh numeric>Meta Mensal</EnterpriseTh>
+                    <EnterpriseTh numeric>Projeção (ritmo)</EnterpriseTh>
+                    <EnterpriseTh className="text-center">Bate Meta?</EnterpriseTh>
+                    <EnterpriseTh numeric>Mês Anterior</EnterpriseTh>
+                    <EnterpriseTh numeric>Var. %</EnterpriseTh>
+                    <EnterpriseTh numeric>Mesmo Mês (ano ant.)</EnterpriseTh>
+                    <EnterpriseTh numeric>Var. %</EnterpriseTh>
+                    <EnterpriseTh numeric>Gap Meta</EnterpriseTh>
+                  </EnterpriseTr>
+                </EnterpriseThead>
+                <EnterpriseTbody>
                     {projecoes.map((p, i) => (
-                      <tr key={p.codigo} className="border-b border-border/50 hover:bg-muted/30">
-                        <td className="py-3 px-2 font-medium">{p.vendedor}</td>
-                        <td className="py-3 px-2 text-right mono-value">{formatCurrency(p.faturamentoMesAtual)}</td>
-                        <td className="py-3 px-2 text-right mono-value text-muted-foreground">{formatCurrency(p.metaMensal)}</td>
-                        <td className="py-3 px-2 text-right mono-value font-medium">{formatCurrency(p.projecaoRitmoAtual)}</td>
-                        <td className="py-3 px-2 text-center">
+                      <EnterpriseTr key={p.codigo}>
+                        <EnterpriseTd className="font-medium">{p.vendedor}</EnterpriseTd>
+                        <EnterpriseTd numeric className="mono-value">{formatCurrency(p.faturamentoMesAtual)}</EnterpriseTd>
+                        <EnterpriseTd numeric className="mono-value text-muted-foreground">{formatCurrency(p.metaMensal)}</EnterpriseTd>
+                        <EnterpriseTd numeric className="mono-value font-medium">{formatCurrency(p.projecaoRitmoAtual)}</EnterpriseTd>
+                        <EnterpriseTd className="text-center">
                           {p.bateMeta ? (
                             <Badge variant="default" className="bg-success text-white">
                               <CheckCircle className="h-3 w-3 mr-1" />
@@ -889,9 +796,9 @@ export default function VendedoresPage() {
                               Não
                             </Badge>
                           )}
-                        </td>
-                        <td className="py-3 px-2 text-right mono-value">{formatCurrency(p.faturamentoMesAnterior)}</td>
-                        <td className="py-3 px-2 text-right">
+                        </EnterpriseTd>
+                        <EnterpriseTd numeric className="mono-value">{formatCurrency(p.faturamentoMesAnterior)}</EnterpriseTd>
+                        <EnterpriseTd numeric>
                           <span className={cn(
                             'inline-flex items-center gap-1',
                             p.variacaoMesAnterior >= 0 ? 'text-success' : 'text-destructive'
@@ -899,9 +806,9 @@ export default function VendedoresPage() {
                             {p.variacaoMesAnterior >= 0 ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
                             {formatPercent(Math.abs(p.variacaoMesAnterior))}
                           </span>
-                        </td>
-                        <td className="py-3 px-2 text-right mono-value">{formatCurrency(p.faturamentoAnoAnterior)}</td>
-                        <td className="py-3 px-2 text-right">
+                        </EnterpriseTd>
+                        <EnterpriseTd numeric className="mono-value">{formatCurrency(p.faturamentoAnoAnterior)}</EnterpriseTd>
+                        <EnterpriseTd numeric>
                           <span className={cn(
                             'inline-flex items-center gap-1',
                             p.variacaoAnoAnterior >= 0 ? 'text-success' : 'text-destructive'
@@ -909,19 +816,18 @@ export default function VendedoresPage() {
                             {p.variacaoAnoAnterior >= 0 ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
                             {formatPercent(Math.abs(p.variacaoAnoAnterior))}
                           </span>
-                        </td>
-                        <td className="py-3 px-2 text-right mono-value">
+                        </EnterpriseTd>
+                        <EnterpriseTd numeric className="mono-value">
                           {p.gapMeta > 0 ? (
                             <span className="text-destructive">{formatCurrency(p.gapMeta)}</span>
                           ) : (
                             <span className="text-success">+{formatCurrency(Math.abs(p.gapMeta))}</span>
                           )}
-                        </td>
-                      </tr>
+                        </EnterpriseTd>
+                      </EnterpriseTr>
                     ))}
-                  </tbody>
-                </table>
-              </div>
+                </EnterpriseTbody>
+              </EnterpriseTable>
             </CardContent>
           </Card>
 
@@ -1064,55 +970,53 @@ export default function VendedoresPage() {
               </Button>
             </CardHeader>
             <CardContent>
-              <div className="overflow-x-auto">
-                <table className="w-full text-xs">
-                  <thead>
-                    <tr className="border-b border-border">
-                      <th className="text-left py-2 px-1 font-medium">#</th>
-                      <th className="text-left py-2 px-1 font-medium">Vendedor</th>
-                      <th className="text-right py-2 px-1 font-medium">Vendas</th>
-                      <th className="text-right py-2 px-1 font-medium">Devol.</th>
-                      <th className="text-right py-2 px-1 font-medium">Líquido</th>
-                      <th className="text-right py-2 px-1 font-medium">Meta</th>
-                      <th className="text-right py-2 px-1 font-medium">%</th>
-                      <th className="text-right py-2 px-1 font-medium">Gap</th>
-                      <th className="text-right py-2 px-1 font-medium">Pendente</th>
-                      <th className="text-right py-2 px-1 font-medium">Fat.</th>
-                      <th className="text-right py-2 px-1 font-medium">Pend.</th>
-                      <th className="text-right py-2 px-1 font-medium">Ticket</th>
-                      <th className="text-right py-2 px-1 font-medium">Part. %</th>
-                    </tr>
-                  </thead>
-                  <tbody>
+              <EnterpriseTable>
+                <EnterpriseThead>
+                  <EnterpriseTr>
+                    <EnterpriseTh>#</EnterpriseTh>
+                    <EnterpriseTh>Vendedor</EnterpriseTh>
+                    <EnterpriseTh numeric>Vendas</EnterpriseTh>
+                    <EnterpriseTh numeric>Devol.</EnterpriseTh>
+                    <EnterpriseTh numeric>Líquido</EnterpriseTh>
+                    <EnterpriseTh numeric>Meta</EnterpriseTh>
+                    <EnterpriseTh numeric>%</EnterpriseTh>
+                    <EnterpriseTh numeric>Gap</EnterpriseTh>
+                    <EnterpriseTh numeric>Pendente</EnterpriseTh>
+                    <EnterpriseTh numeric>Fat.</EnterpriseTh>
+                    <EnterpriseTh numeric>Pend.</EnterpriseTh>
+                    <EnterpriseTh numeric>Ticket</EnterpriseTh>
+                    <EnterpriseTh numeric>Part. %</EnterpriseTh>
+                  </EnterpriseTr>
+                </EnterpriseThead>
+                <EnterpriseTbody>
                     {rankingDetalhado.map((v, i) => (
-                      <tr key={v.codigo} className="border-b border-border/30 hover:bg-muted/20">
-                        <td className="py-2 px-1">{i + 1}</td>
-                        <td className="py-2 px-1 font-medium">{v.nome}</td>
-                        <td className="py-2 px-1 text-right mono-value">{formatCurrency(v.totalVendas, true)}</td>
-                        <td className="py-2 px-1 text-right mono-value text-destructive">{formatCurrency(v.totalDevolucoes, true)}</td>
-                        <td className="py-2 px-1 text-right mono-value font-medium">{formatCurrency(v.faturamentoLiquido, true)}</td>
-                        <td className="py-2 px-1 text-right mono-value">{formatCurrency(v.meta, true)}</td>
-                        <td className="py-2 px-1 text-right">{formatPercent(v.percentualAtingido)}</td>
-                        <td className="py-2 px-1 text-right mono-value">{formatCurrency(v.faltaMeta, true)}</td>
-                        <td className="py-2 px-1 text-right mono-value">{formatCurrency(v.pendente, true)}</td>
-                        <td className="py-2 px-1 text-right">{v.pedidosFaturados}</td>
-                        <td className="py-2 px-1 text-right">{v.pedidosPendentes}</td>
-                        <td className="py-2 px-1 text-right mono-value">{formatCurrency(v.ticketMedio, true)}</td>
-                        <td className="py-2 px-1 text-right">{formatPercent(v.participacao)}</td>
-                      </tr>
+                      <EnterpriseTr key={v.codigo}>
+                        <EnterpriseTd>{i + 1}</EnterpriseTd>
+                        <EnterpriseTd className="font-medium">{v.nome}</EnterpriseTd>
+                        <EnterpriseTd numeric className="mono-value">{formatCurrency(v.totalVendas, true)}</EnterpriseTd>
+                        <EnterpriseTd numeric className="mono-value text-destructive">{formatCurrency(v.totalDevolucoes, true)}</EnterpriseTd>
+                        <EnterpriseTd numeric className="mono-value font-medium">{formatCurrency(v.faturamentoLiquido, true)}</EnterpriseTd>
+                        <EnterpriseTd numeric className="mono-value">{formatCurrency(v.meta, true)}</EnterpriseTd>
+                        <EnterpriseTd numeric>{formatPercent(v.percentualAtingido)}</EnterpriseTd>
+                        <EnterpriseTd numeric className="mono-value">{formatCurrency(v.faltaMeta, true)}</EnterpriseTd>
+                        <EnterpriseTd numeric className="mono-value">{formatCurrency(v.pendente, true)}</EnterpriseTd>
+                        <EnterpriseTd numeric>{v.pedidosFaturados}</EnterpriseTd>
+                        <EnterpriseTd numeric>{v.pedidosPendentes}</EnterpriseTd>
+                        <EnterpriseTd numeric className="mono-value">{formatCurrency(v.ticketMedio, true)}</EnterpriseTd>
+                        <EnterpriseTd numeric>{formatPercent(v.participacao)}</EnterpriseTd>
+                      </EnterpriseTr>
                     ))}
-                  </tbody>
-                </table>
-              </div>
+                </EnterpriseTbody>
+              </EnterpriseTable>
             </CardContent>
           </Card>
         </TabsContent>
 
         {/* TAB: Assistente IA */}
-        <TabsContent value="ia" className="space-y-6">
+        <TabsContent value="ia" className="mt-0 min-h-0 flex-1 space-y-3 overflow-auto">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2">
-              <Card className="h-[600px] flex flex-col">
+              <Card className="h-[min(400px,calc(100dvh-18rem))] flex flex-col">
                 <CardHeader className="border-b">
                   <CardTitle className="flex items-center gap-2">
                     <Bot className="h-5 w-5 text-primary" />
@@ -1197,7 +1101,7 @@ export default function VendedoresPage() {
                 </CardContent>
               </Card>
 
-              <Card className="bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20">
+              <Card className="border-primary/20 bg-muted/20">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-base flex items-center gap-2">
                     <AlertCircle className="h-4 w-4 text-primary" />

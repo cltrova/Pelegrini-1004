@@ -103,7 +103,7 @@ export function InsightsIATab({ vendedores, kpis }: Props) {
               <Card
                 key={i}
                 className={cn(
-                  'border-border/60 transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5',
+                  'border-border/60 transition-colors duration-300 hover:border-primary/30 hover:bg-muted/30',
                   cfg.bg,
                 )}
               >

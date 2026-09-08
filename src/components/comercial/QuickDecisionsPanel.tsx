@@ -65,7 +65,7 @@ export function QuickDecisionsPanel({ vendedores, clientes, evolucao, distribuic
     <div className="space-y-4">
       {/* Faixa de decisões rápidas: cards de indicadores */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
+        <Card className="border-primary/20 bg-card">
           <CardContent className="p-4">
             <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
               <Activity className="h-3.5 w-3.5" /> Mês vs Anterior
@@ -84,7 +84,7 @@ export function QuickDecisionsPanel({ vendedores, clientes, evolucao, distribuic
           </CardContent>
         </Card>
 
-        <Card className="border-success/20 bg-gradient-to-br from-success/5 to-transparent">
+        <Card className="border-success/20 bg-card">
           <CardContent className="p-4">
             <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
               <Target className="h-3.5 w-3.5" /> Média Histórica
@@ -94,7 +94,7 @@ export function QuickDecisionsPanel({ vendedores, clientes, evolucao, distribuic
           </CardContent>
         </Card>
 
-        <Card className="border-warning/20 bg-gradient-to-br from-warning/5 to-transparent">
+        <Card className="border-warning/20 bg-card">
           <CardContent className="p-4">
             <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
               <AlertTriangle className="h-3.5 w-3.5" /> Clientes em Risco
@@ -104,7 +104,7 @@ export function QuickDecisionsPanel({ vendedores, clientes, evolucao, distribuic
           </CardContent>
         </Card>
 
-        <Card className="border-accent/20 bg-gradient-to-br from-accent/5 to-transparent">
+        <Card className="border-accent/20 bg-card">
           <CardContent className="p-4">
             <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
               <Zap className="h-3.5 w-3.5" /> Carteira Ativa

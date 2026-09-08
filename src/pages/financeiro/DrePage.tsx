@@ -1,8 +1,7 @@
 import { useState, useMemo, useCallback } from 'react';
-import { Header } from '@/components/layout/Header';
-import { MobileHeader, MobilePageContainer } from '@/components/layout/MobileHeader';
+import { MobileHeader } from '@/components/layout/MobileHeader';
 import { MobileBottomNav } from '@/components/layout/MobileBottomNav';
-import { DreFilters } from '@/components/dre/DreFilters';
+import { EnterpriseDreFilters } from '@/components/dre/EnterpriseDreFilters';
 import { DreIndicators } from '@/components/dre/DreIndicators';
 import { DreGroupedTable } from '@/components/dre/DreGroupedTable';
 import { DreDashboard } from '@/components/dre/DreDashboard';
@@ -12,7 +11,6 @@ import { DreAssistant } from '@/components/assistente/DreAssistant';
 import { LoadingState } from '@/components/common/LoadingState';
 import { ErrorState } from '@/components/common/ErrorState';
 import { EmptyState } from '@/components/common/EmptyState';
-import { CollapsibleFilterBar } from '@/components/common/CollapsibleFilterBar';
 import {
   useDreData,
   filterDreData,
@@ -21,7 +19,7 @@ import {
   calculateGroupSummary,
 } from '@/hooks/useDreData';
 import { DreFilters as DreFiltersType } from '@/types/dre';
-import { RefreshCw, LayoutDashboard, Table, Filter, GitCompare, Bot } from 'lucide-react';
+import { RefreshCw, LayoutDashboard, Table, Filter, GitCompare, Bot, FileBarChart2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
@@ -29,6 +27,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { useDreExpenseAccountConfig } from '@/hooks/useDreExpenseAccountConfig';
 import { FinanceiroSearchPrompt } from '@/components/financeiro/FinanceiroSearchPrompt';
 import { useFinanceiroSearch } from '@/contexts/FinanceiroSearchContext';
+import { EnterprisePageHeader } from '@/components/enterprise';
 
 export default function DrePage() {
   const { data, isLoading, isError, refetch } = useDreData();
@@ -148,36 +147,32 @@ export default function DrePage() {
   }, [resetSearch]);
 
   const filtersBar = (
-      <CollapsibleFilterBar
-        title="Filtros"
+      <EnterpriseDreFilters
         activeFiltersCount={activeFiltersCount}
-        summary={filterSummary}
-        onClear={handleClearFilters}
+        anos={filterOptions.anos}
+        codigos={filterOptions.codigos}
+        codigoDescricaoMap={filterOptions.codigoDescricaoMap}
+        empresas={filterOptions.empresas}
+        empresasVendedorExterno={filterOptions.empresasVendedorExterno}
+        empresasVendedorInterno={filterOptions.empresasVendedorInterno}
+        filters={pendingFilters}
+        grupos={filterOptions.grupos}
         isOpen={isFilterBarOpen}
+        onClear={handleClearFilters}
+        onFiltersChange={setPendingFilters}
         onOpenChange={setIsFilterBarOpen}
-      >
-        <DreFilters
-          filters={pendingFilters}
-          onFiltersChange={setPendingFilters}
-          onSearch={handleSearch}
-          empresas={filterOptions.empresas}
-          periodos={filterOptions.periodos}
-          anos={filterOptions.anos}
-          grupos={filterOptions.grupos}
-          codigos={filterOptions.codigos}
-          codigoDescricaoMap={filterOptions.codigoDescricaoMap}
-          vendedoresInternos={filterOptions.vendedoresInternos}
-          vendedoresExternos={filterOptions.vendedoresExternos}
-          empresasVendedorInterno={filterOptions.empresasVendedorInterno}
-          empresasVendedorExterno={filterOptions.empresasVendedorExterno}
-        />
-      </CollapsibleFilterBar>
+        onSearch={handleSearch}
+        periodos={filterOptions.periodos}
+        summary={filterSummary.map((item) => `${item.label}: ${item.value}`).join(' | ')}
+        vendedoresExternos={filterOptions.vendedoresExternos}
+        vendedoresInternos={filterOptions.vendedoresInternos}
+      />
   );
 
   // Versão Mobile
   if (isMobile) {
     return (
-      <div className="flex flex-col min-h-screen bg-background pb-20">
+      <div className="flex h-screen flex-col overflow-hidden bg-background pb-20">
         {/* Header Mobile */}
         <MobileHeader
           title="DRE"
@@ -198,24 +193,27 @@ export default function DrePage() {
                     <SheetTitle>Filtros</SheetTitle>
                   </SheetHeader>
                   <div className="mt-4 space-y-4 overflow-y-auto">
-                    <DreFilters
+                    <EnterpriseDreFilters
+                      activeFiltersCount={activeFiltersCount}
+                      anos={filterOptions.anos}
+                      codigos={filterOptions.codigos}
+                      codigoDescricaoMap={filterOptions.codigoDescricaoMap}
+                      empresas={filterOptions.empresas}
+                      empresasVendedorExterno={filterOptions.empresasVendedorExterno}
+                      empresasVendedorInterno={filterOptions.empresasVendedorInterno}
                       filters={pendingFilters}
+                      grupos={filterOptions.grupos}
+                      isOpen
+                      onClear={handleClearFilters}
                       onFiltersChange={setPendingFilters}
                       onSearch={() => {
                         setAppliedFilters(pendingFilters);
                         markSearched();
                         setShowMobileFilters(false);
                       }}
-                      empresas={filterOptions.empresas}
                       periodos={filterOptions.periodos}
-                      anos={filterOptions.anos}
-                      grupos={filterOptions.grupos}
-                      codigos={filterOptions.codigos}
-                      codigoDescricaoMap={filterOptions.codigoDescricaoMap}
-                      vendedoresInternos={filterOptions.vendedoresInternos}
                       vendedoresExternos={filterOptions.vendedoresExternos}
-                      empresasVendedorInterno={filterOptions.empresasVendedorInterno}
-                      empresasVendedorExterno={filterOptions.empresasVendedorExterno}
+                      vendedoresInternos={filterOptions.vendedoresInternos}
                     />
                   </div>
                 </SheetContent>
@@ -275,19 +273,19 @@ export default function DrePage() {
 
   // Versão Desktop
   return (
-    <div className="min-h-screen">
-      <Header
-        actions={
-          <div className="flex items-center gap-2">
+    <div className="flex h-full min-h-0 flex-1 overflow-hidden bg-background">
+      <div className="enterprise-page-shell max-w-[1600px]">
+        <EnterprisePageHeader
+          title="DRE"
+          subtitle="Demonstrativo de Resultado"
+          icon={FileBarChart2}
+          actions={
             <Button variant="outline" size="sm" onClick={() => refetch()}>
               <RefreshCw className="h-4 w-4 mr-2" />
               Atualizar
             </Button>
-          </div>
-        }
-      />
-
-      <div className="p-6 space-y-6">
+          }
+        />
         {filtersBar}
 
         {!hasSearched ? (
@@ -318,34 +316,32 @@ export default function DrePage() {
                 <DreIndicators indicators={indicators} />
 
                 {/* Tabs de visualização */}
-                <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'dashboard' | 'comparativo' | 'detalhe' | 'assistente')}>
-                  <TabsList
-                    className="mb-5 h-11 p-1 bg-muted/40 backdrop-blur border border-border/60 rounded-xl gap-1"
-                  >
+                <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'dashboard' | 'comparativo' | 'detalhe' | 'assistente')} className="flex min-h-0 flex-1 flex-col overflow-hidden">
+                  <TabsList className="mb-3 h-10 shrink-0 gap-1 rounded-lg border border-border/60 bg-muted/40 p-1">
                     <TabsTrigger
                       value="dashboard"
-                      className="gap-2 h-9 px-4 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-md data-[state=active]:text-foreground text-muted-foreground transition-all"
+                      className="gap-2 h-8 px-3 data-[state=active]:bg-background data-[state=active]:text-foreground text-muted-foreground"
                     >
                       <LayoutDashboard className="h-4 w-4" />
                       Visão Geral
                     </TabsTrigger>
                     <TabsTrigger
                       value="comparativo"
-                      className="gap-2 h-9 px-4 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-md data-[state=active]:text-foreground text-muted-foreground transition-all"
+                      className="gap-2 h-8 px-3 data-[state=active]:bg-background data-[state=active]:text-foreground text-muted-foreground"
                     >
                       <GitCompare className="h-4 w-4" />
                       Comparativo
                     </TabsTrigger>
                     <TabsTrigger
                       value="detalhe"
-                      className="gap-2 h-9 px-4 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-md data-[state=active]:text-foreground text-muted-foreground transition-all"
+                      className="gap-2 h-8 px-3 data-[state=active]:bg-background data-[state=active]:text-foreground text-muted-foreground"
                     >
                       <Table className="h-4 w-4" />
                       Detalhe
                     </TabsTrigger>
                     <TabsTrigger
                       value="assistente"
-                      className="gap-2 h-9 px-4 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-md data-[state=active]:text-foreground text-muted-foreground transition-all"
+                      className="gap-2 h-8 px-3 data-[state=active]:bg-background data-[state=active]:text-foreground text-muted-foreground"
                     >
                       <Bot className="h-4 w-4" />
                       Assistente
@@ -353,7 +349,7 @@ export default function DrePage() {
                   </TabsList>
 
 
-                  <TabsContent value="dashboard" className="mt-0">
+                  <TabsContent value="dashboard" className="mt-0 min-h-0 flex-1 overflow-auto">
                     <DreDashboard
                       data={filteredData}
                       groupSummary={groupSummary}
@@ -370,15 +366,15 @@ export default function DrePage() {
 
 
 
-                  <TabsContent value="comparativo" className="mt-0">
+                  <TabsContent value="comparativo" className="mt-0 min-h-0 flex-1 overflow-auto">
                     <DreComparativo data={filteredData} groupSummary={groupSummary} />
                   </TabsContent>
 
-                  <TabsContent value="detalhe" className="mt-0">
+                  <TabsContent value="detalhe" className="mt-0 min-h-0 flex-1 overflow-auto">
                     <DreGroupedTable data={filteredData} />
                   </TabsContent>
 
-                  <TabsContent value="assistente" className="mt-0">
+                  <TabsContent value="assistente" className="mt-0 min-h-0 flex-1 overflow-auto">
                     <DreAssistant dreData={filteredData} indicators={indicators} contasDespVar={contasDespVar} contasDespFixas={contasDespFixas} onUpdateDespVar={setContasDespVar} onUpdateDespFixas={setContasDespFixas} />
                   </TabsContent>
                 </Tabs>

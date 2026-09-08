@@ -65,24 +65,15 @@ export function AIInsightsFeed({ contexto }: Props) {
   }, [contexto.empresa, contexto.kpis.faturamento_liquido]);
 
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-r from-primary/5 via-card to-cyan-500/5 backdrop-blur-md group">
-      {/* Glow background */}
-      <div className="absolute inset-0 opacity-50 pointer-events-none">
-        <div className="absolute -top-12 -left-12 w-48 h-48 rounded-full bg-primary/20 blur-3xl animate-pulse" />
-        <div className="absolute -bottom-12 right-1/4 w-56 h-56 rounded-full bg-cyan-500/15 blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
-      </div>
-
+    <div className="relative overflow-hidden rounded-lg border border-border/60 bg-card group">
       <div className="relative flex items-center gap-3 p-3 pl-4">
         {/* Label */}
         <div className="flex items-center gap-2 shrink-0 pr-3 border-r border-border/50">
-          <div className="relative">
-            <div className="absolute inset-0 rounded-full bg-primary/40 blur-md animate-pulse" />
-            <div className="relative h-8 w-8 rounded-full bg-gradient-to-br from-primary to-cyan-500 flex items-center justify-center shadow-lg">
-              <Sparkles className="h-4 w-4 text-primary-foreground" />
-            </div>
+          <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center">
+            <Sparkles className="h-4 w-4 text-primary-foreground" />
           </div>
           <div className="hidden sm:block">
-            <p className="text-[10px] uppercase tracking-[0.15em] font-bold text-primary leading-none">Inteligência IA</p>
+            <p className="text-[10px] uppercase tracking-[0.15em] font-bold text-foreground leading-none">Inteligência IA</p>
             <p className="text-[10px] text-muted-foreground leading-tight mt-0.5">Insights de hoje</p>
           </div>
         </div>

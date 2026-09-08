@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import type { ReactNode } from 'react';
 import { Search, Download, Receipt, ArrowUpDown, ArrowUp, ArrowDown, X } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import {
@@ -51,27 +52,27 @@ function fmtDate(iso?: string) {
 }
 
 const COLUMNS: Column[] = [
-  { key: 'cod_pedido',        label: 'Cód. Pedido',   width: '110px', get: (p) => p.cod_pedido as any },
+  { key: 'cod_pedido',        label: 'Cód. Pedido',   width: '110px', get: (p) => p.cod_pedido },
   { key: 'num_nf',            label: 'NF',            width: '90px',  get: (p) => p.num_nf },
   { key: 'data_pedido',       label: 'Dt. Pedido',    width: '110px', get: (p) => p.data_pedido },
   { key: 'data_faturamento',  label: 'Dt. Faturam.',  width: '110px', get: (p) => p.data_faturamento },
-  { key: 'data_movimento',    label: 'Dt. Movimento', width: '110px', get: (p) => (p as any).data_movimento || p.data_faturamento },
+  { key: 'data_movimento',    label: 'Dt. Movimento', width: '110px', get: (p) => String((p as Record<string, unknown>).data_movimento ?? p.data_faturamento ?? '') },
   { key: 'tipo',              label: 'Tipo',          width: '100px', align: 'center', get: (p) => p.tipo },
   { key: 'vendedor_nome',     label: 'Vendedor',      width: '160px', get: (p) => p.vendedor_nome || p.nome_interno || p.nome_externo },
-  { key: 'vendedor_codigo',   label: 'Cód. Vend.',    width: '90px',  get: (p) => p.vendedor_codigo as any },
+  { key: 'vendedor_codigo',   label: 'Cód. Vend.',    width: '90px',  get: (p) => p.vendedor_codigo },
   { key: 'cliente_razao',     label: 'Cliente',       width: '220px', get: (p) => p.cliente_razao },
-  { key: 'cliente_codigo',    label: 'Cód. Cliente',  width: '100px', get: (p) => p.cliente_codigo as any },
-  { key: 'filial_nome',       label: 'Filial',        width: '140px', get: (p) => p.filial_nome || (p.filial_codigo as any) },
+  { key: 'cliente_codigo',    label: 'Cód. Cliente',  width: '100px', get: (p) => p.cliente_codigo },
+  { key: 'filial_nome',       label: 'Filial',        width: '140px', get: (p) => p.filial_nome || p.filial_codigo },
   { key: 'descricao',         label: 'Produto',       width: '260px', get: (p) => p.descricao },
-  { key: 'cod_produto',       label: 'Cód. Produto',  width: '100px', get: (p) => p.cod_produto as any },
+  { key: 'cod_produto',       label: 'Cód. Produto',  width: '100px', get: (p) => p.cod_produto },
   { key: 'marca',             label: 'Marca',         width: '130px', get: (p) => p.marca },
   { key: 'grupo',             label: 'Grupo',         width: '140px', get: (p) => p.grupo || p.nome_grupo },
-  { key: 'cfop',              label: 'CFOP',          width: '80px',  align: 'center', get: (p) => (p as any).cfop },
+  { key: 'cfop',              label: 'CFOP',          width: '80px',  align: 'center', get: (p) => String((p as Record<string, unknown>).cfop ?? '') },
   { key: 'quantidade',        label: 'Qtd',           width: '80px',  align: 'right', numeric: true, get: (p) => p.quantidade },
   { key: 'valor_venda_item',  label: 'Vlr. Venda',    width: '120px', align: 'right', currency: true, get: (p) => p.valor_venda_item ?? 0 },
   { key: 'valor_desconto',    label: 'Desc. Item',    width: '120px', align: 'right', currency: true, get: (p) => p.valor_desconto ?? 0 },
   { key: 'valor_devolucao_item', label: 'Vlr. Devol.', width: '120px', align: 'right', currency: true, get: (p) => p.valor_devolucao_item ?? 0 },
-  { key: 'valor_liquido_final_item', label: 'Vlr. Líq. Final', width: '130px', align: 'right', currency: true, get: (p) => (p as any).valor_liquido_final_item ?? 0 },
+  { key: 'valor_liquido_final_item', label: 'Vlr. Líq. Final', width: '130px', align: 'right', currency: true, get: (p) => Number((p as Record<string, unknown>).valor_liquido_final_item ?? 0) },
   { key: 'valor_bruto_item',  label: 'Vlr. Bruto',    width: '120px', align: 'right', currency: true, get: (p) => p.valor_bruto_item ?? 0 },
   { key: 'valor_total',       label: 'Vlr. Líquido',  width: '130px', align: 'right', currency: true, get: (p) => p.valor_total ?? 0 },
   { key: 'valor_custo',       label: 'Custo',         width: '120px', align: 'right', currency: true, get: (p) => p.valor_custo ?? 0 },
@@ -192,7 +193,7 @@ export function ReceitaDetalheDialog({
     const q = busca.trim().toLowerCase();
     if (!q) return produtosEscopo;
     return produtosEscopo.filter(p =>
-      SEARCH_KEYS.some(k => String((p as any)[k] ?? '').toLowerCase().includes(q))
+      SEARCH_KEYS.some(k => String((p as Record<string, unknown>)[k] ?? '').toLowerCase().includes(q))
     );
   }, [produtosEscopo, busca]);
 
@@ -228,7 +229,7 @@ export function ReceitaDetalheDialog({
       venda += Number(p.valor_venda_item ?? 0);
       desconto += Number(p.valor_desconto ?? 0);
       devolucao += Number(p.valor_devolucao_item ?? 0);
-      liqFinal += Number((p as any).valor_liquido_final_item ?? 0);
+      liqFinal += Number((p as Record<string, unknown>).valor_liquido_final_item ?? 0);
       bruto += Number(p.valor_bruto_item ?? 0);
       liquido += Number(p.valor_total ?? 0);
       custo += Number(p.valor_custo ?? 0);
@@ -278,7 +279,7 @@ export function ReceitaDetalheDialog({
       open={open}
       onOpenChange={(v) => { onOpenChange(v); if (!v) { setBusca(''); setTipoFiltro('todos'); setPage(0); } }}
     >
-      <DialogContent className="flex h-[88vh] w-[92vw] max-w-[1280px] flex-col gap-4 border-border/60 bg-card p-4 text-foreground shadow-2xl sm:rounded-xl [&::-webkit-scrollbar]:h-2 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-primary/35 hover:[&::-webkit-scrollbar-thumb]:bg-primary/50">
+      <DialogContent className="flex h-[88vh] w-[92vw] max-w-[1280px] flex-col gap-4 border-border/60 bg-card p-4 text-foreground sm:rounded-lg [&::-webkit-scrollbar]:h-2 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-primary/35 hover:[&::-webkit-scrollbar-thumb]:bg-primary/50">
         <DialogHeader className="border-b border-border/60 pb-3 [&>p]:hidden">
           <DialogTitle className="flex items-center gap-2 text-[0px] font-semibold">
             <span className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/15 text-primary ring-1 ring-primary/20">
@@ -296,7 +297,7 @@ export function ReceitaDetalheDialog({
           <ResumoCard label="Devolucoes" value={formatInteger(contagemTipo.devolucoes)} />
         </div>
 
-        <div className="flex items-center gap-2 flex-wrap rounded-xl border border-border/50 bg-background/20 p-2">
+        <div className="flex items-center gap-2 flex-wrap rounded-lg border border-border/50 bg-background/20 p-2">
           <div
             data-testid="receita-tipo-filtros"
             className="flex items-center gap-1 rounded-full border border-border/40 bg-muted/25 p-0.5"
@@ -312,7 +313,7 @@ export function ReceitaDetalheDialog({
                 size="sm"
                 variant="ghost"
                 className={cn(
-                  'h-7 rounded-full border border-transparent px-3 text-[11px] font-medium transition-all',
+                  'h-7 rounded-full border border-transparent px-3 text-[11px] font-medium transition-colors',
                   tipoFiltro === item.key
                     ? 'border-primary/30 bg-primary/15 text-primary shadow-none hover:bg-primary/20'
                     : 'text-muted-foreground hover:bg-background/45 hover:text-foreground',
@@ -370,7 +371,7 @@ export function ReceitaDetalheDialog({
             />
           ) : (
             <table className="w-full text-xs">
-              <thead className="sticky top-0 z-10 border-b border-border/60 bg-muted/70 backdrop-blur">
+              <thead className="sticky top-0 z-10 border-b border-border/60 bg-muted">
                 <tr className="text-[10px] uppercase text-muted-foreground">
                   {TABLE_COLUMNS.map(c => (
                     <th
@@ -407,7 +408,7 @@ export function ReceitaDetalheDialog({
                     >
                       {TABLE_COLUMNS.map(c => {
                         const v = c.get(p);
-                        let display: any = v ?? '—';
+                        let display: ReactNode = v ?? '—';
                         if (c.key.startsWith('data_')) display = fmtDate(v as string);
                         else if (c.currency) display = formatCurrency(Number(v ?? 0));
                         else if (c.numeric) display = formatNumber(Number(v ?? 0), 0);
@@ -450,10 +451,10 @@ export function ReceitaDetalheDialog({
                   );
                 })}
               </tbody>
-              <tfoot className="sticky bottom-0 border-t border-border/60 bg-muted/70 backdrop-blur font-semibold">
+              <tfoot className="sticky bottom-0 border-t border-border/60 bg-muted font-semibold">
                 <tr className="text-xs">
                   {TABLE_COLUMNS.map((c) => {
-                    let content: any = '';
+                    let content: ReactNode = '';
                     if (c.key === 'cod_pedido') content = `TOTAL (${formatInteger(ordenados.length)})`;
                     else if (c.key === 'quantidade') content = formatNumber(totais.qtd, 0);
                     else if (c.key === 'valor_venda_item') content = formatCurrency(totais.venda);
@@ -504,7 +505,7 @@ export function ReceitaDetalheDialog({
 function ResumoCard({ label, value, destaque = false }: { label: string; value: string; destaque?: boolean }) {
   return (
     <div className={cn(
-      'rounded-xl border px-3 py-2.5 transition-colors',
+      'rounded-lg border px-3 py-2.5 transition-colors',
       destaque
         ? 'border-primary/25 bg-primary/10 text-primary'
         : 'border-border/60 bg-background/35 text-foreground',

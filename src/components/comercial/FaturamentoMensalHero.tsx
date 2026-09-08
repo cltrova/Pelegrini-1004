@@ -64,7 +64,7 @@ function RichTooltip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null;
   const d = payload[0].payload as MesData & { tendencia?: number };
   return (
-    <div className="rounded-xl border border-border/70 bg-popover/95 backdrop-blur-xl px-3.5 py-2.5 shadow-2xl shadow-primary/20 min-w-[200px] animate-in fade-in-0 zoom-in-95 duration-150">
+    <div className="rounded-lg border border-border bg-popover px-3.5 py-2.5 min-w-[200px] animate-in fade-in-0 zoom-in-95 duration-150">
       <div className="flex items-center justify-between gap-3 mb-2 pb-2 border-b border-border/50">
         <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">{label}</p>
         <CalendarRange className="h-3.5 w-3.5 text-primary" />
@@ -112,15 +112,7 @@ function KpiTile({
     ? value
     : isCurrency ? formatCurrency(animated) : formatInteger(Math.round(animated));
   return (
-    <div className="group relative overflow-hidden rounded-2xl border border-border/60 bg-gradient-to-br from-card via-card to-card/60 p-4 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-primary/10 hover:border-primary/40">
-      <div className={cn(
-        'absolute -top-16 -right-16 h-32 w-32 rounded-full blur-3xl opacity-40 group-hover:opacity-70 transition-opacity duration-500',
-        accent === 'primary' && 'bg-primary/40',
-        accent === 'success' && 'bg-success/40',
-        accent === 'destructive' && 'bg-destructive/40',
-        accent === 'chart-3' && 'bg-chart-3/40',
-        accent === 'chart-4' && 'bg-chart-4/40',
-      )} />
+    <div className="group relative overflow-hidden rounded-lg border border-border/60 bg-card p-4 transition-colors duration-300 hover:border-primary/40">
       <div className="relative flex items-center justify-between mb-2">
         <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{label}</span>
         {Icon && (
@@ -208,9 +200,9 @@ export function FaturamentoMensalHero({
   // ── Empty state absoluto ─────────────────────
   if (!stats) {
     return (
-      <Card className="border-dashed border-border/60 bg-gradient-to-br from-card via-card to-muted/20">
+      <Card className="border-dashed border-border/60 bg-card">
         <CardContent className="py-12 flex flex-col items-center justify-center gap-3 text-center">
-          <div className="h-12 w-12 rounded-2xl bg-muted/40 flex items-center justify-center">
+          <div className="h-12 w-12 rounded-lg bg-muted/40 flex items-center justify-center">
             <Activity className="h-6 w-6 text-muted-foreground" />
           </div>
           <p className="text-sm font-semibold">Sem dados de faturamento no período</p>
@@ -223,16 +215,12 @@ export function FaturamentoMensalHero({
   const growing = stats.slope > 0;
 
   return (
-    <Card className="relative overflow-hidden border-border/60 bg-gradient-to-br from-card via-card to-primary/[0.02] shadow-lg">
-      {/* Ambient glow */}
-      <div className="pointer-events-none absolute -top-24 -right-24 h-64 w-64 rounded-full bg-primary/10 blur-3xl" />
-      <div className="pointer-events-none absolute -bottom-32 -left-24 h-64 w-64 rounded-full bg-chart-3/10 blur-3xl" />
-
+    <Card className="relative overflow-hidden border-border/60 bg-card">
       <CardContent className="relative p-5 sm:p-6 space-y-6">
         {/* ═══════════════ 1) CABEÇALHO EXECUTIVO ═══════════════ */}
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 ring-1 ring-primary/30 flex items-center justify-center shadow-inner">
+            <div className="h-10 w-10 rounded-lg bg-primary/10 ring-1 ring-primary/30 flex items-center justify-center">
               <Sparkles className="h-5 w-5 text-primary" />
             </div>
             <div>
@@ -302,9 +290,9 @@ export function FaturamentoMensalHero({
         ) : (
           <div className="space-y-3">
             <div className={cn(
-              'relative rounded-xl border transition-all duration-300 overflow-hidden',
+              'relative rounded-lg border transition-colors duration-300 overflow-hidden',
               hoveredMonth
-                ? 'border-primary/40 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent shadow-md shadow-primary/10'
+                ? 'border-primary/40 bg-primary/8'
                 : 'border-dashed border-border/40 bg-muted/20',
             )}>
               <div className="px-3.5 py-2 flex items-center justify-between gap-3 min-h-[44px]">
@@ -395,16 +383,14 @@ export function FaturamentoMensalHero({
 function SinglePointHero({ mes }: { mes: MesData }) {
   const anim = useCountUp(mes.vendas);
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-primary/30 bg-gradient-to-br from-primary/15 via-primary/5 to-transparent p-6 sm:p-8">
-      <div className="pointer-events-none absolute -top-16 -right-16 h-48 w-48 rounded-full bg-primary/20 blur-3xl" />
-      <div className="pointer-events-none absolute -bottom-16 -left-16 h-48 w-48 rounded-full bg-chart-3/20 blur-3xl" />
+    <div className="relative overflow-hidden rounded-lg border border-primary/30 bg-card p-6 sm:p-8">
       <div className="relative grid gap-6 md:grid-cols-[auto,1fr] items-center">
         <div className="flex flex-col items-center md:items-start gap-2">
           <Badge className="bg-primary/20 text-primary border-0 gap-1 uppercase tracking-widest text-[10px] font-bold">
             <Sparkles className="h-3 w-3" /> Início da série
           </Badge>
           <p className="text-xs uppercase tracking-widest text-muted-foreground font-bold">{mes.mes}</p>
-          <p className="text-4xl sm:text-5xl font-black tabular-nums tracking-tight bg-gradient-to-br from-foreground to-foreground/70 bg-clip-text">
+          <p className="text-4xl sm:text-5xl font-black tabular-nums tracking-tight">
             {formatCurrency(anim)}
           </p>
           <div className="flex items-center gap-4 text-xs text-muted-foreground">
@@ -415,7 +401,7 @@ function SinglePointHero({ mes }: { mes: MesData }) {
             <span><strong className="text-foreground tabular-nums">{formatInteger(mes.qtdClientes)}</strong> clientes</span>
           </div>
         </div>
-        <div className="rounded-xl border border-border/60 bg-card/60 backdrop-blur p-4 flex items-start gap-3">
+        <div className="rounded-lg border border-border/60 bg-card p-4 flex items-start gap-3">
           <div className="h-8 w-8 rounded-lg bg-chart-3/15 ring-1 ring-chart-3/30 flex items-center justify-center shrink-0">
             <Info className="h-4 w-4 text-chart-3" />
           </div>
@@ -490,13 +476,13 @@ function SmartFooter({
             onClick={ins.action}
             disabled={!clickable}
             className={cn(
-              'group text-left flex items-start gap-3 rounded-xl border border-border/60 bg-card/60 p-3 transition-all duration-200',
-              clickable && 'hover:-translate-y-0.5 hover:shadow-lg hover:border-primary/40 cursor-pointer',
+              'group text-left flex items-start gap-3 rounded-lg border border-border/60 bg-card p-3 transition-colors duration-200',
+              clickable && 'hover:border-primary/40 cursor-pointer',
               !clickable && 'opacity-95 cursor-default',
             )}
           >
             <div className={cn(
-              'h-8 w-8 shrink-0 rounded-lg flex items-center justify-center ring-1 transition-transform group-hover:scale-110',
+              'h-8 w-8 shrink-0 rounded-lg flex items-center justify-center ring-1',
               ins.tone === 'success' && 'bg-success/15 ring-success/30 text-success',
               ins.tone === 'destructive' && 'bg-destructive/15 ring-destructive/30 text-destructive',
               ins.tone === 'primary' && 'bg-primary/15 ring-primary/30 text-primary',

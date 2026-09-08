@@ -51,21 +51,13 @@ export function InsightsInteligentes({ items }: Props) {
             <Card
               key={it.id}
               className={cn(
-                'group relative overflow-hidden border-border/60 bg-card p-4 shadow-sm cursor-default',
-                'transition-all duration-300 ease-out',
-                'hover:-translate-y-1 hover:scale-[1.015] hover:border-border hover:shadow-[0_16px_36px_-16px_hsl(var(--foreground)/0.22)]',
+                'group relative overflow-hidden border-border/60 bg-card p-4 cursor-default',
+                'transition-colors duration-300 ease-out',
+                'hover:border-primary/30 hover:bg-muted/30',
                 'animate-fade-in'
               )}
               style={{ animationDelay: `${idx * 50}ms`, animationFillMode: 'both' }}
             >
-              {/* Spotlight */}
-              <div
-                aria-hidden
-                className={cn(
-                  'pointer-events-none absolute -inset-px rounded-[inherit] opacity-0 transition-opacity duration-500 group-hover:opacity-100',
-                  'bg-[radial-gradient(circle_at_top_left,hsl(var(--primary)/0.10),transparent_55%)]'
-                )}
-              />
               {/* Borda translúcida no hover */}
               <div
                 aria-hidden
@@ -74,7 +66,7 @@ export function InsightsInteligentes({ items }: Props) {
               <div className="relative flex items-start gap-3">
                 <div
                   className={cn(
-                    'flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ring-1 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3',
+                    'flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ring-1',
                     tone.bg,
                     tone.ring
                   )}

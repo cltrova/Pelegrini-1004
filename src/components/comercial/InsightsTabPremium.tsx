@@ -92,21 +92,6 @@ export function InsightsTabPremium({
 
   return (
     <section className="relative space-y-6">
-      {/* Background ambient */}
-      <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden rounded-3xl">
-        <div className="absolute -top-40 -left-32 h-[28rem] w-[28rem] rounded-full bg-[hsl(var(--primary)/0.14)] blur-3xl" />
-        <div className="absolute -bottom-40 -right-32 h-[28rem] w-[28rem] rounded-full bg-[hsl(var(--warning)/0.10)] blur-3xl" />
-        <div className="absolute top-1/2 left-1/2 h-72 w-72 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[hsl(var(--accent)/0.08)] blur-3xl" />
-        {/* Noise sutil via SVG data uri */}
-        <div
-          className="absolute inset-0 opacity-[0.03] mix-blend-overlay"
-          style={{
-            backgroundImage:
-              "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)' opacity='0.6'/></svg>\")",
-          }}
-        />
-      </div>
-
       {/* === Grid principal: Risco + Novos === */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         {/* --- Clientes em Risco --- */}
@@ -151,7 +136,7 @@ export function InsightsTabPremium({
                 <div className="text-[10px] uppercase tracking-[0.15em] text-muted-foreground">
                   Receita
                 </div>
-                <div className="text-sm font-bold tabular-nums bg-gradient-to-r from-success to-success/70 bg-clip-text text-transparent">
+                <div className="text-sm font-bold tabular-nums text-success">
                   {formatCurrency(animNovosValor)}
                 </div>
               </div>
@@ -234,20 +219,16 @@ export function InsightsTabPremium({
 
       <style>{`
         @keyframes ipremFadeUp {
-          from { opacity: 0; transform: translateY(10px); filter: blur(6px); }
-          to { opacity: 1; transform: translateY(0); filter: blur(0); }
-        }
-        @keyframes ipremIdle {
-          0%,100% { transform: translateY(0) scale(1); opacity: 0.55; }
-          50% { transform: translateY(-4px) scale(1.04); opacity: 0.9; }
+          from { opacity: 0; transform: translateY(10px); }
+          to { opacity: 1; transform: translateY(0); }
         }
         .iprem-scroll::-webkit-scrollbar { width: 6px; }
         .iprem-scroll::-webkit-scrollbar-track { background: transparent; }
         .iprem-scroll::-webkit-scrollbar-thumb {
-          background: hsl(0 0% 100% / 0.06);
+          background: hsl(var(--border));
           border-radius: 3px;
         }
-        .iprem-scroll:hover::-webkit-scrollbar-thumb { background: hsl(0 0% 100% / 0.12); }
+        .iprem-scroll:hover::-webkit-scrollbar-thumb { background: hsl(var(--muted-foreground) / 0.35); }
       `}</style>
     </section>
   );
@@ -257,30 +238,26 @@ export function InsightsTabPremium({
 
 type Tone = 'primary' | 'success' | 'warning' | 'danger';
 
-const TONE_MAP: Record<Tone, { ring: string; soft: string; text: string; glow: string }> = {
+const TONE_MAP: Record<Tone, { ring: string; soft: string; text: string }> = {
   primary: {
     ring: 'hsl(var(--primary))',
     soft: 'hsl(var(--primary) / 0.10)',
     text: 'hsl(var(--primary))',
-    glow: '0 0 28px hsl(var(--primary) / 0.30)',
   },
   success: {
     ring: 'hsl(var(--success))',
     soft: 'hsl(var(--success) / 0.10)',
     text: 'hsl(var(--success))',
-    glow: '0 0 28px hsl(var(--success) / 0.28)',
   },
   warning: {
     ring: 'hsl(var(--warning))',
     soft: 'hsl(var(--warning) / 0.10)',
     text: 'hsl(var(--warning))',
-    glow: '0 0 28px hsl(var(--warning) / 0.28)',
   },
   danger: {
     ring: 'hsl(var(--destructive))',
     soft: 'hsl(var(--destructive) / 0.10)',
     text: 'hsl(var(--destructive))',
-    glow: '0 0 28px hsl(var(--destructive) / 0.28)',
   },
 };
 
@@ -302,30 +279,18 @@ function GlassCard({
   const t = TONE_MAP[tone];
   return (
     <div
-      className="premium-hover-card group relative overflow-hidden rounded-[22px] border border-white/[0.08] bg-gradient-to-br from-background/70 via-background/50 to-background/30 backdrop-blur-2xl transition-all duration-500 ease-out"
+      className="group relative overflow-hidden rounded-lg border border-border/60 bg-card transition-colors duration-300 ease-out hover:border-primary/30"
       style={{
-        boxShadow:
-          'inset 0 1px 0 hsl(0 0% 100% / 0.06), 0 18px 50px -20px hsl(220 50% 5% / 0.7)',
         animation: `ipremFadeUp 0.6s ${delay}ms ease-out backwards`,
       }}
     >
-      {/* Glow superior tematizado */}
-      <div
-        className="pointer-events-none absolute inset-x-0 -top-px h-px"
-        style={{ background: `linear-gradient(90deg, transparent, ${t.ring}66, transparent)` }}
-      />
-      <div
-        className="pointer-events-none absolute -top-24 -right-20 h-56 w-56 rounded-full opacity-40 blur-3xl"
-        style={{ background: t.soft }}
-      />
-
       <div className="relative flex items-start justify-between gap-3 px-5 pt-5 pb-3">
         <div className="flex items-start gap-3">
           <div
-            className="h-10 w-10 rounded-xl flex items-center justify-center transition-transform duration-500 group-hover:scale-110"
+            className="h-10 w-10 rounded-lg flex items-center justify-center"
             style={{
               background: t.soft,
-              boxShadow: `inset 0 0 0 1px ${t.ring}44, ${t.glow}`,
+              boxShadow: `inset 0 0 0 1px ${t.ring}44`,
             }}
           >
             <Icon className="h-4.5 w-4.5" style={{ color: t.text }} />
@@ -334,8 +299,7 @@ function GlassCard({
             <h3
               className={cn(
                 'text-base font-semibold tracking-tight leading-tight',
-                gradientTitle &&
-                  'bg-gradient-to-r from-primary via-primary to-accent bg-clip-text text-transparent'
+                gradientTitle && 'text-primary'
               )}
             >
               {title}
@@ -344,10 +308,10 @@ function GlassCard({
               <p className="text-[11.5px] text-muted-foreground mt-0.5">{subtitle}</p>
             )}
             {countLabel && (
-              <div className="mt-1.5 inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.03] px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+              <div className="mt-1.5 inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-muted/30 px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
                 <span
                   className="h-1.5 w-1.5 rounded-full"
-                  style={{ background: t.ring, boxShadow: `0 0 8px ${t.ring}` }}
+                  style={{ background: t.ring }}
                 />
                 {countLabel}
               </div>
@@ -377,7 +341,7 @@ function PremiumScrollList({ children, pageSize = 5 }: { children: React.ReactNo
       </div>
 
       {totalPages > 1 && (
-        <div className="flex items-center justify-between mt-3 pt-3 border-t border-white/[0.06]">
+        <div className="flex items-center justify-between mt-3 pt-3 border-t border-border/60">
           <button
             onClick={() => setPage(p => Math.max(0, p - 1))}
             disabled={safePage === 0}
@@ -385,7 +349,7 @@ function PremiumScrollList({ children, pageSize = 5 }: { children: React.ReactNo
               'flex items-center gap-1 text-[11px] font-medium px-2 py-1 rounded-md transition-all',
               safePage === 0
                 ? 'text-muted-foreground/40 cursor-not-allowed'
-                : 'text-foreground hover:bg-white/5 hover:text-primary',
+                : 'text-foreground hover:bg-muted/40 hover:text-primary',
             )}
           >
             <ChevronLeft className="h-3 w-3" /> Anterior
@@ -402,8 +366,8 @@ function PremiumScrollList({ children, pageSize = 5 }: { children: React.ReactNo
                   className={cn(
                     'h-5 min-w-5 px-1.5 text-[10px] font-semibold rounded-md tabular-nums transition-all',
                     p === safePage
-                      ? 'bg-primary text-primary-foreground shadow-[0_0_10px_hsl(var(--primary)/0.4)]'
-                      : 'text-muted-foreground hover:bg-white/5 hover:text-foreground',
+                      ? 'bg-primary text-primary-foreground'
+                      : 'text-muted-foreground hover:bg-muted/40 hover:text-foreground',
                   )}
                 >
                   {p + 1}
@@ -419,7 +383,7 @@ function PremiumScrollList({ children, pageSize = 5 }: { children: React.ReactNo
               'flex items-center gap-1 text-[11px] font-medium px-2 py-1 rounded-md transition-all',
               safePage === totalPages - 1
                 ? 'text-muted-foreground/40 cursor-not-allowed'
-                : 'text-foreground hover:bg-white/5 hover:text-primary',
+                : 'text-foreground hover:bg-muted/40 hover:text-primary',
             )}
           >
             Próxima <ChevronRight className="h-3 w-3" />
@@ -435,11 +399,11 @@ function Avatar({ name, tone }: { name: string; tone: Tone }) {
   const hue = hashHue(name);
   return (
     <div
-      className="h-9 w-9 shrink-0 rounded-xl flex items-center justify-center text-[11px] font-bold tracking-wide"
+      className="h-9 w-9 shrink-0 rounded-lg flex items-center justify-center text-[11px] font-bold tracking-wide"
       style={{
-        background: `linear-gradient(135deg, hsl(${hue} 70% 35% / 0.7), hsl(${(hue + 40) % 360} 70% 25% / 0.7))`,
-        boxShadow: `inset 0 0 0 1px ${t.ring}33, 0 4px 12px -6px hsl(220 50% 5% / 0.6)`,
-        color: 'hsl(0 0% 98%)',
+        background: `hsl(${hue} 55% 42% / 0.18)`,
+        boxShadow: `inset 0 0 0 1px ${t.ring}33`,
+        color: t.text,
       }}
     >
       {initials(name)}
@@ -454,15 +418,11 @@ function RiskItem({ c, index }: { c: ClienteRisco; index: number }) {
   const t = TONE_MAP[sev];
   return (
     <div
-      className="group/item relative flex items-center gap-3 rounded-xl border border-white/[0.06] bg-white/[0.02] p-2.5 transition-all duration-300 hover:border-white/15 hover:bg-white/[0.04] hover:-translate-y-0.5 hover:scale-[1.005]"
+      className="group/item relative flex items-center gap-3 rounded-lg border border-border/60 bg-card p-2.5 transition-colors duration-300 hover:border-warning/30 hover:bg-muted/30"
       style={{
         animation: `ipremFadeUp 0.45s ${index * 30}ms ease-out backwards`,
       }}
     >
-      <div
-        className="pointer-events-none absolute inset-0 rounded-xl opacity-0 group-hover/item:opacity-100 transition-opacity duration-500"
-        style={{ boxShadow: `inset 0 0 0 1px ${t.ring}55` }}
-      />
       <Avatar name={name} tone={sev} />
       <div className="min-w-0 flex-1">
         <p className="text-sm font-medium truncate" title={name}>{name}</p>
@@ -488,7 +448,7 @@ function NovoItem({ c, index }: { c: ClienteNovo; index: number }) {
   const name = c.fantasia || c.razao || '—';
   return (
     <div
-      className="group/item relative flex items-center gap-3 rounded-xl border border-white/[0.06] bg-white/[0.02] p-2.5 transition-all duration-300 hover:border-success/30 hover:bg-success/[0.04] hover:-translate-y-0.5 hover:scale-[1.005]"
+      className="group/item relative flex items-center gap-3 rounded-lg border border-border/60 bg-card p-2.5 transition-colors duration-300 hover:border-success/30 hover:bg-muted/30"
       style={{ animation: `ipremFadeUp 0.45s ${index * 30}ms ease-out backwards` }}
     >
       <Avatar name={name} tone="success" />
@@ -499,7 +459,7 @@ function NovoItem({ c, index }: { c: ClienteNovo; index: number }) {
         </p>
       </div>
       <div className="text-right">
-        <div className="text-sm font-semibold tabular-nums bg-gradient-to-r from-success to-success/70 bg-clip-text text-transparent">
+        <div className="text-sm font-semibold tabular-nums text-success">
           {formatCurrency(c.faturamentoLiquido)}
         </div>
         <div className="text-[10px] text-muted-foreground inline-flex items-center gap-0.5">
@@ -515,18 +475,9 @@ function EmptyRiskState() {
     <div className="relative flex flex-col items-center justify-center text-center py-10">
       <div className="relative mb-4">
         <div
-          className="absolute inset-0 rounded-full blur-2xl"
+          className="relative h-16 w-16 rounded-lg flex items-center justify-center bg-success/10 border border-success/30"
           style={{
-            background: 'hsl(var(--warning) / 0.35)',
-            animation: 'ipremIdle 3.2s ease-in-out infinite',
-          }}
-        />
-        <div
-          className="relative h-16 w-16 rounded-2xl flex items-center justify-center"
-          style={{
-            background:
-              'linear-gradient(135deg, hsl(var(--success) / 0.20), hsl(var(--warning) / 0.15))',
-            boxShadow: 'inset 0 0 0 1px hsl(var(--success) / 0.30), 0 0 28px hsl(var(--warning) / 0.25)',
+            boxShadow: 'inset 0 0 0 1px hsl(var(--success) / 0.30)',
           }}
         >
           <ShieldCheck className="h-7 w-7 text-success" />
@@ -546,7 +497,7 @@ function EmptyRiskState() {
 function EmptyNeutralState({ message, hint }: { message: string; hint: string }) {
   return (
     <div className="flex flex-col items-center justify-center text-center py-10">
-      <div className="h-14 w-14 rounded-2xl flex items-center justify-center mb-3 bg-white/[0.03] border border-white/[0.06]">
+      <div className="h-14 w-14 rounded-lg flex items-center justify-center mb-3 bg-muted/30 border border-border/60">
         <UserPlus className="h-6 w-6 text-muted-foreground" />
       </div>
       <h4 className="text-sm font-semibold tracking-tight">{message}</h4>
@@ -570,16 +521,11 @@ function AIInsightCard({ tone, icon: Icon, label, value, description, delay = 0 
   const t = TONE_MAP[tone];
   return (
     <div
-      className="premium-hover-card group relative overflow-hidden rounded-2xl border border-white/[0.08] bg-gradient-to-br from-background/60 to-background/30 backdrop-blur-xl p-4 transition-all duration-300"
+      className="group relative overflow-hidden rounded-lg border border-border/60 bg-card p-4 transition-colors duration-300 hover:border-primary/30 hover:bg-muted/30"
       style={{
-        boxShadow: 'inset 0 1px 0 hsl(0 0% 100% / 0.05), 0 10px 24px -16px hsl(220 50% 5% / 0.5)',
         animation: `ipremFadeUp 0.5s ${delay}ms ease-out backwards`,
       }}
     >
-      <div
-        className="pointer-events-none absolute -top-12 -right-12 h-32 w-32 rounded-full opacity-0 group-hover:opacity-100 blur-3xl transition-opacity duration-500"
-        style={{ background: t.ring }}
-      />
       <div className="relative flex items-start justify-between gap-2 mb-3">
         <div
           className="h-9 w-9 rounded-lg flex items-center justify-center"
@@ -608,10 +554,6 @@ function AIInsightCard({ tone, icon: Icon, label, value, description, delay = 0 
           {description}
         </p>
       </div>
-      <div
-        className="pointer-events-none absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"
-        style={{ boxShadow: `inset 0 0 0 1px ${t.ring}55` }}
-      />
     </div>
   );
 }

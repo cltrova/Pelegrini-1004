@@ -16,20 +16,13 @@ interface InteractiveRankCardProps {
   data: RankItem[];
   formatValue: (n: number) => string;
   pageSize?: number;
-  defaultColor?: string;
 }
-
-const FALLBACK_COLORS = [
-  'hsl(217, 91%, 60%)', 'hsl(173, 80%, 40%)', 'hsl(142, 71%, 45%)',
-  'hsl(38, 92%, 50%)', 'hsl(0, 72%, 51%)', 'hsl(280, 65%, 60%)',
-  'hsl(200, 80%, 50%)', 'hsl(330, 70%, 50%)', 'hsl(160, 60%, 45%)', 'hsl(45, 85%, 55%)',
-];
 
 // Medal palette - gold / silver / bronze
 const MEDAL = {
-  0: { color: 'hsl(45, 95%, 55%)', glow: 'hsl(45, 95%, 65%)', label: 'Ouro' },
-  1: { color: 'hsl(220, 8%, 75%)', glow: 'hsl(220, 12%, 85%)', label: 'Prata' },
-  2: { color: 'hsl(25, 70%, 50%)', glow: 'hsl(25, 80%, 60%)', label: 'Bronze' },
+  0: { bg: 'bg-amber-500/10 text-amber-600 border-amber-500/35', label: 'Ouro' },
+  1: { bg: 'bg-slate-500/10 text-slate-500 border-slate-500/30', label: 'Prata' },
+  2: { bg: 'bg-orange-500/10 text-orange-600 border-orange-500/35', label: 'Bronze' },
 } as const;
 
 export function InteractiveRankCard({
@@ -38,7 +31,6 @@ export function InteractiveRankCard({
   data,
   formatValue,
   pageSize = 10,
-  defaultColor,
 }: InteractiveRankCardProps) {
   const [hovered, setHovered] = useState<string | null>(null);
   const [page, setPage] = useState(0);
@@ -53,11 +45,6 @@ export function InteractiveRankCard({
   const safePage = Math.min(page, totalPages - 1);
   const start = safePage * pageSize;
   const pageItems = ranking.slice(start, start + pageSize);
-
-  const getColor = (globalIdx: number) => {
-    if (globalIdx < 3) return MEDAL[globalIdx as 0 | 1 | 2].color;
-    return defaultColor || FALLBACK_COLORS[globalIdx % FALLBACK_COLORS.length];
-  };
 
   return (
     <Card className="premium-card chart-premium stagger-3 flex flex-col">
@@ -83,7 +70,6 @@ export function InteractiveRankCard({
             <div className="flex flex-col justify-between flex-1 gap-3">
               {pageItems.map((item, idxInPage) => {
                 const globalIdx = start + idxInPage;
-                const color = getColor(globalIdx);
                 const isTop3 = globalIdx < 3;
                 const medal = isTop3 ? MEDAL[globalIdx as 0 | 1 | 2] : null;
                 const isActive = hovered === item.key;
@@ -95,7 +81,7 @@ export function InteractiveRankCard({
                     onMouseEnter={() => setHovered(item.key)}
                     className={cn(
                       'flex items-center gap-4 rounded-md px-1 py-1 cursor-default',
-                      'transition-all duration-300 ease-out',
+                      'transition-[opacity,transform] duration-300 ease-out',
                       isActive && 'translate-x-0.5',
                       isDimmed && 'opacity-50',
                     )}
@@ -103,16 +89,12 @@ export function InteractiveRankCard({
                   >
                     {medal ? (
                       <span
-                        className="w-7 h-7 flex items-center justify-center rounded-full flex-shrink-0 transition-transform duration-300"
-                        style={{
-                          background: `linear-gradient(135deg, ${medal.glow}, ${medal.color})`,
-                          boxShadow: isActive
-                            ? `0 0 14px ${medal.color}cc, inset 0 0 0 1px hsl(0 0% 100% / 0.25)`
-                            : `0 0 8px ${medal.color}80, inset 0 0 0 1px hsl(0 0% 100% / 0.2)`,
-                          transform: isActive ? 'scale(1.08)' : 'scale(1)',
-                        }}
+                        className={cn(
+                          'w-7 h-7 flex items-center justify-center rounded-md border flex-shrink-0',
+                          medal.bg,
+                        )}
                       >
-                        <Medal className="h-3.5 w-3.5 text-background" strokeWidth={2.5} />
+                        <Medal className="h-3.5 w-3.5" strokeWidth={2.5} />
                       </span>
                     ) : (
                       <span
@@ -142,20 +124,16 @@ export function InteractiveRankCard({
 
                       <div className="relative h-2 w-full bg-muted/50 rounded-full overflow-hidden">
                         <div
-                          className="ir-bar relative h-full rounded-full transition-all duration-500"
+                          className={cn(
+                            'ir-bar relative h-full rounded-full transition-[width,background-color] duration-500',
+                            isTop3 ? 'bg-primary' : 'bg-foreground/35',
+                            isActive && 'bg-primary',
+                          )}
                           style={{
                             width: `${Math.max(item.pctMax, 2)}%`,
-                            background: `linear-gradient(90deg, ${color}80, ${color})`,
-                            boxShadow: isActive
-                              ? `0 0 12px ${color}cc`
-                              : isTop3
-                              ? `0 0 8px ${color}80`
-                              : 'none',
                             animationDelay: `${Math.min(idxInPage * 35, 420)}ms`,
                           }}
-                        >
-                          <span className="ir-shine absolute inset-y-0 -left-1/3 w-1/3" />
-                        </div>
+                        />
                       </div>
                     </div>
                   </div>
@@ -169,7 +147,7 @@ export function InteractiveRankCard({
                   onClick={() => setPage(p => Math.max(0, p - 1))}
                   disabled={safePage === 0}
                   className={cn(
-                    'flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-md transition-all',
+                    'flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-md transition-colors',
                     safePage === 0
                       ? 'text-muted-foreground/40 cursor-not-allowed'
                       : 'text-foreground hover:bg-muted/60 hover:text-primary',
@@ -187,9 +165,9 @@ export function InteractiveRankCard({
                         key={p}
                         onClick={() => setPage(p)}
                         className={cn(
-                          'h-6 min-w-6 px-1.5 text-[11px] font-semibold rounded-md tabular-nums transition-all',
+                          'h-6 min-w-6 px-1.5 text-[11px] font-semibold rounded-md tabular-nums transition-colors',
                           p === safePage
-                            ? 'bg-primary text-primary-foreground shadow-[0_0_10px_hsl(var(--primary)/0.4)]'
+                            ? 'bg-primary text-primary-foreground'
                             : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground',
                         )}
                       >
@@ -203,7 +181,7 @@ export function InteractiveRankCard({
                   onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
                   disabled={safePage === totalPages - 1}
                   className={cn(
-                    'flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-md transition-all',
+                    'flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-md transition-colors',
                     safePage === totalPages - 1
                       ? 'text-muted-foreground/40 cursor-not-allowed'
                       : 'text-foreground hover:bg-muted/60 hover:text-primary',
@@ -220,17 +198,7 @@ export function InteractiveRankCard({
       <style>{`
         @keyframes irFade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes irFill { from { transform: scaleX(0); } to { transform: scaleX(1); } }
-        @keyframes irShine {
-          0% { transform: translateX(-120%); opacity: 0; }
-          30% { opacity: 0.35; }
-          70% { opacity: 0.2; }
-          100% { transform: translateX(420%); opacity: 0; }
-        }
         .ir-bar { transform-origin: left center; animation: irFill 720ms cubic-bezier(0.22, 0.9, 0.32, 1) backwards; }
-        .ir-shine {
-          background: linear-gradient(90deg, transparent, hsl(0 0% 100% / 0.35), transparent);
-          animation: irShine 3.8s ease-in-out infinite;
-        }
       `}</style>
     </Card>
   );

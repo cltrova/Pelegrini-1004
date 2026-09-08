@@ -15,6 +15,10 @@ interface AgingBucket {
   color: string;
 }
 
+type AgingTooltipPayload = {
+  payload?: AgingBucket;
+};
+
 export function AgingChart({ duplicatas }: Props) {
   const buckets = useMemo<AgingBucket[]>(() => {
     const def: AgingBucket[] = [
@@ -55,9 +59,9 @@ export function AgingChart({ duplicatas }: Props) {
             <YAxis tickFormatter={(v) => formatCompactNumber(v)} tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" />
             <Tooltip
               contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8, fontSize: 12 }}
-              formatter={(value: number, _name, item: any) => [
+              formatter={(value: number, _name: string, item: AgingTooltipPayload) => [
                 formatCurrency(value),
-                `${item.payload.qtd} duplicatas`,
+                `${item.payload?.qtd ?? 0} duplicatas`,
               ]}
               labelStyle={{ fontWeight: 600 }}
             />

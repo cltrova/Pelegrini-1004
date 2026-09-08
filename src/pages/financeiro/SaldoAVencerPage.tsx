@@ -74,7 +74,7 @@ export default function SaldoAVencerPage() {
 
 
   return (
-    <div className="mx-auto w-full max-w-[1600px] px-4 py-6 md:px-8 md:py-10 space-y-6 animate-fade-in">
+    <div className="enterprise-page-shell max-w-[1600px] animate-fade-in">
       <header className="flex items-center gap-3">
         <div className="h-11 w-11 rounded-xl bg-primary/10 flex items-center justify-center">
           <Wallet className="h-6 w-6 text-primary" />

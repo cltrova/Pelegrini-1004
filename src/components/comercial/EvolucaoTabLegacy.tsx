@@ -75,12 +75,12 @@ function Sparkline({ values, color = 'hsl(var(--primary))', height = 28 }: { val
 function PremiumTooltip({ active, payload, label, isCurrency = true }: any) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="rounded-xl border border-border/60 bg-card/95 backdrop-blur-xl px-3 py-2.5 shadow-2xl shadow-primary/10 animate-in fade-in-0 zoom-in-95 duration-150">
+    <div className="rounded-lg border border-border bg-card px-3 py-2.5 animate-in fade-in-0 zoom-in-95 duration-150">
       <p className="text-[11px] font-semibold text-muted-foreground mb-1.5 uppercase tracking-wider">{label}</p>
       <div className="space-y-1">
         {payload.map((entry: any, i: number) => (
           <div key={i} className="flex items-center gap-2 text-xs">
-            <span className="h-2 w-2 rounded-full ring-2 ring-offset-1 ring-offset-card" style={{ backgroundColor: entry.color, boxShadow: `0 0 8px ${entry.color}` }} />
+            <span className="h-2 w-2 rounded-full ring-2 ring-offset-1 ring-offset-card" style={{ backgroundColor: entry.color }} />
             <span className="text-muted-foreground">{entry.name}:</span>
             <span className="font-bold tabular-nums">
               {isCurrency && typeof entry.value === 'number' ? formatCurrency(entry.value) : formatInteger(entry.value)}
@@ -471,8 +471,7 @@ export function EvolucaoTabLegacy({ pedidos, devolucoes, vendedoresPerformance, 
       {/* ============== KPIs Premium ============== */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
         {/* Total */}
-        <Card className="group relative overflow-hidden border-primary/20 bg-gradient-to-br from-primary/15 via-primary/5 to-transparent backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:shadow-primary/20 cursor-default animate-in fade-in-0 slide-in-from-bottom-2">
-          <div className="absolute -top-8 -right-8 h-24 w-24 rounded-full bg-primary/10 blur-2xl group-hover:bg-primary/20 transition-colors" />
+        <Card className="group relative overflow-hidden border-primary/20 bg-card transition-colors duration-300 hover:border-primary/40 cursor-default animate-in fade-in-0 slide-in-from-bottom-2">
           <CardContent className="relative p-4">
             <div className="flex items-center gap-2 mb-2">
               <div className="h-7 w-7 rounded-lg bg-primary/15 flex items-center justify-center ring-1 ring-primary/20">
@@ -489,7 +488,7 @@ export function EvolucaoTabLegacy({ pedidos, devolucoes, vendedoresPerformance, 
         </Card>
 
         {/* Média */}
-        <Card className="group relative overflow-hidden border-border/50 backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:border-chart-2/40 cursor-default animate-in fade-in-0 slide-in-from-bottom-2 [animation-delay:60ms]">
+        <Card className="group relative overflow-hidden border-border/50 bg-card transition-colors duration-300 hover:border-chart-2/40 cursor-default animate-in fade-in-0 slide-in-from-bottom-2 [animation-delay:60ms]">
           <CardContent className="p-4">
             <div className="flex items-center gap-2 mb-2">
               <div className="h-7 w-7 rounded-lg bg-chart-2/15 flex items-center justify-center ring-1 ring-chart-2/20">
@@ -512,7 +511,7 @@ export function EvolucaoTabLegacy({ pedidos, devolucoes, vendedoresPerformance, 
           className="text-left"
           aria-label="Selecionar melhor dia"
         >
-          <Card className="group relative overflow-hidden border-success/30 bg-gradient-to-br from-success/10 via-success/5 to-transparent backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-success/20 cursor-pointer animate-in fade-in-0 slide-in-from-bottom-2 [animation-delay:120ms]">
+          <Card className="group relative overflow-hidden border-success/30 bg-card transition-colors duration-300 hover:border-success/50 cursor-pointer animate-in fade-in-0 slide-in-from-bottom-2 [animation-delay:120ms]">
             <CardContent className="p-4">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
@@ -543,7 +542,7 @@ export function EvolucaoTabLegacy({ pedidos, devolucoes, vendedoresPerformance, 
           className="text-left"
           aria-label="Selecionar pior dia"
         >
-          <Card className="group relative overflow-hidden border-destructive/30 bg-gradient-to-br from-destructive/10 via-destructive/5 to-transparent backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-destructive/20 cursor-pointer animate-in fade-in-0 slide-in-from-bottom-2 [animation-delay:180ms]">
+          <Card className="group relative overflow-hidden border-destructive/30 bg-card transition-colors duration-300 hover:border-destructive/50 cursor-pointer animate-in fade-in-0 slide-in-from-bottom-2 [animation-delay:180ms]">
             <CardContent className="p-4">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
@@ -569,9 +568,9 @@ export function EvolucaoTabLegacy({ pedidos, devolucoes, vendedoresPerformance, 
 
         {/* Tendência */}
         <Card className={cn(
-          "group relative overflow-hidden backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl cursor-default animate-in fade-in-0 slide-in-from-bottom-2 [animation-delay:240ms]",
-          kpisEvolucao.tendencia > 0 && "border-success/30 bg-gradient-to-br from-success/10 to-transparent hover:shadow-success/20",
-          kpisEvolucao.tendencia < 0 && "border-destructive/30 bg-gradient-to-br from-destructive/10 to-transparent hover:shadow-destructive/20",
+          "group relative overflow-hidden bg-card transition-colors duration-300 cursor-default animate-in fade-in-0 slide-in-from-bottom-2 [animation-delay:240ms]",
+          kpisEvolucao.tendencia > 0 && "border-success/30 hover:border-success/50",
+          kpisEvolucao.tendencia < 0 && "border-destructive/30 hover:border-destructive/50",
           kpisEvolucao.tendencia === 0 && "border-border/50",
         )}>
           <CardContent className="p-4">
@@ -582,8 +581,8 @@ export function EvolucaoTabLegacy({ pedidos, devolucoes, vendedoresPerformance, 
                 kpisEvolucao.tendencia < 0 && "bg-destructive/15 ring-destructive/20",
                 kpisEvolucao.tendencia === 0 && "bg-muted/30 ring-border/30",
               )}>
-                {kpisEvolucao.tendencia > 0 ? <TrendingUp className="h-3.5 w-3.5 text-success animate-pulse" />
-                  : kpisEvolucao.tendencia < 0 ? <TrendingDown className="h-3.5 w-3.5 text-destructive animate-pulse" />
+                {kpisEvolucao.tendencia > 0 ? <TrendingUp className="h-3.5 w-3.5 text-success" />
+                  : kpisEvolucao.tendencia < 0 ? <TrendingDown className="h-3.5 w-3.5 text-destructive" />
                   : <Minus className="h-3.5 w-3.5 text-muted-foreground" />}
               </div>
               <span className="text-xs text-muted-foreground font-medium">Tendência 7d</span>
@@ -605,11 +604,10 @@ export function EvolucaoTabLegacy({ pedidos, devolucoes, vendedoresPerformance, 
 
       {/* ============== Insights interativos ============== */}
       {insights.length > 0 && (
-        <Card className="border-primary/20 bg-gradient-to-r from-primary/8 via-primary/3 to-transparent backdrop-blur-sm overflow-hidden relative">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,hsl(var(--primary)/0.08),transparent_50%)] pointer-events-none" />
+        <Card className="border-primary/20 bg-card overflow-hidden relative">
           <CardHeader className="pb-3 relative">
             <CardTitle className="text-sm flex items-center gap-2">
-              <Sparkles className="h-4 w-4 text-primary animate-pulse" />
+              <Sparkles className="h-4 w-4 text-primary" />
               Insights Automáticos
               {filterDayOfWeek !== null && (
                 <Badge variant="outline" className="ml-2 cursor-pointer border-primary/40 text-primary" onClick={() => setFilterDayOfWeek(null)}>
@@ -627,18 +625,18 @@ export function EvolucaoTabLegacy({ pedidos, devolucoes, vendedoresPerformance, 
                   onClick={insight.action}
                   disabled={!insight.action}
                   className={cn(
-                    "text-left p-3 rounded-xl border transition-all duration-300 group",
-                    insight.action ? "cursor-pointer hover:-translate-y-0.5 hover:shadow-lg" : "cursor-default",
-                    insight.tipo === 'positivo' && "bg-success/8 border-success/30 hover:bg-success/12 hover:border-success/50 hover:shadow-success/20",
-                    insight.tipo === 'negativo' && "bg-destructive/8 border-destructive/30 hover:bg-destructive/12 hover:border-destructive/50 hover:shadow-destructive/20",
-                    insight.tipo === 'neutro' && "bg-primary/8 border-primary/30 hover:bg-primary/12 hover:border-primary/50 hover:shadow-primary/20",
+                    "text-left p-3 rounded-lg border transition-colors duration-300 group",
+                    insight.action ? "cursor-pointer" : "cursor-default",
+                    insight.tipo === 'positivo' && "bg-success/8 border-success/30 hover:bg-success/12 hover:border-success/50",
+                    insight.tipo === 'negativo' && "bg-destructive/8 border-destructive/30 hover:bg-destructive/12 hover:border-destructive/50",
+                    insight.tipo === 'neutro' && "bg-primary/8 border-primary/30 hover:bg-primary/12 hover:border-primary/50",
                     "animate-in fade-in-0 slide-in-from-left-2",
                   )}
                   style={{ animationDelay: `${i * 80}ms` }}
                 >
                   <div className="flex items-start gap-2">
                     <div className={cn(
-                      "h-7 w-7 rounded-lg flex items-center justify-center shrink-0 transition-transform group-hover:scale-110",
+                      "h-7 w-7 rounded-lg flex items-center justify-center shrink-0",
                       insight.tipo === 'positivo' && "bg-success/15",
                       insight.tipo === 'negativo' && "bg-destructive/15",
                       insight.tipo === 'neutro' && "bg-primary/15",
@@ -661,17 +659,17 @@ export function EvolucaoTabLegacy({ pedidos, devolucoes, vendedoresPerformance, 
 
       {/* ============== Sub-tabs ============== */}
       <Tabs value={subTab} onValueChange={(v) => setSubTab(v as typeof subTab)}>
-        <TabsList className="grid w-full grid-cols-4 bg-muted/40 backdrop-blur-sm border border-border/50 p-1 h-auto">
-          <TabsTrigger value="diaria" className="text-xs gap-1.5 data-[state=active]:bg-card data-[state=active]:shadow-md data-[state=active]:shadow-primary/10 transition-all">
+        <TabsList className="grid w-full grid-cols-4 bg-muted/40 border border-border/50 p-1 h-auto">
+          <TabsTrigger value="diaria" className="text-xs gap-1.5 data-[state=active]:bg-card transition-colors">
             <CalendarDays className="h-3.5 w-3.5 hidden sm:inline" /> Diária
           </TabsTrigger>
-          <TabsTrigger value="mensal" className="text-xs gap-1.5 data-[state=active]:bg-card data-[state=active]:shadow-md data-[state=active]:shadow-primary/10 transition-all">
+          <TabsTrigger value="mensal" className="text-xs gap-1.5 data-[state=active]:bg-card transition-colors">
             <CalendarRange className="h-3.5 w-3.5 hidden sm:inline" /> Mensal
           </TabsTrigger>
-          <TabsTrigger value="vendedor" className="text-xs gap-1.5 data-[state=active]:bg-card data-[state=active]:shadow-md data-[state=active]:shadow-primary/10 transition-all">
+          <TabsTrigger value="vendedor" className="text-xs gap-1.5 data-[state=active]:bg-card transition-colors">
             <Users className="h-3.5 w-3.5 hidden sm:inline" /> Por Vendedor
           </TabsTrigger>
-          <TabsTrigger value="comparativo" className="text-xs gap-1.5 data-[state=active]:bg-card data-[state=active]:shadow-md data-[state=active]:shadow-primary/10 transition-all">
+          <TabsTrigger value="comparativo" className="text-xs gap-1.5 data-[state=active]:bg-card transition-colors">
             <BarChart3 className="h-3.5 w-3.5 hidden sm:inline" /> Comparativo
           </TabsTrigger>
         </TabsList>
@@ -680,7 +678,7 @@ export function EvolucaoTabLegacy({ pedidos, devolucoes, vendedoresPerformance, 
         <TabsContent value="diaria" className="mt-6 space-y-6 animate-in fade-in-0 slide-in-from-bottom-1 duration-300">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Gráfico principal */}
-            <Card className="lg:col-span-2 border-border/50 backdrop-blur-sm overflow-hidden">
+            <Card className="lg:col-span-2 border-border/50 bg-card overflow-hidden">
               <CardHeader className="pb-2 flex flex-row items-center justify-between">
                 <div>
                   <CardTitle className="text-base flex items-center gap-2">
@@ -701,9 +699,9 @@ export function EvolucaoTabLegacy({ pedidos, devolucoes, vendedoresPerformance, 
               <CardContent>
                 {/* Barra de ação flutuante (hover live) */}
                 <div className={cn(
-                  "relative mb-3 rounded-xl border transition-all duration-200 overflow-hidden",
+                  "relative mb-3 rounded-lg border transition-colors duration-200 overflow-hidden",
                   hoveredPoint
-                    ? "border-primary/40 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent shadow-md shadow-primary/10"
+                    ? "border-primary/40 bg-primary/8"
                     : "border-dashed border-border/40 bg-muted/20"
                 )}>
                   <div className="px-3 py-2 flex items-center justify-between gap-3">
@@ -732,7 +730,7 @@ export function EvolucaoTabLegacy({ pedidos, devolucoes, vendedoresPerformance, 
                         </div>
                         <Button
                           size="sm"
-                          className="h-7 text-xs gap-1.5 shrink-0 shadow-md shadow-primary/20"
+                          className="h-7 text-xs gap-1.5 shrink-0"
                           onClick={() => setDrillDate(hoveredPoint.data)}
                         >
                           <MousePointerClick className="h-3 w-3" />
@@ -787,7 +785,7 @@ export function EvolucaoTabLegacy({ pedidos, devolucoes, vendedoresPerformance, 
             </Card>
 
             {/* Dia da semana - diverging interativo */}
-            <Card className="border-border/50 backdrop-blur-sm overflow-hidden">
+            <Card className="border-border/50 bg-card overflow-hidden">
               <CardHeader className="pb-2">
                 <CardTitle className="text-base flex items-center gap-2">
                   <Calendar className="h-4 w-4 text-chart-2" />
@@ -829,8 +827,7 @@ export function EvolucaoTabLegacy({ pedidos, devolucoes, vendedoresPerformance, 
                           <div
                             className={cn(
                               "absolute inset-y-0 left-0 rounded-full transition-all duration-500",
-                              isMax ? "bg-gradient-to-r from-primary to-primary/70" : "bg-gradient-to-r from-chart-2 to-chart-2/60",
-                              isSelected && "shadow-[0_0_12px] shadow-primary/40",
+                              isMax ? "bg-primary" : "bg-chart-2/70",
                             )}
                             style={{ width: `${widthPct}%` }}
                           />
@@ -848,7 +845,7 @@ export function EvolucaoTabLegacy({ pedidos, devolucoes, vendedoresPerformance, 
           </div>
 
           {/* Detalhamento Diário interativo */}
-          <Card ref={detailsRef} className="border-border/50 backdrop-blur-sm overflow-hidden">
+          <Card ref={detailsRef} className="border-border/50 bg-card overflow-hidden">
             <CardHeader className="pb-2 flex flex-row items-center justify-between">
               <div>
                 <CardTitle className="text-base">Detalhamento Diário</CardTitle>
@@ -873,11 +870,11 @@ export function EvolucaoTabLegacy({ pedidos, devolucoes, vendedoresPerformance, 
                       type="button"
                       onClick={() => { setSelectedDate(dia.data); setDrillDate(dia.data); }}
                       className={cn(
-                        "relative p-3 rounded-xl border text-center transition-all duration-300 hover:-translate-y-1 hover:shadow-lg cursor-pointer group overflow-hidden",
-                        isSelected && "ring-2 ring-primary ring-offset-2 ring-offset-background shadow-xl shadow-primary/30 scale-[1.02]",
-                        isTop && !isSelected && "border-success/40 bg-success/5 hover:shadow-success/30",
-                        isLow && !isSelected && "border-destructive/40 bg-destructive/5 hover:shadow-destructive/30",
-                        !isTop && !isLow && !isSelected && "border-border/50 bg-card hover:border-primary/30 hover:shadow-primary/20",
+                        "relative p-3 rounded-lg border text-center transition-colors duration-300 cursor-pointer group overflow-hidden",
+                        isSelected && "ring-2 ring-primary ring-offset-2 ring-offset-background",
+                        isTop && !isSelected && "border-success/40 bg-success/5",
+                        isLow && !isSelected && "border-destructive/40 bg-destructive/5",
+                        !isTop && !isLow && !isSelected && "border-border/50 bg-card hover:border-primary/30",
                         "animate-in fade-in-0 zoom-in-95",
                       )}
                       style={{ animationDelay: `${i * 30}ms` }}
@@ -929,7 +926,7 @@ export function EvolucaoTabLegacy({ pedidos, devolucoes, vendedoresPerformance, 
           )}
           {!isEmpresa1001 && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <Card className="lg:col-span-2 border-border/50 backdrop-blur-sm">
+            <Card className="lg:col-span-2 border-border/50 bg-card">
               <CardHeader className="pb-2 flex flex-row items-center justify-between">
                 <CardTitle className="text-base flex items-center gap-2">
                   <BarChart3 className="h-4 w-4 text-primary" />
@@ -946,9 +943,9 @@ export function EvolucaoTabLegacy({ pedidos, devolucoes, vendedoresPerformance, 
               </CardHeader>
               <CardContent>
                 <div className={cn(
-                  "relative mb-3 rounded-xl border transition-all duration-200 overflow-hidden",
+                  "relative mb-3 rounded-lg border transition-colors duration-200 overflow-hidden",
                   hoveredMonth
-                    ? "border-primary/40 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent shadow-md shadow-primary/10"
+                    ? "border-primary/40 bg-primary/8"
                     : "border-dashed border-border/40 bg-muted/20"
                 )}>
                   <div className="px-3 py-2 flex items-center justify-between gap-3">
@@ -967,7 +964,7 @@ export function EvolucaoTabLegacy({ pedidos, devolucoes, vendedoresPerformance, 
                             </div>
                           </div>
                         </div>
-                        <Button size="sm" className="h-7 text-xs gap-1.5 shrink-0 shadow-md shadow-primary/20" onClick={() => setMonthDrill(hoveredMonth.mesKey)}>
+                        <Button size="sm" className="h-7 text-xs gap-1.5 shrink-0" onClick={() => setMonthDrill(hoveredMonth.mesKey)}>
                           <MousePointerClick className="h-3 w-3" />
                           Ver mês
                         </Button>
@@ -1004,7 +1001,7 @@ export function EvolucaoTabLegacy({ pedidos, devolucoes, vendedoresPerformance, 
                       <Legend wrapperStyle={{ fontSize: 11 }} />
                       <Bar dataKey="vendas" name="Vendas" radius={[6, 6, 0, 0]} onClick={(d: any) => d?.mesKey && setMonthDrill(d.mesKey)}>
                         {dadosEvolucaoMensal.map((m, i) => (
-                          <Cell key={i} fill={hoveredMonth?.mesKey === m.mesKey ? 'url(#mensalGradActive)' : 'url(#mensalGrad)'} style={{ filter: hoveredMonth?.mesKey === m.mesKey ? 'drop-shadow(0 0 8px hsl(var(--primary)/0.5))' : undefined }} />
+                          <Cell key={i} fill={hoveredMonth?.mesKey === m.mesKey ? 'url(#mensalGradActive)' : 'url(#mensalGrad)'} />
                         ))}
                       </Bar>
                       <Bar dataKey="devolucoes" name="Devoluções" fill="hsl(var(--destructive))" fillOpacity={0.7} radius={[6, 6, 0, 0]} onClick={(d: any) => d?.mesKey && setMonthDrill(d.mesKey)} />
@@ -1015,7 +1012,7 @@ export function EvolucaoTabLegacy({ pedidos, devolucoes, vendedoresPerformance, 
               </CardContent>
             </Card>
 
-            <Card className="border-border/50 backdrop-blur-sm">
+            <Card className="border-border/50 bg-card">
               <CardHeader className="pb-2">
                 <CardTitle className="text-base flex items-center gap-2">
                   <CalendarRange className="h-4 w-4 text-primary" />
@@ -1039,7 +1036,7 @@ export function EvolucaoTabLegacy({ pedidos, devolucoes, vendedoresPerformance, 
                       onMouseEnter={() => setHoveredMonth(mes)}
                       className={cn(
                         "w-full text-left space-y-1 rounded-lg p-2 transition-all duration-200",
-                        isActive ? "bg-primary/10 ring-1 ring-primary/40 shadow-md shadow-primary/10" : "hover:bg-muted/40",
+                        isActive ? "bg-primary/10 ring-1 ring-primary/40" : "hover:bg-muted/40",
                       )}
                     >
                       <div className="flex justify-between items-center text-sm">
@@ -1060,7 +1057,7 @@ export function EvolucaoTabLegacy({ pedidos, devolucoes, vendedoresPerformance, 
                       <div className="relative h-1.5 rounded-full bg-muted/40 overflow-hidden">
                         <div className={cn(
                           "absolute inset-y-0 left-0 rounded-full transition-all duration-700",
-                          isActive ? "bg-gradient-to-r from-primary via-primary/80 to-primary/60 shadow-[0_0_10px] shadow-primary/50" : "bg-gradient-to-r from-primary to-primary/60",
+                          isActive ? "bg-primary" : "bg-primary/70",
                         )} style={{ width: `${progresso}%` }} />
                       </div>
                       <div className="flex justify-between text-[10px] text-muted-foreground">
@@ -1076,7 +1073,7 @@ export function EvolucaoTabLegacy({ pedidos, devolucoes, vendedoresPerformance, 
           )}
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card className="border-border/50 backdrop-blur-sm">
+            <Card className="border-border/50 bg-card">
               <CardHeader className="pb-2">
                 <CardTitle className="text-base flex items-center gap-2">
                   <Target className="h-4 w-4 text-chart-3" />
@@ -1104,7 +1101,7 @@ export function EvolucaoTabLegacy({ pedidos, devolucoes, vendedoresPerformance, 
               </CardContent>
             </Card>
 
-            <Card className="border-border/50 backdrop-blur-sm">
+            <Card className="border-border/50 bg-card">
               <CardHeader className="pb-2">
                 <CardTitle className="text-base flex items-center gap-2">
                   <Users className="h-4 w-4 text-chart-4" />
@@ -1136,7 +1133,7 @@ export function EvolucaoTabLegacy({ pedidos, devolucoes, vendedoresPerformance, 
 
         {/* ============== POR VENDEDOR ============== */}
         <TabsContent value="vendedor" className="mt-6 space-y-6 animate-in fade-in-0 slide-in-from-bottom-1 duration-300">
-          <Card className="border-border/50 backdrop-blur-sm">
+          <Card className="border-border/50 bg-card">
             <CardHeader className="pb-2 flex flex-row items-start justify-between gap-3">
               <div>
                 <CardTitle className="text-base flex items-center gap-2">
@@ -1153,9 +1150,9 @@ export function EvolucaoTabLegacy({ pedidos, devolucoes, vendedoresPerformance, 
             </CardHeader>
             <CardContent>
               <div className={cn(
-                "relative mb-3 rounded-xl border transition-all duration-200 overflow-hidden",
+                "relative mb-3 rounded-lg border transition-colors duration-200 overflow-hidden",
                 hoveredSeller
-                  ? "border-primary/40 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent shadow-md shadow-primary/10"
+                  ? "border-primary/40 bg-primary/8"
                   : "border-dashed border-border/40 bg-muted/20",
               )}>
                 <div className="px-3 py-2 flex items-center justify-between gap-3">
@@ -1177,7 +1174,7 @@ export function EvolucaoTabLegacy({ pedidos, devolucoes, vendedoresPerformance, 
                         <Button size="sm" variant="outline" className="h-7 text-xs gap-1.5" onClick={() => soloOnly(hoveredSeller.nome)}>
                           <Zap className="h-3 w-3" /> Solo
                         </Button>
-                        <Button size="sm" className="h-7 text-xs gap-1.5 shadow-md shadow-primary/20" onClick={() => setSellerDrill(hoveredSeller.nome)}>
+                        <Button size="sm" className="h-7 text-xs gap-1.5" onClick={() => setSellerDrill(hoveredSeller.nome)}>
                           <MousePointerClick className="h-3 w-3" /> Detalhes
                         </Button>
                       </div>
@@ -1211,7 +1208,6 @@ export function EvolucaoTabLegacy({ pedidos, devolucoes, vendedoresPerformance, 
                           strokeOpacity={isHidden ? 0 : (hoveredSeller && !isFocused ? 0.25 : 1)}
                           dot={{ r: isFocused ? 4 : 3 }}
                           activeDot={{ r: 7, cursor: 'pointer', onClick: () => setSellerDrill(v.nome) }}
-                          style={isFocused ? { filter: `drop-shadow(0 0 8px ${CHART_COLORS[i % CHART_COLORS.length]})` } : undefined}
                         />
                       );
                     })}
@@ -1236,13 +1232,13 @@ export function EvolucaoTabLegacy({ pedidos, devolucoes, vendedoresPerformance, 
                   className={cn("transition-all duration-300", isHidden && "opacity-40")}
                 >
                   <Card className={cn(
-                    "relative overflow-hidden border-border/50 backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl",
-                    !isHidden && "hover:shadow-primary/20",
-                    isFocused && "ring-2 ring-primary/50 shadow-xl",
+                    "relative overflow-hidden border-border/50 bg-card transition-colors duration-300",
+                    !isHidden && "hover:border-primary/30",
+                    isFocused && "ring-2 ring-primary/50",
                   )}>
                     <div
                       className="absolute top-0 left-0 h-full transition-all"
-                      style={{ backgroundColor: color, boxShadow: `0 0 12px ${color}`, width: isFocused ? 3 : 4 }}
+                      style={{ backgroundColor: color, width: isFocused ? 3 : 4 }}
                     />
                     <CardContent className="p-4">
                       <div className="flex items-center justify-between gap-2 mb-2">
@@ -1294,7 +1290,7 @@ export function EvolucaoTabLegacy({ pedidos, devolucoes, vendedoresPerformance, 
         {/* ============== COMPARATIVO ============== */}
         <TabsContent value="comparativo" className="mt-6 space-y-6 animate-in fade-in-0 slide-in-from-bottom-1 duration-300">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card className="border-border/50 backdrop-blur-sm">
+            <Card className="border-border/50 bg-card">
               <CardHeader className="pb-2">
                 <CardTitle className="text-base flex items-center gap-2">
                   <BarChart3 className="h-4 w-4 text-primary" />
@@ -1314,9 +1310,9 @@ export function EvolucaoTabLegacy({ pedidos, devolucoes, vendedoresPerformance, 
                         type="button"
                         onClick={() => setHalfFocus(prev => prev === key ? null : key)}
                         className={cn(
-                          "relative p-4 rounded-xl text-center border transition-all duration-300 hover:-translate-y-0.5",
-                          isP2 ? "bg-gradient-to-br from-primary/15 to-primary/5 border-primary/30" : "bg-gradient-to-br from-muted/50 to-muted/20 border-border/40",
-                          isActive && "ring-2 ring-primary/60 shadow-xl shadow-primary/20 -translate-y-0.5",
+                          "relative p-4 rounded-lg text-center border transition-colors duration-300",
+                          isP2 ? "bg-primary/8 border-primary/30 hover:bg-primary/12" : "bg-muted/40 border-border/40 hover:bg-muted/60",
+                          isActive && "ring-2 ring-primary/60",
                         )}
                       >
                         <p className="text-xs text-muted-foreground mb-1 font-medium">{key === 'p1' ? '1ª Metade' : '2ª Metade'}</p>
@@ -1333,9 +1329,9 @@ export function EvolucaoTabLegacy({ pedidos, devolucoes, vendedoresPerformance, 
                 </div>
                 {/* Medidor radial */}
                 <div className={cn(
-                  "p-5 rounded-xl text-center border backdrop-blur-sm relative overflow-hidden transition-all",
-                  comparativoPeriodos.variacao > 0 ? "bg-gradient-to-br from-success/15 to-success/5 border-success/30" :
-                  comparativoPeriodos.variacao < 0 ? "bg-gradient-to-br from-destructive/15 to-destructive/5 border-destructive/30" :
+                  "p-5 rounded-lg text-center border relative overflow-hidden transition-colors",
+                  comparativoPeriodos.variacao > 0 ? "bg-success/10 border-success/30" :
+                  comparativoPeriodos.variacao < 0 ? "bg-destructive/10 border-destructive/30" :
                   "bg-muted/30 border-border/40",
                 )}>
                   <div className="flex items-center justify-center gap-4">
@@ -1358,7 +1354,7 @@ export function EvolucaoTabLegacy({ pedidos, devolucoes, vendedoresPerformance, 
                             strokeLinecap="round"
                             strokeDasharray={`${dash} ${c}`}
                             transform="rotate(-90 40 40)"
-                            style={{ transition: 'stroke-dasharray 800ms cubic-bezier(.2,.8,.2,1)', filter: `drop-shadow(0 0 6px ${stroke})` }}
+                            style={{ transition: 'stroke-dasharray 800ms cubic-bezier(.2,.8,.2,1)' }}
                           />
                           <text x="40" y="44" textAnchor="middle" className="fill-foreground" style={{ fontSize: '13px', fontWeight: 700 }}>
                             {Math.round(pct)}%
@@ -1390,7 +1386,7 @@ export function EvolucaoTabLegacy({ pedidos, devolucoes, vendedoresPerformance, 
               </CardContent>
             </Card>
 
-            <Card className="border-border/50 backdrop-blur-sm">
+            <Card className="border-border/50 bg-card">
               <CardHeader className="pb-2">
                 <CardTitle className="text-base flex items-center gap-2">
                   <Calendar className="h-4 w-4 text-chart-2" />
@@ -1432,7 +1428,7 @@ export function EvolucaoTabLegacy({ pedidos, devolucoes, vendedoresPerformance, 
                         <div className="relative h-2 rounded-full bg-muted/40 overflow-hidden mt-1">
                           <div className={cn(
                             "absolute inset-y-0 left-0 rounded-full transition-all duration-500",
-                            isMax ? "bg-gradient-to-r from-primary to-primary/70 group-hover:shadow-[0_0_8px] group-hover:shadow-primary/50" : "bg-gradient-to-r from-chart-2 to-chart-2/60 group-hover:shadow-[0_0_6px] group-hover:shadow-chart-2/40",
+                            isMax ? "bg-primary" : "bg-chart-2/70",
                           )} style={{ width: `${dia.percentual}%` }} />
                         </div>
                       </button>
@@ -1443,7 +1439,7 @@ export function EvolucaoTabLegacy({ pedidos, devolucoes, vendedoresPerformance, 
             </Card>
           </div>
 
-          <Card className="border-border/50 backdrop-blur-sm">
+          <Card className="border-border/50 bg-card">
             <CardHeader className="pb-2">
               <CardTitle className="text-base flex items-center gap-2">
                 <LineChartIcon className="h-4 w-4 text-chart-3" />
@@ -1477,7 +1473,7 @@ export function EvolucaoTabLegacy({ pedidos, devolucoes, vendedoresPerformance, 
                     <Legend wrapperStyle={{ fontSize: 11 }} />
                     <Bar yAxisId="left" dataKey="vendas" name="Vendas" radius={[4, 4, 0, 0]} onClick={(d: any) => d?.data && setDrillDate(d.data)}>
                       {dadosEvolucaoDiaria.slice(-30).map((d, i) => (
-                        <Cell key={i} fill={hoveredPoint?.data === d.data ? 'url(#cmpVendasGradActive)' : 'url(#cmpVendasGrad)'} style={{ filter: hoveredPoint?.data === d.data ? 'drop-shadow(0 0 6px hsl(var(--primary)/0.5))' : undefined }} />
+                        <Cell key={i} fill={hoveredPoint?.data === d.data ? 'url(#cmpVendasGradActive)' : 'url(#cmpVendasGrad)'} />
                       ))}
                     </Bar>
                     <Line yAxisId="right" type="monotone" dataKey="pedidos" name="Pedidos" stroke="hsl(var(--chart-3))" strokeWidth={2.5} dot={{ r: 2 }} activeDot={{ r: 6, cursor: 'pointer', onClick: () => hoveredPoint?.data && setDrillDate(hoveredPoint.data) }} />
@@ -1503,8 +1499,7 @@ export function EvolucaoTabLegacy({ pedidos, devolucoes, vendedoresPerformance, 
               </DialogHeader>
               <div className="space-y-4">
                 {/* Card destaque faturamento */}
-                <div className="relative p-5 rounded-xl bg-gradient-to-br from-primary/15 via-primary/5 to-transparent border border-primary/30 overflow-hidden">
-                  <div className="absolute -top-8 -right-8 h-32 w-32 rounded-full bg-primary/15 blur-3xl" />
+                <div className="relative p-5 rounded-lg bg-card border border-primary/30 overflow-hidden">
                   <p className="text-xs text-muted-foreground mb-1">Faturamento do dia</p>
                   <p className="text-3xl font-bold tabular-nums">{formatCurrency(drillData.dia.vendas)}</p>
                   {drillData.dia.devolucoes > 0 && (

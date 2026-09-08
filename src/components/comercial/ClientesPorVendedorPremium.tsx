@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { ChevronLeft, ChevronRight, Users, TrendingUp, Crown, Trophy, Percent, BarChart3, Search, Ticket, Target, Repeat } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 
 type FilterKey = 'todos' | 'ouro' | 'prata' | 'bronze' | 'acima';
 
@@ -45,14 +45,14 @@ interface Props {
 }
 
 const PALETTE = [
-  { from: 'hsl(217, 91%, 60%)', to: 'hsl(217, 91%, 45%)', soft: 'hsl(217, 91%, 60% / 0.12)' },
-  { from: 'hsl(173, 80%, 45%)', to: 'hsl(173, 80%, 32%)', soft: 'hsl(173, 80%, 45% / 0.12)' },
-  { from: 'hsl(280, 65%, 60%)', to: 'hsl(280, 65%, 45%)', soft: 'hsl(280, 65%, 60% / 0.12)' },
-  { from: 'hsl(38, 92%, 55%)',  to: 'hsl(38, 92%, 42%)',  soft: 'hsl(38, 92%, 55% / 0.12)' },
-  { from: 'hsl(330, 75%, 55%)', to: 'hsl(330, 75%, 42%)', soft: 'hsl(330, 75%, 55% / 0.12)' },
-  { from: 'hsl(160, 60%, 45%)', to: 'hsl(160, 60%, 32%)', soft: 'hsl(160, 60%, 45% / 0.12)' },
-  { from: 'hsl(200, 80%, 55%)', to: 'hsl(200, 80%, 42%)', soft: 'hsl(200, 80%, 55% / 0.12)' },
-  { from: 'hsl(45, 85%, 55%)',  to: 'hsl(45, 85%, 42%)',  soft: 'hsl(45, 85%, 55% / 0.12)' },
+  { color: 'hsl(217, 91%, 60%)' },
+  { color: 'hsl(173, 80%, 45%)' },
+  { color: 'hsl(280, 65%, 60%)' },
+  { color: 'hsl(38, 92%, 55%)' },
+  { color: 'hsl(330, 75%, 55%)' },
+  { color: 'hsl(160, 60%, 45%)' },
+  { color: 'hsl(200, 80%, 55%)' },
+  { color: 'hsl(45, 85%, 55%)' },
 ];
 
 const MEDAL = [
@@ -134,11 +134,10 @@ export function ClientesPorVendedorPremium({
     const isTop3 = globalIdx < 3;
     const medal = isTop3 ? MEDAL[globalIdx] : null;
     const pal = PALETTE[globalIdx % PALETTE.length];
-    const accent = medal?.color ?? pal.from;
-    const grad = `linear-gradient(135deg, ${medal?.ring ?? pal.from}, ${accent})`;
+    const accent = medal?.color ?? pal.color;
     const spark = buildSparkline(selected.key + selected.nome, selected.valor);
     const sparkMax = Math.max(...spark);
-    return { isTop3, medal, accent, grad, spark, sparkMax };
+    return { isTop3, medal, accent, spark, sparkMax };
   }, [selected]);
 
   return (
@@ -185,15 +184,12 @@ export function ClientesPorVendedorPremium({
                       key={f.key}
                       onClick={() => { setFilter(f.key); setPage(0); }}
                       className={cn(
-                        'text-[10px] font-semibold uppercase tracking-wider px-2.5 py-1 rounded-full border transition-all',
+                        'text-[10px] font-semibold uppercase tracking-wider px-2.5 py-1 rounded-full border transition-colors',
                         active
-                          ? 'text-background border-transparent shadow-sm'
+                          ? 'bg-primary text-primary-foreground border-primary'
                           : 'text-muted-foreground border-border/60 hover:text-foreground hover:border-border',
                       )}
-                      style={active ? {
-                        background: f.color ?? 'hsl(var(--primary))',
-                        boxShadow: f.color ? `0 0 10px ${f.color}66` : undefined,
-                      } : undefined}
+                      style={active && f.color ? { background: f.color, borderColor: f.color } : undefined}
                     >
                       {f.label}
                     </button>
@@ -213,8 +209,7 @@ export function ClientesPorVendedorPremium({
                 const isTop3 = globalIdx < 3;
                 const medal = isTop3 ? MEDAL[globalIdx] : null;
                 const pal = PALETTE[globalIdx % PALETTE.length];
-                const accent = medal?.color ?? pal.from;
-                const grad = `linear-gradient(135deg, ${medal?.ring ?? pal.from}, ${accent})`;
+                const accent = medal?.color ?? pal.color;
                 const isUp = item.vsMedia >= 0;
 
 
@@ -223,48 +218,39 @@ export function ClientesPorVendedorPremium({
                     key={item.key}
                     onClick={() => setSelectedKey(item.key)}
                     className={cn(
-                      'cpv-tile group relative rounded-xl p-3 overflow-hidden cursor-pointer',
-                      'border bg-card/40 backdrop-blur-sm',
-                      isTop3 ? 'border-transparent' : 'border-border/50',
-                      'transition-all duration-300 ease-out',
-                      'hover:-translate-y-0.5 hover:shadow-lg',
+                      'cpv-tile group relative rounded-lg p-3 overflow-hidden cursor-pointer',
+                      'border bg-card',
+                      isTop3 ? 'border-primary/25' : 'border-border/50',
+                      'transition-colors duration-200 ease-out',
+                      'hover:border-primary/35 hover:bg-muted/30',
                     )}
                     style={{
                       animation: `cpvIn 380ms ${Math.min(idxInPage * 45, 360)}ms ease-out backwards`,
-                      ...(isTop3 ? { boxShadow: `inset 0 0 0 1px ${accent}8c` } : {}),
+                      ...(isTop3 ? { borderColor: accent } : {}),
                     }}
                   >
-                    {/* glow on hover */}
-                    <span
-                      className="cpv-glow absolute inset-0 transition-opacity duration-300 pointer-events-none opacity-0 group-hover:opacity-100"
-                      style={{
-                        background: `radial-gradient(120% 80% at 0% 0%, ${pal.soft}, transparent 60%)`,
-                        boxShadow: `inset 0 0 0 1px ${accent}66, 0 10px 30px -12px ${accent}66`,
-                      }}
-                    />
-
                     <div className="relative">
                       {/* top row: avatar + name + rank */}
                       <div className="relative flex items-start gap-2.5">
                         <div className="relative flex-shrink-0">
                           <div
-                            className="w-9 h-9 rounded-lg flex items-center justify-center text-[11px] font-bold text-background tabular-nums shadow-sm"
+                            className="w-9 h-9 rounded-lg flex items-center justify-center text-[11px] font-bold tabular-nums border bg-muted/40"
                             style={{
-                              background: grad,
-                              boxShadow: `0 0 0 1px ${accent}40, 0 4px 12px -2px ${accent}55`,
+                              borderColor: accent,
+                              color: accent,
                             }}
                           >
                             {initials(item.nome)}
                           </div>
                           {isTop3 && (
                             <span
-                              className="absolute -top-1 -right-1 w-4 h-4 rounded-full flex items-center justify-center"
+                              className="absolute -top-1 -right-1 w-4 h-4 rounded-full flex items-center justify-center border bg-card"
                               style={{
-                                background: grad,
-                                boxShadow: `0 0 8px ${accent}cc`,
+                                borderColor: accent,
+                                color: accent,
                               }}
                             >
-                              <Crown className="h-2.5 w-2.5 text-background" strokeWidth={3} />
+                              <Crown className="h-2.5 w-2.5" strokeWidth={3} />
                             </span>
                           )}
                         </div>
@@ -279,7 +265,7 @@ export function ClientesPorVendedorPremium({
                                 className="text-[9px] font-bold tracking-wider px-1.5 py-0.5 rounded"
                                 style={{
                                   color: accent,
-                                  background: `${accent}1f`,
+                                  border: `1px solid ${accent}`,
                                 }}
                               >
                                 {medal.label}
@@ -335,8 +321,7 @@ export function ClientesPorVendedorPremium({
                             className="cpv-bar absolute inset-y-0 left-0 rounded-full"
                             style={{
                               width: `${Math.max(item.pctMax, 3)}%`,
-                              background: grad,
-                              boxShadow: `0 0 8px ${accent}99`,
+                              background: accent,
                               animationDelay: `${Math.min(idxInPage * 45, 360)}ms`,
                             }}
                           />
@@ -375,7 +360,7 @@ export function ClientesPorVendedorPremium({
                         className={cn(
                           'h-6 min-w-6 px-1.5 text-[11px] font-semibold rounded-md tabular-nums transition-all',
                           p === safePage
-                            ? 'bg-primary text-primary-foreground shadow-[0_0_10px_hsl(var(--primary)/0.4)]'
+                            ? 'bg-primary text-primary-foreground'
                             : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground',
                         )}
                       >
@@ -405,7 +390,7 @@ export function ClientesPorVendedorPremium({
       <Dialog open={!!selected} onOpenChange={(o) => !o && setSelectedKey(null)}>
         <DialogContent className="max-w-lg p-0 overflow-hidden border-border/60 bg-card">
           {selected && selectedMeta && (() => {
-            const { accent, grad, spark } = selectedMeta;
+            const { accent, spark } = selectedMeta;
             const selectedAny = selected as unknown as {
               historicoValores?: number[];
               evolucao?: Array<number | { valor?: number; value?: number }>;
@@ -429,8 +414,7 @@ export function ClientesPorVendedorPremium({
               <div className="relative">
                 {/* compact header */}
                 <div
-                  className="px-5 py-3 border-b border-border/40 flex items-center justify-between gap-3"
-                  style={{ background: `radial-gradient(120% 100% at 0% 0%, ${accent}14, transparent 70%)` }}
+                  className="px-5 py-3 border-b border-border/40 bg-muted/30 flex items-center justify-between gap-3"
                 >
                   <DialogTitle className="text-sm font-semibold text-foreground truncate">
                     {selected.nome}
@@ -531,12 +515,6 @@ export function ClientesPorVendedorPremium({
                     <div className="h-44">
                       <ResponsiveContainer width="100%" height="100%">
                         <BarChart data={chartData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-                          <defs>
-                            <linearGradient id={`cpvBarGrad-${selected.key}`} x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="0%" stopColor={accent} stopOpacity={0.95} />
-                              <stop offset="100%" stopColor={accent} stopOpacity={0.55} />
-                            </linearGradient>
-                          </defs>
                           <XAxis
                             dataKey="periodo"
                             tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
@@ -575,11 +553,10 @@ export function ClientesPorVendedorPremium({
 
 
       <style>{`
-        @keyframes cpvIn { from { opacity: 0; transform: translateY(8px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+        @keyframes cpvIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes cpvBarFill { from { transform: scaleX(0); } to { transform: scaleX(1); } }
         @keyframes cpvBarRise { from { transform: scaleY(0); opacity: 0; } to { transform: scaleY(1); opacity: 1; } }
         .cpv-bar { transform-origin: left center; animation: cpvBarFill 720ms cubic-bezier(0.22, 0.9, 0.32, 1) backwards; }
-        .cpv-tile:hover { background: hsl(var(--card) / 0.7); }
       `}</style>
     </Card>
   );

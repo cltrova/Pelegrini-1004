@@ -129,7 +129,7 @@ export function SmartAlerts({ kpis, vendedores, evolucao }: Props) {
   }, [kpis, vendedores, evolucao]);
 
   return (
-    <div className="rounded-2xl border border-border/50 bg-card/60 backdrop-blur-md p-5">
+    <div className="rounded-lg border border-border/60 bg-card p-5">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <div className="h-7 w-7 rounded-lg bg-destructive/15 flex items-center justify-center">
@@ -153,14 +153,13 @@ export function SmartAlerts({ kpis, vendedores, evolucao }: Props) {
             <div
               key={a.id}
               className={cn(
-                'group relative rounded-xl border p-2.5 flex items-start gap-2.5 transition-all duration-300 hover:scale-[1.01] hover:shadow-lg cursor-default',
+                'group relative rounded-lg border p-2.5 flex items-start gap-2.5 transition-colors duration-200 hover:bg-muted/30 cursor-default',
                 s.bg, s.border,
               )}
             >
               <div className={cn(
                 'h-8 w-8 rounded-lg flex items-center justify-center shrink-0',
                 s.bg, s.color,
-                s.pulse && 'animate-pulse',
               )}>
                 <Icon className="h-4 w-4" />
               </div>
@@ -169,7 +168,7 @@ export function SmartAlerts({ kpis, vendedores, evolucao }: Props) {
                 <p className="text-[11px] text-muted-foreground leading-snug mt-0.5">{a.detalhe}</p>
               </div>
               {s.pulse && (
-                <div className={cn('absolute top-2 right-2 h-1.5 w-1.5 rounded-full animate-ping', a.severity === 'critico' && 'bg-destructive')} />
+                <div className={cn('absolute top-2 right-2 h-1.5 w-1.5 rounded-full', a.severity === 'critico' && 'bg-destructive')} />
               )}
             </div>
           );

@@ -45,7 +45,7 @@ export function PedidosFaturadosDialog({ open, onOpenChange, pedidos, onPedidoCl
     for (const p of pedidos || []) {
       if ((p.tipo || 'PEDIDO') !== 'PEDIDO') continue;
       if (!p.data_faturamento) continue;
-      const numero = String((p as any).numero ?? (p as any).num_nf ?? p.id ?? '').trim();
+      const numero = String(p.numero ?? p.num_nf ?? p.id ?? '').trim();
       const key = numero || String(p.id);
       const cliente = String(p.cliente_fantasia || p.cliente_razao || '—');
       const dataFat = String(p.data_faturamento).substring(0, 10);
@@ -153,7 +153,7 @@ export function PedidosFaturadosDialog({ open, onOpenChange, pedidos, onPedidoCl
             </div>
           ) : (
             <table className="w-full text-sm">
-              <thead className="sticky top-0 bg-muted/60 backdrop-blur border-b">
+              <thead className="sticky top-0 bg-muted border-b">
                 <tr className="text-xs uppercase text-muted-foreground">
                   <th className="text-left px-3 py-2 font-semibold">Cliente</th>
                   <th className="text-left px-3 py-2 font-semibold">Nº Pedido</th>

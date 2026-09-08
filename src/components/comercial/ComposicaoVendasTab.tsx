@@ -38,7 +38,8 @@ interface MarcaAgg {
 function normMarca(p: ProdutoItem): string {
   const nome = (p.marca || '').toString().trim().toUpperCase();
   if (nome) return nome;
-  const cod = (p as any).cod_marca ? String((p as any).cod_marca).trim() : '';
+  const codMarca = (p as Record<string, unknown>).cod_marca;
+  const cod = codMarca ? String(codMarca).trim() : '';
   return cod ? `MARCA ${cod}` : 'SEM MARCA';
 }
 
@@ -211,7 +212,7 @@ export function ComposicaoVendasTab({ produtos, isLoading, periodoLabel }: Props
         </div>
       </div>
 
-      <div className="rounded-xl border border-white/10 overflow-hidden bg-card">
+      <div className="rounded-lg border border-white/10 overflow-hidden bg-card">
         <div className="grid grid-cols-[minmax(200px,1.4fr)_minmax(220px,2fr)_minmax(260px,3fr)_110px_150px_90px] gap-2 px-3 py-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground bg-white/[0.03] border-b border-white/10">
           <div>Marca</div>
           <div>Cliente</div>

@@ -34,10 +34,10 @@ function UsuariosPageContent() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden bg-background">
       {/* Header */}
-      <div className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-10">
-        <div className="container mx-auto px-4 py-4">
+      <div className="shrink-0 border-b bg-card/50 backdrop-blur-sm">
+        <div className="container mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <Button
@@ -69,7 +69,7 @@ function UsuariosPageContent() {
       </div>
 
       {/* Content */}
-      <div className="container mx-auto px-4 py-6 space-y-6">
+      <div className="container mx-auto min-h-0 flex-1 space-y-3 overflow-auto px-4 py-4">
         {/* Info Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card>

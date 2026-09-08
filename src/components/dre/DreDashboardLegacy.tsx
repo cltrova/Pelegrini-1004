@@ -397,11 +397,11 @@ export function DreDashboardLegacy({
       {/* Linha 1: Grupo Raiz + Distribuição por Categoria */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Grupo Raiz - Layout detalhado */}
-        <div className="bg-card rounded-xl border border-border p-4 lg:col-span-2">
+        <div className="bg-card rounded-lg border border-border p-4 lg:col-span-2">
           <CardHeader title="Resultado por Grupo Raiz" description={analysisDescriptions.grupoRaiz} />
           <div className="space-y-1">
             {/* Vendas Líquidas de Devolução */}
-            <div className="dre-row-hover flex items-center rounded-md border-l-4" style={{ borderLeftColor: 'hsl(210, 70%, 50%)', backgroundColor: 'hsl(210, 70%, 50%, 0.1)', '--dre-row-color': 'hsl(210, 70%, 50%, 0.4)', '--dre-row-color-bg-hover': 'hsl(210, 70%, 50%, 0.25)' } as React.CSSProperties}>
+            <div className="flex items-center rounded-md border-l-4 transition-colors hover:bg-muted/40" style={{ borderLeftColor: 'hsl(210, 70%, 50%)', backgroundColor: 'hsl(210, 70%, 50%, 0.1)', '--dre-row-color': 'hsl(210, 70%, 50%, 0.4)', '--dre-row-color-bg-hover': 'hsl(210, 70%, 50%, 0.25)' } as React.CSSProperties}>
               <span className="flex-1 px-3 py-2 text-sm font-bold text-foreground flex items-center gap-1">
                 Vendas Líquidas de Devolução
                 <TooltipProvider delayDuration={0}><UITooltip><TooltipTrigger asChild><Info className="h-3 w-3 text-muted-foreground cursor-help relative z-50" /></TooltipTrigger><TooltipContent side="top" className="max-w-sm z-[100]"><div className="text-xs space-y-0.5"><p className="font-semibold mb-1">Composição:</p><p>• Receitas</p><p>• Devoluções</p><p className="mt-1 text-muted-foreground">Base para todos os percentuais (AV%)</p></div></TooltipContent></UITooltip></TooltipProvider>
@@ -410,7 +410,7 @@ export function DreDashboardLegacy({
               <span className="px-3 py-2 text-sm font-bold text-foreground w-24 text-right">{analiseGrupoRaiz.vendasLiquidas.pct.toFixed(2)}%</span>
             </div>
             {/* Lucro Bruto */}
-            <div className="dre-row-hover flex items-center rounded-md border-l-4" style={{ borderLeftColor: 'hsl(50, 70%, 45%)', backgroundColor: 'hsl(50, 70%, 45%, 0.1)', '--dre-row-color': 'hsl(50, 70%, 45%, 0.4)', '--dre-row-color-bg-hover': 'hsl(50, 70%, 45%, 0.25)' } as React.CSSProperties}>
+            <div className="flex items-center rounded-md border-l-4 transition-colors hover:bg-muted/40" style={{ borderLeftColor: 'hsl(50, 70%, 45%)', backgroundColor: 'hsl(50, 70%, 45%, 0.1)', '--dre-row-color': 'hsl(50, 70%, 45%, 0.4)', '--dre-row-color-bg-hover': 'hsl(50, 70%, 45%, 0.25)' } as React.CSSProperties}>
               <span className="flex-1 px-3 py-2 text-sm font-bold text-foreground flex items-center gap-1">
                 Lucro Bruto
                 <TooltipProvider delayDuration={0}><UITooltip><TooltipTrigger asChild><Info className="h-3 w-3 text-muted-foreground cursor-help relative z-50" /></TooltipTrigger><TooltipContent side="top" className="max-w-sm z-[100]"><div className="text-xs space-y-0.5"><p className="font-semibold mb-1">Composição:</p><p>• Receitas</p><p>• (-) Deduções de Receita</p><p>• Custos de Vendas de Mercadorias</p><p>• Custos de Vendas de Serviços</p><p className="mt-1 text-muted-foreground">% = Lucro Bruto ÷ |Vendas Líquidas|</p></div></TooltipContent></UITooltip></TooltipProvider>
@@ -419,7 +419,7 @@ export function DreDashboardLegacy({
               <span className="px-3 py-2 text-sm font-bold text-foreground w-24 text-right">{analiseGrupoRaiz.lucroBruto.pct.toFixed(2)}%</span>
             </div>
             {/* Despesas Fixas */}
-            <div className="dre-row-hover flex items-center rounded-md border-l-4" style={{ borderLeftColor: 'hsl(180, 100%, 40%)', backgroundColor: 'hsl(180, 100%, 40%, 0.1)', '--dre-row-color': 'hsl(180, 100%, 40%, 0.4)', '--dre-row-color-bg-hover': 'hsl(180, 100%, 40%, 0.25)' } as React.CSSProperties}>
+            <div className="flex items-center rounded-md border-l-4 transition-colors hover:bg-muted/40" style={{ borderLeftColor: 'hsl(180, 100%, 40%)', backgroundColor: 'hsl(180, 100%, 40%, 0.1)', '--dre-row-color': 'hsl(180, 100%, 40%, 0.4)', '--dre-row-color-bg-hover': 'hsl(180, 100%, 40%, 0.25)' } as React.CSSProperties}>
               <span className="flex-1 px-3 py-2 text-sm font-semibold text-foreground flex items-center gap-1">
                 Despesas Fixas
                 <button onClick={() => setShowDespFixasDialog(true)} className="text-muted-foreground hover:text-primary transition-colors relative z-50" title="Gerenciar contas">
@@ -431,7 +431,7 @@ export function DreDashboardLegacy({
               <span className="px-3 py-2 text-sm font-semibold text-foreground w-24 text-right">{analiseGrupoRaiz.despFixas.pct.toFixed(2)}%</span>
             </div>
             {/* Despesas Variáveis */}
-            <div className="dre-row-hover flex items-center rounded-md border-l-4" style={{ borderLeftColor: 'hsl(0, 0%, 60%)', backgroundColor: 'hsl(0, 0%, 60%, 0.1)', '--dre-row-color': 'hsl(0, 0%, 60%, 0.4)', '--dre-row-color-bg-hover': 'hsl(0, 0%, 60%, 0.25)' } as React.CSSProperties}>
+            <div className="flex items-center rounded-md border-l-4 transition-colors hover:bg-muted/40" style={{ borderLeftColor: 'hsl(0, 0%, 60%)', backgroundColor: 'hsl(0, 0%, 60%, 0.1)', '--dre-row-color': 'hsl(0, 0%, 60%, 0.4)', '--dre-row-color-bg-hover': 'hsl(0, 0%, 60%, 0.25)' } as React.CSSProperties}>
               <span className="flex-1 px-3 py-2 text-sm font-semibold text-foreground flex items-center gap-1">
                 Despesas Variáveis
                 <button onClick={() => setShowDespVarDialog(true)} className="text-muted-foreground hover:text-primary transition-colors relative z-50" title="Gerenciar contas">
@@ -443,7 +443,7 @@ export function DreDashboardLegacy({
               <span className="px-3 py-2 text-sm font-semibold text-foreground w-24 text-right">{analiseGrupoRaiz.despVariaveis.pct.toFixed(2)}%</span>
             </div>
             {/* Total Despesas */}
-            <div className="dre-row-hover flex items-center rounded-md border-l-4" style={{ borderLeftColor: 'hsl(0, 80%, 55%)', backgroundColor: 'hsl(0, 80%, 55%, 0.1)', '--dre-row-color': 'hsl(0, 80%, 55%, 0.4)', '--dre-row-color-bg-hover': 'hsl(0, 80%, 55%, 0.25)' } as React.CSSProperties}>
+            <div className="flex items-center rounded-md border-l-4 transition-colors hover:bg-muted/40" style={{ borderLeftColor: 'hsl(0, 80%, 55%)', backgroundColor: 'hsl(0, 80%, 55%, 0.1)', '--dre-row-color': 'hsl(0, 80%, 55%, 0.4)', '--dre-row-color-bg-hover': 'hsl(0, 80%, 55%, 0.25)' } as React.CSSProperties}>
               <span className="flex-1 px-3 py-2 text-sm font-bold text-foreground flex items-center gap-1">
                 Total Despesas
                 <TooltipProvider delayDuration={0}><UITooltip><TooltipTrigger asChild><Info className="h-3 w-3 text-muted-foreground cursor-help relative z-50" /></TooltipTrigger><TooltipContent side="top" className="max-w-sm z-[100]"><div className="text-xs space-y-0.5"><p className="font-semibold mb-1">Composição:</p><p>• Despesas Fixas</p><p>• Despesas Variáveis</p><p className="mt-1 text-muted-foreground">% = |Total Desp.| ÷ |Vendas Líquidas|</p></div></TooltipContent></UITooltip></TooltipProvider>
@@ -452,7 +452,7 @@ export function DreDashboardLegacy({
               <span className="px-3 py-2 text-sm font-bold text-foreground w-24 text-right">{analiseGrupoRaiz.totalDespesas.pct.toFixed(2)}%</span>
             </div>
             {/* Custo Médio */}
-            <div className="dre-row-hover flex items-center rounded-md border-l-4" style={{ borderLeftColor: 'hsl(30, 100%, 55%)', backgroundColor: 'hsl(30, 100%, 55%, 0.1)', '--dre-row-color': 'hsl(30, 100%, 55%, 0.4)', '--dre-row-color-bg-hover': 'hsl(30, 100%, 55%, 0.25)' } as React.CSSProperties}>
+            <div className="flex items-center rounded-md border-l-4 transition-colors hover:bg-muted/40" style={{ borderLeftColor: 'hsl(30, 100%, 55%)', backgroundColor: 'hsl(30, 100%, 55%, 0.1)', '--dre-row-color': 'hsl(30, 100%, 55%, 0.4)', '--dre-row-color-bg-hover': 'hsl(30, 100%, 55%, 0.25)' } as React.CSSProperties}>
               <span className="flex-1 px-3 py-2 text-sm font-semibold text-foreground flex items-center gap-1">
                 Custo Médio
                 <TooltipProvider delayDuration={0}><UITooltip><TooltipTrigger asChild><Info className="h-3 w-3 text-muted-foreground cursor-help relative z-50" /></TooltipTrigger><TooltipContent side="top" className="max-w-sm z-[100]"><div className="text-xs space-y-0.5"><p className="font-semibold mb-1">Fórmula:</p><p>• |Custos de Vendas de Mercadorias|</p><p>• ÷ |Vendas Líquidas|</p></div></TooltipContent></UITooltip></TooltipProvider>
@@ -461,7 +461,7 @@ export function DreDashboardLegacy({
               <span className="px-3 py-2 text-sm font-semibold text-foreground w-24 text-right">{analiseGrupoRaiz.custoMedio.pct.toFixed(2)}%</span>
             </div>
             {/* Lucro Operacional */}
-            <div className="dre-row-hover flex items-center rounded-md border-l-4" style={{ borderLeftColor: 'hsl(120, 100%, 35%)', backgroundColor: 'hsl(120, 100%, 35%, 0.1)', '--dre-row-color': 'hsl(120, 100%, 35%, 0.4)', '--dre-row-color-bg-hover': 'hsl(120, 100%, 35%, 0.25)' } as React.CSSProperties}>
+            <div className="flex items-center rounded-md border-l-4 transition-colors hover:bg-muted/40" style={{ borderLeftColor: 'hsl(120, 100%, 35%)', backgroundColor: 'hsl(120, 100%, 35%, 0.1)', '--dre-row-color': 'hsl(120, 100%, 35%, 0.4)', '--dre-row-color-bg-hover': 'hsl(120, 100%, 35%, 0.25)' } as React.CSSProperties}>
               <span className="flex-1 px-3 py-2 text-sm font-bold text-foreground flex items-center gap-1">
                 Lucro Operacional
                 <TooltipProvider delayDuration={0}><UITooltip><TooltipTrigger asChild><Info className="h-3 w-3 text-muted-foreground cursor-help relative z-50" /></TooltipTrigger><TooltipContent side="top" className="max-w-sm z-[100]"><div className="text-xs space-y-0.5"><p className="font-semibold mb-1">Composição:</p><p>• Lucro Bruto</p><p>• + Total Despesas</p><p>• + Resultado Financeiro</p><p>• + Outras Receitas/Despesas</p><p className="mt-1 text-muted-foreground">% = Lucro Op. ÷ |Vendas Líquidas|</p></div></TooltipContent></UITooltip></TooltipProvider>
@@ -470,7 +470,7 @@ export function DreDashboardLegacy({
               <span className="px-3 py-2 text-sm font-bold text-foreground w-24 text-right">{analiseGrupoRaiz.lucroOperacional.pct.toFixed(2)}%</span>
             </div>
             {/* Resultado Financeiro Líquido */}
-            <div className="dre-row-hover flex items-center rounded-md border-l-4" style={{ borderLeftColor: 'hsl(200, 60%, 50%)', backgroundColor: 'hsl(200, 60%, 50%, 0.1)', '--dre-row-color': 'hsl(200, 60%, 50%, 0.4)', '--dre-row-color-bg-hover': 'hsl(200, 60%, 50%, 0.25)' } as React.CSSProperties}>
+            <div className="flex items-center rounded-md border-l-4 transition-colors hover:bg-muted/40" style={{ borderLeftColor: 'hsl(200, 60%, 50%)', backgroundColor: 'hsl(200, 60%, 50%, 0.1)', '--dre-row-color': 'hsl(200, 60%, 50%, 0.4)', '--dre-row-color-bg-hover': 'hsl(200, 60%, 50%, 0.25)' } as React.CSSProperties}>
               <span className="flex-1 px-3 py-2 text-sm font-semibold text-foreground flex items-center gap-1">
                 Resultado Financeiro Líquido
                 <TooltipProvider delayDuration={0}><UITooltip><TooltipTrigger asChild><Info className="h-3 w-3 text-muted-foreground cursor-help relative z-50" /></TooltipTrigger><TooltipContent side="top" className="max-w-sm z-[100]"><div className="text-xs space-y-0.5"><p className="font-semibold mb-1">Composição:</p><p>• Receitas Financeiras</p><p>• Despesas Financeiras</p><p className="mt-1 text-muted-foreground">% = Resultado Financeiro ÷ |Vendas Líquidas|</p></div></TooltipContent></UITooltip></TooltipProvider>
@@ -479,7 +479,7 @@ export function DreDashboardLegacy({
               <span className="px-3 py-2 text-sm font-semibold text-foreground w-24 text-right">{analiseGrupoRaiz.resultadoFinanceiro.pct.toFixed(2)}%</span>
             </div>
             {/* Provisão Para IRPJ e CSLL */}
-            <div className="dre-row-hover flex items-center rounded-md border-l-4" style={{ borderLeftColor: 'hsl(320, 60%, 50%)', backgroundColor: 'hsl(320, 60%, 50%, 0.1)', '--dre-row-color': 'hsl(320, 60%, 50%, 0.4)', '--dre-row-color-bg-hover': 'hsl(320, 60%, 50%, 0.25)' } as React.CSSProperties}>
+            <div className="flex items-center rounded-md border-l-4 transition-colors hover:bg-muted/40" style={{ borderLeftColor: 'hsl(320, 60%, 50%)', backgroundColor: 'hsl(320, 60%, 50%, 0.1)', '--dre-row-color': 'hsl(320, 60%, 50%, 0.4)', '--dre-row-color-bg-hover': 'hsl(320, 60%, 50%, 0.25)' } as React.CSSProperties}>
               <span className="flex-1 px-3 py-2 text-sm font-semibold text-foreground flex items-center gap-1">
                 Provisão Para IRPJ e CSLL
                 <TooltipProvider delayDuration={0}><UITooltip><TooltipTrigger asChild><Info className="h-3 w-3 text-muted-foreground cursor-help relative z-50" /></TooltipTrigger><TooltipContent side="top" className="max-w-sm z-[100]"><div className="text-xs space-y-0.5"><p className="font-semibold mb-1">Composição:</p><p>• Provisão para IRPJ</p><p>• Provisão para CSLL</p><p className="mt-1 text-muted-foreground">% = |Provisão| ÷ |Vendas Líquidas|</p></div></TooltipContent></UITooltip></TooltipProvider>
@@ -488,7 +488,7 @@ export function DreDashboardLegacy({
               <span className="px-3 py-2 text-sm font-semibold text-foreground w-24 text-right">{analiseGrupoRaiz.provisaoIRPJ.pct.toFixed(2)}%</span>
             </div>
             {/* Lucro Final */}
-            <div className="dre-row-hover flex items-center rounded-md border-l-4" style={{ borderLeftColor: 'hsl(140, 80%, 30%)', backgroundColor: 'hsl(140, 80%, 30%, 0.1)', '--dre-row-color': 'hsl(140, 80%, 30%, 0.4)', '--dre-row-color-bg-hover': 'hsl(140, 80%, 30%, 0.25)' } as React.CSSProperties}>
+            <div className="flex items-center rounded-md border-l-4 transition-colors hover:bg-muted/40" style={{ borderLeftColor: 'hsl(140, 80%, 30%)', backgroundColor: 'hsl(140, 80%, 30%, 0.1)', '--dre-row-color': 'hsl(140, 80%, 30%, 0.4)', '--dre-row-color-bg-hover': 'hsl(140, 80%, 30%, 0.25)' } as React.CSSProperties}>
               <span className="flex-1 px-3 py-2 text-sm font-bold text-foreground flex items-center gap-1">
                 Lucro Final
                 <TooltipProvider delayDuration={0}><UITooltip><TooltipTrigger asChild><Info className="h-3 w-3 text-muted-foreground cursor-help relative z-50" /></TooltipTrigger><TooltipContent side="top" className="max-w-sm z-[100]"><div className="text-xs space-y-0.5"><p className="font-semibold mb-1">Composição:</p><p>• Soma total de todas as contas</p><p>• (Resultado líquido do exercício)</p><p className="mt-1 text-muted-foreground">% = Lucro Final ÷ |Vendas Líquidas|</p></div></TooltipContent></UITooltip></TooltipProvider>
@@ -499,7 +499,7 @@ export function DreDashboardLegacy({
             {/* Espaço */}
             <div className="h-2" />
             {/* Markup Médio */}
-            <div className="dre-row-hover flex items-center rounded-md border-l-4" style={{ borderLeftColor: 'hsl(50, 70%, 45%)', backgroundColor: 'hsl(50, 70%, 45%, 0.1)', '--dre-row-color': 'hsl(50, 70%, 45%, 0.4)', '--dre-row-color-bg-hover': 'hsl(50, 70%, 45%, 0.25)' } as React.CSSProperties}>
+            <div className="flex items-center rounded-md border-l-4 transition-colors hover:bg-muted/40" style={{ borderLeftColor: 'hsl(50, 70%, 45%)', backgroundColor: 'hsl(50, 70%, 45%, 0.1)', '--dre-row-color': 'hsl(50, 70%, 45%, 0.4)', '--dre-row-color-bg-hover': 'hsl(50, 70%, 45%, 0.25)' } as React.CSSProperties}>
               <span className="flex-1 px-3 py-2 text-sm font-bold text-foreground flex items-center gap-1">
                 Markup médio
                 <TooltipProvider delayDuration={0}><UITooltip><TooltipTrigger asChild><Info className="h-3 w-3 text-muted-foreground cursor-help relative z-50" /></TooltipTrigger><TooltipContent side="top" className="max-w-sm z-[100]"><div className="text-xs space-y-0.5"><p className="font-semibold mb-1">Fórmula:</p><p>• |Receitas|</p><p>• ÷ (|Impostos| + |CMV/CSV|)</p></div></TooltipContent></UITooltip></TooltipProvider>
@@ -510,7 +510,7 @@ export function DreDashboardLegacy({
         </div>
 
         {/* Distribuição de Despesas */}
-        <div className="bg-card rounded-xl border border-border p-4 flex flex-col">
+        <div className="bg-card rounded-lg border border-border p-4 flex flex-col">
           <CardHeader title="Distribuição de Despesas" description="Proporção entre Despesas Fixas e Variáveis no total de despesas" />
           <div className="flex-1 flex flex-col items-center justify-center min-h-0">
             <div className="h-[180px] w-full">
@@ -552,7 +552,7 @@ export function DreDashboardLegacy({
 
       {/* Linha 2: Evolução Mensal + Margem */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div className="bg-card rounded-xl border border-border p-4 lg:col-span-2">
+        <div className="bg-card rounded-lg border border-border p-4 lg:col-span-2">
           <CardHeader title="Evolução Mensal do Resultado" description={analysisDescriptions.evolucaoMensal} />
           <div className="h-[220px]">
             <ResponsiveContainer width="100%" height="100%">
@@ -576,7 +576,7 @@ export function DreDashboardLegacy({
           </div>
         </div>
 
-        <div className="bg-card rounded-xl border border-border p-4">
+        <div className="bg-card rounded-lg border border-border p-4">
           <CardHeader title="Margem Líquida (%)" description={analysisDescriptions.margemLiquida} />
           <div className="h-[220px]">
             <ResponsiveContainer width="100%" height="100%">
@@ -594,7 +594,7 @@ export function DreDashboardLegacy({
 
       {/* Linha 3: Receitas vs Custos + Evolução Anual + Top Grupos */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div className="bg-card rounded-xl border border-border p-4">
+        <div className="bg-card rounded-lg border border-border p-4">
           <CardHeader title="Receitas vs Custos vs Despesas" description={analysisDescriptions.receitasCustos} />
           <div className="h-[220px]">
             <ResponsiveContainer width="100%" height="100%">
@@ -613,7 +613,7 @@ export function DreDashboardLegacy({
         </div>
 
         {evolucaoAnual.length > 1 && (
-          <div className="bg-card rounded-xl border border-border p-4">
+          <div className="bg-card rounded-lg border border-border p-4">
             <CardHeader title="Evolução Anual" description={analysisDescriptions.evolucaoAnual} />
             <div className="h-[220px]">
               <ResponsiveContainer width="100%" height="100%">
@@ -631,7 +631,7 @@ export function DreDashboardLegacy({
           </div>
         )}
 
-        <div className={`bg-card rounded-xl border border-border p-4 ${evolucaoAnual.length <= 1 ? 'lg:col-span-2' : ''}`}>
+        <div className={`bg-card rounded-lg border border-border p-4 ${evolucaoAnual.length <= 1 ? 'lg:col-span-2' : ''}`}>
           <CardHeader title="Top 10 Grupos" description={analysisDescriptions.topGrupos} />
           <div className="h-[220px]">
             <ResponsiveContainer width="100%" height="100%">
@@ -639,7 +639,7 @@ export function DreDashboardLegacy({
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                 <XAxis type="number" tickFormatter={(v) => formatCompactNumber(v)} stroke="hsl(var(--muted-foreground))" fontSize={10} />
                 <YAxis type="category" dataKey="grupo" width={90} stroke="hsl(var(--muted-foreground))" fontSize={9} />
-                <Tooltip formatter={(value: number, name: string, props: any) => [formatCurrency(props.payload.valor), 'Valor']} contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px' }} />
+                <Tooltip formatter={(_value: number, _name: string, props: { payload?: { valor?: number } }) => [formatCurrency(props.payload?.valor ?? 0), 'Valor']} contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px' }} />
                 <Bar dataKey="absValor" radius={[0, 3, 3, 0]}>
                   {topGrupos.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={getBarColor(entry.valor)} />

@@ -166,11 +166,6 @@ export function BrazilMap({ data, onStateSelect, trends }: BrazilMapProps) {
                   setHoverPos(null);
                 }}
               >
-                <defs>
-                  <filter id="brmap-shadow" x="-5%" y="-5%" width="110%" height="110%">
-                    <feDropShadow dx="0" dy="1" stdDeviation="1.5" floodOpacity="0.25" />
-                  </filter>
-                </defs>
                 {Object.entries(ESTADOS_PATH).map(([uf, { d, cx, cy }]) => {
                   const isHovered = hoveredState === uf;
                   const hasData = !!stateData.get(uf);
@@ -182,10 +177,9 @@ export function BrazilMap({ data, onStateSelect, trends }: BrazilMapProps) {
                         stroke="hsl(var(--background))"
                         strokeWidth={isHovered ? 1.4 : 0.6}
                         className={cn(
-                          'transition-all duration-150 cursor-pointer',
+                          'transition-[fill,stroke-width,opacity] duration-150 cursor-pointer',
                           isHovered && 'brightness-110',
                         )}
-                        style={isHovered ? { filter: 'url(#brmap-shadow)' } : undefined}
                         onMouseEnter={() => setHoveredState(uf)}
                         onMouseMove={(e) => {
                           const rect = (
@@ -213,7 +207,6 @@ export function BrazilMap({ data, onStateSelect, trends }: BrazilMapProps) {
                               fontSize: isSmall ? 13 : 14,
                               fontWeight: 800,
                               fill: '#FFFFFF',
-                              filter: 'drop-shadow(1px 1px 3px rgba(0,0,0,0.8))',
                             }}
                           >
                             {uf}
@@ -229,7 +222,7 @@ export function BrazilMap({ data, onStateSelect, trends }: BrazilMapProps) {
               {/* Tooltip flutuante */}
               {hoveredState && hoverPos && (
                 <div
-                  className="absolute pointer-events-none z-20 bg-slate-950/95 backdrop-blur border-2 border-primary/40 rounded-lg shadow-2xl px-3 py-2 min-w-[200px] ring-1 ring-black/40"
+                  className="absolute pointer-events-none z-20 min-w-[200px] rounded-lg border border-border bg-popover px-3 py-2 text-popover-foreground"
                   style={{
                     left: Math.min(hoverPos.x + 14, 380),
                     top: Math.max(hoverPos.y - 10, 0),
@@ -266,18 +259,17 @@ export function BrazilMap({ data, onStateSelect, trends }: BrazilMapProps) {
                 </div>
               )}
 
-              {/* Legenda gradiente */}
-              <div className="absolute bottom-2 right-2 bg-card/90 backdrop-blur border border-border rounded-lg px-3 py-2 shadow-lg">
+              {/* Legenda */}
+              <div className="absolute bottom-2 right-2 rounded-lg border border-border bg-card px-3 py-2">
                 <p className="text-[10px] text-muted-foreground mb-1.5 font-medium">
                   Intensidade de vendas
                 </p>
-                <div
-                  className="h-2 w-40 rounded-full"
-                  style={{
-                    background:
-                      'linear-gradient(90deg, hsl(217,70%,78%), hsl(217,81%,60%), hsl(217,91%,38%), hsl(217,91%,30%))',
-                  }}
-                />
+                <div className="flex h-2 w-40 overflow-hidden rounded-full">
+                  <span className="flex-1 bg-sky-200" />
+                  <span className="flex-1 bg-sky-400" />
+                  <span className="flex-1 bg-sky-600" />
+                  <span className="flex-1 bg-sky-800" />
+                </div>
                 <div className="flex justify-between text-[9px] text-muted-foreground mt-1">
                   <span>Menor</span>
                   <span>→</span>
@@ -346,7 +338,7 @@ export function BrazilMap({ data, onStateSelect, trends }: BrazilMapProps) {
                     className={cn(
                       'px-2.5 py-0.5 text-[11px] font-medium rounded-full transition-colors',
                       periodo === p
-                        ? 'bg-primary text-primary-foreground shadow-sm'
+                        ? 'bg-primary text-primary-foreground'
                         : 'text-muted-foreground hover:text-foreground',
                     )}
                   >

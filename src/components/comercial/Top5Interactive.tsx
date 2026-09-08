@@ -51,13 +51,13 @@ export function Top5Interactive({ data, percentualTotal }: Top5InteractiveProps)
                 onClick={() => setSelected(idx)}
                 onMouseEnter={() => setHovered(idx)}
                 onMouseLeave={() => setHovered(null)}
-                className="group relative flex flex-col items-center justify-end transition-all duration-300 outline-none"
+                className="group relative flex flex-col items-center justify-end transition-opacity duration-300 outline-none"
               >
                 {/* Nome + valor acima do pódio */}
                 <div
                   className={cn(
-                    'mb-2 text-center transition-all duration-300 w-full px-1',
-                    isActive ? 'scale-105' : 'opacity-80 group-hover:opacity-100',
+                    'mb-2 text-center transition-opacity duration-300 w-full px-1',
+                    isActive ? 'opacity-100' : 'opacity-80 group-hover:opacity-100',
                   )}
                 >
                   <Icon
@@ -75,21 +75,17 @@ export function Top5Interactive({ data, percentualTotal }: Top5InteractiveProps)
                 {/* Bloco do pódio */}
                 <div
                   className={cn(
-                    'w-full rounded-t-lg relative overflow-hidden border border-b-0 transition-all duration-300',
-                    isActive ? 'border-transparent' : 'border-border/40',
+                    'w-full rounded-t-lg relative overflow-hidden border border-b-0 transition-colors duration-300',
+                    isActive ? 'border-primary/35 bg-primary/15' : 'border-border/40 bg-muted/30',
                   )}
                   style={{
                     height: `${barHeight}px`,
-                    background: `linear-gradient(180deg, ${item.fill}40 0%, ${item.fill}15 60%, ${item.fill}25 100%)`,
-                    boxShadow: isActive
-                      ? `inset 0 0 0 1.5px ${item.fill}, 0 -8px 24px -8px ${item.fill}80`
-                      : `inset 0 0 0 1px ${item.fill}30`,
                   }}
                 >
                   {/* Brilho topo */}
                   <div
                     className="absolute inset-x-0 top-0 h-1"
-                    style={{ background: item.fill, boxShadow: `0 0 12px ${item.fill}` }}
+                    style={{ backgroundColor: item.fill }}
                   />
                   {/* Label de posição */}
                   <div className="absolute inset-0 flex items-center justify-center">
@@ -98,7 +94,7 @@ export function Top5Interactive({ data, percentualTotal }: Top5InteractiveProps)
                         'font-bold italic tabular-nums tracking-tight',
                         isFirst ? 'text-4xl' : 'text-2xl',
                       )}
-                      style={{ color: item.fill, textShadow: `0 2px 12px ${item.fill}60` }}
+                      style={{ color: item.fill }}
                     >
                       {label}
                     </span>
@@ -109,13 +105,12 @@ export function Top5Interactive({ data, percentualTotal }: Top5InteractiveProps)
           })}
         </div>
         {/* Base do pódio */}
-        <div className="h-1 w-full rounded-full bg-gradient-to-r from-transparent via-border to-transparent" />
+        <div className="h-px w-full bg-border/70" />
       </div>
 
       {/* Resumo do destaque */}
       <div
-        className="rounded-lg border border-border/60 bg-card/60 p-3 transition-all"
-        style={{ boxShadow: `inset 0 0 0 1px ${active?.fill}20` }}
+        className="rounded-lg border border-border/60 bg-card/60 p-3 transition-colors"
       >
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0 flex-1">
@@ -154,14 +149,11 @@ export function Top5Interactive({ data, percentualTotal }: Top5InteractiveProps)
                 onMouseEnter={() => setHovered(idx)}
                 onMouseLeave={() => setHovered(null)}
                 className={cn(
-                  'w-full flex items-center gap-3 p-2 rounded-md border transition-all text-left',
+                  'w-full flex items-center gap-3 p-2 rounded-md border transition-colors text-left',
                   isActive
-                    ? 'border-transparent bg-card'
+                    ? 'border-primary/35 bg-primary/10'
                     : 'border-border/40 bg-card/30 hover:bg-card/60',
                 )}
-                style={{
-                  boxShadow: isActive ? `0 0 0 1.5px ${item.fill}, 0 4px 10px -4px ${item.fill}40` : undefined,
-                }}
               >
                 <span
                   className="text-xs font-bold italic tabular-nums w-6 text-center"
@@ -173,7 +165,7 @@ export function Top5Interactive({ data, percentualTotal }: Top5InteractiveProps)
                   <p className="text-xs font-medium text-foreground truncate">{item.name}</p>
                   <div className="mt-1 h-1 w-full bg-muted/40 rounded-full overflow-hidden">
                     <div
-                      className="h-full rounded-full transition-all duration-500"
+                      className="h-full rounded-full transition-[width] duration-500"
                       style={{ width: `${share}%`, background: item.fill }}
                     />
                   </div>

@@ -84,20 +84,14 @@ function HeroCard({ label, value, format, icon: Icon, deltaPct, deltaHint, expla
   return (
     <Card
       className={cn(
-        'group relative overflow-hidden border-border/60 bg-card shadow-sm cursor-default',
-        'transition-all duration-300 ease-out',
-        'hover:-translate-y-1 hover:scale-[1.015] hover:border-border hover:shadow-[0_12px_32px_-12px_hsl(var(--foreground)/0.18)]'
+        'group relative overflow-hidden border-border/60 bg-card cursor-default',
+        'transition-colors duration-200 ease-out',
+        'hover:border-primary/30 hover:bg-muted/30'
       )}
     >
-      {/* Iluminação sutil */}
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-x-0 -top-24 h-40 bg-[radial-gradient(ellipse_at_center,hsl(var(--primary)/0.10),transparent_60%)] opacity-0 transition-opacity duration-500 group-hover:opacity-100"
-      />
-      {/* Borda translúcida no hover */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 rounded-[inherit] ring-1 ring-inset ring-transparent transition-colors duration-300 group-hover:ring-primary/15"
+        className="pointer-events-none absolute inset-0 rounded-[inherit] ring-1 ring-inset ring-transparent transition-colors duration-200 group-hover:ring-primary/15"
       />
       <CardContent className="relative p-5 md:p-6">
         <div className="flex items-start justify-between gap-3">
@@ -116,10 +110,10 @@ function HeroCard({ label, value, format, icon: Icon, deltaPct, deltaHint, expla
               <TooltipContent className="max-w-64 text-xs leading-5">{explanation}</TooltipContent>
             </Tooltip>
           </div>
-          <Icon className="h-4 w-4 text-muted-foreground/70 transition-all duration-300 group-hover:text-primary group-hover:scale-110" />
+          <Icon className="h-4 w-4 text-muted-foreground/70 transition-colors duration-200 group-hover:text-primary" />
         </div>
 
-        <PelegriniResponsiveValue as="p" size="hero" className="mono-value mt-4 font-semibold tabular-nums transition-colors duration-300 group-hover:text-foreground">
+        <PelegriniResponsiveValue as="p" size="hero" className="mono-value mt-4 font-semibold tabular-nums transition-colors duration-200 group-hover:text-foreground">
           {format(animated)}
         </PelegriniResponsiveValue>
 
@@ -196,7 +190,7 @@ export function ClientesHeroSection({
   ];
 
   return (
-    <section className="relative overflow-hidden rounded-2xl border border-border/60 bg-gradient-to-br from-muted/40 via-background to-background p-5 md:p-8">
+    <section className="relative overflow-hidden rounded-lg border border-border/60 bg-card p-5 md:p-8">
       <h1 className="mb-6 text-xl font-semibold md:text-2xl">Análise de Clientes</h1>
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4 xl:grid-cols-5">

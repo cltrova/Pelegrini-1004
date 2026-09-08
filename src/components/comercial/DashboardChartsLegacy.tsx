@@ -1,7 +1,7 @@
 import { useMemo, useState, useCallback } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { EnterpriseDataPanel } from '@/components/enterprise';
 import { formatCurrency, formatPercent } from '@/utils/formatters';
 import {
   AreaChart,
@@ -160,15 +160,10 @@ export function DashboardChartsLegacy({ vendedores, clientes, evolucao, distribu
   }, []);
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="enterprise-chart-grid">
       {/* ===================== Evolução ===================== */}
-      <Card className="md:col-span-2 premium-card chart-premium chart-header-accent chart-header-accent-primary stagger-1">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm flex items-center justify-between gap-2">
-            <span className="flex items-center gap-2">
-              <TrendingUp className="h-4 w-4 text-primary icon-hover-glow" />
-              Evolução (últimos 6 meses)
-            </span>
+      <EnterpriseDataPanel
+        actions={
             <div className="flex items-center gap-1">
               <Button
                 size="sm"
@@ -192,9 +187,10 @@ export function DashboardChartsLegacy({ vendedores, clientes, evolucao, distribu
                 Líquido
               </Button>
             </div>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
+        }
+        className="md:col-span-2 lg:col-span-6"
+        title="Evolução (últimos 6 meses)"
+      >
           {evolucaoStats && (
             <div className="flex items-end justify-between mb-2 px-1">
               <div>
@@ -288,28 +284,23 @@ export function DashboardChartsLegacy({ vendedores, clientes, evolucao, distribu
               </AreaChart>
             </ResponsiveContainer>
           </div>
-        </CardContent>
-      </Card>
+      </EnterpriseDataPanel>
 
       {/* ===================== Top 5 Vendedores ===================== */}
-      <Card className="premium-card chart-premium chart-header-accent chart-header-accent-warning stagger-2">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm flex items-center justify-between gap-2">
-            <span className="flex items-center gap-2">
-              <Trophy className="h-4 w-4 text-warning icon-hover-glow" />
-              Top 5 Vendedores — Faturado
-            </span>
-            {vendedorAtivo && (
-              <button
-                onClick={() => setVendedorIdx(null)}
-                className="text-[9px] text-muted-foreground hover:text-foreground transition"
-              >
-                limpar
-              </button>
-            )}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
+      <EnterpriseDataPanel
+        actions={
+          vendedorAtivo ? (
+            <button
+              onClick={() => setVendedorIdx(null)}
+              className="text-[9px] text-muted-foreground hover:text-foreground transition"
+            >
+              limpar
+            </button>
+          ) : undefined
+        }
+        className="lg:col-span-3"
+        title="Top 5 Vendedores — Faturado"
+      >
           <div className="space-y-1.5">
             {top5Vendedores.map((v, i) => {
               const max = top5Vendedores[0]?.valor || 1;
@@ -378,23 +369,18 @@ export function DashboardChartsLegacy({ vendedores, clientes, evolucao, distribu
               );
             })}
           </div>
-        </CardContent>
-      </Card>
+      </EnterpriseDataPanel>
 
       {/* ===================== Top 5 Clientes ===================== */}
-      <Card className="premium-card chart-premium chart-header-accent chart-header-accent-accent stagger-3">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm flex items-center justify-between">
-            <span className="flex items-center gap-2">
-              <Users className="h-4 w-4 text-chart-2 icon-hover-glow" />
-              Top 5 Clientes
-            </span>
+      <EnterpriseDataPanel
+        actions={
             <Badge variant="secondary" className="text-[10px]">
               {formatPercent(top5Clientes.percentual)}
             </Badge>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
+        }
+        className="lg:col-span-3"
+        title="Top 5 Clientes"
+      >
           <div className="flex items-center gap-2 h-[210px]">
             <div className="flex-1 h-full relative">
               <ResponsiveContainer width="100%" height="100%">
@@ -468,26 +454,21 @@ export function DashboardChartsLegacy({ vendedores, clientes, evolucao, distribu
               })}
             </div>
           </div>
-        </CardContent>
-      </Card>
+      </EnterpriseDataPanel>
 
       {/* ===================== Top 5 Estados ===================== */}
-      <Card className="md:col-span-2 premium-card chart-premium chart-header-accent chart-header-accent-success stagger-4">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm flex items-center justify-between gap-2">
-            <span className="flex items-center gap-2">
-              <MapPin className="h-4 w-4 text-accent icon-hover-glow" />
-              Top 5 Estados
+      <EnterpriseDataPanel
+        actions={
+          ufAtivo ? (
+            <span className="text-[10px] font-medium text-muted-foreground flex items-center gap-1">
+              <Maximize2 className="h-3 w-3" />
+              {ufAtivo.uf} · {formatCurrency(ufAtivo.valor, true)} · {formatPercent(ufAtivo.participacao)}
             </span>
-            {ufAtivo && (
-              <span className="text-[10px] font-medium text-muted-foreground flex items-center gap-1">
-                <Maximize2 className="h-3 w-3" />
-                {ufAtivo.uf} · {formatCurrency(ufAtivo.valor, true)} · {formatPercent(ufAtivo.participacao)}
-              </span>
-            )}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
+          ) : undefined
+        }
+        className="md:col-span-2 lg:col-span-6"
+        title="Top 5 Estados"
+      >
           <div className="h-[200px]">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={top5UF} onMouseLeave={() => setUfIdx(null)}>
@@ -525,18 +506,10 @@ export function DashboardChartsLegacy({ vendedores, clientes, evolucao, distribu
               </BarChart>
             </ResponsiveContainer>
           </div>
-        </CardContent>
-      </Card>
+      </EnterpriseDataPanel>
 
       {/* ===================== Resumo Rápido ===================== */}
-      <Card className="md:col-span-2 bg-gradient-to-br from-muted/30 to-muted/10 premium-card chart-premium chart-header-accent chart-header-accent-primary stagger-5">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm flex items-center gap-2">
-            <Sparkles className="h-4 w-4 text-primary icon-hover-glow" />
-            Highlights Interativos
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
+      <EnterpriseDataPanel className="md:col-span-2 lg:col-span-6" title="Highlights Interativos">
           <div className="grid grid-cols-2 gap-3 text-sm">
             <HighlightCard
               icon={<Trophy className="h-4 w-4 text-warning" />}
@@ -571,8 +544,7 @@ export function DashboardChartsLegacy({ vendedores, clientes, evolucao, distribu
               colorClass="text-muted-foreground"
             />
           </div>
-        </CardContent>
-      </Card>
+      </EnterpriseDataPanel>
     </div>
   );
 }
@@ -594,7 +566,7 @@ function HighlightCard({
 }) {
   return (
     <div
-      className="p-3 bg-gradient-to-r from-muted/20 to-transparent rounded-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-lg cursor-default group"
+      className="p-3 rounded-lg border border-border bg-muted/20 transition-colors hover:bg-muted/30 cursor-default group"
       style={{ borderLeft: `4px solid ${accent}` }}
     >
       <div className="flex items-center gap-2 mb-1">

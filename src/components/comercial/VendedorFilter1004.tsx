@@ -94,7 +94,7 @@ export function VendedorFilter1004({ filters, onFiltersChange, vendedores, varia
     }));
 
     return [...equipe, ...extras];
-  }, [equipeConfig, equipePadrao, isCampanhas, vendedores]);
+  }, [equipePadrao, isCampanhas, vendedores]);
 
   const allCodes = useMemo(
     () => vendedoresElegiveis
@@ -116,7 +116,7 @@ export function VendedorFilter1004({ filters, onFiltersChange, vendedores, varia
   const selecionados = useMemo(() => {
     const deveUsarEquipePadrao = isCampanhas && selecionadosPersistidos.length === 0;
     return deveUsarEquipePadrao ? equipeCodes : selecionadosPersistidos;
-  }, [equipeCodes, equipePadrao, isCampanhas, selecionadosPersistidos]);
+  }, [equipeCodes, isCampanhas, selecionadosPersistidos]);
 
   useEffect(() => {
     if (!filters.vendedores?.length || allCodes.length === 0) return;
@@ -183,22 +183,6 @@ export function VendedorFilter1004({ filters, onFiltersChange, vendedores, varia
     );
   }, [vendedoresElegiveis, search]);
 
-  const ChipBtn = ({ active, onClick, children, icon: Icon }: any) => (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cn(
-        'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold border transition-colors',
-        active
-          ? 'bg-primary/15 text-primary border-primary/40'
-          : 'bg-background text-muted-foreground border-border hover:bg-muted',
-      )}
-    >
-      {Icon && <Icon className="h-3 w-3" />}
-      {children}
-    </button>
-  );
-
   return (
     <div className="space-y-2">
       <Popover>
@@ -220,7 +204,7 @@ export function VendedorFilter1004({ filters, onFiltersChange, vendedores, varia
                 onClick={() => aplicarModo('todos')}
                 className={cn(
                   'px-1.5 py-1 rounded text-[10px] font-semibold transition-colors',
-                  modo === 'todos' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground',
+                  modo === 'todos' ? 'bg-background text-foreground' : 'text-muted-foreground hover:text-foreground',
                 )}
               >
                 Todos
@@ -230,7 +214,7 @@ export function VendedorFilter1004({ filters, onFiltersChange, vendedores, varia
                 onClick={() => aplicarModo('equipe')}
                 className={cn(
                   'inline-flex items-center justify-center gap-1 px-1.5 py-1 rounded text-[10px] font-semibold transition-colors',
-                  modo === 'equipe' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground',
+                  modo === 'equipe' ? 'bg-background text-foreground' : 'text-muted-foreground hover:text-foreground',
                 )}
               >
                 <Users className="h-3 w-3" /> Equipe
@@ -240,7 +224,7 @@ export function VendedorFilter1004({ filters, onFiltersChange, vendedores, varia
                 onClick={() => aplicarModo('comissionaveis')}
                 className={cn(
                   'inline-flex items-center justify-center gap-1 px-1.5 py-1 rounded text-[10px] font-semibold transition-colors',
-                  modo === 'comissionaveis' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground',
+                  modo === 'comissionaveis' ? 'bg-background text-foreground' : 'text-muted-foreground hover:text-foreground',
                 )}
               >
                 <UserCheck className="h-3 w-3" /> Comiss.

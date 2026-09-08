@@ -192,18 +192,18 @@ export default function FluxoCaixaPage() {
   }, [filters]);
 
 
-  if (hasSearched && isLoading) return <div className="p-6"><LoadingState message="Carregando fluxo de caixa..." /></div>;
-  if (error) return <div className="p-6"><ErrorState message={(error as Error).message} onRetry={() => refetch()} /></div>;
+  if (hasSearched && isLoading) return <div className="enterprise-page-shell"><LoadingState message="Carregando fluxo de caixa..." /></div>;
+  if (error) return <div className="enterprise-page-shell"><ErrorState message={(error as Error).message} onRetry={() => refetch()} /></div>;
   if (!saldos.length && !movimentos.length) {
-    return <div className="p-6"><EmptyState title="Sem dados" message="Nenhum dado de fluxo de caixa retornado." /></div>;
+    return <div className="enterprise-page-shell"><EmptyState title="Sem dados" message="Nenhum dado de fluxo de caixa retornado." /></div>;
   }
 
   const NOMES_MES = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="enterprise-page-shell">
       {/* Header */}
-      <div className="flex items-end justify-between gap-4 flex-wrap">
+      <div className="flex shrink-0 items-end justify-between gap-4 flex-wrap">
         <div>
           <h1 className="text-2xl font-bold">Fluxo de Caixa</h1>
           <p className="text-sm text-muted-foreground">
@@ -316,9 +316,11 @@ export default function FluxoCaixaPage() {
       </CollapsibleFilterBar>
 
       {!hasSearched ? (
-        <FinanceiroSearchPrompt />
+        <div className="min-h-0 flex-1">
+          <FinanceiroSearchPrompt />
+        </div>
       ) : (
-      <>
+      <div className="min-h-0 flex-1 space-y-3 overflow-auto pr-1">
       {/* KPIs */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
         <KpiCard
@@ -512,7 +514,8 @@ export default function FluxoCaixaPage() {
             </Table>
           </div>
         )}
-      </Card>      </>
+      </Card>
+      </div>
       )}
 
     </div>

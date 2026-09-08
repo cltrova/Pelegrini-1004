@@ -50,7 +50,7 @@ export function AICopilot({ contexto }: Props) {
       if (error) throw error;
       setMessages([...next, { role: 'assistant', content: data?.reply || 'Sem resposta.' }]);
     } catch (e) {
-      setMessages([...next, { role: 'assistant', content: '❌ Erro ao consultar a IA. Tente novamente.' }]);
+      setMessages([...next, { role: 'assistant', content: 'Erro ao consultar a IA. Tente novamente.' }]);
     } finally {
       setLoading(false);
     }
@@ -63,30 +63,22 @@ export function AICopilot({ contexto }: Props) {
           className="fixed bottom-6 right-6 z-40 group"
           aria-label="Abrir copiloto IA"
         >
-          {/* Glow */}
-          <div className="absolute inset-0 rounded-full bg-gradient-to-br from-primary via-cyan-500 to-primary blur-xl opacity-60 group-hover:opacity-90 transition-opacity animate-pulse" />
-          {/* Ring orb */}
-          <div className="relative h-14 w-14 rounded-full bg-gradient-to-br from-primary to-cyan-500 flex items-center justify-center shadow-2xl ring-2 ring-primary/30 group-hover:scale-110 transition-transform duration-300">
-            <Sparkles className="h-6 w-6 text-primary-foreground drop-shadow" />
+          <div className="relative h-14 w-14 rounded-full bg-primary flex items-center justify-center border border-primary/40 transition-colors duration-200 group-hover:bg-primary/90">
+            <Sparkles className="h-6 w-6 text-primary-foreground" />
           </div>
-          <span className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-success ring-2 ring-background animate-pulse" />
-          {/* Label */}
-          <span className="absolute right-full mr-3 top-1/2 -translate-y-1/2 px-3 py-1.5 rounded-full text-xs font-semibold bg-card border border-border shadow-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
-            ✨ Perguntar à IA
+          <span className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-success ring-2 ring-background" />
+          <span className="absolute right-full mr-3 top-1/2 -translate-y-1/2 px-3 py-1.5 rounded-full text-xs font-semibold bg-card border border-border opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
+            Perguntar à IA
           </span>
         </button>
       </SheetTrigger>
 
-      <SheetContent side="right" className="w-full sm:max-w-md p-0 flex flex-col gap-0 border-l-primary/20 bg-gradient-to-b from-card via-background to-background">
+      <SheetContent side="right" className="w-full sm:max-w-md p-0 flex flex-col gap-0 border-l-border/60 bg-background">
         {/* Header */}
-        <div className="relative px-5 py-4 border-b border-border/50 bg-gradient-to-r from-primary/10 via-transparent to-cyan-500/10 backdrop-blur">
-          <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-primary/20 blur-3xl pointer-events-none" />
+        <div className="relative px-5 py-4 border-b border-border/50 bg-card">
           <div className="relative flex items-center gap-3">
-            <div className="relative">
-              <div className="absolute inset-0 rounded-full bg-primary/40 blur-md animate-pulse" />
-              <div className="relative h-10 w-10 rounded-full bg-gradient-to-br from-primary to-cyan-500 flex items-center justify-center shadow-lg">
-                <Sparkles className="h-5 w-5 text-primary-foreground" />
-              </div>
+            <div className="h-10 w-10 rounded-full bg-primary flex items-center justify-center">
+              <Sparkles className="h-5 w-5 text-primary-foreground" />
             </div>
             <div className="flex-1 min-w-0">
               <h2 className="text-base font-bold flex items-center gap-2">
@@ -94,7 +86,7 @@ export function AICopilot({ contexto }: Props) {
                 <span className="text-[10px] px-1.5 py-0.5 rounded bg-success/15 text-success font-mono uppercase tracking-wider">IA</span>
               </h2>
               <p className="text-[11px] text-muted-foreground flex items-center gap-1.5">
-                <span className="h-1.5 w-1.5 rounded-full bg-success animate-pulse" />
+                <span className="h-1.5 w-1.5 rounded-full bg-success" />
                 Conectado aos seus dados em tempo real
               </p>
             </div>
@@ -108,7 +100,7 @@ export function AICopilot({ contexto }: Props) {
         <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
           {messages.length === 0 && (
             <div className="space-y-4">
-              <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4 space-y-2">
+              <div className="rounded-lg border border-border/60 bg-card p-4 space-y-2">
                 <p className="text-sm font-semibold flex items-center gap-2">
                   <Lightbulb className="h-4 w-4 text-primary" />
                   Olá! Sou seu copiloto comercial.
@@ -125,7 +117,7 @@ export function AICopilot({ contexto }: Props) {
                     <button
                       key={i}
                       onClick={() => send(s)}
-                      className="w-full text-left px-3 py-2 rounded-lg text-xs bg-card hover:bg-muted/60 border border-border/50 hover:border-primary/40 transition-all duration-200 flex items-center gap-2 group"
+                      className="w-full text-left px-3 py-2 rounded-lg text-xs bg-card hover:bg-muted/60 border border-border/50 hover:border-primary/40 transition-colors duration-200 flex items-center gap-2 group"
                     >
                       <MessageSquare className="h-3 w-3 text-primary/60 group-hover:text-primary transition-colors" />
                       <span className="flex-1">{s}</span>
@@ -145,13 +137,13 @@ export function AICopilot({ contexto }: Props) {
               )}
             >
               {m.role === 'assistant' && (
-                <div className="h-7 w-7 rounded-full bg-gradient-to-br from-primary to-cyan-500 flex items-center justify-center shrink-0 mt-0.5">
+                <div className="h-7 w-7 rounded-full bg-primary flex items-center justify-center shrink-0 mt-0.5">
                   <Sparkles className="h-3.5 w-3.5 text-primary-foreground" />
                 </div>
               )}
               <div
                 className={cn(
-                  'max-w-[85%] rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed',
+                  'max-w-[85%] rounded-lg px-3.5 py-2.5 text-sm leading-relaxed',
                   m.role === 'user'
                     ? 'bg-primary text-primary-foreground rounded-br-sm'
                     : 'bg-card border border-border/50 rounded-bl-sm'
@@ -170,10 +162,10 @@ export function AICopilot({ contexto }: Props) {
 
           {loading && (
             <div className="flex gap-2 animate-fade-in">
-              <div className="h-7 w-7 rounded-full bg-gradient-to-br from-primary to-cyan-500 flex items-center justify-center shrink-0">
-                <Sparkles className="h-3.5 w-3.5 text-primary-foreground animate-pulse" />
+              <div className="h-7 w-7 rounded-full bg-primary flex items-center justify-center shrink-0">
+                <Sparkles className="h-3.5 w-3.5 text-primary-foreground" />
               </div>
-              <div className="bg-card border border-border/50 rounded-2xl rounded-bl-sm px-3.5 py-2.5 flex items-center gap-1.5">
+              <div className="bg-card border border-border/50 rounded-lg rounded-bl-sm px-3.5 py-2.5 flex items-center gap-1.5">
                 <span className="h-1.5 w-1.5 rounded-full bg-primary animate-bounce" style={{ animationDelay: '0ms' }} />
                 <span className="h-1.5 w-1.5 rounded-full bg-primary animate-bounce" style={{ animationDelay: '150ms' }} />
                 <span className="h-1.5 w-1.5 rounded-full bg-primary animate-bounce" style={{ animationDelay: '300ms' }} />
@@ -184,7 +176,7 @@ export function AICopilot({ contexto }: Props) {
         </div>
 
         {/* Input */}
-        <div className="border-t border-border/50 p-3 bg-card/40 backdrop-blur">
+        <div className="border-t border-border/50 p-3 bg-card">
           <form
             onSubmit={(e) => { e.preventDefault(); send(input); }}
             className="relative flex items-center gap-2"
@@ -194,9 +186,9 @@ export function AICopilot({ contexto }: Props) {
               onChange={(e) => setInput(e.target.value)}
               placeholder="Pergunte ao copiloto..."
               disabled={loading}
-              className="flex-1 h-10 px-3.5 rounded-xl bg-background border border-border/50 focus:border-primary/50 focus:ring-2 focus:ring-primary/20 outline-none text-sm transition-all"
+              className="flex-1 h-10 px-3.5 rounded-lg bg-background border border-border/50 focus:border-primary/50 focus:ring-2 focus:ring-primary/20 outline-none text-sm transition-colors"
             />
-            <Button type="submit" size="icon" disabled={loading || !input.trim()} className="h-10 w-10 rounded-xl shrink-0">
+            <Button type="submit" size="icon" disabled={loading || !input.trim()} className="h-10 w-10 rounded-lg shrink-0">
               {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
             </Button>
           </form>

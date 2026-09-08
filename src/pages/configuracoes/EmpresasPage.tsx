@@ -172,7 +172,7 @@ export default function EmpresasPage() {
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-background p-6">
+      <div className="enterprise-page-shell">
         <Alert variant="destructive">
           <ShieldAlert className="h-4 w-4" />
           <AlertDescription>Você precisa estar autenticado.</AlertDescription>
@@ -182,7 +182,7 @@ export default function EmpresasPage() {
   }
   if (!isMaster) {
     return (
-      <div className="min-h-screen bg-background p-6">
+      <div className="enterprise-page-shell">
         <Alert variant="destructive">
           <ShieldAlert className="h-4 w-4" />
           <AlertDescription>Apenas usuários master podem acessar a gestão de empresas.</AlertDescription>
@@ -195,10 +195,10 @@ export default function EmpresasPage() {
   const statusLabel = statusFilter === 'all' ? 'Todos' : statusFilter === 'ativa' ? 'Ativa' : statusFilter === 'inativa' ? 'Inativa' : 'Pendente';
 
   return (
-    <PelegriniPageSurface moduleKey="financeiro" className="min-h-screen">
-      <div className="relative max-w-[1200px] mx-auto px-6 py-8">
+    <PelegriniPageSurface moduleKey="financeiro">
+      <div className="relative mx-auto flex min-h-0 w-full max-w-[1200px] flex-1 flex-col overflow-hidden px-4 py-4">
         {/* Header */}
-        <div className="flex items-start justify-between gap-4 mb-8 animate-fade-in">
+        <div className="flex shrink-0 items-start justify-between gap-4 mb-4 animate-fade-in">
           <div className="min-w-0">
             <button
               onClick={() => navigate('/configuracoes')}
@@ -226,7 +226,7 @@ export default function EmpresasPage() {
 
 
         {/* Filtros */}
-        <div className="flex flex-wrap items-center gap-2 mb-4">
+        <div className="mb-3 flex shrink-0 flex-wrap items-center gap-2">
           <div className="relative flex-1 min-w-[240px]">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
             <Input
@@ -313,7 +313,7 @@ export default function EmpresasPage() {
         ) : error ? (
           <ErrorState message="Não foi possível carregar as empresas." onRetry={refetch} />
         ) : filtered.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-border bg-card/40 py-20 px-6 text-center">
+          <div className="rounded-xl border border-dashed border-border bg-card/40 py-10 px-6 text-center">
             <div className="mx-auto h-12 w-12 rounded-xl bg-muted/40 border border-border flex items-center justify-center mb-4">
               <Building2 className="h-6 w-6 text-muted-foreground" />
             </div>
@@ -332,7 +332,7 @@ export default function EmpresasPage() {
             )}
           </div>
         ) : (
-          <div className="rounded-xl border border-border bg-card/40 backdrop-blur-sm overflow-hidden shadow-xl shadow-black/5 animate-fade-in">
+          <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-border bg-card/40 backdrop-blur-sm shadow-xl shadow-black/5 animate-fade-in">
             {/* Header */}
             <div className="hidden md:grid grid-cols-[1.4fr_1.4fr_1.6fr_0.8fr_60px] gap-4 px-5 py-3 border-b border-border/60 bg-muted/30 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
               <div>Empresa</div>
@@ -342,7 +342,7 @@ export default function EmpresasPage() {
               <div className="text-right">Ações</div>
             </div>
 
-            <ul className="divide-y divide-border/60">
+            <ul className="min-h-0 flex-1 divide-y divide-border/60 overflow-auto">
               {filtered.map((empresa, idx) => {
                 const status = getStatus(empresa);
                 const enabled = getModulesEnabled(empresa);

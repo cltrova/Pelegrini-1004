@@ -2,7 +2,7 @@ import { ReactNode } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { LucideIcon } from 'lucide-react';
-import { PREMIUM_1004, Premium1004Tone } from './tokens1004';
+import { Premium1004Tone } from './tokens1004';
 
 interface PremiumSectionCardProps {
   title?: string;
@@ -26,10 +26,8 @@ const TONE_CLASS: Record<Premium1004Tone, string> = {
 
 /**
  * Container padrão para todas as seções do módulo Comercial 1004.
- * Espelha o estilo dos cards de VisaoGeralRapida1004:
- * - borda border-border/60
- * - raio, sombra e hover consistentes
- * - header com ícone colorido
+ * Usa borda, raio e hover discretos, com ícone colorido apenas como
+ * sinal semântico da seção.
  */
 export function PremiumSectionCard({
   title,
@@ -46,8 +44,8 @@ export function PremiumSectionCard({
   return (
     <Card
       className={cn(
-        'relative overflow-hidden border-border/60 transition-all duration-300',
-        'hover:shadow-lg hover:border-border',
+        'relative overflow-hidden rounded-lg border-border/60 bg-card transition-colors duration-300',
+        'hover:border-primary/30 hover:bg-muted/20',
         className,
       )}
     >

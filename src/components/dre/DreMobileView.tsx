@@ -235,7 +235,11 @@ export function DreMobileView({ data, indicators, groupSummary }: DreMobileViewP
   const toggleCategory = (cat: string) => {
     setExpandedCategories(prev => {
       const next = new Set(prev);
-      next.has(cat) ? next.delete(cat) : next.add(cat);
+      if (next.has(cat)) {
+        next.delete(cat);
+      } else {
+        next.add(cat);
+      }
       return next;
     });
   };
@@ -243,7 +247,11 @@ export function DreMobileView({ data, indicators, groupSummary }: DreMobileViewP
   const toggleGrupo = (grupo: string) => {
     setExpandedGrupos(prev => {
       const next = new Set(prev);
-      next.has(grupo) ? next.delete(grupo) : next.add(grupo);
+      if (next.has(grupo)) {
+        next.delete(grupo);
+      } else {
+        next.add(grupo);
+      }
       return next;
     });
   };

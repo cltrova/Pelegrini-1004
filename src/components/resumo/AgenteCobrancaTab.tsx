@@ -25,6 +25,11 @@ interface Props {
 
 type Gatilho = 'd3' | 'd1' | 'd0' | 'atrasado';
 
+type SimuladorResponse = {
+  error?: string;
+  reply?: string;
+};
+
 function fmtBR(s: string | null): string {
   if (!s) return '—';
   const d = new Date(s);
@@ -148,7 +153,7 @@ export function AgenteCobrancaTab({ duplicatas }: Props) {
 
   return (
     <div className="space-y-4">
-      <Card className="p-4 bg-gradient-to-br from-sky-500/5 to-indigo-500/5 border-sky-500/20">
+      <Card className="p-4 rounded-lg border-sky-500/20 bg-card">
         <div className="flex items-start gap-3">
           <div className="size-10 rounded-lg bg-sky-500/15 flex items-center justify-center">
             <Bot className="size-5 text-sky-600 dark:text-sky-400" />
@@ -442,11 +447,13 @@ function SimuladorPanel({ cfg, duplicatas }: { cfg: CobrancaConfig; duplicatas: 
         },
       });
       if (error) throw error;
-      if ((data as any)?.error) throw new Error((data as any).error);
-      const reply: string = (data as any)?.reply || '';
+      const response = data as SimuladorResponse | null;
+      if (response?.error) throw new Error(response.error);
+      const reply = response?.reply || '';
       setMessages(prev => [...prev, { id: crypto.randomUUID(), role: 'assistant', content: reply, ts: Date.now() }]);
-    } catch (e: any) {
-      toast({ title: 'Erro no simulador', description: e.message, variant: 'destructive' });
+    } catch (e) {
+      const message = e instanceof Error ? e.message : 'Não foi possível simular a cobrança.';
+      toast({ title: 'Erro no simulador', description: message, variant: 'destructive' });
     } finally {
       setLoading(false);
     }
@@ -580,7 +587,7 @@ function SimuladorPanel({ cfg, duplicatas }: { cfg: CobrancaConfig; duplicatas: 
           )}
           {messages.map(m => (
             <div key={m.id} className={`flex ${m.role === 'assistant' ? 'justify-start' : 'justify-end'}`}>
-              <div className={`max-w-[75%] rounded-2xl px-3 py-2 text-sm whitespace-pre-wrap shadow-sm ${
+              <div className={`max-w-[75%] rounded-lg px-3 py-2 text-sm whitespace-pre-wrap ${
                 m.role === 'assistant'
                   ? 'bg-card border border-border rounded-tl-sm'
                   : 'bg-emerald-500 text-white rounded-tr-sm'
@@ -595,7 +602,7 @@ function SimuladorPanel({ cfg, duplicatas }: { cfg: CobrancaConfig; duplicatas: 
           ))}
           {loading && (
             <div className="flex justify-start">
-              <div className="bg-card border border-border rounded-2xl rounded-tl-sm px-3 py-2 text-sm text-muted-foreground">
+              <div className="bg-card border border-border rounded-lg rounded-tl-sm px-3 py-2 text-sm text-muted-foreground">
                 digitando…
               </div>
             </div>

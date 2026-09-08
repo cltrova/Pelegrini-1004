@@ -9,11 +9,19 @@ interface ExtraRow {
 
 interface Props {
   active?: boolean;
-  payload?: any[];
+  payload?: TooltipEntry[];
   label?: string;
   labelMap?: Record<string, string>;
   valueFormatter?: (v: number) => string;
   extraRows?: ExtraRow[];
+}
+
+interface TooltipEntry {
+  name?: string;
+  dataKey?: string;
+  value: number;
+  color?: string;
+  fill?: string;
 }
 
 export function PremiumChartTooltip({
@@ -33,16 +41,15 @@ export function PremiumChartTooltip({
         </p>
       )}
       <div className="space-y-1">
-        {payload.map((entry: any, idx: number) => {
+        {payload.map((entry, idx) => {
           const key = entry.name ?? entry.dataKey;
-          const displayName = (labelMap?.[key] ?? key) as string;
+          const displayName = key ? (labelMap?.[key] ?? key) : '';
           return (
             <div key={idx} className="flex items-center gap-2 text-xs">
               <span
                 className="w-2 h-2 rounded-full shrink-0"
                 style={{
                   background: entry.color || entry.fill || 'hsl(var(--primary))',
-                  boxShadow: `0 0 8px ${entry.color || entry.fill || 'hsl(var(--primary))'}`,
                 }}
               />
               <span className="text-muted-foreground capitalize">{displayName}</span>
@@ -61,7 +68,6 @@ export function PremiumChartTooltip({
                 style={{
                   borderColor: color,
                   borderStyle: row.dashed ? 'dashed' : 'solid',
-                  boxShadow: `0 0 6px ${color}`,
                 }}
               />
               <span className="text-muted-foreground">{row.name}</span>

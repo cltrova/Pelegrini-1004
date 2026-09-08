@@ -103,7 +103,7 @@ export function ResumoKPICards({ kpis }: Props) {
           <Card
             key={it.label}
             className={cn(
-              'pelegrini-kpi-card min-w-0 p-4 ring-1 shadow-sm transition-all hover:shadow-md',
+              'pelegrini-kpi-card min-w-0 p-4 ring-1 transition-colors hover:bg-muted/30',
               t.bg,
               t.ring,
             )}

@@ -58,11 +58,11 @@ export function RepresentatividadeMarcasList({ marcas, isLoading }: Props) {
   if (!isLoading && rows.length === 0) return null;
 
   return (
-    <Card className="overflow-hidden border-border/60 bg-gradient-to-br from-card to-card/60 shadow-lg">
+    <Card className="overflow-hidden border-border/60 bg-card">
       <CardHeader className="pb-3 border-b border-border/40">
         <div className="flex items-start justify-between gap-3 flex-wrap">
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center ring-1 ring-primary/20">
+            <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center ring-1 ring-primary/20">
               <Tag className="h-5 w-5 text-primary" />
             </div>
             <div>
@@ -91,7 +91,7 @@ export function RepresentatividadeMarcasList({ marcas, isLoading }: Props) {
             )}
             <div className="text-right">
               <div className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">Total</div>
-              <div className="text-lg font-bold font-mono tabular-nums bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+              <div className="text-lg font-bold font-mono tabular-nums text-foreground">
                 {formatCurrency(total)}
               </div>
             </div>
@@ -130,10 +130,10 @@ export function RepresentatividadeMarcasList({ marcas, isLoading }: Props) {
                   onMouseEnter={() => setHovered(row.key)}
                   onMouseLeave={() => setHovered(null)}
                   className={cn(
-                    'group relative rounded-xl px-3 py-2.5 transition-all duration-200',
+                    'group relative rounded-lg px-3 py-2.5 transition-[background-color,opacity,border-color] duration-200',
                     'hover:bg-accent/50 cursor-pointer',
                     dim && 'opacity-40',
-                    isHovered && 'bg-accent/60 shadow-sm scale-[1.005]'
+                    isHovered && 'bg-accent/60'
                   )}
                   style={{
                     borderLeft: `3px solid ${isHovered ? color : 'transparent'}`,
@@ -155,11 +155,9 @@ export function RepresentatividadeMarcasList({ marcas, isLoading }: Props) {
 
                     {/* Color dot */}
                     <div
-                      className="h-2.5 w-2.5 rounded-full flex-shrink-0 transition-transform"
+                      className="h-2.5 w-2.5 rounded-full flex-shrink-0"
                       style={{
-                        background: color,
-                        boxShadow: isHovered ? `0 0 12px ${color}` : 'none',
-                        transform: isHovered ? 'scale(1.4)' : 'scale(1)',
+                        backgroundColor: color,
                       }}
                     />
 
@@ -188,11 +186,9 @@ export function RepresentatividadeMarcasList({ marcas, isLoading }: Props) {
                       {/* Animated bar */}
                       <div className="relative h-1.5 rounded-full bg-muted/40 overflow-hidden">
                         <div
-                          className="absolute inset-y-0 left-0 rounded-full transition-all duration-700 ease-out"
+                          className="absolute inset-y-0 left-0 rounded-full bg-primary transition-[width] duration-700 ease-out"
                           style={{
                             width: `${pctBar}%`,
-                            background: `linear-gradient(90deg, ${color}99, ${color})`,
-                            boxShadow: isHovered ? `0 0 8px ${color}80` : 'none',
                           }}
                         />
                       </div>
