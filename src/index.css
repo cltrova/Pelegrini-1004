@@ -1567,6 +1567,14 @@
   .pelegrini-page-surface :where([class~='p-6']) { padding: 1rem !important; }
   .pelegrini-page-surface :where([class~='p-5']) { padding: 0.875rem !important; }
   .pelegrini-page-surface :where([class~='p-4']) { padding: 0.625rem !important; }
+  .pelegrini-page-surface .giro-density-table :where(td, th) {
+    height: 1.75rem !important;
+    padding: 0 0.5rem !important;
+    line-height: 1 !important;
+  }
+  .pelegrini-page-surface .giro-density-table :where(tr) {
+    height: 1.75rem !important;
+  }
   .pelegrini-page-surface :where([class~='px-5']) {
     padding-left: 0.75rem !important;
     padding-right: 0.75rem !important;

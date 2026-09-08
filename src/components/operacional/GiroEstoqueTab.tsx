@@ -96,7 +96,7 @@ function GiroStatusHelp({ id, status }: { id: string; status: GiroStatus }) {
           onPointerLeave={() => setOpen(false)}
           type="button"
         >
-          <span className={cn('inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold', config.color, config.bg)}>
+          <span className={cn('inline-flex items-center rounded-full border px-1.5 py-0 text-[11px] font-semibold leading-4', config.color, config.bg)}>
             {config.label}
           </span>
         </button>
@@ -281,28 +281,28 @@ export function GiroEstoqueTab({ giroData, estoqueData, filters, onStatusFilterC
         <span className="ml-auto shrink-0 text-xs tabular-nums text-muted-foreground">
           <strong className="font-semibold text-foreground">{sorted.length.toLocaleString('pt-BR')}</strong> produtos
         </span>
-        <Button aria-label="Abrir analise de giro" className="h-9 gap-2" onClick={() => setAnalysisOpen(true)} type="button" variant="outline">
-          <BarChart3 aria-hidden="true" className="h-4 w-4" />
+        <Button aria-label="Abrir analise de giro" className="h-8 gap-1.5 px-2.5 text-xs" onClick={() => setAnalysisOpen(true)} type="button" variant="outline">
+          <BarChart3 aria-hidden="true" className="h-3.5 w-3.5" />
           <span className="hidden sm:inline">Analise de giro</span>
         </Button>
       </EstoqueToolbar>
 
       <Sheet onOpenChange={setAnalysisOpen} open={analysisOpen}>
         <SheetContent className="w-[min(96vw,48rem)] overflow-x-hidden overflow-y-auto p-0 sm:max-w-3xl" side="right">
-          <SheetHeader className="border-b border-border px-5 py-4 pr-12 text-left">
+          <SheetHeader className="border-b border-border px-4 py-3 pr-12 text-left">
             <SheetTitle>Analise de giro</SheetTitle>
             <SheetDescription>Tendencia mensal e produtos que merecem acompanhamento.</SheetDescription>
           </SheetHeader>
-          <div className="space-y-5 p-5">
+          <div className="space-y-4 p-4">
             <EstoqueTrendAlerts giroData={analysisGiroData} />
-            <div className="grid min-w-0 gap-5 lg:grid-cols-2">
-              <section aria-label="Distribuicao por status" className="min-w-0 space-y-3">
+            <div className="grid min-w-0 gap-4 lg:grid-cols-2">
+              <section aria-label="Distribuicao por status" className="min-w-0 space-y-2">
                 <h3 className="text-sm font-semibold">Distribuicao por status</h3>
                 <div className="flex flex-wrap gap-2" aria-label="Filtros da distribuicao por status">
                   {managementSummary.statusDistribution.map(item => (
                     <button
                       aria-label={`Filtrar status ${STATUS_CONFIG[item.status].label}`}
-                      className="border border-border px-2 py-1 text-xs font-medium hover:border-primary hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      className="border border-border px-2 py-0.5 text-xs font-medium hover:border-primary hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                       key={item.status}
                       onClick={() => onStatusFilterChange([item.status])}
                       type="button"
@@ -311,7 +311,7 @@ export function GiroEstoqueTab({ giroData, estoqueData, filters, onStatusFilterC
                     </button>
                   ))}
                 </div>
-                <div className="h-[210px] min-w-0">
+                <div className="h-40 min-w-0">
                   {managementSummary.statusDistribution.length === 0 ? (
                     <AnalysisEmpty>Sem dados para distribuicao por status.</AnalysisEmpty>
                   ) : (
@@ -327,9 +327,9 @@ export function GiroEstoqueTab({ giroData, estoqueData, filters, onStatusFilterC
                   )}
                 </div>
               </section>
-              <section aria-label="Estoque versus vendas" className="min-w-0 space-y-3">
+              <section aria-label="Estoque versus vendas" className="min-w-0 space-y-2">
                 <h3 className="text-sm font-semibold">Estoque versus vendas</h3>
-                <div className="h-[210px] min-w-0">
+                <div className="h-40 min-w-0">
                   {managementSummary.stockVersusSales.length === 0 ? (
                     <AnalysisEmpty>Sem dados para comparar estoque e vendas.</AnalysisEmpty>
                   ) : (
@@ -347,13 +347,13 @@ export function GiroEstoqueTab({ giroData, estoqueData, filters, onStatusFilterC
                 </div>
               </section>
             </div>
-            <section className="space-y-3" aria-label="Movimentacao mensal">
+            <section className="space-y-2" aria-label="Movimentacao mensal">
               <div className="flex items-center justify-between gap-3">
                 <h3 className="text-sm font-semibold">Movimentação mensal</h3>
                 <Badge variant="outline" className="text-[10px] text-muted-foreground">{filters.periodoMeses} meses</Badge>
               </div>
               <p className="sr-only">Movimentacao filtrada: {formatNumber(filteredMovementTotals.vendas)} vendas e {formatNumber(filteredMovementTotals.compras)} compras.</p>
-              <div className="h-[230px] min-w-0">
+              <div className="h-44 min-w-0">
                 {evolucaoMensal.length === 0 ? (
                   <AnalysisEmpty>Sem movimentacoes no periodo filtrado.</AnalysisEmpty>
                 ) : (
@@ -370,10 +370,10 @@ export function GiroEstoqueTab({ giroData, estoqueData, filters, onStatusFilterC
                 )}
               </div>
             </section>
-            <div className="grid min-w-0 gap-5 lg:grid-cols-2">
-              <section aria-label="Faixas sem venda" className="min-w-0 space-y-3">
+            <div className="grid min-w-0 gap-4 lg:grid-cols-2">
+              <section aria-label="Faixas sem venda" className="min-w-0 space-y-2">
                 <h3 className="text-sm font-semibold">Faixas sem venda</h3>
-                <div className="h-[210px] min-w-0">
+                <div className="h-40 min-w-0">
                   {managementSummary.noSaleBuckets.length === 0 ? (
                     <AnalysisEmpty>Sem dados de tempo sem venda.</AnalysisEmpty>
                   ) : (
@@ -395,7 +395,7 @@ export function GiroEstoqueTab({ giroData, estoqueData, filters, onStatusFilterC
                   {managementSummary.idleCapitalRanking.length === 0 ? (
                     <p className="py-6 text-center text-sm text-muted-foreground">Nenhum capital parado identificado.</p>
                   ) : managementSummary.idleCapitalRanking.slice(0, 5).map((item, index) => (
-                    <div className="flex h-11 min-w-0 items-center gap-3" key={`${item.empresa}-${item.cod_produto}`}>
+                    <div className="flex h-9 min-w-0 items-center gap-2" key={`${item.empresa}-${item.cod_produto}`}>
                       <span className="w-5 text-xs text-muted-foreground">{index + 1}</span>
                       <span className="min-w-0 flex-1 truncate text-sm" title={item.produto}>{item.produto}</span>
                       <span className="whitespace-nowrap text-sm font-semibold tabular-nums">{formatCurrency(item.valor)}</span>
@@ -405,11 +405,11 @@ export function GiroEstoqueTab({ giroData, estoqueData, filters, onStatusFilterC
               </section>
             </div>
             {managementSummary.abcValueDistribution.length > 0 && (
-              <section aria-label="Valor por curva ABC" className="space-y-3">
+              <section aria-label="Valor por curva ABC" className="space-y-2">
                 <h3 className="text-sm font-semibold">Valor por curva ABC</h3>
                 <div className="grid gap-2 sm:grid-cols-3">
                   {managementSummary.abcValueDistribution.map(item => (
-                    <div className="border border-border/70 p-3" key={item.classe}>
+                    <div className="border border-border/70 p-2.5" key={item.classe}>
                       <p className="text-xs text-muted-foreground">Curva {item.classe} · {item.produtos} produtos</p>
                       <p className="mt-1 font-semibold tabular-nums">{formatCurrency(item.valor)}</p>
                     </div>
@@ -417,12 +417,12 @@ export function GiroEstoqueTab({ giroData, estoqueData, filters, onStatusFilterC
                 </div>
               </section>
             )}
-            <div className="grid min-w-0 gap-5 md:grid-cols-2">
+            <div className="grid min-w-0 gap-4 md:grid-cols-2">
               <section aria-label="Maior giro" className="min-w-0">
                 <h3 className="border-b border-border pb-2 text-sm font-semibold">Maior giro</h3>
                 <div className="divide-y divide-border/70">
                   {topGiro.slice(0, 5).map((item, index) => (
-                    <div key={`${item.fullName}-${index}`} className="flex h-11 min-w-0 items-center gap-3">
+                    <div key={`${item.fullName}-${index}`} className="flex h-9 min-w-0 items-center gap-2">
                       <span className="w-5 text-xs text-muted-foreground">{index + 1}</span>
                       <span className="min-w-0 flex-1 truncate text-sm" title={item.fullName}>{item.fullName}</span>
                       <span className="whitespace-nowrap text-sm font-semibold tabular-nums">{item.giro.toFixed(2)}x</span>
@@ -435,7 +435,7 @@ export function GiroEstoqueTab({ giroData, estoqueData, filters, onStatusFilterC
                 <h3 className="border-b border-border pb-2 text-sm font-semibold">Mais tempo sem venda</h3>
                 <div className="divide-y divide-border/70">
                   {topParados.slice(0, 5).map((item, index) => (
-                    <div key={`${item.fullName}-${index}`} className="flex h-11 min-w-0 items-center gap-3">
+                    <div key={`${item.fullName}-${index}`} className="flex h-9 min-w-0 items-center gap-2">
                       <span className="w-5 text-xs text-muted-foreground">{index + 1}</span>
                       <span className="min-w-0 flex-1 truncate text-sm" title={item.fullName}>{item.fullName}</span>
                       <span className="whitespace-nowrap text-sm font-semibold tabular-nums text-amber-600 dark:text-amber-400">{item.dias}d</span>
@@ -489,37 +489,37 @@ export function GiroEstoqueTab({ giroData, estoqueData, filters, onStatusFilterC
             })}
           </div>
           <div className="hidden min-w-max md:block">
-            <Table>
+            <Table className="giro-density-table text-xs leading-none">
               <TableHeader className="sticky top-0 z-10 bg-muted">
                 <TableRow>
-                  <TableHead aria-label="Produto" aria-sort={sortDirection('produto')} className="min-w-[220px] p-0">
-                    <button aria-label="Ordenar por produto" className="flex h-10 w-full items-center gap-1 px-4 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring" onClick={() => toggleSort('produto')} type="button">
+                  <TableHead aria-label="Produto" aria-sort={sortDirection('produto')} className="h-8 min-w-[16rem] p-0">
+                    <button aria-label="Ordenar por produto" className="flex h-8 w-full items-center gap-1 px-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring" onClick={() => toggleSort('produto')} type="button">
                       Produto <ArrowUpDown aria-hidden="true" className="h-3 w-3" />
                     </button>
                   </TableHead>
-                  <TableHead>Marca</TableHead>
-                  <TableHead className="text-center">Status</TableHead>
-                  <TableHead aria-label="Estoque" aria-sort={sortDirection('quantidade_estoque')} className="p-0 text-right">
-                    <button aria-label="Ordenar por estoque" className="flex h-10 w-full items-center justify-end gap-1 px-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring" onClick={() => toggleSort('quantidade_estoque')} type="button">
+                  <TableHead className="h-8 !px-2 !py-0">Marca</TableHead>
+                  <TableHead className="h-8 !px-2 !py-0 text-center">Status</TableHead>
+                  <TableHead aria-label="Estoque" aria-sort={sortDirection('quantidade_estoque')} className="h-8 p-0 text-right">
+                    <button aria-label="Ordenar por estoque" className="flex h-8 w-full items-center justify-end gap-1 px-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring" onClick={() => toggleSort('quantidade_estoque')} type="button">
                       Estoque <ArrowUpDown aria-hidden="true" className="h-3 w-3" />
                     </button>
                   </TableHead>
-                  <TableHead aria-label="Valor Estoque" aria-sort={sortDirection('valor_estoque')} className="p-0 text-right">
-                    <button aria-label="Ordenar por valor em estoque" className="flex h-10 w-full items-center justify-end gap-1 px-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring" onClick={() => toggleSort('valor_estoque')} type="button">
+                  <TableHead aria-label="Valor Estoque" aria-sort={sortDirection('valor_estoque')} className="h-8 p-0 text-right">
+                    <button aria-label="Ordenar por valor em estoque" className="flex h-8 w-full items-center justify-end gap-1 px-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring" onClick={() => toggleSort('valor_estoque')} type="button">
                       Valor Estoque <ArrowUpDown aria-hidden="true" className="h-3 w-3" />
                     </button>
                   </TableHead>
-                  <TableHead aria-label="Vendas" aria-sort={sortDirection('total_vendas')} className="p-0 text-right">
-                    <button aria-label="Ordenar por vendas" className="flex h-10 w-full items-center justify-end gap-1 px-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring" onClick={() => toggleSort('total_vendas')} type="button">
+                  <TableHead aria-label="Vendas" aria-sort={sortDirection('total_vendas')} className="h-8 p-0 text-right">
+                    <button aria-label="Ordenar por vendas" className="flex h-8 w-full items-center justify-end gap-1 px-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring" onClick={() => toggleSort('total_vendas')} type="button">
                       Vendas <ArrowUpDown aria-hidden="true" className="h-3 w-3" />
                     </button>
                   </TableHead>
-                  <TableHead aria-label="Cobertura" aria-sort={sortDirection('cobertura_meses')} className="p-0 text-right">
-                    <button aria-label="Ordenar por cobertura" className="flex h-10 w-full items-center justify-end gap-1 px-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring" onClick={() => toggleSort('cobertura_meses')} type="button">
+                  <TableHead aria-label="Cobertura" aria-sort={sortDirection('cobertura_meses')} className="h-8 p-0 text-right">
+                    <button aria-label="Ordenar por cobertura" className="flex h-8 w-full items-center justify-end gap-1 px-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring" onClick={() => toggleSort('cobertura_meses')} type="button">
                       Cobertura <ArrowUpDown aria-hidden="true" className="h-3 w-3" />
                     </button>
                   </TableHead>
-                  <TableHead className="min-w-[140px]">Acao recomendada</TableHead>
+                  <TableHead className="h-8 min-w-[140px] !px-2 !py-0">Acao recomendada</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -527,35 +527,37 @@ export function GiroEstoqueTab({ giroData, estoqueData, filters, onStatusFilterC
                   const identity = productIdentity(s);
                   const statusHelpId = `giro-status-table-${sanitizeDomId(identity)}`;
                   return (
-                    <TableRow className="h-11" key={identity}>
-                      <TableCell className="max-w-[240px]">
-                        <span className="block truncate text-sm font-medium">{s.produto}</span>
-                        <span className="block text-[11px] text-muted-foreground">Codigo {s.cod_produto}</span>
+                    <TableRow className="h-7" key={identity}>
+                      <TableCell className="max-w-[16rem] !px-2 !py-0">
+                        <span className="flex min-w-0 items-baseline gap-2">
+                          <span className="truncate text-[13px] font-medium leading-none">{s.produto}</span>
+                          <span className="shrink-0 text-[11px] leading-none text-muted-foreground">Codigo {s.cod_produto}</span>
+                        </span>
                       </TableCell>
-                      <TableCell className="text-xs">{s.marca}</TableCell>
-                      <TableCell className="text-center">
+                      <TableCell className="!px-2 !py-0 text-xs">{s.marca}</TableCell>
+                      <TableCell className="!px-2 !py-0 text-center">
                         <GiroStatusHelp id={statusHelpId} status={s.status} />
                       </TableCell>
-                      <TableCell className="text-right font-mono">{s.quantidade_estoque}</TableCell>
-                      <TableCell className="whitespace-nowrap text-right font-mono text-sm">{formatCurrency(s.valor_estoque)}</TableCell>
-                      <TableCell className="text-right font-mono">{s.total_vendas}</TableCell>
-                      <TableCell className="text-right">
+                      <TableCell className="!px-2 !py-0 text-right font-mono">{s.quantidade_estoque}</TableCell>
+                      <TableCell className="whitespace-nowrap !px-2 !py-0 text-right font-mono text-[13px]">{formatCurrency(s.valor_estoque)}</TableCell>
+                      <TableCell className="!px-2 !py-0 text-right font-mono">{s.total_vendas}</TableCell>
+                      <TableCell className="!px-2 !py-0 text-right">
                         {s.cobertura_meses == null ? 'Sem baseline' : `${s.cobertura_meses.toFixed(1)} meses`}
                       </TableCell>
-                      <TableCell className="whitespace-nowrap text-xs font-medium">
+                      <TableCell className="whitespace-nowrap !px-2 !py-0 text-xs font-medium">
                         <span>{GIRO_RECOMMENDED_ACTIONS[s.status]}</span>
                         {(() => {
                           const t = trendMap.get(productIdentity(s));
-                          if (!t) return <Minus aria-label="Tendencia estavel" className="ml-2 inline h-4 w-4 text-muted-foreground" />;
+                          if (!t) return <Minus aria-label="Tendencia estavel" className="ml-1.5 inline h-3.5 w-3.5 text-muted-foreground" />;
                           if (t.trend === 'declining') return (
-                            <span aria-label={`Tendencia de queda de ${t.dropPercent.toFixed(0)}%`} className="ml-2 inline-flex items-center gap-1 text-red-400" title={`Queda de ${t.dropPercent.toFixed(0)}%`}>
-                              <TrendingDown className="h-4 w-4" />
-                              <span className="text-xs font-mono">-{t.dropPercent.toFixed(0)}%</span>
+                            <span aria-label={`Tendencia de queda de ${t.dropPercent.toFixed(0)}%`} className="ml-1.5 inline-flex items-center gap-0.5 text-red-400" title={`Queda de ${t.dropPercent.toFixed(0)}%`}>
+                              <TrendingDown className="h-3.5 w-3.5" />
+                              <span className="text-[11px] font-mono">-{t.dropPercent.toFixed(0)}%</span>
                             </span>
                           );
                           if (t.trend === 'growing') return (
-                            <span aria-label="Tendencia de crescimento" className="ml-2 inline-flex items-center gap-1 text-emerald-400">
-                              <TrendingUp className="h-4 w-4" />
+                            <span aria-label="Tendencia de crescimento" className="ml-1.5 inline-flex items-center gap-0.5 text-emerald-400">
+                              <TrendingUp className="h-3.5 w-3.5" />
                             </span>
                           );
                           return <Minus aria-label="Tendencia estavel" className="ml-2 inline h-4 w-4 text-muted-foreground" />;
@@ -569,13 +571,14 @@ export function GiroEstoqueTab({ giroData, estoqueData, filters, onStatusFilterC
           </div>
           </div>
           {visibleCount < sorted.length && (
-            <div className="flex items-center justify-center gap-3 border-t border-border/50 py-3">
+            <div className="flex h-9 shrink-0 items-center justify-center gap-2 border-t border-border/50 py-1">
               <span className="text-xs text-muted-foreground">
                 Mostrando {Math.min(visibleCount, sorted.length)} de {sorted.length}
               </span>
               <Button
                 variant="outline"
                 size="sm"
+                className="h-7 px-2 text-xs"
                 onClick={() => setVisibleCount(v => Math.min(v + 50, sorted.length))}
               >
                 Carregar mais 50
@@ -583,6 +586,7 @@ export function GiroEstoqueTab({ giroData, estoqueData, filters, onStatusFilterC
               <Button
                 variant="ghost"
                 size="sm"
+                className="h-7 px-2 text-xs"
                 onClick={() => setVisibleCount(sorted.length)}
               >
                 Ver todos

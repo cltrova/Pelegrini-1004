@@ -1,9 +1,23 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
+import type { ReactNode } from 'react';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import { estoqueFixtureComTresItens, giroFixture } from './estoque/estoqueFixtures';
 import { GiroEstoqueTab } from './GiroEstoqueTab';
 import type { GiroRecord } from '@/types/estoque';
+
+vi.mock('recharts', async () => {
+  const actual = await vi.importActual<typeof import('recharts')>('recharts');
+
+  return {
+    ...actual,
+    ResponsiveContainer: ({ children }: { children: ReactNode }) => (
+      <div className="recharts-responsive-container" style={{ height: 240, width: 640 }}>
+        {children}
+      </div>
+    ),
+  };
+});
 
 const filters = {
   periodoMeses: 3,
@@ -15,6 +29,14 @@ const filters = {
 } as const;
 
 beforeAll(() => {
+  Object.defineProperty(HTMLElement.prototype, 'clientWidth', {
+    configurable: true,
+    value: 640,
+  });
+  Object.defineProperty(HTMLElement.prototype, 'clientHeight', {
+    configurable: true,
+    value: 240,
+  });
   vi.stubGlobal('ResizeObserver', class ResizeObserverMock {
     observe() {}
     disconnect() {}
@@ -48,6 +70,26 @@ describe('GiroEstoqueTab', () => {
     expect(within(table).getByRole('columnheader', { name: 'Cobertura' })).toBeInTheDocument();
     expect(within(table).getByRole('columnheader', { name: 'Acao recomendada' })).toBeInTheDocument();
     expect(within(table).queryByRole('columnheader', { name: 'Filial' })).not.toBeInTheDocument();
+  });
+
+  it('mantem comandos, tabela e paginacao do giro em densidade de gestor', () => {
+    render(<GiroEstoqueTab estoqueData={estoqueFixtureComTresItens} filters={{ ...filters, statusFilter: [] }} giroData={giroFixture} onStatusFilterChange={vi.fn()} />);
+
+    const toolbar = screen.getByRole('toolbar', { name: 'Comandos do giro de estoque' });
+    expect(toolbar).toHaveClass('h-10');
+    expect(screen.getByRole('button', { name: /Abrir analise de giro/i })).toHaveClass('h-8', 'text-xs');
+
+    const table = screen.getByRole('table');
+    expect(table).toHaveClass('giro-density-table', 'text-xs');
+    expect(within(table).getByRole('columnheader', { name: 'Produto' })).toHaveClass('min-w-[16rem]', 'h-8');
+    expect(within(table).getByRole('columnheader', { name: 'Marca' })).toHaveClass('h-8', '!px-2', '!py-0');
+    expect(within(table).getByRole('button', { name: /Ordenar por produto/i })).toHaveClass('h-8', 'px-2');
+    const productRow = within(table).getAllByRole('row').find((row) => within(row).queryByText('KIT EMBREAGEM PESADA'))!;
+    expect(productRow).toHaveClass('h-7');
+    expect(within(productRow).getByText('KIT EMBREAGEM PESADA')).toHaveClass('text-[13px]', 'leading-none');
+    expect(within(productRow).getByText(/Codigo 101/i)).toHaveClass('text-[11px]', 'leading-none');
+    expect(within(productRow).getByRole('cell', { name: /KIT EMBREAGEM PESADA/i })).toHaveClass('!py-0');
+    expect(within(productRow).getByRole('button', { name: /Explicar status/i }).firstElementChild).toHaveClass('text-[11px]', 'leading-4', 'py-0');
   });
 
   it('nao exibe filial porque a filial BI e selecionada globalmente', () => {
