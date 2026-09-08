@@ -114,6 +114,18 @@ describe('Pelegrini visual foundation', () => {
     expect(screen.getByLabelText('Periodo')).toBeInTheDocument();
   });
 
+  it('keeps Pelegrini filter controls hidden when the bar is collapsed', () => {
+    render(
+      <PelegriniFilterBar activeCount={1} summary="Julho">
+        <label>Vendedor <input /></label>
+      </PelegriniFilterBar>,
+    );
+
+    expect(screen.getByRole('button', { name: /filtros/i })).toHaveAttribute('aria-expanded', 'false');
+    expect(screen.getByLabelText('Vendedor').closest('.pelegrini-filter-controls')).toHaveClass('hidden');
+    expect(screen.getByLabelText('Vendedor').closest('.pelegrini-filter-controls')).not.toHaveClass('lg:flex');
+  });
+
   it('marks a data panel and contains both its heading action and content', () => {
     render(
       <PelegriniDataPanel title="Pedidos" action={<button type="button">Exportar</button>}>
@@ -253,6 +265,8 @@ describe('Pelegrini visual foundation', () => {
     expect(css).toContain('body');
     expect(css).toContain('overflow: hidden');
     expect(css).toContain('.pelegrini-page-surface :where([class~=\'space-y-6\'])');
+    expect(css).toContain('.pelegrini-page-surface :where(.enterprise-page-header, .page-header, .pelegrini-module-header)');
+    expect(css).toContain(':where(div:has(> h1:first-child), div:has(> div > h1:first-child))');
     expect(css).toContain('.pelegrini-page-surface :where([class~=\'p-6\'])');
     expect(css).toContain('.pelegrini-page-surface :where([class*=\'h-[640px]\'])');
   });

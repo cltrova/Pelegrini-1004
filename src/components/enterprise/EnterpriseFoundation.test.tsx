@@ -115,6 +115,19 @@ describe('enterprise visual foundation', () => {
     expect(onApply).toHaveBeenCalledTimes(1);
   });
 
+  it('keeps enterprise filters collapsed by default across viewports', () => {
+    render(
+      <EnterpriseFilterBar summary="Julho">
+        <EnterpriseSearchFilter label="Busca" value="" onChange={() => undefined} />
+      </EnterpriseFilterBar>,
+    );
+
+    expect(screen.getByRole('button', { name: /^filtros$/i })).toHaveAttribute('aria-expanded', 'false');
+    const content = screen.getByLabelText('Busca').closest('label')?.parentElement;
+    expect(content).toHaveClass('hidden');
+    expect(content).not.toHaveClass('lg:flex');
+  });
+
   it('renders standard select and multi-select filters with counts', () => {
     render(
       <div>

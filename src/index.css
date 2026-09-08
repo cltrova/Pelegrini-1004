@@ -1462,6 +1462,11 @@
     margin-bottom: calc(0.625rem * var(--tw-space-y-reverse)) !important;
   }
 
+  .pelegrini-page-surface :where(.enterprise-page-header, .page-header, .pelegrini-module-header),
+  .pelegrini-page-surface :where(.enterprise-page, .enterprise-page-shell) > :where(div:has(> h1:first-child), div:has(> div > h1:first-child)) {
+    display: none !important;
+  }
+
   .pelegrini-page-surface :where([class~='gap-6']) { gap: 0.75rem !important; }
   .pelegrini-page-surface :where([class~='gap-5']) { gap: 0.625rem !important; }
   .pelegrini-page-surface :where([class~='p-6']) { padding: 1rem !important; }

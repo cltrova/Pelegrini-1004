@@ -28,7 +28,7 @@ export function PelegriniFilterBar({ actions, activeCount, children, className, 
           <ChevronDown aria-hidden="true" className={cn(open && 'rotate-180')} />
         </button>
       )}
-      <div className={cn('pelegrini-filter-controls flex flex-col gap-3 sm:flex-row sm:items-end', collapsible && !open && 'hidden lg:flex')}>
+      <div className={cn('pelegrini-filter-controls flex flex-col gap-3 sm:flex-row sm:items-end', collapsible && !open && 'hidden')}>
         <div className="flex min-w-0 flex-1 flex-wrap items-end gap-3">{children}</div>
         {actions && <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div>}
       </div>

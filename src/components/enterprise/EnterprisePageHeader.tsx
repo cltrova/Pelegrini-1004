@@ -19,7 +19,7 @@ export function EnterprisePageHeader({
   className,
 }: EnterprisePageHeaderProps) {
   return (
-    <header className={cn('flex min-w-0 flex-col gap-2 border-b border-border/70 pb-3 sm:flex-row sm:items-end sm:justify-between', className)}>
+    <header className={cn('enterprise-page-header flex min-w-0 flex-col gap-2 border-b border-border/70 pb-3 sm:flex-row sm:items-end sm:justify-between', className)}>
       <div className="min-w-0">
         {eyebrow && <p className="text-[10px] font-semibold uppercase text-muted-foreground">{eyebrow}</p>}
         <h1 className="truncate text-xl font-semibold leading-tight text-foreground md:text-2xl">{title}</h1>

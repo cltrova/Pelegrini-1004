@@ -26,7 +26,7 @@ export function EnterpriseFilterBar({
   resultCount,
   resultLabel = 'resultados',
   isOpen,
-  defaultOpen = true,
+  defaultOpen = false,
   onOpenChange,
   onClear,
   onApply,
@@ -69,7 +69,7 @@ export function EnterpriseFilterBar({
           </Button>
         )}
       </div>
-      <div className={cn('mt-2 flex min-w-0 flex-wrap items-end gap-2', !open && 'hidden lg:flex')}>{children}</div>
+      <div className={cn('mt-2 flex min-w-0 flex-wrap items-end gap-2', !open && 'hidden')}>{children}</div>
     </section>
   );
 }

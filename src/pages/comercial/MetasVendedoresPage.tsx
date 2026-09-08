@@ -117,7 +117,7 @@ export default function MetasVendedoresPage() {
    // Filtros - inicializar como undefined para NÃO filtrar até periodoDisponivel estar disponível
    const [pendingFilters, setPendingFilters] = useState<ComercialFiltersType | undefined>(undefined);
    const [appliedFilters, setAppliedFilters] = useState<ComercialFiltersType | undefined>(undefined);
-  const filtersOpen = true;
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   const aplicarFiltroPadraoPelegrini = useCallback((filters: ComercialFiltersType | undefined) => {
     return aplicarEquipeContextualPelegrini1004AoFiltro(
@@ -272,6 +272,7 @@ export default function MetasVendedoresPage() {
   // Aplicar filtros
   const handleBuscar = useCallback(() => {
     setAppliedFilters(aplicarFiltroPadraoPelegrini(pendingFilters));
+    setFiltersOpen(false);
     invalidarConsultasComerciais(queryClient);
   }, [aplicarFiltroPadraoPelegrini, pendingFilters, queryClient]);
 
@@ -699,6 +700,8 @@ export default function MetasVendedoresPage() {
           resultCount={pedidosFonteFinal.length}
           showVendedorFilter
           useNativeControls
+          isOpen={filtersOpen}
+          onOpenChange={setFiltersOpen}
         />
       )}
 
