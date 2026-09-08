@@ -1,13 +1,20 @@
 import { describe, expect, it } from 'vitest';
 import {
+  calcularPedidosAbertosPorVendedor,
   buildComissaoSearchParams,
   comissaoLinhaPertenceForcaP1004,
   deveExcluirForcaPComissao1004,
+  getValorPedidoAberto,
   mapComissaoLinha,
+  resolvePedidosAbertosPath,
   resolveComissaoVendedoresPath,
 } from './useComissaoVendedores';
 
 describe('mapComissaoLinha', () => {
+  it('usa o endpoint dedicado para pedidos em aberto', () => {
+    expect(resolvePedidosAbertosPath()).toBe('/comercial/pedidos-abertos');
+  });
+
   it('interpreta os campos do relatorio sintetico FAT da Pelegrini', () => {
     const linha = mapComissaoLinha({
       CodVendedor: '00010',
@@ -69,7 +76,7 @@ describe('mapComissaoLinha', () => {
     expect(linha.novaProjecao).toBeCloseTo(85_120.10, 2);
   });
 
-  it('usa AFaturar como pedidos em aberto', () => {
+  it('nao usa AFaturar como pedidos em aberto', () => {
     const linha = mapComissaoLinha({
       Vendedor: '10',
       NomeVendedor: 'XEXEU',
@@ -77,7 +84,7 @@ describe('mapComissaoLinha', () => {
     });
 
     expect(linha.aFaturar).toBeCloseTo(65_057.10, 2);
-    expect(linha.pedidosAberto).toBeCloseTo(65_057.10, 2);
+    expect(linha.pedidosAberto).toBeNull();
   });
 
   it('preserva pedidos em aberto explicitamente zerados pela API', () => {
@@ -86,16 +93,42 @@ describe('mapComissaoLinha', () => {
     expect(linha.aFaturar).toBeCloseTo(53_850.70, 2);
   });
 
-  it('usa AFaturar quando o campo alternativo vem null ou vazio', () => {
-    expect(mapComissaoLinha({ AFaturar: 100, PedidosEmAberto: null }).pedidosAberto).toBe(100);
-    expect(mapComissaoLinha({ AFaturar: 100, PedidosEmAberto: '' }).pedidosAberto).toBe(100);
+  it('mantem pedidos em aberto nulo quando a API de comissao nao informa o campo', () => {
+    expect(mapComissaoLinha({ AFaturar: 100, PedidosEmAberto: null }).pedidosAberto).toBeNull();
+    expect(mapComissaoLinha({ AFaturar: 100, PedidosEmAberto: '' }).pedidosAberto).toBeNull();
   });
 
-  it('aceita os aliases de A faturar como pedidos em aberto', () => {
-    expect(mapComissaoLinha({ AFaturar: 0 }).pedidosAberto).toBe(0);
-    expect(mapComissaoLinha({ 'A FATURAR': '1.234,56' }).pedidosAberto).toBeCloseTo(1234.56, 2);
-    expect(mapComissaoLinha({ a_faturar: 100 }).pedidosAberto).toBe(100);
+  it('aceita somente aliases explicitos de pedidos em aberto', () => {
+    expect(mapComissaoLinha({ PedidosAberto: 0 }).pedidosAberto).toBe(0);
+    expect(mapComissaoLinha({ 'PEDIDOS EM ABERTO': '1.234,56' }).pedidosAberto).toBeCloseTo(1234.56, 2);
+    expect(mapComissaoLinha({ a_faturar_pedidos: 100 }).pedidosAberto).toBe(100);
     expect(mapComissaoLinha({}).pedidosAberto).toBeNull();
+  });
+
+  it('retorna nulo para valor total de pedido faturado', () => {
+    expect(getValorPedidoAberto({
+      status_pedido: 'Faturado',
+      data_faturamento: '2026-09-08',
+      valor_total_pedido: 900,
+    })).toBeNull();
+    expect(getValorPedidoAberto({
+      status_pedido: 'Pendente',
+      data_faturamento: null,
+      valor_total_pedido: '1.234,56',
+    })).toBeCloseTo(1234.56, 2);
+  });
+
+  it('soma somente pedidos abertos e nao repete o pedido por item', () => {
+    const totais = calcularPedidosAbertosPorVendedor([
+      { cod_empresa: 2, cod_pedido: 100, cod_vendedor: 10, status_pedido: 'Pendente', data_faturamento: null, cod_operacao: 10, valor_total_pedido: 500 },
+      { cod_empresa: 2, cod_pedido: 100, cod_vendedor: 10, status_pedido: 'Pendente', data_faturamento: null, cod_operacao: 10, valor_total_pedido: 500 },
+      { cod_empresa: 2, cod_pedido: 101, cod_vendedor: 10, status_pedido: 'Faturado', data_faturamento: '2026-09-08', cod_operacao: 10, valor_total_pedido: 900 },
+      { cod_empresa: 2, cod_pedido: 102, cod_vendedor: 11, status_pedido: 'Pendente', data_faturamento: null, cod_operacao: 62, valor_total_pedido: 250 },
+      { cod_empresa: 2, cod_pedido: 103, cod_vendedor: 11, status_pedido: 'Pendente', data_faturamento: null, cod_operacao: 80, valor_total_pedido: 700 },
+    ], { operacaoInicial: 0, operacaoFinal: 62 });
+
+    expect(totais.get('10')).toBe(500);
+    expect(totais.get('11')).toBe(250);
   });
 
   it('identifica linhas da Forca P na comissao do cliente 1004', () => {

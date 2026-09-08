@@ -10,6 +10,7 @@ export interface Profile {
   cod_empresa_bi: string | null;
   filial_id?: string | null;
   filiais_permitidas?: string[] | null;
+  must_change_password?: boolean;
   created_at: string;
   updated_at: string;
 }

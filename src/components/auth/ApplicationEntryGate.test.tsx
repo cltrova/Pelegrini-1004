@@ -1,5 +1,5 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PasswordGate } from '@/App';
 
 const authState = vi.hoisted(() => ({
@@ -27,6 +27,10 @@ describe('Application entry gate', () => {
     authState.signup.mockReset();
   });
 
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it('shows the CT and CCH login experience before exposing the application', () => {
     render(
       <PasswordGate>
@@ -34,11 +38,21 @@ describe('Application entry gate', () => {
       </PasswordGate>,
     );
 
-    expect(screen.getByRole('heading', { name: 'Acesse sua central' })).toBeInTheDocument();
-    expect(screen.getByText('Casa da Transmissão')).toBeInTheDocument();
-    expect(screen.getByText('Casa do Chevrolet')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Acesso ao sistema' })).toBeInTheDocument();
+    const transmissionLogo = screen.getByRole('img', { name: 'Casa da Transmissão' });
+    expect(transmissionLogo).toHaveAttribute('data-transmission-full-logo');
+    expect(transmissionLogo).toHaveAttribute('src', '/brand/home/transmissao-full-white.png');
+    expect(transmissionLogo.parentElement).toHaveClass('pelegrini-login-logo-stage');
     expect(screen.getByLabelText('Email')).toBeInTheDocument();
     expect(screen.getByLabelText('Senha')).toBeInTheDocument();
+    expect(document.querySelector('.pelegrini-login')).toHaveAttribute('data-layout', 'split-60-40');
+    expect(document.querySelectorAll('[data-login-field]')).toHaveLength(2);
+    expect(document.querySelector('[data-login-field="email"]')).toContainElement(screen.getByLabelText('Email'));
+    expect(document.querySelector('[data-login-field="password"]')).toContainElement(screen.getByLabelText('Senha'));
+    expect(screen.queryByText('Criar conta')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Confirmar senha')).not.toBeInTheDocument();
+    expect(document.querySelector('[data-login-branch-mark]')).not.toBeInTheDocument();
+    expect(screen.queryByText('Central de gestão')).not.toBeInTheDocument();
     expect(screen.queryByText('Conteudo protegido')).not.toBeInTheDocument();
   });
 
@@ -52,21 +66,24 @@ describe('Application entry gate', () => {
     );
 
     expect(screen.getByText('Conteudo protegido')).toBeInTheDocument();
-    expect(screen.queryByRole('heading', { name: 'Acesse sua central' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Acesso ao sistema' })).not.toBeInTheDocument();
   });
 
-  it('switches the institutional visual without selecting an operational branch', () => {
+  it('rotates the institutional story automatically without branch choice buttons', () => {
+    vi.useFakeTimers();
     render(<PasswordGate><p>Conteudo protegido</p></PasswordGate>);
 
-    const transmissao = screen.getByRole('button', { name: 'Casa da Transmissão' });
-    const chevrolet = screen.getByRole('button', { name: 'Casa do Chevrolet' });
-    expect(transmissao).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.queryByRole('button', { name: 'Casa da Transmissão' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Casa do Chevrolet' })).not.toBeInTheDocument();
+    expect(screen.getByRole('img', { name: 'Casa da Transmissão' })).toBeInTheDocument();
 
-    fireEvent.click(chevrolet);
+    act(() => {
+      vi.advanceTimersByTime(6000);
+    });
 
-    expect(chevrolet).toHaveAttribute('aria-pressed', 'true');
-    expect(transmissao).toHaveAttribute('aria-pressed', 'false');
+    expect(screen.getByRole('img', { name: 'Casa do Chevrolet' })).toBeInTheDocument();
     expect(screen.getByText('Peças originais, estoque e atendimento ágil.')).toBeInTheDocument();
+    expect(document.querySelector('[data-login-branch-mark]')).not.toBeInTheDocument();
   });
 
   it('submits credentials and keeps authentication errors inside the access panel', async () => {

@@ -35,17 +35,17 @@ describe('ComissaoPage', () => {
     expect(final).toHaveValue('62');
   });
 
-  it('exibe AFaturar como pedidos em aberto', () => {
+  it('exibe somente o valor explicito de pedidos em aberto', () => {
     linhas.push(
-      mapComissaoLinha({ Vendedor: 10, NomeVendedor: 'XEXEU', AFaturar: 53850.7 }),
+      mapComissaoLinha({ Vendedor: 10, NomeVendedor: 'XEXEU', AFaturar: 53850.7, PedidosEmAberto: 500 }),
       mapComissaoLinha({ Vendedor: 11, NomeVendedor: 'MARCIO', PedidosEmAberto: 100 }),
     );
     render(<ComissaoPage />);
     fireEvent.click(screen.getByRole('button', { name: 'Buscar' }));
     const row = screen.getByText('XEXEU').closest('tr')!;
-    expect(within(row).getAllByRole('cell')[8]).toHaveTextContent('53.850,70');
+    expect(within(row).getAllByRole('cell')[8]).toHaveTextContent('500,00');
     const total = screen.getByText('Total', { exact: true }).closest('tr')!;
-    expect(within(total).getAllByRole('cell')[7]).toHaveTextContent('53.950,70');
+    expect(within(total).getAllByRole('cell')[7]).toHaveTextContent('600,00');
     expect(screen.queryByRole('status')).not.toBeInTheDocument();
   });
 

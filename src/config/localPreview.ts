@@ -9,6 +9,7 @@ type StorageLike = Pick<Storage, 'getItem' | 'setItem'>;
 export const LOCAL_PREVIEW_EMPRESA_STORAGE_KEY = 'pelegrini-local-preview-empresa';
 export const LOCAL_PREVIEW_USERS_STORAGE_KEY = 'pelegrini-local-preview-users';
 export const LOCAL_PREVIEW_ACTIVE_USER_STORAGE_KEY = 'pelegrini-local-preview-active-user';
+export const LOCAL_PREVIEW_AUTHENTICATED_USER_STORAGE_KEY = 'pelegrini-local-preview-authenticated-user';
 export const LOCAL_PREVIEW_MOTIVOS_PERDA_STORAGE_KEY = 'pelegrini-local-preview-motivos-perda';
 
 export interface LocalPreviewUserAccount {
@@ -42,7 +43,7 @@ export interface LocalPreviewMotivoPerdaRegistro {
 }
 
 export function isLocalPreviewEnabled(env: EnvLike = import.meta.env) {
-  return env.VITE_LOCAL_PREVIEW !== 'false' && env.VITE_LOCAL_PREVIEW !== false;
+  return env.VITE_LOCAL_PREVIEW === 'true' || env.VITE_LOCAL_PREVIEW === true;
 }
 
 export function createLocalPreviewPermissions(): UserModulePermissions {
@@ -273,6 +274,10 @@ export function deleteLocalPreviewUserAccount(userId: string, storage?: UsersSto
 export function setActiveLocalPreviewUserAccount(userId: string, storage?: StorageLike) {
   const targetStorage = getLocalStorage(storage);
   targetStorage?.setItem(LOCAL_PREVIEW_ACTIVE_USER_STORAGE_KEY, userId);
+
+  if (targetStorage?.getItem(LOCAL_PREVIEW_AUTHENTICATED_USER_STORAGE_KEY)) {
+    targetStorage.setItem(LOCAL_PREVIEW_AUTHENTICATED_USER_STORAGE_KEY, userId);
+  }
 }
 
 export function getActiveLocalPreviewUserAccount(storage?: StorageLike): LocalPreviewUserAccount {
@@ -281,6 +286,47 @@ export function getActiveLocalPreviewUserAccount(storage?: StorageLike): LocalPr
   const activeUserId = targetStorage?.getItem(LOCAL_PREVIEW_ACTIVE_USER_STORAGE_KEY);
 
   return accounts.find((account) => account.user.id === activeUserId) || accounts[0] || getDefaultLocalPreviewUserAccount();
+}
+
+export function authenticateLocalPreviewUser(
+  email: string,
+  password: string,
+  storage?: StorageLike,
+): LocalPreviewUserAccount | null {
+  const normalizedEmail = email.trim().toLowerCase();
+
+  return readLocalPreviewUserAccounts(storage).find((account) => {
+    const accountEmail = (account.profile.email || account.user.email || '').trim().toLowerCase();
+    return accountEmail === normalizedEmail && account.tempPassword === password;
+  }) || null;
+}
+
+export function setAuthenticatedLocalPreviewUserAccount(userId: string | null, storage?: UsersStorageLike) {
+  const targetStorage = getLocalStorage(storage);
+  if (!targetStorage) return;
+
+  if (!userId) {
+    if ('removeItem' in targetStorage && typeof targetStorage.removeItem === 'function') {
+      targetStorage.removeItem(LOCAL_PREVIEW_AUTHENTICATED_USER_STORAGE_KEY);
+    } else {
+      targetStorage.setItem(LOCAL_PREVIEW_AUTHENTICATED_USER_STORAGE_KEY, '');
+    }
+    return;
+  }
+
+  const accountExists = readLocalPreviewUserAccounts(storage).some((account) => account.user.id === userId);
+  if (!accountExists) return;
+
+  targetStorage.setItem(LOCAL_PREVIEW_ACTIVE_USER_STORAGE_KEY, userId);
+  targetStorage.setItem(LOCAL_PREVIEW_AUTHENTICATED_USER_STORAGE_KEY, userId);
+}
+
+export function getAuthenticatedLocalPreviewUserAccount(storage?: StorageLike): LocalPreviewUserAccount | null {
+  const targetStorage = getLocalStorage(storage);
+  const authenticatedUserId = targetStorage?.getItem(LOCAL_PREVIEW_AUTHENTICATED_USER_STORAGE_KEY);
+  if (!authenticatedUserId) return null;
+
+  return readLocalPreviewUserAccounts(storage).find((account) => account.user.id === authenticatedUserId) || null;
 }
 
 export function readLocalPreviewMotivosPerda(storage?: StorageLike): LocalPreviewMotivoPerdaRegistro[] {

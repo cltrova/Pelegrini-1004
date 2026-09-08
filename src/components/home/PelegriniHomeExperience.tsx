@@ -25,6 +25,7 @@ import { useFilialSelecionada } from '@/contexts/FilialSelecionadaContext';
 import { useEmpresaSelecionada } from '@/contexts/EmpresaSelecionadaContext';
 import { useEmpresaConfig } from '@/hooks/useEmpresaConfig';
 import { useUserModulePermissions } from '@/hooks/useUserModulePermissions';
+import { TransmissionFullLogo } from '@/components/pelegrini/TransmissionFullLogo';
 
 type HomeBranch = 'transmissao' | 'chevrolet';
 
@@ -96,15 +97,19 @@ const branchPresentation: Record<HomeBranch, {
   },
 };
 
-function LayeredBrandLogo({ branch, className = '' }: { branch: HomeBranch; className?: string }) {
+function LayeredBrandLogo({ branch, className = '', fullWhite = false }: { branch: HomeBranch; className?: string; fullWhite?: boolean }) {
   const presentation = branchPresentation[branch];
   return (
-    <span className={`pelegrini-home-logo-stack ${branch} ${className}`}>
-      <img
-        src={presentation.logo}
-        alt={presentation.name}
-        className={branch === 'chevrolet' ? 'pelegrini-chevrolet-logo' : undefined}
-      />
+    <span className={`pelegrini-home-logo-stack ${branch} ${fullWhite ? 'full-white' : ''} ${className}`}>
+      {branch === 'transmissao' && fullWhite
+        ? <TransmissionFullLogo />
+        : (
+          <img
+            src={presentation.logo}
+            alt={presentation.name}
+            className={branch === 'chevrolet' ? 'pelegrini-chevrolet-logo' : undefined}
+          />
+        )}
     </span>
   );
 }
@@ -287,6 +292,7 @@ export function PelegriniHomeExperience({ mobile = false }: PelegriniHomeExperie
                 key={filial.id}
                 type="button"
                 className="pelegrini-home-branch-card"
+                data-branch={filial.id}
                 disabled={filial.blocked}
                 onClick={() => chooseBranch(filial.id)}
                 onPointerEnter={() => setFocusedBranch(filial.id)}
@@ -294,7 +300,7 @@ export function PelegriniHomeExperience({ mobile = false }: PelegriniHomeExperie
                 onFocus={() => setFocusedBranch(filial.id)}
                 onBlur={() => setFocusedBranch(null)}
               >
-                <span className="pelegrini-home-branch-logo-stage"><LayeredBrandLogo branch={filial.id} /></span>
+                <span className="pelegrini-home-branch-logo-stage"><LayeredBrandLogo branch={filial.id} fullWhite /></span>
                 <span className="pelegrini-home-branch-name">{branchPresentation[filial.id].name}<ArrowRight /></span>
                 {filial.blocked && <span className="sr-only">Acesso não liberado</span>}
               </button>

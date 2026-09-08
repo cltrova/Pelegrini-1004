@@ -8,6 +8,7 @@ import {
   giroFixture,
 } from '@/components/operacional/estoque/estoqueFixtures';
 import { PelegriniBranchSwitcher } from '@/components/pelegrini/PelegriniBranchSwitcher';
+import { setAuthenticatedLocalPreviewUserAccount } from '@/config/localPreview';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { EmpresaSelecionadaProvider } from '@/contexts/EmpresaSelecionadaContext';
 import { FilialSelecionadaProvider } from '@/contexts/FilialSelecionadaContext';
@@ -110,6 +111,7 @@ afterAll(() => {
 
 beforeEach(() => {
   localStorage.clear();
+  setAuthenticatedLocalPreviewUserAccount('local-preview-user');
   localStorage.setItem('bi-reports-empresa-selecionada', '1004');
   localStorage.setItem('bi-reports-filial-1004', 'transmissao');
   testState.hookResult = createHookResult();

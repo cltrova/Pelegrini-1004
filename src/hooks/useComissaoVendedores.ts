@@ -50,7 +50,7 @@ function num(value: unknown): number {
   return Number.isFinite(n) ? n : 0;
 }
 
-function pick(row: any, ...keys: string[]): unknown {
+function pick(row: Record<string, unknown> | null | undefined, ...keys: string[]): unknown {
   const normalizeKey = (value: string) =>
     value
       .normalize('NFD')
@@ -73,7 +73,7 @@ function looksLikeCodigoVendedor(value: unknown): boolean {
   return /^\d+$/.test(String(value ?? '').trim());
 }
 
-export function mapComissaoLinha(row: any): ComissaoLinha {
+export function mapComissaoLinha(row: Record<string, unknown>): ComissaoLinha {
   const codigoDireto = pick(row, 'cod_vendedor', 'CodVendedor', 'COD VENDEDOR', 'codigo', 'CodigoVendedor', 'Codigo Vendedor');
   const vendedorGenerico = pick(row, 'vendedor', 'Vendedor', 'VENDEDOR');
   const codigoVendedor = codigoDireto ?? (looksLikeCodigoVendedor(vendedorGenerico) ? vendedorGenerico : '');
@@ -81,7 +81,7 @@ export function mapComissaoLinha(row: any): ComissaoLinha {
   const vendaDireta = num(pick(row, 'venda_direta', 'VendaDireta', 'Venda_Direta', 'valor_venda_direta'));
   const vendaIndireta = num(pick(row, 'venda_indireta', 'VendaIndireta', 'Venda_Indireta', 'valor_venda_indireta'));
   const vendaTotal = vendaDireta + vendaIndireta;
-  const pedidosAberto = pick(row, 'PedidosAberto', 'PedidosEmAberto', 'pedidos_em_aberto', 'pedidos_aberto', 'PEDIDOS EM ABERTO', 'a_faturar_pedidos', 'AFaturar', 'a_faturar', 'A FATURAR');
+  const pedidosAberto = pick(row, 'PedidosAberto', 'PedidosEmAberto', 'pedidos_em_aberto', 'pedidos_aberto', 'PEDIDOS EM ABERTO', 'a_faturar_pedidos');
 
   return {
     vendedor: String(codigoVendedor ?? ''),
@@ -101,6 +101,138 @@ export function mapComissaoLinha(row: any): ComissaoLinha {
     st: num(pick(row, 'st_venda', 'STVenda', 'ST_Venda', 'st', 'ST', 'valor_st')),
     raw: row ?? {},
   };
+}
+
+const PEDIDOS_ABERTOS_PAGE_SIZE = 500;
+
+export function resolvePedidosAbertosPath(): string {
+  return '/comercial/pedidos-abertos';
+}
+
+function normalizeStatus(value: unknown): string {
+  return String(value ?? '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+    .toLowerCase();
+}
+
+function hasValue(value: unknown): boolean {
+  const normalized = normalizeStatus(value);
+  return normalized !== '' && normalized !== 'null' && normalized !== 'undefined' && normalized !== '0';
+}
+
+function normalizeVendedor(value: unknown): string {
+  const normalized = String(value ?? '').trim();
+  if (!/^\d+$/.test(normalized)) return normalized;
+  return normalized.replace(/^0+(?=\d)/, '');
+}
+
+export function getValorPedidoAberto(row: Record<string, unknown>): number | null {
+  const status = normalizeStatus(pick(row, 'status_pedido', 'StatusPedido', 'status', 'Status', 'situacao', 'Situacao'));
+  const dataFaturamento = pick(row, 'data_faturamento', 'DataFaturamento', 'Data_Faturamento', 'DtFaturamento');
+  const numeroNota = pick(row, 'num_nf', 'NumNF', 'NumDocumento', 'numero_nf', 'NumeroNF');
+  const faturado = status.includes('faturad') || hasValue(dataFaturamento) || hasValue(numeroNota);
+  if (faturado) return null;
+
+  const valor = pick(
+    row,
+    'valor_total_pedido',
+    'ValorTotalPedido',
+    'Pedido.Valor Total',
+    'Pedido.ValorVenda2',
+  );
+  return valor === undefined ? null : num(valor);
+}
+
+export function calcularPedidosAbertosPorVendedor(
+  rows: Record<string, unknown>[],
+  options?: { operacaoInicial?: number; operacaoFinal?: number },
+): Map<string, number> {
+  const totais = new Map<string, number>();
+  const pedidosProcessados = new Set<string>();
+
+  rows.forEach((row, index) => {
+    const operacaoRaw = pick(row, 'cod_operacao', 'CodOperacao', 'codigo_operacao', 'Pedido.Codigo Operacao');
+    if (operacaoRaw !== undefined) {
+      const operacao = num(operacaoRaw);
+      if (options?.operacaoInicial !== undefined && operacao < options.operacaoInicial) return;
+      if (options?.operacaoFinal !== undefined && operacao > options.operacaoFinal) return;
+    }
+
+    const empresa = String(pick(row, 'cod_empresa', 'CodEmpresa', 'empresa', 'Empresa') ?? '').trim();
+    const pedido = String(pick(row, 'cod_pedido', 'CodPedido', 'pedido', 'Pedido.Codigo Pedido') ?? '').trim();
+    const pedidoKey = pedido ? `${empresa}|${pedido}` : `linha:${index}`;
+    if (pedidosProcessados.has(pedidoKey)) return;
+    pedidosProcessados.add(pedidoKey);
+
+    const valor = getValorPedidoAberto(row);
+    if (valor === null) return;
+
+    const vendedor = normalizeVendedor(pick(
+      row,
+      'cod_vendedor',
+      'CodVendedor',
+      'cod_vendedor_interno',
+      'CodVendInterno',
+      'Pedido.Cod Vendedor Interno',
+    ));
+    if (!vendedor) return;
+    totais.set(vendedor, (totais.get(vendedor) ?? 0) + valor);
+  });
+
+  return totais;
+}
+
+export function aplicarPedidosAbertosNasComissoes(
+  linhas: ComissaoLinha[],
+  pedidos: Record<string, unknown>[],
+  options?: { operacaoInicial?: number; operacaoFinal?: number },
+): ComissaoLinha[] {
+  const totais = calcularPedidosAbertosPorVendedor(pedidos, options);
+  return linhas.map((linha) => ({
+    ...linha,
+    pedidosAberto: totais.get(normalizeVendedor(linha.vendedor)) ?? 0,
+  }));
+}
+
+function extractRows(json: unknown): Record<string, unknown>[] {
+  if (Array.isArray(json)) return json as Record<string, unknown>[];
+  if (!json || typeof json !== 'object') return [];
+
+  const payload = json as Record<string, unknown>;
+  const nested = payload.pedidos
+    || payload.Pedidos
+    || payload.dados
+    || payload.data
+    || payload.registros
+    || payload.items
+    || payload.resultados;
+  return Array.isArray(nested) ? nested as Record<string, unknown>[] : [];
+}
+
+async function fetchPedidosAbertos(
+  empresa: Parameters<typeof buildApiProxyUrl>[0],
+  params: URLSearchParams,
+  headers: Record<string, string>,
+  signal: AbortSignal,
+): Promise<Record<string, unknown>[] | null> {
+  const rows: Record<string, unknown>[] = [];
+
+  for (let page = 1; page <= 100; page += 1) {
+    const pageParams = new URLSearchParams(params);
+    pageParams.set('page', String(page));
+    pageParams.set('page_size', String(PEDIDOS_ABERTOS_PAGE_SIZE));
+    const url = buildApiProxyUrl(empresa, `${resolvePedidosAbertosPath()}?${pageParams.toString()}`);
+    const response = await fetch(url, { headers, signal });
+    if (!response.ok) return null;
+
+    const batch = extractRows(await response.json());
+    rows.push(...batch);
+    if (batch.length < PEDIDOS_ABERTOS_PAGE_SIZE) return rows;
+  }
+
+  return rows;
 }
 
 export function comissaoLinhaPertenceForcaP1004(linha: Pick<ComissaoLinha, 'vendedor' | 'nome'>): boolean {
@@ -156,24 +288,42 @@ export function useComissaoVendedores(filtros: ComissaoFiltros | null, enabled =
       const params = buildComissaoSearchParams(filtros, codBiParam);
 
       const url = buildApiProxyUrl(empresa, `${path}?${params.toString()}`);
+      const pedidosParams = new URLSearchParams();
+      pedidosParams.set('data_ini', filtros.data_ini);
+      pedidosParams.set('data_fim', filtros.data_fim);
+      if (codBiParam) pedidosParams.set('cod_empresa_bi', codBiParam);
+      if (filtros.operacao_fiscal_inicial) pedidosParams.set('operacao_fiscal_inicial', filtros.operacao_fiscal_inicial);
+      if (filtros.operacao_fiscal_final) pedidosParams.set('operacao_fiscal_final', filtros.operacao_fiscal_final);
       console.log('[Comissao] URL:', `${path}?${params.toString()}`);
 
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), 60000);
       try {
-        const res = await fetch(url, {
-          headers: { Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` },
-          signal: controller.signal,
-        });
+        const headers = { Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` };
+        const [res, pedidos] = await Promise.all([
+          fetch(url, { headers, signal: controller.signal }),
+          fetchPedidosAbertos(empresa, pedidosParams, headers, controller.signal).catch(() => null),
+        ]);
         if (!res.ok) throw new Error(`Comissões: HTTP ${res.status}`);
-        const json = await res.json();
-        const arr: any[] = Array.isArray(json)
-          ? json
-          : json?.dados || json?.data || json?.comissoes || json?.registros || [];
+        const json: unknown = await res.json();
+        const payload = json && typeof json === 'object' ? json as Record<string, unknown> : {};
+        const nestedRows = payload.dados || payload.data || payload.comissoes || payload.registros;
+        const arr: Record<string, unknown>[] = Array.isArray(json)
+          ? json as Record<string, unknown>[]
+          : Array.isArray(nestedRows) ? nestedRows as Record<string, unknown>[] : [];
         if (arr.length > 0) console.log('[Comissao] Campos da API:', Object.keys(arr[0]));
-        return arr
+        const linhas = arr
           .map(mapComissaoLinha)
           .filter((linha) => !deveExcluirForcaP1004 || !comissaoLinhaPertenceForcaP1004(linha));
+
+        if (!pedidos) {
+          console.warn('[Comissao] Endpoint de pedidos em aberto indisponível; AFaturar não será usado como substituto.');
+          return linhas;
+        }
+        return aplicarPedidosAbertosNasComissoes(linhas, pedidos, {
+          operacaoInicial: filtros.operacao_fiscal_inicial ? num(filtros.operacao_fiscal_inicial) : undefined,
+          operacaoFinal: filtros.operacao_fiscal_final ? num(filtros.operacao_fiscal_final) : undefined,
+        });
       } finally {
         clearTimeout(timer);
       }

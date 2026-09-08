@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import {
+  authenticateLocalPreviewUser,
   createLocalPreviewEmpresa,
   createLocalPreviewPermissions,
   createLocalPreviewUserAccount,
   deleteLocalPreviewUserAccount,
   getActiveLocalPreviewUserAccount,
+  getAuthenticatedLocalPreviewUserAccount,
   isLocalPreviewEnabled,
   readLocalPreviewEmpresa,
   readLocalPreviewMotivosPerda,
@@ -13,13 +15,14 @@ import {
   saveLocalPreviewMotivoPerda,
   saveLocalPreviewUserAccount,
   setActiveLocalPreviewUserAccount,
+  setAuthenticatedLocalPreviewUserAccount,
 } from './localPreview';
 
 describe('local preview mode', () => {
-  it('ativa por padrao e permite desligar com VITE_LOCAL_PREVIEW=false', () => {
+  it('ativa somente quando VITE_LOCAL_PREVIEW=true', () => {
     expect(isLocalPreviewEnabled({ VITE_LOCAL_PREVIEW: 'true' })).toBe(true);
     expect(isLocalPreviewEnabled({ VITE_LOCAL_PREVIEW: 'false' })).toBe(false);
-    expect(isLocalPreviewEnabled({})).toBe(true);
+    expect(isLocalPreviewEnabled({})).toBe(false);
   });
 
   it('cria a empresa Pelegrini 1004 com os quatro modulos principais liberados', () => {
@@ -116,6 +119,32 @@ describe('local preview mode', () => {
 
     deleteLocalPreviewUserAccount(user.user.id, localStorageLike);
     expect(readLocalPreviewUserAccounts(localStorageLike).map((account) => account.user.id)).not.toContain(user.user.id);
+  });
+
+  it('autentica usuario local por email e senha e persiste a sessao', () => {
+    const storage = new Map<string, string>();
+    const localStorageLike = {
+      getItem: (key: string) => storage.get(key) ?? null,
+      setItem: (key: string, value: string) => storage.set(key, value),
+      removeItem: (key: string) => storage.delete(key),
+    };
+    const account = createLocalPreviewUserAccount({
+      email: 'ctrova@cyft.com.br',
+      nome: 'Cyro Trova',
+      role: 'master',
+    });
+
+    saveLocalPreviewUserAccount(account, localStorageLike);
+
+    expect(authenticateLocalPreviewUser(' CTROVA@CYFT.COM.BR ', 'preview123', localStorageLike)?.user.id).toBe(account.user.id);
+    expect(authenticateLocalPreviewUser('ctrova@cyft.com.br', 'senha-incorreta', localStorageLike)).toBeNull();
+    expect(getAuthenticatedLocalPreviewUserAccount(localStorageLike)).toBeNull();
+
+    setAuthenticatedLocalPreviewUserAccount(account.user.id, localStorageLike);
+    expect(getAuthenticatedLocalPreviewUserAccount(localStorageLike)?.user.id).toBe(account.user.id);
+
+    setAuthenticatedLocalPreviewUserAccount(null, localStorageLike);
+    expect(getAuthenticatedLocalPreviewUserAccount(localStorageLike)).toBeNull();
   });
 
   it('persiste motivos de vendas perdidas localmente para a empresa 10041', () => {

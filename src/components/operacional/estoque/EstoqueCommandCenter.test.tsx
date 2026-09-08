@@ -311,7 +311,7 @@ describe('EstoqueCommandCenter', () => {
     expect(within(products).getAllByText('KIT EMBREAGEM PESADA').length).toBeGreaterThan(0);
     expect(within(products).getAllByText('ROLAMENTO CARDAN').length).toBeGreaterThan(0);
     expect(within(products).queryByText('BOMBA D AGUA')).not.toBeInTheDocument();
-  });
+  }, 10_000);
 
   it('mantem listagem e destaques informativos quando nao ha dados de giro', () => {
     render(

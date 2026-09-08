@@ -125,6 +125,9 @@ describe('Home branch flow', () => {
   it('stores the desktop branch before showing modules and then navigates directly', () => {
     renderHome(<HomePage />);
 
+    const transmissionLogo = screen.getByRole('img', { name: 'Casa da Transmissão' });
+    expect(transmissionLogo).toHaveAttribute('data-transmission-full-logo');
+    expect(transmissionLogo).toHaveAttribute('src', '/brand/home/transmissao-full-white.png');
     chooseCasaDaTransmissao();
     expect(testState.setFilialAtivaForEmpresa).toHaveBeenCalledWith('1004', 'transmissao');
     expect(screen.getByRole('heading', { name: 'Módulos' })).toBeInTheDocument();

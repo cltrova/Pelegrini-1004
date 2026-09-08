@@ -1,11 +1,13 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { User } from '@supabase/supabase-js';
+import type { User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import type { Profile, AppRole, RolePermissions } from '@/types/auth';
 import { ROLE_PERMISSIONS } from '@/types/auth';
 import {
-  getActiveLocalPreviewUserAccount,
+  authenticateLocalPreviewUser,
+  getAuthenticatedLocalPreviewUserAccount,
   isLocalPreviewEnabled,
+  setAuthenticatedLocalPreviewUserAccount,
 } from '@/config/localPreview';
 
 interface AuthContextType {
@@ -55,9 +57,10 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const localPreview = isLocalPreviewEnabled();
-  const [user, setUser] = useState<User | null>(() => localPreview ? getActiveLocalPreviewUserAccount().user : null);
-  const [profile, setProfile] = useState<Profile | null>(() => localPreview ? getActiveLocalPreviewUserAccount().profile : null);
-  const [roles, setRoles] = useState<AppRole[]>(() => localPreview ? getActiveLocalPreviewUserAccount().roles : []);
+  const initialLocalAccount = localPreview ? getAuthenticatedLocalPreviewUserAccount() : null;
+  const [user, setUser] = useState<User | null>(() => initialLocalAccount?.user ?? null);
+  const [profile, setProfile] = useState<Profile | null>(() => initialLocalAccount?.profile ?? null);
+  const [roles, setRoles] = useState<AppRole[]>(() => initialLocalAccount?.roles ?? []);
   const [isLoading, setIsLoading] = useState(!localPreview);
 
   // Role helpers
@@ -67,7 +70,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   
   // Empresa do usuário
   const codEmpresa = profile?.cod_empresa_bi || null;
-  const mustChangePassword = !!(profile as any)?.must_change_password;
+  const mustChangePassword = !!profile?.must_change_password;
 
 
   // Permission helpers - baseado na hierarquia de roles
@@ -114,10 +117,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Configurar listener de auth state ANTES de getSession
   useEffect(() => {
     if (localPreview) {
-      const activeAccount = getActiveLocalPreviewUserAccount();
-      setUser(activeAccount.user);
-      setProfile(activeAccount.profile);
-      setRoles(activeAccount.roles);
+      const authenticatedAccount = getAuthenticatedLocalPreviewUserAccount();
+      setUser(authenticatedAccount?.user ?? null);
+      setProfile(authenticatedAccount?.profile ?? null);
+      setRoles(authenticatedAccount?.roles ?? []);
       setIsLoading(false);
       return;
     }
@@ -171,8 +174,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [localPreview]);
 
   const login = async (email: string, password: string) => {
+    if (localPreview) {
+      const account = authenticateLocalPreviewUser(email, password);
+      if (!account) return { success: false, error: 'Email ou senha incorretos.' };
+
+      setAuthenticatedLocalPreviewUserAccount(account.user.id);
+      setUser(account.user);
+      setProfile(account.profile);
+      setRoles(account.roles);
+      return { success: true };
+    }
+
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
+      const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
@@ -188,13 +202,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = async () => {
-    await supabase.auth.signOut();
+    if (localPreview) {
+      setAuthenticatedLocalPreviewUserAccount(null);
+    } else {
+      await supabase.auth.signOut();
+    }
     setUser(null);
     setProfile(null);
     setRoles([]);
   };
 
   const signup = async (email: string, password: string, nome?: string) => {
+    if (localPreview) {
+      return { success: false, error: 'Cadastro não disponível.' };
+    }
+
     try {
       const { data, error } = await supabase.auth.signUp({
         email,
@@ -224,6 +246,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const refreshProfile = async () => {
+    if (localPreview) {
+      const account = getAuthenticatedLocalPreviewUserAccount();
+      setUser(account?.user ?? null);
+      setProfile(account?.profile ?? null);
+      setRoles(account?.roles ?? []);
+      return;
+    }
+
     if (user) {
       await loadUserData(user.id);
     }
