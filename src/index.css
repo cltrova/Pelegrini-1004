@@ -1462,10 +1462,91 @@
     margin-bottom: calc(0.625rem * var(--tw-space-y-reverse)) !important;
   }
 
+  .pelegrini-page-surface :where(.enterprise-page-header, .page-header, .pelegrini-module-header),
+  .pelegrini-page-surface :where(.enterprise-page, .enterprise-page-shell) > :where(div:has(> h1:first-child), div:has(> div > h1:first-child)) {
+    display: none !important;
+  }
+
+  .pelegrini-page-surface :where(.enterprise-page, .enterprise-page-shell) {
+    padding: 0.5rem !important;
+    gap: 0.5rem !important;
+  }
+
+  .pelegrini-page-surface :where([data-testid='enterprise-filter-bar']) {
+    padding: 0.375rem 0.5rem !important;
+    border-radius: 6px !important;
+  }
+
+  .pelegrini-page-surface :where([data-testid='enterprise-filter-bar']) > :first-child {
+    gap: 0.375rem !important;
+  }
+
+  .pelegrini-page-surface :where([data-testid='enterprise-filter-bar'] button, .pelegrini-filter-bar-trigger) {
+    height: 1.75rem !important;
+    min-height: 1.75rem !important;
+    padding-left: 0.5rem !important;
+    padding-right: 0.5rem !important;
+    font-size: 0.72rem !important;
+  }
+
+  .pelegrini-page-surface :where([role='tablist']) {
+    min-height: 1.875rem !important;
+    height: auto !important;
+    padding: 0.125rem !important;
+    gap: 0.125rem !important;
+  }
+
+  .pelegrini-page-surface :where([role='tab']) {
+    min-height: 1.625rem !important;
+    height: 1.625rem !important;
+    padding: 0 0.5rem !important;
+    font-size: 0.7rem !important;
+    line-height: 1 !important;
+  }
+
+  .pelegrini-page-surface :where(td, th) {
+    padding-top: 0.3rem !important;
+    padding-bottom: 0.3rem !important;
+    font-size: 0.72rem !important;
+    line-height: 1.15 !important;
+  }
+
+  .pelegrini-page-surface :where([class~='text-2xl'], [class*='text-[26px]'], .kpi-fluid-value) {
+    font-size: 1rem !important;
+    line-height: 1.05 !important;
+  }
+
+  .pelegrini-page-surface :where([class~='text-3xl'], [class~='text-4xl']) {
+    font-size: 1.125rem !important;
+    line-height: 1.08 !important;
+  }
+
   .pelegrini-page-surface :where([class~='gap-6']) { gap: 0.75rem !important; }
   .pelegrini-page-surface :where([class~='gap-5']) { gap: 0.625rem !important; }
+  .pelegrini-page-surface :where([class~='gap-4']) { gap: 0.5rem !important; }
   .pelegrini-page-surface :where([class~='p-6']) { padding: 1rem !important; }
   .pelegrini-page-surface :where([class~='p-5']) { padding: 0.875rem !important; }
+  .pelegrini-page-surface :where([class~='p-4']) { padding: 0.625rem !important; }
+  .pelegrini-page-surface :where([class~='px-5']) {
+    padding-left: 0.75rem !important;
+    padding-right: 0.75rem !important;
+  }
+  .pelegrini-page-surface :where([class~='py-4']) {
+    padding-top: 0.5rem !important;
+    padding-bottom: 0.5rem !important;
+  }
+  .pelegrini-page-surface :where([class~='pb-3'], [class~='pb-2']) {
+    padding-bottom: 0.375rem !important;
+  }
+  .pelegrini-page-surface :where([class~='pt-6'], [class~='pt-5'], [class~='pt-4'], [class~='pt-3'], [class~='pt-2']) {
+    padding-top: 0.5rem !important;
+  }
+  .pelegrini-page-surface :where([class~='mb-6'], [class~='mb-5'], [class~='mb-4']) {
+    margin-bottom: 0.5rem !important;
+  }
+  .pelegrini-page-surface :where([class~='mt-6'], [class~='mt-5'], [class~='mt-4']) {
+    margin-top: 0.5rem !important;
+  }
   .pelegrini-page-surface :where([class~='py-10']) {
     padding-top: 1rem !important;
     padding-bottom: 1rem !important;
@@ -1482,19 +1563,19 @@
   }
 
   .pelegrini-page-surface :where([class*='h-[640px]']) {
-    height: min(440px, calc(100dvh - 14rem)) !important;
+    height: min(360px, calc(100dvh - 12rem)) !important;
   }
 
   .pelegrini-page-surface :where([class*='h-[600px]'], [class*='h-[520px]']) {
-    height: min(400px, calc(100dvh - 15rem)) !important;
+    height: min(320px, calc(100dvh - 13rem)) !important;
   }
 
   .pelegrini-page-surface :where([class*='h-[440px]'], [class*='h-[400px]'], [class*='h-[380px]'], [class*='h-[360px]'], [class*='h-[350px]']) {
-    height: min(300px, calc(100dvh - 18rem)) !important;
+    height: min(240px, calc(100dvh - 15rem)) !important;
   }
 
   .pelegrini-page-surface :where([class*='h-[340px]'], [class*='h-[320px]'], [class*='h-[300px]'], [class*='h-[280px]']) {
-    height: min(240px, calc(100dvh - 20rem)) !important;
+    height: min(200px, calc(100dvh - 16rem)) !important;
   }
 
   .pelegrini-page-surface :where(.recharts-responsive-container) {

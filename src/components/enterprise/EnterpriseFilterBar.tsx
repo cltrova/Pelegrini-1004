@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react';
-import { Filter, Search, X } from 'lucide-react';
+import { ChevronDown, Filter, Search, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { EnterpriseBadge } from './EnterpriseBadge';
@@ -22,11 +22,10 @@ export interface EnterpriseFilterBarProps {
 export function EnterpriseFilterBar({
   children,
   activeCount = 0,
-  summary,
   resultCount,
   resultLabel = 'resultados',
   isOpen,
-  defaultOpen = true,
+  defaultOpen = false,
   onOpenChange,
   onClear,
   onApply,
@@ -42,15 +41,16 @@ export function EnterpriseFilterBar({
       <div className="flex min-w-0 flex-wrap items-center gap-2">
         <button
           aria-expanded={open}
-          className="inline-flex h-8 items-center gap-2 rounded-md px-2 text-xs font-semibold text-foreground hover:bg-muted"
+          aria-label={open ? 'Recolher filtros' : 'Expandir filtros'}
+          className="inline-flex h-8 min-w-[9rem] flex-1 items-center gap-2 rounded-md px-2 text-xs font-semibold text-foreground hover:bg-muted"
           onClick={() => setOpen(!open)}
           type="button"
         >
           <Filter aria-hidden="true" className="h-3.5 w-3.5 text-muted-foreground" />
           Filtros
           {activeCount > 0 && <EnterpriseBadge tone="info">{activeCount} ativos</EnterpriseBadge>}
+          <ChevronDown aria-hidden="true" className={cn('ml-auto h-3.5 w-3.5 text-muted-foreground transition-transform', open && 'rotate-180')} />
         </button>
-        {summary && <div className="min-w-0 flex-1 truncate text-xs text-muted-foreground">{summary}</div>}
         {typeof resultCount === 'number' && (
           <EnterpriseBadge className="tabular-nums">
             {resultCount.toLocaleString('pt-BR')} {resultLabel}
@@ -69,7 +69,7 @@ export function EnterpriseFilterBar({
           </Button>
         )}
       </div>
-      <div className={cn('mt-2 flex min-w-0 flex-wrap items-end gap-2', !open && 'hidden lg:flex')}>{children}</div>
+      <div className={cn('mt-2 flex min-w-0 flex-wrap items-end gap-2', !open && 'hidden')}>{children}</div>
     </section>
   );
 }

@@ -36,6 +36,8 @@ interface EnterpriseComercialFiltersProps {
   monthOnly?: boolean;
   extraFields?: ReactNode;
   useNativeControls?: boolean;
+  isOpen?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 const toOptions = (
@@ -100,6 +102,8 @@ export function EnterpriseComercialFilters({
   monthOnly = false,
   extraFields,
   useNativeControls = false,
+  isOpen,
+  onOpenChange,
 }: EnterpriseComercialFiltersProps) {
   const summary = getComercialFiltersSummary(appliedFilters, vendedores, clientes)
     .map((item) => `${item.label}: ${item.value}`)
@@ -128,6 +132,8 @@ export function EnterpriseComercialFilters({
         onApply={onApply}
         onClear={onClear}
         resultCount={resultCount}
+        isOpen={isOpen}
+        onOpenChange={onOpenChange}
         summary={summary}
       >
         <div className="basis-full min-w-0">
@@ -163,6 +169,8 @@ export function EnterpriseComercialFilters({
       onApply={onApply}
       onClear={onClear}
       resultCount={resultCount}
+      isOpen={isOpen}
+      onOpenChange={onOpenChange}
       summary={summary}
     >
       <EnterpriseSelectFilter
