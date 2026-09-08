@@ -38,12 +38,12 @@ interface MetricItemProps {
 function MetricContent({ icon: Icon, label, value }: Pick<EstoqueMetric, 'icon' | 'label' | 'value'>) {
   return (
     <>
-      <Icon aria-hidden="true" className="h-4 w-4 shrink-0 text-current opacity-75" />
+      <Icon aria-hidden="true" className="h-3.5 w-3.5 shrink-0 text-current opacity-70" />
       <span className="min-w-0 flex-1">
         <span className="block truncate text-[9px] font-semibold uppercase leading-none text-muted-foreground">
           {label}
         </span>
-        <span className="mt-1 block min-w-0 max-w-full whitespace-nowrap text-[clamp(0.875rem,1vw,1.125rem)] font-semibold leading-none tabular-nums text-foreground">
+        <span className="mt-0.5 block min-w-0 max-w-full whitespace-nowrap text-[0.95rem] font-semibold leading-none tabular-nums text-foreground">
           {value}
         </span>
       </span>
@@ -54,12 +54,12 @@ function MetricContent({ icon: Icon, label, value }: Pick<EstoqueMetric, 'icon' 
 function MetricItem({ active, metric, onMetricClick }: MetricItemProps) {
   const [tooltipPosition, setTooltipPosition] = useState<{ left: number; top: number } | null>(null);
   const descriptionId = `estoque-metric-description-${useId().replace(/:/g, '')}`;
-  const metricMinWidth = `calc(${metric.value.length}ch + 7rem)`;
+  const metricMinWidth = `calc(${metric.value.length}ch + 6rem)`;
   const commonClassName = cn(
-    'relative flex h-full min-w-[9rem] flex-1 items-center gap-2 border-r border-border/70 px-3 text-left',
+    'relative flex h-full min-w-[8rem] flex-1 items-center gap-1.5 border-r border-border/55 px-2 text-left',
     'transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring',
     toneClasses[metric.tone],
-    active ? 'bg-primary/10' : 'bg-card hover:bg-muted/45',
+    active ? 'bg-primary/10' : 'bg-card/80 hover:bg-muted/35',
   );
 
   const content = <MetricContent icon={metric.icon} label={metric.label} value={metric.value} />;
@@ -142,7 +142,7 @@ export function EstoqueMetricStrip({
     <section
       aria-label="Indicadores de estoque"
       className={cn(
-        'flex h-[52px] min-w-0 shrink-0 overflow-x-auto border-y border-border/70 bg-card',
+        'flex h-11 min-w-0 shrink-0 overflow-x-auto border-y border-border/60 bg-card/85',
         className,
       )}
     >

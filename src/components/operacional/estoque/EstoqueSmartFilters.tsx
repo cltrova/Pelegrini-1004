@@ -97,18 +97,18 @@ export function EstoqueSmartFilters({
   return (
     <section
       className={cn(
-        'min-w-0',
+        'min-w-0 text-xs',
         compact ? 'flex min-w-max flex-1 flex-nowrap items-center' : 'space-y-2',
       )}
       aria-label="Busca e filtros do estoque"
     >
       <div className={cn('flex min-w-0 items-center gap-2', compact ? 'flex-nowrap' : 'flex-wrap')}>
         {leading}
-        <div className="relative min-w-[12rem] flex-1">
-          <Search aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <div className="relative min-w-[11rem] flex-1">
+          <Search aria-hidden="true" className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
           <Input
             aria-label="Buscar no estoque"
-            className="h-9 min-w-0 pl-9"
+            className="h-8 min-w-0 pl-8 text-xs"
             onChange={(event) => onSearchChange(event.target.value)}
             placeholder="Buscar produto, codigo ou referencia"
             type="search"
@@ -118,18 +118,18 @@ export function EstoqueSmartFilters({
 
         <Sheet>
           <SheetTrigger asChild>
-            <Button aria-label={`Filtros${activeCount ? `, ${activeCount} ativos` : ''}`} className="h-9 gap-2" type="button" variant="outline">
-              <SlidersHorizontal aria-hidden="true" className="h-4 w-4" />
+            <Button aria-label={`Filtros${activeCount ? `, ${activeCount} ativos` : ''}`} className="h-8 gap-1.5 px-2.5 text-xs" type="button" variant="outline">
+              <SlidersHorizontal aria-hidden="true" className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">Filtros</span>
               {activeCount > 0 && <span className="tabular-nums text-xs">{activeCount}</span>}
             </Button>
           </SheetTrigger>
           <SheetContent className="w-[min(92vw,25rem)] p-0 sm:max-w-md" side="right">
-            <SheetHeader className="border-b border-border px-5 py-4 pr-12 text-left">
+            <SheetHeader className="border-b border-border px-4 py-3 pr-12 text-left">
               <SheetTitle>Filtros do estoque</SheetTitle>
               <SheetDescription>Refine a listagem sem perder o contexto da consulta.</SheetDescription>
             </SheetHeader>
-            <div className="space-y-5 overflow-y-auto p-5">
+            <div className="space-y-4 overflow-y-auto p-4">
               <div className="space-y-2">
                 <p className="text-xs font-semibold uppercase text-muted-foreground">Classificacao</p>
                 <div className="flex flex-wrap gap-2">

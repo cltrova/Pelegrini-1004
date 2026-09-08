@@ -162,7 +162,7 @@ describe('EstoqueCommandCenter', () => {
     expect(onExport).toHaveBeenCalledWith([
       expect.objectContaining({ cod_produto: 101, produto: 'KIT EMBREAGEM PESADA' }),
     ]);
-  }, 10_000);
+  });
 
   it('abre o produto solicitado pelo Assistente', async () => {
     const onRequestedProductHandled = vi.fn();
@@ -283,7 +283,7 @@ describe('EstoqueCommandCenter', () => {
       <EstoqueCommandCenter {...fixtureProps} branchKey="1004:transmissao" stockData={manyProducts} />,
     );
     expect(screen.getByRole('button', { name: /Produtos/i })).toHaveAttribute('aria-pressed', 'true');
-  });
+  }, 10_000);
 
   it('filtra a visao real por Disponiveis e Com estoque sem alterar os seis indicadores', () => {
     const onExport = vi.fn();
@@ -384,7 +384,9 @@ describe('EstoqueCommandCenter', () => {
     const metrics = within(commandCenter).getByRole('region', { name: 'Indicadores de estoque' });
     const viewport = within(commandCenter).getByRole('region', { name: 'Dados do estoque' });
 
-    expect(commandCenter).toHaveClass('flex', 'min-h-0', 'overflow-hidden');
+    expect(commandCenter).toHaveClass('flex', 'min-h-0', 'overflow-hidden', 'estoque-manager-view');
+    expect(toolbar).toHaveClass('h-10');
+    expect(metrics).toHaveClass('h-11');
     expect(toolbar.compareDocumentPosition(metrics) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(metrics.compareDocumentPosition(viewport) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(within(viewport).getByRole('table')).toBeInTheDocument();

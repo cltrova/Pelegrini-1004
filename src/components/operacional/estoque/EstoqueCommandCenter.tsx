@@ -154,7 +154,7 @@ export function EstoqueCommandCenter({
   return (
     <section
       aria-label="Central de estoque"
-      className="flex h-full min-h-0 min-w-0 max-w-full flex-col overflow-hidden"
+      className="estoque-manager-view flex h-full min-h-0 min-w-0 max-w-full flex-col overflow-hidden"
     >
       <EstoqueToolbar>
         <EstoqueSmartFilters
@@ -163,25 +163,25 @@ export function EstoqueCommandCenter({
             <>
               <Sheet onOpenChange={setAttentionOpen} open={attentionOpen}>
                 <SheetTrigger asChild>
-                  <Button aria-label="Abrir painel de atencao" className="h-9 gap-2" type="button" variant="outline">
-                    <BellRing aria-hidden="true" className="h-4 w-4" />
+                  <Button aria-label="Abrir painel de atencao" className="h-8 gap-1.5 px-2.5 text-xs" type="button" variant="outline">
+                    <BellRing aria-hidden="true" className="h-3.5 w-3.5" />
                     <span className="hidden lg:inline">Atencao</span>
                     {attentionCount > 0 && <span className="tabular-nums text-xs">{attentionCount}</span>}
                   </Button>
                 </SheetTrigger>
                 <SheetContent className="w-[min(96vw,42rem)] overflow-y-auto p-0 sm:max-w-2xl" side="right">
-                  <SheetHeader className="border-b border-border px-5 py-4 pr-12 text-left">
+                  <SheetHeader className="border-b border-border px-4 py-3 pr-12 text-left">
                     <SheetTitle>Atencao no estoque</SheetTitle>
                     <SheetDescription>Alertas e movimentos que merecem acompanhamento.</SheetDescription>
                   </SheetHeader>
-                  <div className="space-y-5 p-5">
+                  <div className="space-y-4 p-4">
                     <EstoqueAttentionPanel products={filtered} onSelectProduct={selectProduct} />
                     <EstoqueMovementHighlights products={filtered} onSelectProduct={selectProduct} />
                   </div>
                 </SheetContent>
               </Sheet>
-              <Button aria-label="Exportar visao atual" className="h-9 gap-2" onClick={() => onExport(filtered)} type="button" variant="outline">
-                <Download aria-hidden="true" className="h-4 w-4" />
+              <Button aria-label="Exportar visao atual" className="h-8 gap-1.5 px-2.5 text-xs" onClick={() => onExport(filtered)} type="button" variant="outline">
+                <Download aria-hidden="true" className="h-3.5 w-3.5" />
                 <span className="hidden xl:inline">Exportar</span>
               </Button>
             </>
@@ -191,29 +191,29 @@ export function EstoqueCommandCenter({
           leading={(
             <div
             aria-label="Modo de visualizacao do estoque"
-            className="inline-flex h-9 min-w-0 max-w-full rounded-md border border-border bg-muted/20 p-0.5"
+            className="inline-flex h-8 min-w-0 max-w-full rounded-md border border-border bg-muted/20 p-0.5"
             role="group"
           >
             <Button
               aria-pressed={viewMode === 'consolidado'}
-              className={cn('h-8 min-w-0 gap-2 px-2.5 text-xs', viewMode !== 'consolidado' && 'text-muted-foreground')}
+              className={cn('h-7 min-w-0 gap-1.5 px-2 text-xs', viewMode !== 'consolidado' && 'text-muted-foreground')}
               onClick={() => onViewModeChange('consolidado')}
               size="sm"
               type="button"
               variant={viewMode === 'consolidado' ? 'secondary' : 'ghost'}
             >
-              <Layers3 aria-hidden="true" className="h-4 w-4 shrink-0" />
+              <Layers3 aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
               <span>Consolidado</span>
             </Button>
             <Button
               aria-pressed={viewMode === 'detalhado'}
-              className={cn('h-8 min-w-0 gap-2 px-2.5 text-xs', viewMode !== 'detalhado' && 'text-muted-foreground')}
+              className={cn('h-7 min-w-0 gap-1.5 px-2 text-xs', viewMode !== 'detalhado' && 'text-muted-foreground')}
               onClick={() => onViewModeChange('detalhado')}
               size="sm"
               type="button"
               variant={viewMode === 'detalhado' ? 'secondary' : 'ghost'}
             >
-              <ListTree aria-hidden="true" className="h-4 w-4 shrink-0" />
+              <ListTree aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
               <span>Detalhado</span>
             </Button>
             </div>

@@ -197,7 +197,7 @@ function StockStatusValue({ status }: { status: StockStatus }) {
   return (
     <span
       className={cn(
-        'inline-flex whitespace-nowrap items-center gap-1.5 rounded-md border px-2 py-1 text-xs font-semibold',
+        'inline-flex whitespace-nowrap items-center gap-1 rounded-md border px-1.5 py-0.5 text-[11px] font-semibold',
         config.className,
       )}
       data-stock-status={status}
@@ -224,7 +224,7 @@ function ProductButton({ product, onSelectProduct }: Pick<EstoqueProductsTablePr
         <span className="block truncate font-semibold text-foreground group-hover:text-primary" title={product.produto}>
           {product.produto}
         </span>
-        <span className="block text-xs text-muted-foreground">Codigo {product.cod_produto}</span>
+        <span className="block text-[11px] text-muted-foreground">Codigo {product.cod_produto}</span>
       </span>
       <ExternalLink aria-hidden="true" className="h-3.5 w-3.5 shrink-0 text-muted-foreground group-hover:text-primary" />
     </button>
@@ -299,19 +299,19 @@ export function EstoqueProductsTable({
   };
 
   return (
-    <section aria-label="Produtos do estoque" className="flex h-full min-h-0 min-w-0 max-w-full flex-1 flex-col overflow-hidden border border-border/80 bg-background">
+    <section aria-label="Produtos do estoque" className="flex h-full min-h-0 min-w-0 max-w-full flex-1 flex-col overflow-hidden border border-border/70 bg-background">
       <div
         aria-label="Contagem e ordenacao dos produtos"
-        className="flex min-w-0 shrink-0 flex-wrap items-center justify-between gap-2 border-b border-border/80 px-3 py-1.5"
+        className="flex min-w-0 shrink-0 flex-wrap items-center justify-between gap-1.5 border-b border-border/70 px-2.5 py-1"
         role="group"
       >
-        <p className="min-w-0 text-sm text-muted-foreground">
+        <p className="min-w-0 text-xs text-muted-foreground">
           <span className="font-semibold tabular-nums text-foreground">{products.length}</span>{' '}
           {products.length === 1 ? 'produto' : 'produtos'}
         </p>
-        <div className="flex min-w-0 flex-wrap items-center justify-end gap-2">
+        <div className="flex min-w-0 flex-wrap items-center justify-end gap-1.5">
           <Select value={sortMode} onValueChange={(value) => onSortChange(value as StockSortMode)}>
-            <SelectTrigger aria-label="Ordenar produtos" className="h-8 w-[11.5rem] max-w-full bg-background text-xs">
+            <SelectTrigger aria-label="Ordenar produtos" className="h-7 w-[10.5rem] max-w-full bg-background text-xs">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -325,14 +325,14 @@ export function EstoqueProductsTable({
             <DropdownMenuTrigger asChild>
               <Button
                 aria-label="Escolher colunas"
-                className="h-8 gap-2 text-xs"
+                className="h-7 gap-1.5 px-2 text-xs"
                 onClick={() => {
                   if (!columnsMenuOpen) setColumnsMenuOpen(true);
                 }}
                 type="button"
                 variant="outline"
               >
-                <Columns3 aria-hidden="true" className="h-4 w-4" />
+                <Columns3 aria-hidden="true" className="h-3.5 w-3.5" />
                 <span>Colunas</span>
               </Button>
             </DropdownMenuTrigger>
@@ -373,9 +373,9 @@ export function EstoqueProductsTable({
                   {selectedColumns.map((column) => (
                     <th
                       className={cn(
-                        'whitespace-nowrap px-3 py-2 text-[11px] font-semibold uppercase text-muted-foreground',
+                        'whitespace-nowrap px-2 py-1.5 text-[10px] font-semibold uppercase text-muted-foreground',
                         column.numeric && 'text-right',
-                        column.key === 'product' && 'min-w-[18rem]',
+                        column.key === 'product' && 'min-w-[17rem]',
                       )}
                       key={column.key}
                       scope="col"
@@ -391,7 +391,7 @@ export function EstoqueProductsTable({
                     {selectedColumns.map((column) => (
                       <td
                         className={cn(
-                          'h-11 max-w-[18rem] px-3 py-1.5 align-middle text-foreground',
+                          'h-9 max-w-[17rem] px-2 py-1 align-middle text-[13px] text-foreground',
                           column.numeric && 'text-right',
                         )}
                         key={column.key}
@@ -477,25 +477,27 @@ export function EstoqueProductsTable({
       {products.length > 0 && (
         <nav
           aria-label="Paginacao dos produtos"
-          className="flex shrink-0 items-center justify-between gap-3 border-t border-border bg-background px-3 py-2"
+          className="flex shrink-0 items-center justify-between gap-2 border-t border-border bg-background px-2.5 py-1"
         >
           <Button
             aria-label="Pagina anterior"
             disabled={safePage === 0}
             onClick={() => setPage((current) => Math.max(0, current - 1))}
+            className="h-7 w-7"
             size="icon"
             type="button"
             variant="outline"
           >
             <ChevronLeft aria-hidden="true" className="h-4 w-4" />
           </Button>
-          <p className="text-sm font-medium tabular-nums text-muted-foreground">
+          <p className="text-xs font-medium tabular-nums text-muted-foreground">
             Pagina {safePage + 1} de {pageCount}
           </p>
           <Button
             aria-label="Proxima pagina"
             disabled={safePage >= pageCount - 1}
             onClick={() => setPage((current) => Math.min(pageCount - 1, current + 1))}
+            className="h-7 w-7"
             size="icon"
             type="button"
             variant="outline"

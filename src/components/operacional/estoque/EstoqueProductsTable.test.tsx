@@ -239,6 +239,8 @@ describe('EstoqueProductsTable', () => {
     expect(desktop).toHaveClass('hidden', 'md:block', 'min-w-0');
     expect(desktop).not.toHaveClass('overflow-x-auto', 'overflow-auto');
     expect(within(dataScroller).getByRole('rowgroup', { name: 'Cabecalho da tabela' })).toHaveClass('sticky', 'top-0');
+    expect(within(dataScroller).getAllByRole('columnheader')[0]).toHaveClass('py-1.5');
+    expect(within(dataScroller).getAllByRole('cell')[0]).toHaveClass('h-9', 'py-1');
 
     expect(within(desktop).getAllByRole('columnheader').map((header) => header.textContent)).toEqual([
       'Produto',
@@ -261,7 +263,8 @@ describe('EstoqueProductsTable', () => {
     const pagination = screen.getByLabelText('Paginacao dos produtos');
 
     expect(controls).toHaveClass('shrink-0');
-    expect(pagination).toHaveClass('shrink-0');
+    expect(controls).toHaveClass('py-1');
+    expect(pagination).toHaveClass('shrink-0', 'py-1');
     expect(within(dataScroller).queryByRole('group', { name: 'Contagem e ordenacao dos produtos' })).not.toBeInTheDocument();
     expect(within(dataScroller).queryByLabelText('Paginacao dos produtos')).not.toBeInTheDocument();
     expect(products.contains(dataScroller)).toBe(true);

@@ -45,13 +45,13 @@ describe('EstoqueSummaryCards', () => {
     );
 
     expect(screen.getByLabelText('Resumo do estoque')).toHaveClass('min-w-0', 'shrink-0');
-    expect(screen.getByLabelText('Indicadores de estoque')).toHaveClass('h-[52px]', 'overflow-x-auto');
+    expect(screen.getByLabelText('Indicadores de estoque')).toHaveClass('h-11', 'overflow-x-auto');
     expect(container.querySelectorAll('[data-stock-summary]')).toHaveLength(6);
     ['Produtos', 'Valor do estoque', 'Sem estoque', 'Estoque baixo', 'Criticos', 'Capital em excesso'].forEach((label) => {
       expect(screen.getByText(label)).toBeInTheDocument();
     });
     container.querySelectorAll('[data-stock-summary]').forEach((card) => {
-      expect(card).toHaveClass('h-full', 'min-w-[9rem]', 'border-r');
+      expect(card).toHaveClass('h-full', 'min-w-[8rem]', 'border-r');
     });
   });
 
@@ -119,7 +119,7 @@ describe('EstoqueSummaryCards', () => {
     render(<EstoqueSummaryCards products={products} activeFilter="all" onFilterChange={vi.fn()} />);
 
     const value = screen.getByText('Valor do estoque').closest('[data-stock-summary]');
-    expect(value).toHaveClass('min-w-[9rem]');
+    expect(value).toHaveClass('min-w-[8rem]');
     expect(value).not.toHaveClass('overflow-hidden');
     const amount = within(value as HTMLElement).getByText(/9\.876\.543\.210\.987,65/);
     expect(amount).toHaveClass('whitespace-nowrap', 'max-w-full');

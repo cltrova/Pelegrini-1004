@@ -36,7 +36,7 @@ export function EstoqueWorkspaceHeader({
     <header
       aria-label={ariaLabel}
       className={cn(
-        'flex h-11 min-w-0 shrink-0 items-center border-b border-border/70 bg-card px-3 max-md:pl-14',
+        'flex h-10 min-w-0 shrink-0 items-center border-b border-border/60 bg-card/95 px-2.5 max-md:pl-14',
         className,
       )}
       {...props}
@@ -56,7 +56,7 @@ export function EstoqueToolbar({
     <div
       aria-label={ariaLabel}
       className={cn(
-        'flex h-11 min-w-0 shrink-0 flex-nowrap items-center gap-2 overflow-x-auto overscroll-x-contain border-b border-border/70 bg-background px-3',
+        'flex h-10 min-w-0 shrink-0 flex-nowrap items-center gap-1.5 overflow-x-auto overscroll-x-contain border-b border-border/60 bg-background/95 px-2.5',
         className,
       )}
       role="toolbar"
