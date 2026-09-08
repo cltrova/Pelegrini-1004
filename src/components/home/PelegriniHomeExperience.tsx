@@ -14,7 +14,6 @@ import {
   Truck,
 } from 'lucide-react';
 import { ThemeToggle } from '@/components/common/ThemeToggle';
-import { LoginDialog } from '@/components/auth/LoginDialog';
 import { ModuleDetailsDialog } from '@/components/common/ModuleDetailsDialog';
 import { Button } from '@/components/ui/button';
 import { getPelegriniModuleIdentity, type PelegriniModuleKey } from '@/config/pelegriniIdentity';
@@ -134,9 +133,11 @@ export function PelegriniHomeExperience({ mobile = false }: PelegriniHomeExperie
   const { isAuthenticated, user, logout, isVendedor, canAccessSettings, codEmpresa: codEmpresaUsuario, profile } = useAuth();
   const { hasModulo, isMaster } = useEmpresaConfig();
   const { permissions, hasUserModuleAccess } = useUserModulePermissions();
-  const { setFilialAtivaForEmpresa } = useFilialSelecionada();
+  const { filialAtiva, setFilialAtivaForEmpresa } = useFilialSelecionada();
   const { setEmpresaSelecionada } = useEmpresaSelecionada();
-  const [selectedBranch, setSelectedBranch] = useState<HomeBranch | null>(null);
+  const [selectedBranch, setSelectedBranch] = useState<HomeBranch | null>(() => (
+    filialAtiva === 'transmissao' || filialAtiva === 'chevrolet' ? filialAtiva : null
+  ));
   const [focusedBranch, setFocusedBranch] = useState<HomeBranch | null>(null);
   const [slideIndex, setSlideIndex] = useState(0);
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
@@ -272,7 +273,7 @@ export function PelegriniHomeExperience({ mobile = false }: PelegriniHomeExperie
                   <LogOut className="h-4 w-4" />{!mobile && <span>Sair</span>}
                 </Button>
               </div>
-            ) : <LoginDialog />}
+            ) : null}
           </div>
         </div>
       </header>

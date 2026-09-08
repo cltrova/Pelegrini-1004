@@ -42,6 +42,7 @@ import EmpresasPage from "./pages/configuracoes/EmpresasPage";
 import EstoqueAssistantSettingsPage from "./pages/configuracoes/EstoqueAssistantSettingsPage";
 import HomePage from "./pages/HomePage";
 import NotFound from "./pages/NotFound";
+import { PelegriniLoginPage } from "./pages/auth/PelegriniLoginPage";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -129,13 +130,17 @@ function FinanceiroIndexRedirect() {
   return <Navigate to="/" replace />;
 }
 
-function PasswordGate({ children }: { children: React.ReactNode }) {
+export function PasswordGate({ children }: { children: React.ReactNode }) {
 
   const { isAuthenticated, mustChangePassword, isLoading } = useAuth();
+
+  if (isLoading) return <GuardSpinner />;
+  if (!isAuthenticated) return <PelegriniLoginPage />;
+
   return (
     <>
       {children}
-      {!isLoading && isAuthenticated && mustChangePassword && <ForceChangePassword />}
+      {mustChangePassword && <ForceChangePassword />}
     </>
   );
 }

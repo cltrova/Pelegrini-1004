@@ -112,14 +112,14 @@ describe('Home branch flow', () => {
 
   afterEach(() => vi.clearAllMocks());
 
-  it('opens the desktop branch selection before exposing modules even with a stored branch', () => {
+  it('opens the modules directly when a branch is already active', () => {
     testState.filialAtiva = 'chevrolet';
     renderHome(<HomePage />);
 
-    expect(screen.getByRole('heading', { name: 'Escolha a filial' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Casa da Transmissão/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Casa do Chevrolet/i })).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /Comercial/i })).not.toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Módulos' })).toBeInTheDocument();
+    expect(screen.getByText('Filial selecionada: Casa do Chevrolet')).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Escolha a filial' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Comercial/i })).toBeInTheDocument();
   });
 
   it('stores the desktop branch before showing modules and then navigates directly', () => {
@@ -135,7 +135,7 @@ describe('Home branch flow', () => {
   });
 
   it('uses the same branch-first flow on mobile', () => {
-    testState.filialAtiva = 'chevrolet';
+    testState.filialAtiva = null;
     renderHome(<HomeMobilePage />);
 
     expect(screen.getByRole('heading', { name: 'Escolha a filial' })).toBeInTheDocument();
