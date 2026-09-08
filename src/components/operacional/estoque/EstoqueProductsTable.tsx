@@ -273,7 +273,7 @@ function StockStatusValue({ status }: { status: StockStatus }) {
   return (
     <span
       className={cn(
-        'inline-flex whitespace-nowrap items-center gap-1 rounded-md border px-1.5 py-0.5 text-[11px] font-semibold',
+        'inline-flex h-6 w-[7.5rem] items-center justify-center gap-1 rounded-md border px-1.5 py-0.5 text-[11px] font-semibold',
         config.className,
       )}
       data-stock-status={status}
@@ -292,15 +292,15 @@ function ProductButton({ product, onSelectProduct }: Pick<EstoqueProductsTablePr
   return (
     <button
       aria-label={`Abrir ${product.produto}`}
-      className="group flex min-w-0 max-w-full items-center gap-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      className="group flex min-w-0 w-full max-w-full items-center justify-center text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       onClick={() => onSelectProduct(product)}
+      title={`Codigo ${product.cod_produto}`}
       type="button"
     >
-      <span className="min-w-0 text-center">
+      <span className="min-w-0 max-w-full text-center">
         <span className="block truncate font-semibold text-foreground group-hover:text-primary" title={product.produto}>
           {product.produto}
         </span>
-        <span className="block text-[11px] text-muted-foreground">Codigo {product.cod_produto}</span>
       </span>
     </button>
   );

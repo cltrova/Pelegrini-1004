@@ -51,7 +51,7 @@ describe('EstoqueSummaryCards', () => {
       expect(screen.getByText(label)).toBeInTheDocument();
     });
     container.querySelectorAll('[data-stock-summary]').forEach((card) => {
-      expect(card).toHaveClass('h-full', 'min-w-[8rem]', 'border-r');
+      expect(card).toHaveClass('h-full', 'w-full', 'border-r');
     });
   });
 
@@ -119,7 +119,7 @@ describe('EstoqueSummaryCards', () => {
     render(<EstoqueSummaryCards products={products} activeFilter="all" onFilterChange={vi.fn()} />);
 
     const value = screen.getByText('Valor do estoque').closest('[data-stock-summary]');
-    expect(value).toHaveClass('min-w-[8rem]');
+    expect(value).toHaveClass('w-full');
     expect(value).not.toHaveClass('overflow-hidden');
     const amount = within(value as HTMLElement).getByText(/9\.876\.543\.210\.987,65/);
     expect(amount).toHaveClass('whitespace-nowrap', 'max-w-full');

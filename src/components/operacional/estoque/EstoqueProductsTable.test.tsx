@@ -218,6 +218,9 @@ describe('EstoqueProductsTable', () => {
     expect(within(mobileItem).getByText('Critico')).toBeInTheDocument();
     expect(within(mobileItem).getByText('ZF')).toBeInTheDocument();
     expect(within(mobileItem).getByLabelText('Situacao: Critico')).toBeInTheDocument();
+    expect(within(mobileItem).queryByText('Codigo 101')).not.toBeInTheDocument();
+    expect(within(mobileItem).getByRole('button', { name: 'Abrir KIT EMBREAGEM PESADA' })).toHaveAttribute('title', 'Codigo 101');
+    expect(within(mobileItem).getByLabelText('Situacao: Critico').closest('[data-stock-status]')).toHaveClass('w-[7.5rem]', 'justify-center');
   });
 
   it('abre o produto por um botao com nome acessivel', () => {
