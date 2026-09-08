@@ -269,6 +269,21 @@ describe('Pelegrini visual foundation', () => {
     expect(css).toContain('.pelegrini-page-surface :where([class*=\'h-[640px]\'])');
   });
 
+  it('applies simple system-colored scrollbars globally', () => {
+    const css = readFileSync(join(process.cwd(), 'src/index.css'), 'utf8');
+
+    expect(css).toContain('html {');
+    expect(css).toContain('scrollbar-width: thin');
+    expect(css).toContain('scrollbar-color: hsl(var(--primary) / 0.55) hsl(var(--muted) / 0.28)');
+    expect(css).toContain('*::-webkit-scrollbar');
+    expect(css).toContain('width: 7px');
+    expect(css).toContain('height: 7px');
+    expect(css).toContain('*::-webkit-scrollbar-thumb');
+    expect(css).toContain('background-color: hsl(var(--primary) / 0.5)');
+    expect(css).toContain('*::-webkit-scrollbar-thumb:hover');
+    expect(css).toContain('background-color: hsl(var(--primary) / 0.68)');
+  });
+
   it('keeps the commercial overview cards sized by their actual content for Pelegrini', () => {
     const source = readFileSync(join(process.cwd(), 'src/components/comercial/VisaoGeralRapida1004.tsx'), 'utf8');
 
