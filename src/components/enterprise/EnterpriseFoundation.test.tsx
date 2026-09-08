@@ -116,16 +116,24 @@ describe('enterprise visual foundation', () => {
   });
 
   it('keeps enterprise filters collapsed by default across viewports', () => {
+    const verboseSummary = 'Anos: 2026 | Mes: Set | Vendedores: 5 selecionados';
     render(
-      <EnterpriseFilterBar summary="Julho">
+      <EnterpriseFilterBar activeCount={3} resultCount={670} summary={verboseSummary}>
         <EnterpriseSearchFilter label="Busca" value="" onChange={() => undefined} />
       </EnterpriseFilterBar>,
     );
 
-    expect(screen.getByRole('button', { name: /^filtros$/i })).toHaveAttribute('aria-expanded', 'false');
+    const toggle = screen.getByRole('button', { name: /filtros/i });
+    expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    expect(screen.queryByText(verboseSummary)).not.toBeInTheDocument();
     const content = screen.getByLabelText('Busca').closest('label')?.parentElement;
     expect(content).toHaveClass('hidden');
     expect(content).not.toHaveClass('lg:flex');
+
+    fireEvent.click(toggle);
+
+    expect(toggle).toHaveAttribute('aria-expanded', 'true');
+    expect(content).not.toHaveClass('hidden');
   });
 
   it('renders standard select and multi-select filters with counts', () => {
