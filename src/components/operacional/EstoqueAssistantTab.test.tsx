@@ -262,6 +262,41 @@ describe('EstoqueAssistantTab', () => {
     expect(screen.queryByLabelText('8 de 10 creditos usados')).not.toBeInTheDocument();
   });
 
+  it('ignora uma consulta antiga ao retornar para a mesma filial', async () => {
+    let resolveOldCreditRefresh: (value: unknown) => void = () => undefined;
+
+    mockMaybeSingle
+      .mockResolvedValueOnce({ data: null })
+      .mockResolvedValueOnce({ data: { credits_used: 7, credits_limit: 10 } })
+      .mockImplementationOnce(() => new Promise(resolve => { resolveOldCreditRefresh = resolve; }))
+      .mockResolvedValueOnce({ data: null })
+      .mockResolvedValueOnce({ data: { credits_used: 2, credits_limit: 20 } })
+      .mockResolvedValueOnce({ data: null })
+      .mockResolvedValueOnce({ data: { credits_used: 9, credits_limit: 10 } });
+    vi.stubGlobal('fetch', vi.fn(async () => ({ ok: true, json: async () => ({ response: 'Resposta CT' }) })));
+
+    const { rerender } = render(<EstoqueAssistantTab estoqueData={estoqueFixture} giroData={giroFixture} />);
+    await screen.findByLabelText('7 de 10 creditos usados');
+    fireEvent.change(screen.getByPlaceholderText('Pergunte sobre seu estoque...'), { target: { value: 'Pergunta CT' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Enviar pergunta' }));
+    await screen.findByText('Resposta CT');
+    await waitFor(() => expect(mockMaybeSingle).toHaveBeenCalledTimes(3));
+
+    activeBranch.value = 'chevrolet';
+    rerender(<EstoqueAssistantTab estoqueData={estoqueFixture} giroData={giroFixture} />);
+    await screen.findByLabelText('2 de 20 creditos usados');
+    activeBranch.value = 'transmissao';
+    rerender(<EstoqueAssistantTab estoqueData={estoqueFixture} giroData={giroFixture} />);
+    await screen.findByLabelText('9 de 10 creditos usados');
+
+    await act(async () => {
+      resolveOldCreditRefresh({ data: { credits_used: 8, credits_limit: 10 } });
+    });
+
+    expect(screen.getByLabelText('9 de 10 creditos usados')).toBeInTheDocument();
+    expect(screen.queryByLabelText('8 de 10 creditos usados')).not.toBeInTheDocument();
+  });
+
   it('trata ultima venda ausente como desconhecida no contexto', async () => {
     const fetchMock = vi.fn(async () => ({ ok: true, json: async () => ({ response: 'OK' }) }));
     vi.stubGlobal('fetch', fetchMock);

@@ -279,6 +279,7 @@ describe('EstoquePage', () => {
     {
       name: 'mantem Fonte parcial quando estoque parcial e giro falham',
       overrides: {
+        isFetching: true,
         partialSources: { consolidado: true, detalhado: false },
         sourceErrors: { consolidado: new Error('Fonte parcial'), detalhado: null, giro: new Error('Giro indisponivel') },
       },

@@ -979,8 +979,14 @@ export function EstoqueAssistantTab({ giroData, estoqueData, now, onProductActio
   const { codEmpresaAtiva, empresa } = useEmpresaAtiva();
   const { filialAtiva } = useFilialSelecionada();
   const codEmpresaBi = resolveCodEmpresaBiParam(empresa, filialAtiva) || codEmpresaAtiva || '';
-  const activeCreditsCompanyRef = useRef(codEmpresaBi);
-  activeCreditsCompanyRef.current = codEmpresaBi;
+  const creditsRequestRef = useRef({ company: codEmpresaBi, generation: 0, requestId: 0 });
+  if (creditsRequestRef.current.company !== codEmpresaBi) {
+    creditsRequestRef.current = {
+      company: codEmpresaBi,
+      generation: creditsRequestRef.current.generation + 1,
+      requestId: creditsRequestRef.current.requestId,
+    };
+  }
 
   // Load custom prompt + credits
   useEffect(() => {
@@ -1012,8 +1018,18 @@ export function EstoqueAssistantTab({ giroData, estoqueData, now, onProductActio
 
   const refreshCredits = useCallback(async () => {
     if (!codEmpresaBi) return;
+    const request = {
+      company: codEmpresaBi,
+      generation: creditsRequestRef.current.generation,
+      requestId: creditsRequestRef.current.requestId + 1,
+    };
+    creditsRequestRef.current.requestId = request.requestId;
     const { data } = await supabase.from('estoque_assistant_credits').select('credits_used, credits_limit').eq('cod_empresa_bi', codEmpresaBi).maybeSingle();
-    if (data && activeCreditsCompanyRef.current === codEmpresaBi) {
+    const activeRequest = creditsRequestRef.current;
+    if (data
+      && activeRequest.company === request.company
+      && activeRequest.generation === request.generation
+      && activeRequest.requestId === request.requestId) {
       setCredits({ used: data.credits_used, limit: data.credits_limit });
     }
   }, [codEmpresaBi]);

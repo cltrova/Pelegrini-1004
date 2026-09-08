@@ -105,8 +105,8 @@ export default function EstoquePage() {
     ? `Atualizado as ${displayedUpdate.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`
     : 'Aguardando primeira atualizacao';
   const stockSourceState = sourceStatus?.[viewMode];
-  const sourceStateLabel = isFetching
-    ? recoveringStock ? 'Recuperando estoque completo' : 'Atualizando dados'
+  const sourceStateLabel = recoveringStock
+    ? 'Recuperando estoque completo'
     : stockUnavailable
       ? 'Estoque indisponivel'
       : recoveredStock
@@ -115,11 +115,13 @@ export default function EstoquePage() {
         ? 'Fonte parcial'
         : stockError
           ? 'Ultimos dados preservados'
-        : movementError
-          ? 'Estoque atualizado, giro pendente'
-          : stockSourceState === 'ready'
-            ? 'Dados atualizados'
-            : 'Fonte aguardando consulta';
+          : isFetching
+            ? 'Atualizando dados'
+            : movementError
+              ? 'Estoque atualizado, giro pendente'
+              : stockSourceState === 'ready'
+                ? 'Dados atualizados'
+                : 'Fonte aguardando consulta';
 
   const filterOptions = useMemo(() => ({
     marcas: [...new Set(estoqueData.map(r => r.marca))].sort(),
