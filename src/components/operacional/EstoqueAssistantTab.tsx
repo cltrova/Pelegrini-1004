@@ -979,6 +979,8 @@ export function EstoqueAssistantTab({ giroData, estoqueData, now, onProductActio
   const { codEmpresaAtiva, empresa } = useEmpresaAtiva();
   const { filialAtiva } = useFilialSelecionada();
   const codEmpresaBi = resolveCodEmpresaBiParam(empresa, filialAtiva) || codEmpresaAtiva || '';
+  const activeCreditsCompanyRef = useRef(codEmpresaBi);
+  activeCreditsCompanyRef.current = codEmpresaBi;
 
   // Load custom prompt + credits
   useEffect(() => {
@@ -1011,7 +1013,9 @@ export function EstoqueAssistantTab({ giroData, estoqueData, now, onProductActio
   const refreshCredits = useCallback(async () => {
     if (!codEmpresaBi) return;
     const { data } = await supabase.from('estoque_assistant_credits').select('credits_used, credits_limit').eq('cod_empresa_bi', codEmpresaBi).maybeSingle();
-    if (data) setCredits({ used: data.credits_used, limit: data.credits_limit });
+    if (data && activeCreditsCompanyRef.current === codEmpresaBi) {
+      setCredits({ used: data.credits_used, limit: data.credits_limit });
+    }
   }, [codEmpresaBi]);
 
   const creditPercent = credits.limit > 0 ? Math.min((credits.used / credits.limit) * 100, 100) : 0;
