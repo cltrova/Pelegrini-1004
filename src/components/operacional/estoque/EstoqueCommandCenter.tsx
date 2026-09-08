@@ -17,6 +17,7 @@ import { EstoqueAttentionPanel } from './EstoqueAttentionPanel';
 import { EstoqueMovementHighlights } from './EstoqueMovementHighlights';
 import { EstoqueProductDrawer } from './EstoqueProductDrawer';
 import { EstoqueProductsTable } from './EstoqueProductsTable';
+import { readVisibleColumns, StockColumnPicker, storageKey, type StockColumnKey } from './EstoqueProductsTable';
 import { EstoqueSmartFilters } from './EstoqueSmartFilters';
 import { EstoqueSummaryCards } from './EstoqueSummaryCards';
 import { EstoqueDataViewport, EstoqueToolbar } from './EstoqueWorkspace';
@@ -66,7 +67,8 @@ export function EstoqueCommandCenter({
   const [brands, setBrands] = useState<string[]>([]);
   const [groups, setGroups] = useState<string[]>([]);
   const [lines, setLines] = useState<string[]>([]);
-  const [sortMode, setSortMode] = useState<StockSortMode>('stock-desc');
+  const [sortMode, setSortMode] = useState<StockSortMode>('product-asc');
+  const [visibleColumns, setVisibleColumns] = useState<StockColumnKey[]>(() => readVisibleColumns(branchKey, viewMode));
   const [selectedProduct, setSelectedProduct] = useState<StockProductInsight | null>(null);
   const [attentionOpen, setAttentionOpen] = useState(false);
 
@@ -79,6 +81,10 @@ export function EstoqueCommandCenter({
     setSelectedProduct(null);
     setAttentionOpen(false);
   }, [branchKey]);
+
+  useEffect(() => {
+    setVisibleColumns(readVisibleColumns(branchKey, viewMode));
+  }, [branchKey, viewMode]);
 
   useEffect(() => {
     if (!movementAvailable && quickFilter === 'excess') {
@@ -151,6 +157,11 @@ export function EstoqueCommandCenter({
     setSelectedProduct(product);
   };
 
+  const handleVisibleColumnsChange = (columns: StockColumnKey[]) => {
+    setVisibleColumns(columns);
+    window.localStorage.setItem(storageKey(branchKey, viewMode), JSON.stringify(columns));
+  };
+
   return (
     <section
       aria-label="Central de estoque"
@@ -184,6 +195,12 @@ export function EstoqueCommandCenter({
                 <Download aria-hidden="true" className="h-3.5 w-3.5" />
                 <span className="hidden xl:inline">Exportar</span>
               </Button>
+              <StockColumnPicker
+                branchKey={branchKey}
+                onVisibleColumnsChange={handleVisibleColumnsChange}
+                viewMode={viewMode}
+                visibleColumns={visibleColumns}
+              />
             </>
           )}
           brands={brands}
@@ -253,9 +270,11 @@ export function EstoqueCommandCenter({
           branchKey={branchKey}
           onSelectProduct={selectProduct}
           onSortChange={setSortMode}
+          onVisibleColumnsChange={handleVisibleColumnsChange}
           products={filtered}
           sortMode={sortMode}
           sourceEmpty={stockData.length === 0}
+          visibleColumns={visibleColumns}
           viewMode={viewMode}
         />
       </EstoqueDataViewport>

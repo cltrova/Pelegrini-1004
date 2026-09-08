@@ -96,7 +96,6 @@ export default function EstoquePage() {
     ? stockUnavailable && stockError && !recoveringStock
     : (stockUnavailable && stockError) || (movementUnavailable && movementError);
   const sourceHasActiveIssue = Boolean(movementError || (stockError && !recoveredStock));
-  const branchName = filialAtiva === 'chevrolet' ? 'Casa do Chevrolet' : 'Casa da Transmissao';
   const activeSourceUpdate = activeTab === 'central'
     ? sourceLastUpdated?.[viewMode]
     : sourceLastUpdated?.giro;
@@ -229,7 +228,6 @@ export default function EstoquePage() {
     <EstoqueWorkspace className="bg-background">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="contents">
         <EstoqueWorkspaceHeader className="gap-3">
-          <span className="hidden shrink-0 text-xs font-semibold text-foreground lg:inline">{branchName}</span>
           <PelegriniTabs
             ariaLabel="Visões do estoque"
             className="estoque-tabs min-w-0 flex-1"

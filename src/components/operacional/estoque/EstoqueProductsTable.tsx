@@ -5,7 +5,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Columns3,
-  ExternalLink,
   Siren,
   TriangleAlert,
   type LucideIcon,
@@ -20,11 +19,10 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import type { ViewMode } from '@/types/estoque';
 
-import type { StockProductInsight, StockSortMode, StockStatus } from './estoqueIntelligence';
+import type { StockProductInsight, StockSortKey, StockSortMode, StockStatus } from './estoqueIntelligence';
 
 export type StockColumnKey =
   | 'product'
@@ -101,14 +99,6 @@ const statusConfig: Record<
   },
 };
 
-const sortOptions: readonly { value: StockSortMode; label: string }[] = [
-  { value: 'stock-desc', label: 'Maior estoque' },
-  { value: 'stock-asc', label: 'Menor estoque' },
-  { value: 'product', label: 'Produto' },
-  { value: 'last-movement', label: 'Ultima movimentacao' },
-  { value: 'brand', label: 'Marca' },
-];
-
 export interface EstoqueProductsTableProps {
   products: StockProductInsight[];
   sourceEmpty?: boolean;
@@ -118,13 +108,14 @@ export interface EstoqueProductsTableProps {
   onSortChange: (mode: StockSortMode) => void;
   onSelectProduct: (product: StockProductInsight) => void;
   onVisibleColumnsChange?: (columns: StockColumnKey[]) => void;
+  visibleColumns?: StockColumnKey[];
 }
 
-function storageKey(branchKey: string, viewMode: ViewMode): string {
+export function storageKey(branchKey: string, viewMode: ViewMode): string {
   return `pelegrini:estoque:columns:${branchKey}:${viewMode}`;
 }
 
-function readVisibleColumns(branchKey: string, viewMode: ViewMode): StockColumnKey[] {
+export function readVisibleColumns(branchKey: string, viewMode: ViewMode): StockColumnKey[] {
   const modeColumns = columnsByMode[viewMode];
   const defaultColumns = modeColumns.map((column) => column.key);
   const validColumns = new Set(defaultColumns);
@@ -142,6 +133,91 @@ function readVisibleColumns(branchKey: string, viewMode: ViewMode): StockColumnK
   } catch {
     return defaultColumns;
   }
+}
+
+const sortKeyByColumn: Record<StockColumnKey, StockSortKey> = {
+  product: 'product',
+  brand: 'brand',
+  group: 'group',
+  quantity: 'quantity',
+  lastMovement: 'last-movement',
+  status: 'status',
+  branch: 'branch',
+  value: 'value',
+  averageCost: 'average-cost',
+  location: 'location',
+  lastPurchase: 'last-purchase',
+  lastSale: 'last-sale',
+};
+
+function sortKeyFromMode(mode: StockSortMode): StockSortKey {
+  if (mode === 'stock-desc' || mode === 'stock-asc') return 'quantity';
+  if (mode === 'product') return 'product';
+  if (mode === 'brand') return 'brand';
+  if (mode === 'last-movement') return 'last-movement';
+  return mode.replace(/-(asc|desc)$/, '') as StockSortKey;
+}
+
+function sortDirectionFromMode(mode: StockSortMode, key: StockSortKey): 'ascending' | 'descending' | 'none' {
+  if (sortKeyFromMode(mode) !== key) return 'none';
+  return mode.endsWith('-asc') ? 'ascending' : 'descending';
+}
+
+function nextSortMode(mode: StockSortMode, key: StockSortKey): StockSortMode {
+  const currentKey = sortKeyFromMode(mode);
+  const direction = currentKey === key && sortDirectionFromMode(mode, key) === 'ascending' ? 'desc' : 'asc';
+  return `${key}-${direction}` as StockSortMode;
+}
+
+export function StockColumnPicker({
+  branchKey,
+  viewMode,
+  visibleColumns,
+  onVisibleColumnsChange,
+}: {
+  branchKey: string;
+  viewMode: ViewMode;
+  visibleColumns: StockColumnKey[];
+  onVisibleColumnsChange: (columns: StockColumnKey[]) => void;
+}) {
+  const [columnsMenuOpen, setColumnsMenuOpen] = useState(false);
+  const stockColumns = columnsByMode[viewMode];
+
+  const toggleColumn = (column: StockColumnKey) => {
+    if (requiredColumns.has(column)) return;
+    const next = visibleColumns.includes(column)
+      ? visibleColumns.filter((key) => key !== column)
+      : stockColumns
+          .filter((definition) => visibleColumns.includes(definition.key) || definition.key === column)
+          .map((definition) => definition.key);
+    window.localStorage.setItem(storageKey(branchKey, viewMode), JSON.stringify(next));
+    onVisibleColumnsChange(next);
+  };
+
+  return (
+    <DropdownMenu open={columnsMenuOpen} onOpenChange={setColumnsMenuOpen}>
+      <DropdownMenuTrigger asChild>
+        <Button aria-label="Escolher colunas" className="h-8 gap-1.5 px-2.5 text-xs" type="button" variant="outline">
+          <Columns3 aria-hidden="true" className="h-3.5 w-3.5" />
+          <span>Colunas</span>
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="max-h-[24rem] w-64 overflow-y-auto">
+        <DropdownMenuLabel>Colunas visiveis</DropdownMenuLabel>
+        {stockColumns.map((column) => (
+          <DropdownMenuCheckboxItem
+            checked={visibleColumns.includes(column.key)}
+            disabled={column.required}
+            key={column.key}
+            onCheckedChange={() => toggleColumn(column.key)}
+            onSelect={(event) => event.preventDefault()}
+          >
+            {column.label}
+          </DropdownMenuCheckboxItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
 }
 
 function formatNumber(value: number): string {
@@ -220,13 +296,12 @@ function ProductButton({ product, onSelectProduct }: Pick<EstoqueProductsTablePr
       onClick={() => onSelectProduct(product)}
       type="button"
     >
-      <span className="min-w-0">
+      <span className="min-w-0 text-center">
         <span className="block truncate font-semibold text-foreground group-hover:text-primary" title={product.produto}>
           {product.produto}
         </span>
         <span className="block text-[11px] text-muted-foreground">Codigo {product.cod_produto}</span>
       </span>
-      <ExternalLink aria-hidden="true" className="h-3.5 w-3.5 shrink-0 text-muted-foreground group-hover:text-primary" />
     </button>
   );
 }
@@ -263,13 +338,15 @@ export function EstoqueProductsTable({
   onSortChange,
   onSelectProduct,
   onVisibleColumnsChange,
+  visibleColumns: controlledVisibleColumns,
 }: EstoqueProductsTableProps) {
-  const [visibleColumns, setVisibleColumns] = useState<StockColumnKey[]>(() => readVisibleColumns(branchKey, viewMode));
-  const [columnsMenuOpen, setColumnsMenuOpen] = useState(false);
+  const [internalVisibleColumns, setInternalVisibleColumns] = useState<StockColumnKey[]>(() => readVisibleColumns(branchKey, viewMode));
   const [page, setPage] = useState(0);
+  const isControlled = controlledVisibleColumns !== undefined;
+  const visibleColumns = controlledVisibleColumns ?? internalVisibleColumns;
 
   useEffect(() => {
-    setVisibleColumns(readVisibleColumns(branchKey, viewMode));
+    if (!isControlled) setInternalVisibleColumns(readVisibleColumns(branchKey, viewMode));
   }, [branchKey, viewMode]);
 
   useEffect(() => {
@@ -285,21 +362,8 @@ export function EstoqueProductsTable({
     ? 'Nenhum produto disponivel na fonte de estoque.'
     : 'Nenhum produto corresponde aos filtros atuais.';
 
-  const toggleColumn = (column: StockColumnKey) => {
-    if (requiredColumns.has(column)) return;
-
-    const next = visibleColumns.includes(column)
-      ? visibleColumns.filter((key) => key !== column)
-      : stockColumns
-          .filter((definition) => visibleColumns.includes(definition.key) || definition.key === column)
-          .map((definition) => definition.key);
-    setVisibleColumns(next);
-    window.localStorage.setItem(storageKey(branchKey, viewMode), JSON.stringify(next));
-    onVisibleColumnsChange?.(next);
-  };
-
   return (
-    <section aria-label="Produtos do estoque" className="flex h-full min-h-0 min-w-0 max-w-full flex-1 flex-col overflow-hidden border border-border/70 bg-background">
+    <section aria-label="Produtos do estoque" className="estoque-products-table flex h-full min-h-0 min-w-0 max-w-full flex-1 flex-col overflow-hidden border border-border/70 bg-background">
       <div
         aria-label="Contagem e ordenacao dos produtos"
         className="flex min-w-0 shrink-0 flex-wrap items-center justify-between gap-1.5 border-b border-border/70 px-2.5 py-1"
@@ -309,49 +373,10 @@ export function EstoqueProductsTable({
           <span className="font-semibold tabular-nums text-foreground">{products.length}</span>{' '}
           {products.length === 1 ? 'produto' : 'produtos'}
         </p>
-        <div className="flex min-w-0 flex-wrap items-center justify-end gap-1.5">
-          <Select value={sortMode} onValueChange={(value) => onSortChange(value as StockSortMode)}>
-            <SelectTrigger aria-label="Ordenar produtos" className="h-7 w-[10.5rem] max-w-full bg-background text-xs">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {sortOptions.map((option) => (
-                <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          <DropdownMenu open={columnsMenuOpen} onOpenChange={setColumnsMenuOpen}>
-            <DropdownMenuTrigger asChild>
-              <Button
-                aria-label="Escolher colunas"
-                className="h-7 gap-1.5 px-2 text-xs"
-                onClick={() => {
-                  if (!columnsMenuOpen) setColumnsMenuOpen(true);
-                }}
-                type="button"
-                variant="outline"
-              >
-                <Columns3 aria-hidden="true" className="h-3.5 w-3.5" />
-                <span>Colunas</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="max-h-[24rem] w-64 overflow-y-auto">
-              <DropdownMenuLabel>Colunas visiveis</DropdownMenuLabel>
-              {stockColumns.map((column) => (
-                <DropdownMenuCheckboxItem
-                  checked={visibleColumns.includes(column.key)}
-                  disabled={column.required}
-                  key={column.key}
-                  onCheckedChange={() => toggleColumn(column.key)}
-                  onSelect={(event) => event.preventDefault()}
-                >
-                  {column.label}
-                </DropdownMenuCheckboxItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
+        {!isControlled && <StockColumnPicker branchKey={branchKey} onVisibleColumnsChange={(next) => {
+          setInternalVisibleColumns(next);
+          onVisibleColumnsChange?.(next);
+        }} viewMode={viewMode} visibleColumns={visibleColumns} />}
       </div>
 
       <div
@@ -366,23 +391,33 @@ export function EstoqueProductsTable({
           {products.length === 0 ? (
             <p className="px-4 py-10 text-center text-sm text-muted-foreground">{emptyMessage}</p>
           ) : (
-            <div className="min-h-full min-w-max">
-              <table className="w-full text-left text-sm">
+            <div className="min-h-full min-w-full">
+              <table className="w-full table-fixed text-sm">
                 <thead aria-label="Cabecalho da tabela" className="sticky top-0 z-10 bg-muted">
                 <tr className="border-b border-border">
-                  {selectedColumns.map((column) => (
+                  {selectedColumns.map((column) => {
+                    const sortKey = sortKeyByColumn[column.key];
+                    return (
                     <th
+                      aria-sort={sortDirectionFromMode(sortMode, sortKey)}
+                      style={{ width: `${100 / selectedColumns.length}%` }}
                       className={cn(
-                        'whitespace-nowrap px-2 py-1.5 text-[10px] font-semibold uppercase text-muted-foreground',
-                        column.numeric && 'text-right',
-                        column.key === 'product' && 'min-w-[17rem]',
+                        'whitespace-nowrap px-2 py-1 text-center text-[10px] font-semibold uppercase text-muted-foreground',
                       )}
                       key={column.key}
                       scope="col"
                     >
-                      {column.label}
+                      <button
+                        aria-label={`Ordenar por ${column.label}`}
+                        className="flex h-7 w-full items-center justify-center rounded px-1 text-center hover:bg-background/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
+                        onClick={() => onSortChange(nextSortMode(sortMode, sortKey))}
+                        type="button"
+                      >
+                        {column.label}
+                      </button>
                     </th>
-                  ))}
+                    );
+                  })}
                 </tr>
                 </thead>
                 <tbody className="divide-y divide-border/70">
@@ -391,8 +426,7 @@ export function EstoqueProductsTable({
                     {selectedColumns.map((column) => (
                       <td
                         className={cn(
-                          'h-9 max-w-[17rem] px-2 py-1 align-middle text-[13px] text-foreground',
-                          column.numeric && 'text-right',
+                          'h-9 max-w-[17rem] px-2 py-1 text-center align-middle text-[12px] text-foreground',
                         )}
                         key={column.key}
                       >
@@ -455,18 +489,8 @@ export function EstoqueProductsTable({
                   </div>
                 </dl>
               )}
-              <div className="mt-2 flex min-w-0 items-center justify-between gap-2">
+              <div className="mt-2 flex min-w-0 items-center justify-end gap-2">
                 {viewMode === 'consolidado' ? <StockStatusValue status={product.status} /> : <span />}
-                <Button
-                  aria-label={`Abrir ${product.produto}`}
-                  className="h-8 w-8 shrink-0"
-                  onClick={() => onSelectProduct(product)}
-                  size="icon"
-                  type="button"
-                  variant="ghost"
-                >
-                  <ExternalLink aria-hidden="true" className="h-4 w-4" />
-                </Button>
               </div>
             </article>
             ))

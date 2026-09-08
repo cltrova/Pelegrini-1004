@@ -144,7 +144,7 @@ describe('EstoquePage', () => {
 
     renderEstoquePage();
 
-    expect(screen.getByText(/Casa da Transmissao/i)).toBeInTheDocument();
+    expect(screen.queryByText(/Casa da Transmissao/i)).not.toBeInTheDocument();
     expect(screen.getByText(/Atualizado.*13:45/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/Estado da fonte de estoque: Dados atualizados/i)).toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: 'Gestao de Estoque' })).not.toBeInTheDocument();

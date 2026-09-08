@@ -3,7 +3,20 @@ import type { EstoqueRecord, GiroRecord } from '@/types/estoque';
 export type StockStatus = 'available' | 'low' | 'critical' | 'out';
 export type StockGranularity = 'product' | 'branch' | 'location';
 export type StockQuickFilter = 'all' | StockStatus | 'stagnant' | 'with-stock' | 'attention' | 'excess';
-export type StockSortMode = 'stock-desc' | 'stock-asc' | 'product' | 'last-movement' | 'brand';
+export type StockSortKey =
+  | 'product'
+  | 'brand'
+  | 'group'
+  | 'quantity'
+  | 'value'
+  | 'last-movement'
+  | 'status'
+  | 'branch'
+  | 'location'
+  | 'average-cost'
+  | 'last-purchase'
+  | 'last-sale';
+export type StockSortMode = `${StockSortKey}-${'asc' | 'desc'}` | 'stock-desc' | 'stock-asc' | 'product' | 'last-movement' | 'brand';
 export type StockMovementTrend = 'increasing' | 'decreasing' | 'stagnant' | 'irregular';
 export type StockPrimaryMovementType = 'sale' | 'withdrawal' | 'purchase' | 'entry';
 export type StockMovementScope = 'branch' | 'product';
@@ -354,12 +367,33 @@ export function filterStockInsights(
 }
 
 export function sortStockInsights(insights: StockProductInsight[], mode: StockSortMode): StockProductInsight[] {
-  return [...insights].sort((a, b) => {
-    if (mode === 'stock-asc') return a.quantidade_estoque - b.quantidade_estoque;
-    if (mode === 'stock-desc') return b.quantidade_estoque - a.quantidade_estoque;
-    if (mode === 'product') return a.produto.localeCompare(b.produto, 'pt-BR');
-    if (mode === 'brand') return a.marca.localeCompare(b.marca, 'pt-BR');
+  const legacyMode = mode === 'stock-desc' ? 'quantity-desc'
+    : mode === 'stock-asc' ? 'quantity-asc'
+      : mode === 'product' ? 'product-asc'
+        : mode === 'brand' ? 'brand-asc'
+          : mode === 'last-movement' ? 'last-movement-desc'
+            : mode;
+  const descending = legacyMode.endsWith('-desc');
+  const key = legacyMode.replace(/-(asc|desc)$/, '') as StockSortKey;
 
-    return (b.lastMovementDate ?? '').localeCompare(a.lastMovementDate ?? '');
+  return [...insights].sort((a, b) => {
+    const textValue = (value: unknown) => String(value ?? '');
+    const numericValue = (value: unknown) => Number(value ?? 0);
+    const values: Record<StockSortKey, string | number> = {
+      product: a.produto.localeCompare(b.produto, 'pt-BR'),
+      brand: a.marca.localeCompare(b.marca, 'pt-BR'),
+      group: a.grupo.localeCompare(b.grupo, 'pt-BR'),
+      quantity: a.quantidade_estoque - b.quantidade_estoque,
+      value: a.valor_estoque - b.valor_estoque,
+      'last-movement': textValue(a.lastMovementDate).localeCompare(textValue(b.lastMovementDate)),
+      status: textValue(a.status).localeCompare(textValue(b.status), 'pt-BR'),
+      branch: textValue(a.empresa).localeCompare(textValue(b.empresa), 'pt-BR'),
+      location: textValue(a.localizacao_produto).localeCompare(textValue(b.localizacao_produto), 'pt-BR'),
+      'average-cost': numericValue(a.custo_medio) - numericValue(b.custo_medio),
+      'last-purchase': textValue(a.data_ultima_compra).localeCompare(textValue(b.data_ultima_compra)),
+      'last-sale': textValue(a.data_ultima_venda).localeCompare(textValue(b.data_ultima_venda)),
+    };
+    const comparison = Number(values[key] ?? 0);
+    return descending ? -comparison : comparison;
   });
 }

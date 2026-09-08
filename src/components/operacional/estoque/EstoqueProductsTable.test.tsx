@@ -239,8 +239,8 @@ describe('EstoqueProductsTable', () => {
     expect(desktop).toHaveClass('hidden', 'md:block', 'min-w-0');
     expect(desktop).not.toHaveClass('overflow-x-auto', 'overflow-auto');
     expect(within(dataScroller).getByRole('rowgroup', { name: 'Cabecalho da tabela' })).toHaveClass('sticky', 'top-0');
-    expect(within(dataScroller).getAllByRole('columnheader')[0]).toHaveClass('py-1.5');
-    expect(within(dataScroller).getAllByRole('cell')[0]).toHaveClass('h-9', 'py-1');
+    expect(within(dataScroller).getAllByRole('columnheader')[0]).toHaveClass('text-center');
+    expect(within(dataScroller).getAllByRole('cell')[0]).toHaveClass('text-center');
 
     expect(within(desktop).getAllByRole('columnheader').map((header) => header.textContent)).toEqual([
       'Produto',
@@ -405,22 +405,18 @@ describe('EstoqueProductsTable', () => {
     expect(screen.queryByRole('columnheader', { name: 'Valor em estoque' })).not.toBeInTheDocument();
   });
 
-  it('envia os cinco modos de ordenacao pelo seletor', () => {
+  it('ordena pela coluna clicada e alterna entre crescente e decrescente', () => {
     const onSortChange = vi.fn();
-    render(<EstoqueProductsTable {...baseProps} onSortChange={onSortChange} />);
+    const { rerender } = render(<EstoqueProductsTable {...baseProps} onSortChange={onSortChange} />);
 
-    const trigger = screen.getByRole('combobox', { name: 'Ordenar produtos' });
-    fireEvent.click(trigger);
-    const options = screen.getAllByRole('option');
-    expect(options.map((option) => option.textContent)).toEqual([
-      'Maior estoque',
-      'Menor estoque',
-      'Produto',
-      'Ultima movimentacao',
-      'Marca',
-    ]);
-    fireEvent.click(screen.getByRole('option', { name: 'Produto' }));
-    expect(onSortChange).toHaveBeenCalledWith('product');
+    const quantityHeader = screen.getByRole('columnheader', { name: 'Quantidade' });
+    expect(quantityHeader).toHaveAttribute('aria-sort', 'descending');
+    fireEvent.click(within(quantityHeader).getByRole('button', { name: 'Ordenar por Quantidade' }));
+    expect(onSortChange).toHaveBeenLastCalledWith('quantity-asc');
+    rerender(<EstoqueProductsTable {...baseProps} onSortChange={onSortChange} sortMode="quantity-asc" />);
+    const updatedQuantityHeader = screen.getByRole('columnheader', { name: 'Quantidade' });
+    fireEvent.click(within(updatedQuantityHeader).getByRole('button', { name: 'Ordenar por Quantidade' }));
+    expect(onSortChange).toHaveBeenLastCalledWith('quantity-desc');
   });
 
   it('renderiza valores monetarios com o valor responsivo Pelegrini', () => {
@@ -486,6 +482,6 @@ describe('EstoqueProductsTable', () => {
 
     expect(within(desktop).getAllByRole('row')).toHaveLength(2);
     expect(screen.getByText('Pagina 2 de 2')).toBeInTheDocument();
-    expect(screen.getAllByRole('button', { name: 'Abrir PRODUTO 51' })).toHaveLength(3);
+    expect(screen.getAllByRole('button', { name: 'Abrir PRODUTO 51' })).toHaveLength(2);
   }, 10_000);
 });

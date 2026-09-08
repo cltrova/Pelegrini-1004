@@ -207,12 +207,19 @@ describe('EstoqueCommandCenter', () => {
     render(<EstoqueCommandCenter {...fixtureProps} onExport={onExport} />);
     vi.useRealTimers();
 
-    const sortControl = screen.getByRole('combobox', { name: 'Ordenar produtos' });
-    fireEvent.click(sortControl);
-    fireEvent.click(screen.getByRole('option', { name: 'Menor estoque' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Ordenar por Quantidade' }));
     fireEvent.click(screen.getByRole('button', { name: 'Exportar visao atual' }));
 
     expect(onExport).toHaveBeenCalledWith([product202, product101, product303]);
+  });
+
+  it('posiciona o seletor de colunas ao lado de exportar e remove o seletor de maior estoque', () => {
+    render(<EstoqueCommandCenter {...fixtureProps} />);
+
+    expect(screen.getByRole('button', { name: 'Exportar visao atual' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Escolher colunas' })).toBeInTheDocument();
+    expect(screen.queryByRole('combobox', { name: 'Ordenar produtos' })).not.toBeInTheDocument();
+    expect(screen.queryByText('Maior estoque')).not.toBeInTheDocument();
   });
 
   it('preserva busca e filtros enquanto troca o modo pelo callback controlado', () => {

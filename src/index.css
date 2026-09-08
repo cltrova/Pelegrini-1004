@@ -1572,9 +1572,14 @@
     padding: 0 0.5rem !important;
     line-height: 1 !important;
   }
-  .pelegrini-page-surface .giro-density-table :where(tr) {
-    height: 1.75rem !important;
-  }
+.pelegrini-page-surface .giro-density-table :where(tr) {
+  height: 1.75rem !important;
+}
+
+.estoque-products-table .pelegrini-responsive-value {
+  font-size: 0.82rem !important;
+  font-weight: 650;
+}
   .pelegrini-page-surface :where([class~='px-5']) {
     padding-left: 0.75rem !important;
     padding-right: 0.75rem !important;
