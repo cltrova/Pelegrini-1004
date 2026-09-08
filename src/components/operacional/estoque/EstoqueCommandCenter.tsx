@@ -71,6 +71,16 @@ export function EstoqueCommandCenter({
   const [attentionOpen, setAttentionOpen] = useState(false);
 
   useEffect(() => {
+    setSearch('');
+    setQuickFilter('all');
+    setBrands([]);
+    setGroups([]);
+    setLines([]);
+    setSelectedProduct(null);
+    setAttentionOpen(false);
+  }, [branchKey]);
+
+  useEffect(() => {
     if (!movementAvailable && quickFilter === 'excess') {
       setQuickFilter('all');
     }

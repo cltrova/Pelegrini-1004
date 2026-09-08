@@ -249,6 +249,42 @@ describe('EstoqueCommandCenter', () => {
     expect(onExport).toHaveBeenCalledWith([expect.objectContaining({ cod_produto: 202 })]);
   });
 
+  it('limpa busca, filtros, pagina e drawer ao trocar de filial', () => {
+    const manyProducts = Array.from({ length: 51 }, (_, index) => ({
+      ...estoqueFixtureComTresItens[index % estoqueFixtureComTresItens.length],
+      cod_produto: 10_000 + index,
+      produto: `PRODUTO ${String(index).padStart(2, '0')}`,
+    }));
+    const { rerender } = render(
+      <EstoqueCommandCenter {...fixtureProps} branchKey="1004:transmissao" stockData={manyProducts} />,
+    );
+
+    fireEvent.change(screen.getByRole('searchbox', { name: 'Buscar no estoque' }), {
+      target: { value: 'produto' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Proxima pagina' }));
+    expect(screen.getByText('Pagina 2 de 2')).toBeInTheDocument();
+    const lastPage = screen.getByRole('region', { name: 'Produtos do estoque' });
+    fireEvent.click(within(lastPage).getAllByRole('button', { name: /^Abrir PRODUTO/i })[0]);
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+
+    rerender(
+      <EstoqueCommandCenter {...fixtureProps} branchKey="1004:chevrolet" stockData={manyProducts} />,
+    );
+    vi.runAllTimers();
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(screen.getByRole('searchbox', { name: 'Buscar no estoque' })).toHaveValue('');
+    expect(screen.getByRole('button', { name: /Produtos/i })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByText('Pagina 1 de 2')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /Sem estoque/i }));
+    rerender(
+      <EstoqueCommandCenter {...fixtureProps} branchKey="1004:transmissao" stockData={manyProducts} />,
+    );
+    expect(screen.getByRole('button', { name: /Produtos/i })).toHaveAttribute('aria-pressed', 'true');
+  });
+
   it('filtra a visao real por Disponiveis e Com estoque sem alterar os seis indicadores', () => {
     const onExport = vi.fn();
     render(<EstoqueCommandCenter {...fixtureProps} onExport={onExport} />);

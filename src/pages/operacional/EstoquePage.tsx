@@ -109,14 +109,12 @@ export default function EstoquePage() {
     ? recoveringStock ? 'Recuperando estoque completo' : 'Atualizando dados'
     : stockUnavailable
       ? 'Estoque indisponivel'
-      : movementError
-      ? 'Estoque atualizado, giro pendente'
       : recoveredStock
-        ? 'Estoque recuperado'
-    : partialStock
-      ? 'Fonte parcial'
-      : stockError
-        ? 'Ultimos dados preservados'
+        ? movementError ? 'Estoque recuperado, giro pendente' : 'Estoque recuperado'
+      : partialStock
+        ? 'Fonte parcial'
+        : stockError
+          ? 'Ultimos dados preservados'
         : movementError
           ? 'Estoque atualizado, giro pendente'
           : stockSourceState === 'ready'
@@ -157,6 +155,12 @@ export default function EstoquePage() {
   useEffect(() => {
     setSourceNoticeDismissed(false);
   }, [sourceNoticeFingerprint]);
+
+  useEffect(() => {
+    setGiroFilters(DEFAULT_GIRO_FILTERS);
+    setPendingGiro(DEFAULT_GIRO_FILTERS);
+    setRequestedProductCode(null);
+  }, [branchKey]);
 
   const sourceNotice = sourceHasActiveIssue && !sourceNoticeDismissed ? (
     <Alert className="rounded-none border-x-0 border-t-0 py-1.5" role="status">

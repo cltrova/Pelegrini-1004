@@ -263,15 +263,46 @@ describe('EstoquePage', () => {
     await waitFor(() => expect(screen.getByText('Estoque parcial')).toBeInTheDocument());
   });
 
-  it('mantem alerta amarelo quando o estoque foi recuperado mas o giro falhou', () => {
+  it('indica estoque recuperado com giro pendente sem afirmar que o estoque esta atualizado', () => {
     testState.hookResult = createHookResult({
       recoveredSources: { consolidado: true, detalhado: false },
       sourceErrors: { consolidado: new Error('Fonte recuperada'), detalhado: null, giro: new Error('Giro indisponivel') },
     });
     renderEstoquePage();
 
-    expect(screen.getByLabelText(/Estado da fonte de estoque: Estoque atualizado, giro pendente/i)).toHaveAttribute('data-issue', 'true');
+    expect(screen.getByLabelText(/Estado da fonte de estoque: Estoque recuperado, giro pendente/i)).toHaveAttribute('data-issue', 'true');
+    expect(screen.queryByLabelText(/Estado da fonte de estoque: Estoque atualizado, giro pendente/i)).not.toBeInTheDocument();
     expect(screen.getByText(/Movimentacoes indisponiveis/i)).toBeInTheDocument();
+  });
+
+  it.each([
+    {
+      name: 'mantem Fonte parcial quando estoque parcial e giro falham',
+      overrides: {
+        partialSources: { consolidado: true, detalhado: false },
+        sourceErrors: { consolidado: new Error('Fonte parcial'), detalhado: null, giro: new Error('Giro indisponivel') },
+      },
+      label: 'Fonte parcial',
+    },
+    {
+      name: 'mantem Ultimos dados preservados quando estoque e giro falham com dados em cache',
+      overrides: {
+        sourceErrors: { consolidado: new Error('Estoque indisponivel'), detalhado: null, giro: new Error('Giro indisponivel') },
+      },
+      label: 'Ultimos dados preservados',
+    },
+    {
+      name: 'usa giro pendente quando apenas o giro falha e o estoque esta saudavel',
+      overrides: {
+        sourceErrors: { consolidado: null, detalhado: null, giro: new Error('Giro indisponivel') },
+      },
+      label: 'Estoque atualizado, giro pendente',
+    },
+  ])('$name', ({ overrides, label }) => {
+    testState.hookResult = createHookResult(overrides);
+    renderEstoquePage();
+
+    expect(screen.getByLabelText(`Estado da fonte de estoque: ${label}`)).toHaveAttribute('data-issue', 'true');
   });
 
   it('transforma o Giro em mesa operacional sem compatibilidade temporaria de scroll', () => {
@@ -573,6 +604,23 @@ describe('EstoquePage', () => {
     expect(localStorage.getItem('bi-reports-filial-1004')).toBe('chevrolet');
     await waitFor(() => expect(screen.getByRole('columnheader', { name: 'Marca' })).toBeInTheDocument());
     expect(screen.queryByRole('columnheader', { name: 'Grupo' })).not.toBeInTheDocument();
+  });
+
+  it('limpa filtros pendentes e aplicados do Giro ao trocar de filial', async () => {
+    renderEstoquePage({ withBranchSwitcher: true });
+    fireEvent.click(screen.getByRole('tab', { name: 'Giro de Estoque' }));
+
+    const search = screen.getByPlaceholderText('Buscar produto, fabricante, marca...');
+    fireEvent.change(search, { target: { value: 'bomba' } });
+    fireEvent.keyDown(search, { key: 'Enter' });
+    expect(within(screen.getByRole('table')).queryByText('KIT EMBREAGEM PESADA')).not.toBeInTheDocument();
+
+    fireEvent.change(search, { target: { value: 'pendente' } });
+    fireEvent.click(screen.getByRole('radio', { name: 'Casa do Chevrolet' }));
+
+    await waitFor(() => expect(search).toHaveValue(''));
+    expect(within(screen.getByRole('table')).getByText('KIT EMBREAGEM PESADA')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Filtros do giro' })).toBeInTheDocument();
   });
 
   it('exporta somente os registros filtrados pela central', async () => {
