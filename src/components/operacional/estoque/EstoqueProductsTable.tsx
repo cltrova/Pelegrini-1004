@@ -253,7 +253,7 @@ function AverageCostValue({ product }: { product: StockProductInsight }) {
   const estimated = isContingencyRecord(product);
 
   return (
-    <span className="inline-flex min-w-0 flex-col items-end">
+    <span className="inline-flex min-w-0 flex-col items-center text-center">
       {estimated && (
         <span className="block text-[10px] font-medium uppercase text-amber-600 dark:text-amber-400">
           Custo estimado
