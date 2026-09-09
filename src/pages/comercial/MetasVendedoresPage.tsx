@@ -1,4 +1,4 @@
-import { useMemo, useState, useCallback, useEffect } from 'react';
+import { lazy, Suspense, useMemo, useState, useCallback, useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useComercialData } from '@/hooks/useComercialData';
 import { useEmpresaAtiva } from '@/hooks/useEmpresaAtiva';
@@ -33,12 +33,6 @@ import { EnterpriseComercialFilters } from '@/components/comercial/EnterpriseCom
 import { LayoutAlternativoComercial } from '@/components/comercial/LayoutAlternativoComercial';
 import { getVendedorAvatar } from '@/config/vendedorAvatars';
 import { getFeriadosComerciaisMeta } from '@/utils/feriadosComerciais';
-import { PremiumMetasView } from '@/components/comercial/PremiumMetasView';
-import { MetasViewLegacy } from '@/components/comercial/legacy/MetasViewLegacy';
-import { CampanhasTab } from '@/components/comercial/CampanhasTab';
-
-import MetasDiariasPage from '@/pages/comercial/MetasDiariasPage';
-import { InsightsIATab } from '@/components/comercial/InsightsIATab';
 import { VisaoGeralRapida1004 } from '@/components/comercial/VisaoGeralRapida1004';
 import { ReceitaDetalheDialog } from '@/components/comercial/ReceitaDetalheDialog';
 import { useComercialProdutos } from '@/hooks/useComercialProdutos';
@@ -75,6 +69,21 @@ type VendedorDetalheRow = {
   metaEsperada: number;
   ticketMedio?: number;
 };
+
+const loadMetasDiarias = () => import('@/pages/comercial/MetasDiariasPage');
+const loadPremiumMetas = () => import('@/components/comercial/PremiumMetasView').then(module => ({ default: module.PremiumMetasView }));
+const loadMetasLegacy = () => import('@/components/comercial/legacy/MetasViewLegacy').then(module => ({ default: module.MetasViewLegacy }));
+const loadInsights = () => import('@/components/comercial/InsightsIATab').then(module => ({ default: module.InsightsIATab }));
+const loadCampanhas = () => import('@/components/comercial/CampanhasTab').then(module => ({ default: module.CampanhasTab }));
+const LazyMetasDiariasPage = lazy(loadMetasDiarias);
+const LazyPremiumMetasView = lazy(loadPremiumMetas);
+const LazyMetasViewLegacy = lazy(loadMetasLegacy);
+const LazyInsightsIATab = lazy(loadInsights);
+const LazyCampanhasTab = lazy(loadCampanhas);
+
+function ComercialTabFallback() {
+  return <div aria-label="Carregando aba comercial" className="flex min-h-24 items-center justify-center text-xs text-muted-foreground" role="status">Carregando...</div>;
+}
 
 // Metas fixas de fallback para empresas que não possuem MetaVendedor no JSON
 const METAS_VENDEDORES: Record<string | number, number> = {
@@ -707,6 +716,7 @@ export default function MetasVendedoresPage() {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v); try { sessionStorage.setItem('comercial:metas:tab', v); } catch { /* storage pode estar bloqueado pelo navegador */ } }} className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden">
+      <Suspense fallback={<ComercialTabFallback />}>
         <div className="w-full shrink-0 overflow-x-auto overscroll-x-contain rounded-md [scrollbar-width:thin]">
         <TabsList className={cn(
           'flex h-12 w-max min-w-full justify-start',
@@ -746,7 +756,7 @@ export default function MetasVendedoresPage() {
             />
 
           ) : (
-            <MetasViewLegacy
+            <LazyMetasViewLegacy
               vendedoresComMeta={vendedoresBaseVisual}
               pedidos={pedidosDetalheVisual}
               kpisGerais={kpisGerais}
@@ -760,7 +770,7 @@ export default function MetasVendedoresPage() {
         {/* ==================== ABA: DETALHES (antiga Visão Geral 1004) ==================== */}
         {isPelegriniPage && (
           <TabsContent value="detalhes" className="mt-0 min-h-0 flex-1 space-y-3 overflow-auto">
-            <PremiumMetasView
+            <LazyPremiumMetasView
               vendedoresComMeta={vendedoresComMetaFonteFinal}
               pedidos={pedidosFonteFinal}
               kpisGerais={kpisGerais}
@@ -773,7 +783,7 @@ export default function MetasVendedoresPage() {
 
         {/* ==================== ABA: METAS DIÁRIAS ==================== */}
         <TabsContent value="metas-diarias" className="mt-0 min-h-0 flex-1 space-y-3 overflow-auto">
-          <MetasDiariasPage />
+          <LazyMetasDiariasPage />
         </TabsContent>
 
 
@@ -935,7 +945,7 @@ export default function MetasVendedoresPage() {
               tone="azul"
               className="lg:col-span-2"
             >
-              <InsightsIATab vendedores={vendedoresBaseVisual} kpis={kpisGerais} />
+              <LazyInsightsIATab vendedores={vendedoresBaseVisual} kpis={kpisGerais} />
             </PremiumSectionCard>
 
             {/* Ranking de Performance */}
@@ -1153,17 +1163,18 @@ export default function MetasVendedoresPage() {
 
         {/* ==================== ABA: INSIGHTS IA ==================== */}
         <TabsContent value="insights" className="mt-0 min-h-0 flex-1 space-y-3 overflow-auto">
-          <InsightsIATab vendedores={vendedoresBaseVisual} kpis={kpisGerais} />
+          <LazyInsightsIATab vendedores={vendedoresBaseVisual} kpis={kpisGerais} />
         </TabsContent>
 
 
         {/* ==================== ABA: CAMPANHAS ==================== */}
         {isPelegriniPage && (
           <TabsContent value="campanhas" className="mt-0 min-h-0 flex-1 space-y-3 overflow-auto">
-            <CampanhasTab periodoFiltro={periodoCampanhas} />
+            <LazyCampanhasTab periodoFiltro={periodoCampanhas} />
           </TabsContent>
         )}
-      </Tabs>
+      </Suspense>
+        </Tabs>
 
       <VendedorDetailsDialog
         vendedor={vendedorDetalhe?.row ?? null}
