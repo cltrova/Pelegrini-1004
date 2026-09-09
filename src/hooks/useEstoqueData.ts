@@ -314,46 +314,46 @@ export function useEstoqueData() {
     retry: false,
   });
 
-  const estoqueConsolidadoPrincipal = filtrarEstoqueCasaChevrolet10041(
+  const estoqueConsolidadoPrincipal = useMemo(() => filtrarEstoqueCasaChevrolet10041(
     (consolidadoQuery.data || []) as unknown as Array<Record<string, unknown>>,
     estoqueCompanyCode,
-  ) as unknown as EstoqueRecord[];
-  const estoqueDetalhadoPrincipal = filtrarEstoqueCasaChevrolet10041(
+  ) as unknown as EstoqueRecord[], [consolidadoQuery.data, estoqueCompanyCode]);
+  const estoqueDetalhadoPrincipal = useMemo(() => filtrarEstoqueCasaChevrolet10041(
     (detalhadoQuery.data || []) as unknown as Array<Record<string, unknown>>,
     estoqueCompanyCode,
-  ) as unknown as EstoqueRecord[];
-  const giroData = (filtrarEstoqueCasaChevrolet10041(
+  ) as unknown as EstoqueRecord[], [detalhadoQuery.data, estoqueCompanyCode]);
+  const giroData = useMemo(() => (filtrarEstoqueCasaChevrolet10041(
     (giroQuery.data || []) as unknown as Array<Record<string, unknown>>,
     estoqueCompanyCode,
-  ) as unknown as GiroRecord[]).filter(row => isGiroRowFromActiveBranch(row, estoqueCompanyCode));
-  const estoqueFallback = buildEstoqueFallbackFromGiro(giroData, estoqueCompanyCode);
-  const recoveryRows = (filtrarEstoqueCasaChevrolet10041(
+  ) as unknown as GiroRecord[]).filter(row => isGiroRowFromActiveBranch(row, estoqueCompanyCode)), [giroQuery.data, estoqueCompanyCode]);
+  const estoqueFallback = useMemo(() => buildEstoqueFallbackFromGiro(giroData, estoqueCompanyCode), [giroData, estoqueCompanyCode]);
+  const recoveryRows = useMemo(() => (filtrarEstoqueCasaChevrolet10041(
     (recoveryQuery.data || []) as unknown as Array<Record<string, unknown>>,
     estoqueCompanyCode,
-  ) as unknown as GiroRecord[]).filter(row => isGiroRowFromActiveBranch(row, estoqueCompanyCode));
-  const recentStart = (() => {
+  ) as unknown as GiroRecord[]).filter(row => isGiroRowFromActiveBranch(row, estoqueCompanyCode)), [recoveryQuery.data, estoqueCompanyCode]);
+  const recentStart = useMemo(() => {
     const hoje = new Date();
     return new Date(hoje.getFullYear(), hoje.getMonth() - 3, 1).toISOString().slice(0, 10);
-  })();
-  const estoqueRecuperado = buildOperationalEstoqueFallbackFromGiro(
+  }, []);
+  const estoqueRecuperado = useMemo(() => buildOperationalEstoqueFallbackFromGiro(
     recoveryRows,
     estoqueCompanyCode,
     recentStart,
-  );
-  const recoveredSources = {
+  ), [estoqueCompanyCode, recentStart, recoveryRows]);
+  const recoveredSources = useMemo(() => ({
     consolidado: consolidadoQuery.isError && !estoqueConsolidadoPrincipal.length && estoqueRecuperado.length > 0,
     detalhado: detalhadoQuery.isError && !estoqueDetalhadoPrincipal.length && estoqueRecuperado.length > 0,
-  };
-  const partialSources = {
+  }), [consolidadoQuery.isError, detalhadoQuery.isError, estoqueConsolidadoPrincipal.length, estoqueDetalhadoPrincipal.length, estoqueRecuperado.length]);
+  const partialSources = useMemo(() => ({
     consolidado: consolidadoQuery.isError && !estoqueConsolidadoPrincipal.length && !recoveredSources.consolidado && estoqueFallback.length > 0,
     detalhado: detalhadoQuery.isError && !estoqueDetalhadoPrincipal.length && !recoveredSources.detalhado && estoqueFallback.length > 0,
-  };
-  const consolidadoData = recoveredSources.consolidado
+  }), [consolidadoQuery.isError, detalhadoQuery.isError, estoqueConsolidadoPrincipal.length, estoqueDetalhadoPrincipal.length, estoqueFallback.length, recoveredSources]);
+  const consolidadoData = useMemo(() => recoveredSources.consolidado
     ? estoqueRecuperado
-    : partialSources.consolidado ? estoqueFallback : estoqueConsolidadoPrincipal;
-  const detalhadoData = recoveredSources.detalhado
+    : partialSources.consolidado ? estoqueFallback : estoqueConsolidadoPrincipal, [estoqueConsolidadoPrincipal, estoqueFallback, estoqueRecuperado, partialSources, recoveredSources]);
+  const detalhadoData = useMemo(() => recoveredSources.detalhado
     ? estoqueRecuperado
-    : partialSources.detalhado ? estoqueFallback : estoqueDetalhadoPrincipal;
+    : partialSources.detalhado ? estoqueFallback : estoqueDetalhadoPrincipal, [estoqueDetalhadoPrincipal, estoqueFallback, estoqueRecuperado, partialSources, recoveredSources]);
 
   const sourceStatus = {
     consolidado: resolveStockSourceState(consolidadoQuery, partialSources.consolidado || recoveredSources.consolidado),
