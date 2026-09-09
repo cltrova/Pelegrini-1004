@@ -8,7 +8,7 @@ import {
   XAxis, YAxis, CartesianGrid, ResponsiveContainer, Area, AreaChart, Bar, BarChart,
   Scatter, ScatterChart, ZAxis, Tooltip as ReTooltip
 } from 'recharts';
-import { CheckCircle2, AlertTriangle, XCircle, TrendingUp, TrendingDown, Minus, ArrowUpDown, BarChart3 } from 'lucide-react';
+import { CheckCircle2, AlertTriangle, XCircle, TrendingUp, TrendingDown, ArrowUpDown, BarChart3 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { EstoqueRecord, GiroRecord, GiroFiltersState, GiroProductSummary, GiroStatus } from '@/types/estoque';
 import { analyzeSalesTrends, TrendDirection } from '@/utils/salesTrendAnalysis';
@@ -468,10 +468,8 @@ export function GiroEstoqueTab({ giroData, estoqueData, filters, onStatusFilterC
                 <article key={identity} className="space-y-2 px-3 py-2.5">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <p className="truncate text-sm font-semibold">{s.produto}</p>
-                      <p className="mt-0.5 text-xs text-muted-foreground">
-                        {s.cod_produto} · {s.marca || 'Sem marca'}
-                      </p>
+                      <p className="truncate text-sm font-semibold" title={`Codigo ${s.cod_produto}`}>{s.produto}</p>
+                      <p className="mt-0.5 text-xs text-muted-foreground">{s.marca || 'Sem marca'}</p>
                     </div>
                     <span className="shrink-0">
                       <GiroStatusHelp id={statusHelpId} status={s.status} />
@@ -492,34 +490,34 @@ export function GiroEstoqueTab({ giroData, estoqueData, filters, onStatusFilterC
             <Table className="giro-density-table text-xs leading-none">
               <TableHeader className="sticky top-0 z-10 bg-muted">
                 <TableRow>
-                  <TableHead aria-label="Produto" aria-sort={sortDirection('produto')} className="h-8 min-w-[16rem] p-0">
-                    <button aria-label="Ordenar por produto" className="flex h-8 w-full items-center gap-1 px-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring" onClick={() => toggleSort('produto')} type="button">
+                  <TableHead aria-label="Produto" aria-sort={sortDirection('produto')} className="h-8 min-w-[16rem] p-0 text-center">
+                    <button aria-label="Ordenar por produto" className="flex h-8 w-full items-center justify-center gap-1 px-2 text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring" onClick={() => toggleSort('produto')} type="button">
                       Produto <ArrowUpDown aria-hidden="true" className="h-3 w-3" />
                     </button>
                   </TableHead>
-                  <TableHead className="h-8 !px-2 !py-0">Marca</TableHead>
+                  <TableHead className="h-8 !px-2 !py-0 text-center">Marca</TableHead>
                   <TableHead className="h-8 !px-2 !py-0 text-center">Status</TableHead>
-                  <TableHead aria-label="Estoque" aria-sort={sortDirection('quantidade_estoque')} className="h-8 p-0 text-right">
-                    <button aria-label="Ordenar por estoque" className="flex h-8 w-full items-center justify-end gap-1 px-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring" onClick={() => toggleSort('quantidade_estoque')} type="button">
+                  <TableHead aria-label="Estoque" aria-sort={sortDirection('quantidade_estoque')} className="h-8 p-0 text-center">
+                    <button aria-label="Ordenar por estoque" className="flex h-8 w-full items-center justify-center gap-1 px-2 text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring" onClick={() => toggleSort('quantidade_estoque')} type="button">
                       Estoque <ArrowUpDown aria-hidden="true" className="h-3 w-3" />
                     </button>
                   </TableHead>
-                  <TableHead aria-label="Valor Estoque" aria-sort={sortDirection('valor_estoque')} className="h-8 p-0 text-right">
-                    <button aria-label="Ordenar por valor em estoque" className="flex h-8 w-full items-center justify-end gap-1 px-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring" onClick={() => toggleSort('valor_estoque')} type="button">
+                  <TableHead aria-label="Valor Estoque" aria-sort={sortDirection('valor_estoque')} className="h-8 p-0 text-center">
+                    <button aria-label="Ordenar por valor em estoque" className="flex h-8 w-full items-center justify-center gap-1 px-2 text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring" onClick={() => toggleSort('valor_estoque')} type="button">
                       Valor Estoque <ArrowUpDown aria-hidden="true" className="h-3 w-3" />
                     </button>
                   </TableHead>
-                  <TableHead aria-label="Vendas" aria-sort={sortDirection('total_vendas')} className="h-8 p-0 text-right">
-                    <button aria-label="Ordenar por vendas" className="flex h-8 w-full items-center justify-end gap-1 px-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring" onClick={() => toggleSort('total_vendas')} type="button">
+                  <TableHead aria-label="Vendas" aria-sort={sortDirection('total_vendas')} className="h-8 p-0 text-center">
+                    <button aria-label="Ordenar por vendas" className="flex h-8 w-full items-center justify-center gap-1 px-2 text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring" onClick={() => toggleSort('total_vendas')} type="button">
                       Vendas <ArrowUpDown aria-hidden="true" className="h-3 w-3" />
                     </button>
                   </TableHead>
-                  <TableHead aria-label="Cobertura" aria-sort={sortDirection('cobertura_meses')} className="h-8 p-0 text-right">
-                    <button aria-label="Ordenar por cobertura" className="flex h-8 w-full items-center justify-end gap-1 px-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring" onClick={() => toggleSort('cobertura_meses')} type="button">
+                  <TableHead aria-label="Cobertura" aria-sort={sortDirection('cobertura_meses')} className="h-8 p-0 text-center">
+                    <button aria-label="Ordenar por cobertura" className="flex h-8 w-full items-center justify-center gap-1 px-2 text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring" onClick={() => toggleSort('cobertura_meses')} type="button">
                       Cobertura <ArrowUpDown aria-hidden="true" className="h-3 w-3" />
                     </button>
                   </TableHead>
-                  <TableHead className="h-8 min-w-[140px] !px-2 !py-0">Acao recomendada</TableHead>
+                  <TableHead className="h-8 min-w-[140px] !px-2 !py-0 text-center">Acao recomendada</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -528,27 +526,26 @@ export function GiroEstoqueTab({ giroData, estoqueData, filters, onStatusFilterC
                   const statusHelpId = `giro-status-table-${sanitizeDomId(identity)}`;
                   return (
                     <TableRow className="h-7" key={identity}>
-                      <TableCell className="max-w-[16rem] !px-2 !py-0">
-                        <span className="flex min-w-0 items-baseline gap-2">
+                      <TableCell className="max-w-[16rem] !px-2 !py-0 text-center">
+                        <span className="flex min-w-0 items-center justify-center gap-2" title={`Codigo ${s.cod_produto}`}>
                           <span className="truncate text-[13px] font-medium leading-none">{s.produto}</span>
-                          <span className="shrink-0 text-[11px] leading-none text-muted-foreground">Codigo {s.cod_produto}</span>
                         </span>
                       </TableCell>
-                      <TableCell className="!px-2 !py-0 text-xs">{s.marca}</TableCell>
+                      <TableCell className="!px-2 !py-0 text-center text-xs">{s.marca}</TableCell>
                       <TableCell className="!px-2 !py-0 text-center">
                         <GiroStatusHelp id={statusHelpId} status={s.status} />
                       </TableCell>
-                      <TableCell className="!px-2 !py-0 text-right font-mono">{s.quantidade_estoque}</TableCell>
-                      <TableCell className="whitespace-nowrap !px-2 !py-0 text-right font-mono text-[13px]">{formatCurrency(s.valor_estoque)}</TableCell>
-                      <TableCell className="!px-2 !py-0 text-right font-mono">{s.total_vendas}</TableCell>
-                      <TableCell className="!px-2 !py-0 text-right">
+                      <TableCell className="!px-2 !py-0 text-center font-mono">{s.quantidade_estoque}</TableCell>
+                      <TableCell className="whitespace-nowrap !px-2 !py-0 text-center font-mono text-[13px]">{formatCurrency(s.valor_estoque)}</TableCell>
+                      <TableCell className="!px-2 !py-0 text-center font-mono">{s.total_vendas}</TableCell>
+                      <TableCell className="!px-2 !py-0 text-center">
                         {s.cobertura_meses == null ? 'Sem baseline' : `${s.cobertura_meses.toFixed(1)} meses`}
                       </TableCell>
-                      <TableCell className="whitespace-nowrap !px-2 !py-0 text-xs font-medium">
+                      <TableCell className="whitespace-nowrap !px-2 !py-0 text-center text-xs font-medium">
                         <span>{GIRO_RECOMMENDED_ACTIONS[s.status]}</span>
                         {(() => {
                           const t = trendMap.get(productIdentity(s));
-                          if (!t) return <Minus aria-label="Tendencia estavel" className="ml-1.5 inline h-3.5 w-3.5 text-muted-foreground" />;
+                          if (!t) return null;
                           if (t.trend === 'declining') return (
                             <span aria-label={`Tendencia de queda de ${t.dropPercent.toFixed(0)}%`} className="ml-1.5 inline-flex items-center gap-0.5 text-red-400" title={`Queda de ${t.dropPercent.toFixed(0)}%`}>
                               <TrendingDown className="h-3.5 w-3.5" />
@@ -560,7 +557,7 @@ export function GiroEstoqueTab({ giroData, estoqueData, filters, onStatusFilterC
                               <TrendingUp className="h-3.5 w-3.5" />
                             </span>
                           );
-                          return <Minus aria-label="Tendencia estavel" className="ml-2 inline h-4 w-4 text-muted-foreground" />;
+                          return null;
                         })()}
                       </TableCell>
                     </TableRow>
