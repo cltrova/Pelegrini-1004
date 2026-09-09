@@ -1,5 +1,4 @@
 import { useMemo, useState } from 'react';
-import * as XLSX from 'xlsx';
 import { Search, DollarSign, FileText, Download, ChevronDown, ChevronRight } from 'lucide-react';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
@@ -133,7 +132,8 @@ export function ValorTotalDetalheDialog({ open, onOpenChange, pedidos, totalEspe
     });
   };
 
-  const exportExcel = () => {
+  const exportExcel = async () => {
+    const XLSX = await import('xlsx');
     const rows: Array<Record<string, string | number>> = [];
     for (const g of filtrados) {
       for (const p of g.pedidos) {

@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Loader2, Search, FileSpreadsheet, CalendarDays, Package, Boxes, Building2, CircleDollarSign } from 'lucide-react';
-import * as XLSX from 'xlsx';
 import { useEmpresaAtiva } from '@/hooks/useEmpresaAtiva';
 import { useFilialSelecionada } from '@/contexts/FilialSelecionadaContext';
 import { resolveCodEmpresaBiParam } from '@/utils/filialEndpoint';
@@ -219,11 +218,12 @@ export default function EstoqueRetroativoPage() {
     }
   };
 
-  const gerarExcel = () => {
+  const gerarExcel = async () => {
     if (!filtered.length) {
       toast.error('Sem dados para exportar');
       return;
     }
+    const XLSX = await import('xlsx');
     const aoa: Array<Array<string | number>> = [
       [
         'CODIGO',

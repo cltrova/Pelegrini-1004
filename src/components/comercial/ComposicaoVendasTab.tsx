@@ -1,5 +1,4 @@
 import { useMemo, useState } from 'react';
-import * as XLSX from 'xlsx';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ChevronDown, ChevronRight, Download, Search, Layers, Package } from 'lucide-react';
@@ -149,7 +148,8 @@ export function ComposicaoVendasTab({ produtos, isLoading, periodoLabel }: Props
     setExpanded({});
   };
 
-  const exportXlsx = () => {
+  const exportXlsx = async () => {
+    const XLSX = await import('xlsx');
     const rows: (string | number)[][] = [];
     rows.push(['Produto_Marca', 'Cliente', 'Produto', 'Soma de Qtde', 'Soma de VendaLiq']);
     for (const m of filtered) {

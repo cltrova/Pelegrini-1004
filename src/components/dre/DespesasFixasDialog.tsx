@@ -7,7 +7,6 @@ import { X, Plus, Search, Download, Check } from 'lucide-react';
 import { DreRecord } from '@/types/dre';
 import { formatCurrency } from '@/utils/formatters';
 import { getEffectiveFixedAccountCodes, isGrupoFixoDre } from '@/utils/dreExpenseAccounts';
-import * as XLSX from 'xlsx';
 
 interface DespesasFixasDialogProps {
   open: boolean;
@@ -149,7 +148,8 @@ export function DespesasFixasDialog({
     onOpenChange(false);
   };
 
-  const handleExportExcel = () => {
+  const handleExportExcel = async () => {
+    const XLSX = await import('xlsx');
     const data = allFixedAccounts.map((account) => ({
       Código: account.codigo,
       Descrição: account.descricao,

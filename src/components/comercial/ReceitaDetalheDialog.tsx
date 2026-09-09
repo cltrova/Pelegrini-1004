@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import { Search, Download, Receipt, ArrowUpDown, ArrowUp, ArrowDown, X } from 'lucide-react';
-import * as XLSX from 'xlsx';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog';
@@ -248,7 +247,8 @@ export function ReceitaDetalheDialog({
     else { setSortKey(key); setSortDir('desc'); }
   };
 
-  const exportExcel = () => {
+  const exportExcel = async () => {
+    const XLSX = await import('xlsx');
     const header = TABLE_COLUMNS.map(c => c.label);
     const rows = ordenados.map(p => TABLE_COLUMNS.map(c => {
       const v = c.get(p);

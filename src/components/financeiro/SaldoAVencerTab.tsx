@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from 'react';
-import * as XLSX from 'xlsx';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -585,7 +584,8 @@ export function SaldoAVencerTab({ filtros }: { filtros?: SaldoAVencerFiltros }) 
   }, [clienteSel, aVencerFoco, clientes]);
 
 
-  const exportRanking = () => {
+  const exportRanking = async () => {
+    const XLSX = await import('xlsx');
     const rows = filtrados.map((c) => ({
       'Código': c.codCliente,
       'Cliente': c.cliente,
@@ -605,8 +605,9 @@ export function SaldoAVencerTab({ filtros }: { filtros?: SaldoAVencerFiltros }) 
     XLSX.writeFile(wb, 'saldo-a-vencer-clientes.xlsx');
   };
 
-  const exportDetalhe = () => {
+  const exportDetalhe = async () => {
     if (!detalhe) return;
+    const XLSX = await import('xlsx');
     const rows: Record<string, string | number>[] = [];
     detalhe.linhas.forEach((l) => {
       const grupo = l.key === SEM_VENCIMENTO_KEY

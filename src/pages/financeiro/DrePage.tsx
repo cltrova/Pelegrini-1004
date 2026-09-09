@@ -1,13 +1,9 @@
-import { useState, useMemo, useCallback } from 'react';
+import { lazy, Suspense, useState, useMemo, useCallback } from 'react';
 import { MobileHeader } from '@/components/layout/MobileHeader';
 import { MobileBottomNav } from '@/components/layout/MobileBottomNav';
 import { EnterpriseDreFilters } from '@/components/dre/EnterpriseDreFilters';
 import { DreIndicators } from '@/components/dre/DreIndicators';
 import { DreGroupedTable } from '@/components/dre/DreGroupedTable';
-import { DreDashboard } from '@/components/dre/DreDashboard';
-import { DreComparativo } from '@/components/dre/DreComparativo';
-import { DreMobileView } from '@/components/dre/DreMobileView';
-import { DreAssistant } from '@/components/assistente/DreAssistant';
 import { LoadingState } from '@/components/common/LoadingState';
 import { ErrorState } from '@/components/common/ErrorState';
 import { EmptyState } from '@/components/common/EmptyState';
@@ -28,6 +24,20 @@ import { useDreExpenseAccountConfig } from '@/hooks/useDreExpenseAccountConfig';
 import { FinanceiroSearchPrompt } from '@/components/financeiro/FinanceiroSearchPrompt';
 import { useFinanceiroSearch } from '@/contexts/FinanceiroSearchContext';
 import { EnterprisePageHeader } from '@/components/enterprise';
+
+const LazyDreDashboard = lazy(() => import('@/components/dre/DreDashboard').then(({ DreDashboard }) => ({ default: DreDashboard })));
+const LazyDreComparativo = lazy(() => import('@/components/dre/DreComparativo').then(({ DreComparativo }) => ({ default: DreComparativo })));
+const LazyDreGroupedTable = lazy(() => import('@/components/dre/DreGroupedTable').then(({ DreGroupedTable }) => ({ default: DreGroupedTable })));
+const LazyDreMobileView = lazy(() => import('@/components/dre/DreMobileView').then(({ DreMobileView }) => ({ default: DreMobileView })));
+const LazyDreAssistant = lazy(() => import('@/components/assistente/DreAssistant').then(({ DreAssistant }) => ({ default: DreAssistant })));
+
+function DreTabFallback() {
+  return (
+    <div className="flex min-h-24 items-center justify-center rounded-lg border border-border/50 bg-card/30 p-4">
+      <LoadingState message="Preparando visualização..." />
+    </div>
+  );
+}
 
 export default function DrePage() {
   const { data, isLoading, isError, refetch } = useDreData();
@@ -258,11 +268,13 @@ export default function DrePage() {
               />
             </div>
           ) : (
-            <DreMobileView 
+            <Suspense fallback={<DreTabFallback />}>
+            <LazyDreMobileView
               data={filteredData} 
               indicators={indicators}
               groupSummary={groupSummary}
             />
+            </Suspense>
           )}
         </div>
 
@@ -350,7 +362,8 @@ export default function DrePage() {
 
 
                   <TabsContent value="dashboard" className="mt-0 min-h-0 flex-1 overflow-auto">
-                    <DreDashboard
+                    <Suspense fallback={<DreTabFallback />}>
+                    <LazyDreDashboard
                       data={filteredData}
                       groupSummary={groupSummary}
                       contasDespVar={contasDespVar}
@@ -362,20 +375,27 @@ export default function DrePage() {
                       onExcludedContasDespFixasChange={setExcludedContasDespFixas}
                       onExcludedContasDespVarChange={setExcludedContasDespVar}
                     />
+                    </Suspense>
                   </TabsContent>
 
 
 
                   <TabsContent value="comparativo" className="mt-0 min-h-0 flex-1 overflow-auto">
-                    <DreComparativo data={filteredData} groupSummary={groupSummary} />
+                    <Suspense fallback={<DreTabFallback />}>
+                      <LazyDreComparativo data={filteredData} groupSummary={groupSummary} />
+                    </Suspense>
                   </TabsContent>
 
                   <TabsContent value="detalhe" className="mt-0 min-h-0 flex-1 overflow-auto">
-                    <DreGroupedTable data={filteredData} />
+                    <Suspense fallback={<DreTabFallback />}>
+                      <LazyDreGroupedTable data={filteredData} />
+                    </Suspense>
                   </TabsContent>
 
                   <TabsContent value="assistente" className="mt-0 min-h-0 flex-1 overflow-auto">
-                    <DreAssistant dreData={filteredData} indicators={indicators} contasDespVar={contasDespVar} contasDespFixas={contasDespFixas} onUpdateDespVar={setContasDespVar} onUpdateDespFixas={setContasDespFixas} />
+                    <Suspense fallback={<DreTabFallback />}>
+                      <LazyDreAssistant dreData={filteredData} indicators={indicators} contasDespVar={contasDespVar} contasDespFixas={contasDespFixas} onUpdateDespVar={setContasDespVar} onUpdateDespFixas={setContasDespFixas} />
+                    </Suspense>
                   </TabsContent>
                 </Tabs>
               </>

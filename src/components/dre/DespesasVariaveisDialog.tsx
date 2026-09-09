@@ -7,7 +7,6 @@ import { X, Plus, Search, Download, Check } from 'lucide-react';
 import { DreRecord } from '@/types/dre';
 import { formatCurrency } from '@/utils/formatters';
 import { getEffectiveVariableAccountCodes, isGrupoVariavelDre } from '@/utils/dreExpenseAccounts';
-import * as XLSX from 'xlsx';
 
 interface DespesasVariaveisDialogProps {
   open: boolean;
@@ -132,7 +131,8 @@ export function DespesasVariaveisDialog({
     onOpenChange(false);
   };
 
-  const handleExportExcel = () => {
+  const handleExportExcel = async () => {
+    const XLSX = await import('xlsx');
     const data = allVariableAccounts.map(a => ({
       'Código': a.codigo,
       'Descrição': a.descricao,

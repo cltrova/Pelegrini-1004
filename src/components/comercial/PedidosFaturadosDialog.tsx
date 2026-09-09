@@ -1,5 +1,4 @@
 import { useMemo, useState } from 'react';
-import * as XLSX from 'xlsx';
 import { Search, FileText, Receipt, Download } from 'lucide-react';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
@@ -121,7 +120,8 @@ export function PedidosFaturadosDialog({ open, onOpenChange, pedidos, onPedidoCl
             variant="outline"
             className="h-8 gap-1.5"
             disabled={!filtrados.length}
-            onClick={() => {
+            onClick={async () => {
+              const XLSX = await import('xlsx');
               const rows = filtrados.map((p) => ({
                 Cliente: p.cliente,
                 'Nº Pedido': p.numero,
