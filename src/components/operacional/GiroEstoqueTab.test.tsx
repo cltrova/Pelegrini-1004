@@ -87,9 +87,12 @@ describe('GiroEstoqueTab', () => {
     const productRow = within(table).getAllByRole('row').find((row) => within(row).queryByText('KIT EMBREAGEM PESADA'))!;
     expect(productRow).toHaveClass('h-7');
     expect(within(productRow).getByText('KIT EMBREAGEM PESADA')).toHaveClass('text-[13px]', 'leading-none');
-    expect(within(productRow).getByText(/Codigo 101/i)).toHaveClass('text-[11px]', 'leading-none');
+    expect(within(productRow).queryByText(/Codigo 101/i)).not.toBeInTheDocument();
+    expect(within(productRow).getByText('KIT EMBREAGEM PESADA').parentElement).toHaveAttribute('title', 'Codigo 101');
+    expect(within(productRow).getByRole('cell', { name: /KIT EMBREAGEM PESADA/i })).toHaveClass('text-center');
     expect(within(productRow).getByRole('cell', { name: /KIT EMBREAGEM PESADA/i })).toHaveClass('!py-0');
     expect(within(productRow).getByRole('button', { name: /Explicar status/i }).firstElementChild).toHaveClass('text-[11px]', 'leading-4', 'py-0');
+    expect(within(productRow).getAllByRole('cell').every((cell) => cell.className.includes('text-center'))).toBe(true);
   });
 
   it('nao exibe filial porque a filial BI e selecionada globalmente', () => {
