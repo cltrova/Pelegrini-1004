@@ -8,6 +8,7 @@ import { LoadingState } from '@/components/common/LoadingState';
 import { EstoqueAssistantTab } from '@/components/operacional/EstoqueAssistantTab';
 import { GiroEstoqueTab } from '@/components/operacional/GiroEstoqueTab';
 import { EstoqueCommandCenter } from '@/components/operacional/estoque/EstoqueCommandCenter';
+import { EstoqueOverview } from '@/components/operacional/estoque/EstoqueOverview';
 import { GiroFilterPopover } from '@/components/operacional/estoque/GiroFilterPopover';
 import { countVisibleGiroFilters, GIRO_STATUS_LABELS, summarizeVisibleGiroFilters } from '@/components/operacional/estoque/giroFilterPresentation';
 import {
@@ -23,6 +24,7 @@ import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { useFilialSelecionada } from '@/contexts/FilialSelecionadaContext';
 import { useEstoqueData } from '@/hooks/useEstoqueData';
 import type { EstoqueRecord, GiroFiltersState, GiroStatus, ViewMode } from '@/types/estoque';
+import type { StockQuickFilter } from '@/components/operacional/estoque/estoqueIntelligence';
 import { toast } from 'sonner';
 
 function calcDiasSemVenda(dataUltimaVenda: string | null): number {
@@ -68,6 +70,7 @@ export default function EstoquePage() {
   const { activeCompanyCode, consolidadoData, detalhadoData, giroData, isLoading, isInitialLoading, empresa, sourceErrors, sourceStatus, sourceLastUpdated, lastSuccessfulUpdate, partialSources, recoveredSources, recoveryStatus, isFetching, refetch } = useEstoqueData();
   const { codEmpresaContexto, filialAtiva } = useFilialSelecionada();
   const [activeTab, setActiveTab] = useState('central');
+  const [requestedQuickFilter, setRequestedQuickFilter] = useState<StockQuickFilter | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>('consolidado');
   const [giroFilters, setGiroFilters] = useState<GiroFiltersState>(DEFAULT_GIRO_FILTERS);
   const [pendingGiro, setPendingGiro] = useState<GiroFiltersState>(DEFAULT_GIRO_FILTERS);
@@ -88,7 +91,7 @@ export default function EstoquePage() {
   );
   const detailedStockLoading = activeTab === 'central' && viewMode === 'detalhado'
     && sourceStatus?.detalhado === 'loading' && detalhadoData.length === 0;
-  const movementLoading = activeTab !== 'central' && sourceStatus?.giro === 'loading' && giroData.length === 0;
+  const movementLoading = (activeTab === 'giro' || activeTab === 'assistente') && sourceStatus?.giro === 'loading' && giroData.length === 0;
   const partialStock = Boolean(partialSources?.[viewMode]);
   const recoveredStock = Boolean(recoveredSources?.[viewMode]);
   const recoveringStock = recoveryStatus === 'loading' && (partialStock || stockUnavailable);
@@ -149,6 +152,11 @@ export default function EstoquePage() {
     setActiveTab('central');
   };
 
+  const openCentralFromOverview = (filter?: StockQuickFilter) => {
+    setRequestedQuickFilter(filter ?? null);
+    setActiveTab('central');
+  };
+
   const sourceNoticeFingerprint = sourceHasActiveIssue
     ? [branchKey, viewMode, partialStock, recoveringStock, stockError?.message, movementError?.message].join('|')
     : `healthy:${branchKey}:${viewMode}`;
@@ -164,7 +172,7 @@ export default function EstoquePage() {
   }, [branchKey]);
 
   const sourceNotice = sourceHasActiveIssue && !sourceNoticeDismissed ? (
-    <Alert className="rounded-none border-x-0 border-t-0 py-1.5" role="status">
+    <Alert className="shrink-0 rounded-none border-x-0 border-t-0 py-1.5" role="status">
       <AlertTriangle className="h-4 w-4" />
       <AlertTitle className="pr-10 text-xs">
         {recoveringStock ? 'Recuperando estoque completo' : partialStock ? 'Estoque parcial' : 'Dados com atualizacao pendente'}
@@ -234,6 +242,7 @@ export default function EstoquePage() {
             value={activeTab}
             onValueChange={setActiveTab}
             items={[
+              { value: 'overview', label: 'Visão geral' },
               { value: 'central', label: 'Central de Estoque' },
               { value: 'giro', label: 'Giro de Estoque' },
               { value: 'assistente', label: 'Assistente' },
@@ -302,8 +311,21 @@ export default function EstoquePage() {
               requestedProductCode={requestedProductCode}
               onRequestedProductHandled={() => setRequestedProductCode(null)}
               sourceNotice={sourceNotice}
+              requestedQuickFilter={requestedQuickFilter}
+              onRequestedQuickFilterHandled={() => setRequestedQuickFilter(null)}
             />
           )}
+        </TabsContent>
+
+        <TabsContent className="m-0 min-h-0 flex-1 overflow-hidden data-[state=active]:flex data-[state=active]:flex-col" aria-labelledby="pelegrini-tab-overview" id="pelegrini-tabpanel-overview" value="overview">
+          <EstoqueOverview
+            activeCompanyCode={activeCompanyCode}
+            isFetching={isFetching}
+            movementData={giroData}
+            onOpenCentral={openCentralFromOverview}
+            onRefresh={() => { void refetch(); }}
+            stockData={estoqueData}
+          />
         </TabsContent>
 
         <TabsContent className="m-0 min-h-0 flex-1 overflow-hidden data-[state=active]:flex data-[state=active]:flex-col" aria-labelledby="pelegrini-tab-giro" id="pelegrini-tabpanel-giro" value="giro">

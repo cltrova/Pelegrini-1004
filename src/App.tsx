@@ -3,6 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { lazy, Suspense } from "react";
 import { ThemeProvider } from "next-themes";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { EmpresaSelecionadaProvider } from "@/contexts/EmpresaSelecionadaContext";
@@ -18,28 +19,28 @@ import { ForceChangePassword } from "@/components/auth/ForceChangePassword";
 import { useAuth } from "@/contexts/AuthContext";
 import { useEmpresaAtiva } from "@/hooks/useEmpresaAtiva";
 import { useUserModulePermissions } from "@/hooks/useUserModulePermissions";
-import DrePage from "./pages/financeiro/DrePage";
-import VariacaoPage from "./pages/financeiro/VariacaoPage";
-import ResumoPage from "./pages/financeiro/ResumoPage";
-import SaldoAVencerPage from "./pages/financeiro/SaldoAVencerPage";
+const DrePage = lazy(() => import('./pages/financeiro/DrePage'));
+const VariacaoPage = lazy(() => import('./pages/financeiro/VariacaoPage'));
+const ResumoPage = lazy(() => import('./pages/financeiro/ResumoPage'));
+const SaldoAVencerPage = lazy(() => import('./pages/financeiro/SaldoAVencerPage'));
 
 // ComercialDashboardPage removido do roteamento: layout antigo (MetasVendedoresPage) restaurado para todas as empresas.
-import MetasVendedoresPage from "./pages/comercial/MetasVendedoresPage";
-import ClientesAnalysePage from "./pages/comercial/ClientesAnalysePage";
-import ProdutosPage from "./pages/comercial/ProdutosPage";
-import ComissaoPage from "./pages/comercial/ComissaoPage";
-import CotacoesAbertasPage from "./pages/comercial/CotacoesAbertasPage";
-import VendasPerdidasPage from "./pages/comercial/VendasPerdidasPage";
-import EstoquePage from "./pages/operacional/EstoquePage";
-import EstoqueRetroativoPage from "./pages/operacional/EstoqueRetroativoPage";
-import ChatPage from "./pages/whatsapp/ChatPage";
-import SettingsPage from "./pages/whatsapp/SettingsPage";
-import RelatorioPage from "./pages/whatsapp/RelatorioPage";
-import AgentesPage from "./pages/whatsapp/AgentesPage";
-import ConfiguracoesPage from "./pages/ConfiguracoesPage";
-import UsuariosPage from "./pages/configuracoes/UsuariosPage";
-import EmpresasPage from "./pages/configuracoes/EmpresasPage";
-import EstoqueAssistantSettingsPage from "./pages/configuracoes/EstoqueAssistantSettingsPage";
+const MetasVendedoresPage = lazy(() => import('./pages/comercial/MetasVendedoresPage'));
+const ClientesAnalysePage = lazy(() => import('./pages/comercial/ClientesAnalysePage'));
+const ProdutosPage = lazy(() => import('./pages/comercial/ProdutosPage'));
+const ComissaoPage = lazy(() => import('./pages/comercial/ComissaoPage'));
+const CotacoesAbertasPage = lazy(() => import('./pages/comercial/CotacoesAbertasPage'));
+const VendasPerdidasPage = lazy(() => import('./pages/comercial/VendasPerdidasPage'));
+const EstoquePage = lazy(() => import('./pages/operacional/EstoquePage'));
+const EstoqueRetroativoPage = lazy(() => import('./pages/operacional/EstoqueRetroativoPage'));
+const ChatPage = lazy(() => import('./pages/whatsapp/ChatPage'));
+const SettingsPage = lazy(() => import('./pages/whatsapp/SettingsPage'));
+const RelatorioPage = lazy(() => import('./pages/whatsapp/RelatorioPage'));
+const AgentesPage = lazy(() => import('./pages/whatsapp/AgentesPage'));
+const ConfiguracoesPage = lazy(() => import('./pages/ConfiguracoesPage'));
+const UsuariosPage = lazy(() => import('./pages/configuracoes/UsuariosPage'));
+const EmpresasPage = lazy(() => import('./pages/configuracoes/EmpresasPage'));
+const EstoqueAssistantSettingsPage = lazy(() => import('./pages/configuracoes/EstoqueAssistantSettingsPage'));
 import HomePage from "./pages/HomePage";
 import NotFound from "./pages/NotFound";
 import { PelegriniLoginPage } from "./pages/auth/PelegriniLoginPage";
@@ -156,6 +157,7 @@ const App = () => (
             <Sonner />
             <BrowserRouter>
               <PasswordGate>
+              <Suspense fallback={<GuardSpinner />}>
               <Routes>
 
               <Route path="/" element={<HomePage />} />
@@ -273,6 +275,7 @@ const App = () => (
               {/* 404 */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
+              </Suspense>
               </PasswordGate>
 
             </BrowserRouter>

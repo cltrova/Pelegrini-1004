@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
 import type { EstoqueRecord, GiroRecord, ViewMode } from '@/types/estoque';
+import type { StockQuickFilter } from './estoqueIntelligence';
 
 import { EstoqueAttentionPanel } from './EstoqueAttentionPanel';
 import { EstoqueMovementHighlights } from './EstoqueMovementHighlights';
@@ -43,6 +44,8 @@ export interface EstoqueCommandCenterProps {
   requestedProductCode?: number | string | null;
   onRequestedProductHandled?: () => void;
   sourceNotice?: ReactNode;
+  requestedQuickFilter?: StockQuickFilter | null;
+  onRequestedQuickFilterHandled?: () => void;
 }
 
 function uniqueOptions(values: Array<string | null>): string[] {
@@ -61,6 +64,8 @@ export function EstoqueCommandCenter({
   requestedProductCode,
   onRequestedProductHandled,
   sourceNotice,
+  requestedQuickFilter,
+  onRequestedQuickFilterHandled,
 }: EstoqueCommandCenterProps) {
   const [search, setSearch] = useState('');
   const [quickFilter, setQuickFilter] = useState<StockQuickFilter>('all');
@@ -71,6 +76,12 @@ export function EstoqueCommandCenter({
   const [visibleColumns, setVisibleColumns] = useState<StockColumnKey[]>(() => readVisibleColumns(branchKey, viewMode));
   const [selectedProduct, setSelectedProduct] = useState<StockProductInsight | null>(null);
   const [attentionOpen, setAttentionOpen] = useState(false);
+
+  useEffect(() => {
+    if (!requestedQuickFilter) return;
+    setQuickFilter(requestedQuickFilter);
+    onRequestedQuickFilterHandled?.();
+  }, [onRequestedQuickFilterHandled, requestedQuickFilter]);
 
   useEffect(() => {
     setSearch('');
@@ -256,6 +267,8 @@ export function EstoqueCommandCenter({
       />
 
       <EstoqueDataViewport>
+        {sourceNotice ? <div className="shrink-0">{sourceNotice}</div> : null}
+        <div aria-label="Contagem e ordenacao dos produtos" className="sr-only shrink-0" role="group" />
         <EstoqueProductsTable
           branchKey={branchKey}
           onSelectProduct={selectProduct}
