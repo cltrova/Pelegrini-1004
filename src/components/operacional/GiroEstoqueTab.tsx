@@ -96,7 +96,7 @@ function GiroStatusHelp({ id, status }: { id: string; status: GiroStatus }) {
           onPointerLeave={() => setOpen(false)}
           type="button"
         >
-          <span className={cn('inline-flex items-center rounded-full border px-1.5 py-0 text-[11px] font-semibold leading-4', config.color, config.bg)}>
+          <span className={cn('inline-flex h-5 w-[4.75rem] items-center justify-center rounded-full border px-1.5 py-0 text-[11px] font-semibold leading-4', config.color, config.bg)}>
             {config.label}
           </span>
         </button>
@@ -487,8 +487,8 @@ export function GiroEstoqueTab({ giroData, estoqueData, filters, onStatusFilterC
             <Table className="giro-density-table text-xs leading-none">
               <TableHeader className="sticky top-0 z-10 bg-muted">
                 <TableRow>
-                  <TableHead aria-label="Produto" aria-sort={sortDirection('produto')} className="h-8 min-w-[16rem] p-0 text-center">
-                    <button aria-label="Ordenar por produto" className="flex h-8 w-full items-center justify-center gap-1 px-2 text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring" onClick={() => toggleSort('produto')} type="button">
+                  <TableHead aria-label="Produto" aria-sort={sortDirection('produto')} className="h-8 min-w-[16rem] p-0 text-left">
+                    <button aria-label="Ordenar por produto" className="flex h-8 w-full items-center justify-start gap-1 px-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring" onClick={() => toggleSort('produto')} type="button">
                       Produto <ArrowUpDown aria-hidden="true" className="h-3 w-3" />
                     </button>
                   </TableHead>
@@ -523,9 +523,9 @@ export function GiroEstoqueTab({ giroData, estoqueData, filters, onStatusFilterC
                   const statusHelpId = `giro-status-table-${sanitizeDomId(identity)}`;
                   return (
                     <TableRow className="h-7" key={identity}>
-                      <TableCell className="max-w-[16rem] !px-2 !py-0 text-center">
-                        <span className="flex min-w-0 items-center justify-center gap-2" title={`Codigo ${s.cod_produto}`}>
-                          <span className="truncate text-[13px] font-medium leading-none">{s.produto}</span>
+                      <TableCell className="max-w-[16rem] !px-2 !py-0 text-left">
+                        <span className="flex min-w-0 items-center justify-start gap-2 text-left" title={`Codigo ${s.cod_produto}`}>
+                          <span className="truncate text-left text-[13px] font-medium leading-none">{s.produto}</span>
                         </span>
                       </TableCell>
                       <TableCell className="!px-2 !py-0 text-center text-xs">{s.marca}</TableCell>
