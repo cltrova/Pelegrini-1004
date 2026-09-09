@@ -13,7 +13,7 @@ import { useEmpresaAtiva } from '@/hooks/useEmpresaAtiva';
 import { useFilialSelecionada } from '@/contexts/FilialSelecionadaContext';
 import { resolveCodEmpresaBiParam } from '@/utils/filialEndpoint';
 import { toast } from 'sonner';
-import { generatePDF, generateDOCX, DocumentData } from '@/utils/documentGenerator';
+import type { DocumentData } from '@/utils/documentGenerator';
 import { EstoqueInsights } from './EstoqueInsights';
 import { parseStrictDate } from './estoque/assistantInsights';
 import { EstoqueDataViewport, EstoqueToolbar } from './estoque/EstoqueWorkspace';
@@ -51,6 +51,16 @@ const ASSISTANT_SUGGESTIONS = [
   { label: 'Transferir ou promover', question: 'Quais produtos sao candidatos a transferencia ou promocao?' },
   { label: 'Resumo diario', question: 'Apresente um resumo das principais decisoes de estoque de hoje.' },
 ] as const;
+
+async function exportAssistantPdf(document: DocumentData) {
+  const { generatePDF } = await import('@/utils/documentGenerator');
+  await generatePDF(document);
+}
+
+async function exportAssistantDocx(document: DocumentData) {
+  const { generateDOCX } = await import('@/utils/documentGenerator');
+  await generateDOCX(document);
+}
 
 function buildContext(estoque: EstoqueRecord[], giro: GiroRecord[], referenceDate = new Date()): string {
   const totalItens = estoque.length;
@@ -666,10 +676,10 @@ function ChatTab({ estoqueData, giroData, now, customPrompt, codEmpresaBi, credi
                         {msg.document.total_valor ? ` · R$ ${msg.document.total_valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : ''}
                       </p>
                       <div className="flex gap-2">
-                        <Button size="sm" variant="outline" className="gap-1.5 text-xs h-7" onClick={() => generatePDF(msg.document!)}>
+                        <Button size="sm" variant="outline" className="gap-1.5 text-xs h-7" onClick={() => void exportAssistantPdf(msg.document!)}>
                           <FileDown className="h-3 w-3" /> PDF
                         </Button>
-                        <Button size="sm" variant="outline" className="gap-1.5 text-xs h-7" onClick={() => generateDOCX(msg.document!)}>
+                        <Button size="sm" variant="outline" className="gap-1.5 text-xs h-7" onClick={() => void exportAssistantDocx(msg.document!)}>
                           <Download className="h-3 w-3" /> Word
                         </Button>
                       </div>
