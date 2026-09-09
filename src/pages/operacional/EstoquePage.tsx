@@ -1,14 +1,11 @@
-import { useEffect, useMemo, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import { AlertTriangle, RefreshCw, Search, X } from 'lucide-react';
 
 import { EmptyState } from '@/components/common/EmptyState';
 import { ErrorState } from '@/components/common/ErrorState';
 import { FilterDropdownChip, MultiSelectOptions, SingleSelectOptions } from '@/components/common/FilterDropdownChip';
 import { LoadingState } from '@/components/common/LoadingState';
-import { EstoqueAssistantTab } from '@/components/operacional/EstoqueAssistantTab';
-import { GiroEstoqueTab } from '@/components/operacional/GiroEstoqueTab';
 import { EstoqueCommandCenter } from '@/components/operacional/estoque/EstoqueCommandCenter';
-import { EstoqueOverview } from '@/components/operacional/estoque/EstoqueOverview';
 import { GiroFilterPopover } from '@/components/operacional/estoque/GiroFilterPopover';
 import { countVisibleGiroFilters, GIRO_STATUS_LABELS, summarizeVisibleGiroFilters } from '@/components/operacional/estoque/giroFilterPresentation';
 import {
@@ -65,6 +62,18 @@ const STATUS_OPTIONS = [
 const DEFAULT_GIRO_FILTERS: GiroFiltersState = {
   periodoMeses: 3, statusFilter: [], empresas: [], marcas: [], grupos: [], searchTerm: '',
 };
+
+const LazyEstoqueOverview = lazy(() => import('@/components/operacional/estoque/EstoqueOverview').then(({ EstoqueOverview }) => ({ default: EstoqueOverview })));
+const LazyGiroEstoqueTab = lazy(() => import('@/components/operacional/GiroEstoqueTab').then(({ GiroEstoqueTab }) => ({ default: GiroEstoqueTab })));
+const LazyEstoqueAssistantTab = lazy(() => import('@/components/operacional/EstoqueAssistantTab').then(({ EstoqueAssistantTab }) => ({ default: EstoqueAssistantTab })));
+
+function EstoqueTabFallback() {
+  return (
+    <EstoqueDataViewport className="p-4" role="status" aria-label="Carregando visão do estoque">
+      <LoadingState />
+    </EstoqueDataViewport>
+  );
+}
 
 export default function EstoquePage() {
   const { activeCompanyCode, consolidadoData, detalhadoData, giroData, isLoading, isInitialLoading, empresa, sourceErrors, sourceStatus, sourceLastUpdated, lastSuccessfulUpdate, partialSources, recoveredSources, recoveryStatus, isFetching, refetch } = useEstoqueData();
@@ -318,24 +327,27 @@ export default function EstoquePage() {
         </TabsContent>
 
         <TabsContent className="m-0 min-h-0 flex-1 overflow-hidden data-[state=active]:flex data-[state=active]:flex-col" aria-labelledby="pelegrini-tab-overview" id="pelegrini-tabpanel-overview" value="overview">
-          <EstoqueOverview
-            activeCompanyCode={activeCompanyCode}
-            isFetching={isFetching}
-            movementData={giroData}
-            onOpenCentral={openCentralFromOverview}
-            onRefresh={() => { void refetch(); }}
-            stockData={estoqueData}
-          />
+          <Suspense fallback={<EstoqueTabFallback />}>
+            <LazyEstoqueOverview
+              activeCompanyCode={activeCompanyCode}
+              isFetching={isFetching}
+              movementData={giroData}
+              onOpenCentral={openCentralFromOverview}
+              onRefresh={() => { void refetch(); }}
+              stockData={estoqueData}
+            />
+          </Suspense>
         </TabsContent>
 
         <TabsContent className="m-0 min-h-0 flex-1 overflow-hidden data-[state=active]:flex data-[state=active]:flex-col" aria-labelledby="pelegrini-tab-giro" id="pelegrini-tabpanel-giro" value="giro">
-          <GiroEstoqueTab
-            activeCompanyCode={activeCompanyCode}
-            giroData={giroData}
-            estoqueData={estoqueData}
-            filters={giroFilters}
-            onStatusFilterChange={applyGiroStatusFilter}
-            toolbarContent={(
+          <Suspense fallback={<EstoqueTabFallback />}>
+            <LazyGiroEstoqueTab
+              activeCompanyCode={activeCompanyCode}
+              giroData={giroData}
+              estoqueData={estoqueData}
+              filters={giroFilters}
+              onStatusFilterChange={applyGiroStatusFilter}
+              toolbarContent={(
               <>
                 <div className="relative min-w-[15rem] flex-1 sm:max-w-md">
                   <Search aria-hidden="true" className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -371,12 +383,15 @@ export default function EstoquePage() {
               </FilterDropdownChip>
                 </GiroFilterPopover>
               </>
-            )}
-          />
+              )}
+            />
+          </Suspense>
         </TabsContent>
 
         <TabsContent className="m-0 min-h-0 flex-1 overflow-hidden data-[state=active]:flex data-[state=active]:flex-col" aria-labelledby="pelegrini-tab-assistente" id="pelegrini-tabpanel-assistente" value="assistente">
-          <EstoqueAssistantTab giroData={giroData} estoqueData={estoqueData} onProductAction={openProductFromAssistant} />
+          <Suspense fallback={<EstoqueTabFallback />}>
+            <LazyEstoqueAssistantTab giroData={giroData} estoqueData={estoqueData} onProductAction={openProductFromAssistant} />
+          </Suspense>
         </TabsContent>
           </>
         )}
