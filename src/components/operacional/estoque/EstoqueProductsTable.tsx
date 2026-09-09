@@ -364,20 +364,16 @@ export function EstoqueProductsTable({
 
   return (
     <section aria-label="Produtos do estoque" className="estoque-products-table flex h-full min-h-0 min-w-0 max-w-full flex-1 flex-col overflow-hidden border border-border/70 bg-background">
-      <div
-        aria-label="Contagem e ordenacao dos produtos"
-        className="flex min-w-0 shrink-0 flex-wrap items-center justify-between gap-1.5 border-b border-border/70 px-2.5 py-1"
+      {!isControlled && <div
+        aria-label="Opcoes da tabela"
+        className="flex min-w-0 shrink-0 flex-wrap items-center justify-end gap-1.5 border-b border-border/70 px-2.5 py-1"
         role="group"
       >
-        <p className="min-w-0 text-xs text-muted-foreground">
-          <span className="font-semibold tabular-nums text-foreground">{products.length}</span>{' '}
-          {products.length === 1 ? 'produto' : 'produtos'}
-        </p>
-        {!isControlled && <StockColumnPicker branchKey={branchKey} onVisibleColumnsChange={(next) => {
+        <StockColumnPicker branchKey={branchKey} onVisibleColumnsChange={(next) => {
           setInternalVisibleColumns(next);
           onVisibleColumnsChange?.(next);
-        }} viewMode={viewMode} visibleColumns={visibleColumns} />}
-      </div>
+        }} viewMode={viewMode} visibleColumns={visibleColumns} />
+      </div>}
 
       <div
         aria-label="Rolagem dos produtos do estoque"

@@ -208,7 +208,7 @@ export function EstoqueCommandCenter({
           leading={(
             <div
             aria-label="Modo de visualizacao do estoque"
-            className="inline-flex h-8 min-w-0 max-w-full rounded-md border border-border bg-muted/20 p-0.5"
+            className="inline-flex h-8 min-w-0 max-w-full shrink-0 justify-start rounded-md border border-border bg-muted/20 p-0.5"
             role="group"
           >
             <Button
@@ -256,16 +256,6 @@ export function EstoqueCommandCenter({
       />
 
       <EstoqueDataViewport>
-        {sourceNotice && <div className="shrink-0">{sourceNotice}</div>}
-        {viewMode === 'detalhado' && stockData.length > 0 && detailedGranularity === 'product' && (
-          <p
-            className="shrink-0 border-b border-primary/20 bg-primary/[0.04] px-3 py-2 text-xs text-muted-foreground"
-            role="status"
-          >
-            A fonte atual nao fornece filial ou localizacao para detalhar estes produtos.
-          </p>
-        )}
-
         <EstoqueProductsTable
           branchKey={branchKey}
           onSelectProduct={selectProduct}
