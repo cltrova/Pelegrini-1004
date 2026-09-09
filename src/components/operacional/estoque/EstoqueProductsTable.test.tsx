@@ -242,7 +242,7 @@ describe('EstoqueProductsTable', () => {
     expect(desktop).toHaveClass('hidden', 'md:block', 'min-w-0');
     expect(desktop).not.toHaveClass('overflow-x-auto', 'overflow-auto');
     expect(within(dataScroller).getByRole('rowgroup', { name: 'Cabecalho da tabela' })).toHaveClass('sticky', 'top-0');
-    expect(within(dataScroller).getAllByRole('columnheader')[0]).toHaveClass('text-center');
+    expect(within(dataScroller).getAllByRole('columnheader')[0]).toHaveClass('text-left');
     expect(within(dataScroller).getAllByRole('cell')[0]).toHaveClass('text-center');
 
     expect(within(desktop).getAllByRole('columnheader').map((header) => header.textContent)).toEqual([
