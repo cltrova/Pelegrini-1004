@@ -438,9 +438,7 @@ describe('EstoqueCommandCenter', () => {
   it('informa quando o modo detalhado possui apenas granularidade de produto', () => {
     render(<EstoqueCommandCenter {...fixtureProps} stockData={estoqueFixture} viewMode="detalhado" />);
 
-    expect(screen.getByRole('status')).toHaveTextContent(
-      'A fonte atual nao fornece filial ou localizacao para detalhar estes produtos.',
-    );
+    expect(screen.queryByText('A fonte atual nao fornece filial ou localizacao para detalhar estes produtos.')).not.toBeInTheDocument();
   });
 
   it('consolida produtos repetidos e mantem registros separados no detalhado', () => {

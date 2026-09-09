@@ -262,13 +262,13 @@ describe('EstoqueProductsTable', () => {
 
     const products = screen.getByRole('region', { name: 'Produtos do estoque' });
     const dataScroller = screen.getByRole('region', { name: 'Rolagem dos produtos do estoque' });
-    const controls = screen.getByRole('group', { name: 'Contagem e ordenacao dos produtos' });
+    const controls = screen.getByRole('group', { name: 'Opcoes da tabela' });
     const pagination = screen.getByLabelText('Paginacao dos produtos');
 
     expect(controls).toHaveClass('shrink-0');
     expect(controls).toHaveClass('py-1');
     expect(pagination).toHaveClass('shrink-0', 'py-1');
-    expect(within(dataScroller).queryByRole('group', { name: 'Contagem e ordenacao dos produtos' })).not.toBeInTheDocument();
+    expect(within(dataScroller).queryByRole('group', { name: 'Opcoes da tabela' })).not.toBeInTheDocument();
     expect(within(dataScroller).queryByLabelText('Paginacao dos produtos')).not.toBeInTheDocument();
     expect(products.contains(dataScroller)).toBe(true);
     expect(screen.getByLabelText('Tabela de produtos do estoque').firstElementChild).toHaveClass('min-h-full');
