@@ -7,20 +7,28 @@ import { useEmpresaAtiva } from '@/hooks/useEmpresaAtiva';
 import { Empresa } from '@/hooks/useEmpresaConfig';
 import { supabase } from '@/integrations/supabase/client';
 import { buildApiProxyUrl } from '@/utils/apiEndpointResolver';
-import variacaoDataLocal from '@/data/variacaoData.json';
-import dreDataLocal from '@/data/dreData.json';
 import { useEmpresaConfig } from '@/hooks/useEmpresaConfig';
+
+const loadLocalVariacaoData = async (): Promise<VariacaoRecord[]> => {
+  const module = await import('@/data/variacaoData.json');
+  return module.default as VariacaoRecord[];
+};
+
+const loadLocalDreData = async (): Promise<DreRecord[]> => {
+  const module = await import('@/data/dreData.json');
+  return module.default as DreRecord[];
+};
 
 // Mapeamento de nomes de JSON para imports locais - Variação
 const VARIACAO_JSON_IMPORTS: Record<string, () => Promise<{ default: VariacaoRecord[] }>> = {
-  'variacaoData': () => Promise.resolve({ default: variacaoDataLocal as VariacaoRecord[] }),
-  '/data/variacaoData.json': () => Promise.resolve({ default: variacaoDataLocal as VariacaoRecord[] }),
+  'variacaoData': async () => ({ default: await loadLocalVariacaoData() }),
+  '/data/variacaoData.json': async () => ({ default: await loadLocalVariacaoData() }),
 };
 
 // Mapeamento de nomes de JSON para imports locais - DRE (para DFC)
 const DRE_JSON_IMPORTS: Record<string, () => Promise<{ default: DreRecord[] }>> = {
-  'dreData': () => Promise.resolve({ default: dreDataLocal as DreRecord[] }),
-  '/data/dreData.json': () => Promise.resolve({ default: dreDataLocal as DreRecord[] }),
+  'dreData': async () => ({ default: await loadLocalDreData() }),
+  '/data/dreData.json': async () => ({ default: await loadLocalDreData() }),
 };
 
 const isValidAnoMes = (anoMes: unknown): anoMes is string => {
@@ -149,9 +157,9 @@ async function fetchLocalVariacaoJson(jsonPath: string, codEmpresa?: string): Pr
     
     return data;
   }
-  
+
   console.warn(`[Variação] JSON não encontrado: ${jsonPath}, usando fallback`);
-  return variacaoDataLocal as VariacaoRecord[];
+  return loadLocalVariacaoData();
 }
 
 // Buscar dados JSON locais para DRE (usado no DFC - fallback)
@@ -176,7 +184,7 @@ async function fetchLocalDreJson(jsonPath: string, codEmpresa?: string): Promise
   }
   
   console.warn(`[DRE-DFC] JSON não encontrado: ${jsonPath}, usando fallback`);
-  return dreDataLocal as DreRecord[];
+  return loadLocalDreData();
 }
 
 // Verificar se URL é acessível (não é IP local/privado)
@@ -278,7 +286,7 @@ async function fetchVariacaoData(empresa?: Empresa | null, codEmpresa?: string, 
     }
     if (isMaster) {
       console.log('[Variação] Master sem dados configurados - usando dados de demonstração');
-      rawData = variacaoDataLocal as VariacaoRecord[];
+      rawData = await loadLocalVariacaoData();
       dataSource = 'fallback';
     } else {
       // Não-master sem dados configurados = empresa sem dados

@@ -1,13 +1,9 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { lazy, Suspense, useState, useCallback, useMemo } from 'react';
 import { Header } from '@/components/layout/Header';
 import { MobileHeader } from '@/components/layout/MobileHeader';
 import { MobileBottomNav } from '@/components/layout/MobileBottomNav';
 import { DFCFilters } from '@/components/variacao/DFCFilters';
-import { DFCTable } from '@/components/variacao/DFCTable';
-import { DFCDashboard } from '@/components/variacao/DFCDashboard';
 import { VariacaoFilters } from '@/components/variacao/VariacaoFilters';
-import { VariacaoAssistant } from '@/components/assistente/VariacaoAssistant';
-import { DfcConfigTab } from '@/components/variacao/DfcConfigTab';
 import { LoadingState } from '@/components/common/LoadingState';
 import { ErrorState } from '@/components/common/ErrorState';
 import { EmptyState } from '@/components/common/EmptyState';
@@ -23,6 +19,19 @@ import { FinanceiroSearchPrompt } from '@/components/financeiro/FinanceiroSearch
 import { useFinanceiroSearch } from '@/contexts/FinanceiroSearchContext';
 
 const TODOS_MESES = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12'];
+
+const LazyDFCTable = lazy(() => import('@/components/variacao/DFCTable').then(({ DFCTable }) => ({ default: DFCTable })));
+const LazyDFCDashboard = lazy(() => import('@/components/variacao/DFCDashboard').then(({ DFCDashboard }) => ({ default: DFCDashboard })));
+const LazyVariacaoAssistant = lazy(() => import('@/components/assistente/VariacaoAssistant').then(({ VariacaoAssistant }) => ({ default: VariacaoAssistant })));
+const LazyDfcConfigTab = lazy(() => import('@/components/variacao/DfcConfigTab').then(({ DfcConfigTab }) => ({ default: DfcConfigTab })));
+
+function VariacaoTabFallback() {
+  return (
+    <div className="flex min-h-24 items-center justify-center rounded-lg border border-border/50 bg-card/30 p-4">
+      <LoadingState message="Preparando visualização..." />
+    </div>
+  );
+}
 
 export default function VariacaoPage() {
   // DFC Config state (shared with assistant)
@@ -286,7 +295,7 @@ export default function VariacaoPage() {
               </div>
             ) : (
               <div className="p-4 space-y-6">
-                <DFCTable
+                <LazyDFCTable
                   linhas={dfc.linhas}
                   anoPeriodo1={anoPeriodo1}
                   mesPeriodo1={mesPeriodo1}
@@ -301,7 +310,7 @@ export default function VariacaoPage() {
             </div>
           ) : (
             <div className="p-4">
-              <DFCDashboard grupos={dashboardData.grupos} totais={dashboardData.totais} ano={anoDashboard} />
+              <LazyDFCDashboard grupos={dashboardData.grupos} totais={dashboardData.totais} ano={anoDashboard} />
             </div>
           )}
         </div>
@@ -418,6 +427,7 @@ export default function VariacaoPage() {
             </TabsList>
 
             <TabsContent value="demonstracao" className="mt-0 min-h-0 flex-1 space-y-3 overflow-auto">
+              <Suspense fallback={<VariacaoTabFallback />}>
               {!hasSearched ? (
                 <FinanceiroSearchPrompt />
               ) : filterOptions.anos.length < 1 ? (
@@ -425,7 +435,7 @@ export default function VariacaoPage() {
               ) : !temDadosDFC ? (
                 <EmptyState title="Nenhum resultado" message="Nenhum dado encontrado para os períodos selecionados." />
               ) : (
-                <DFCTable
+                <LazyDFCTable
                   linhas={dfc.linhas}
                   anoPeriodo1={anoPeriodo1}
                   mesPeriodo1={mesPeriodo1}
@@ -433,9 +443,11 @@ export default function VariacaoPage() {
                   mesPeriodo2={mesPeriodo2}
                 />
               )}
+              </Suspense>
             </TabsContent>
 
             <TabsContent value="dashboard" className="mt-0 min-h-0 flex-1 space-y-3 overflow-auto">
+              <Suspense fallback={<VariacaoTabFallback />}>
               {!hasSearched ? (
                 <FinanceiroSearchPrompt />
               ) : filterOptions.anos.length < 1 ? (
@@ -443,22 +455,27 @@ export default function VariacaoPage() {
               ) : dashboardData.grupos.length === 0 ? (
                 <EmptyState title="Nenhum resultado" message="Nenhum dado encontrado para o ano selecionado." />
               ) : (
-                <DFCDashboard grupos={dashboardData.grupos} totais={dashboardData.totais} ano={anoDashboard} />
+                <LazyDFCDashboard grupos={dashboardData.grupos} totais={dashboardData.totais} ano={anoDashboard} />
               )}
+              </Suspense>
             </TabsContent>
 
             <TabsContent value="assistente" className="mt-0 min-h-0 flex-1 space-y-3 overflow-auto">
-              <VariacaoAssistant 
+              <Suspense fallback={<VariacaoTabFallback />}>
+              <LazyVariacaoAssistant
                 variacaoData={variacaoData || []} 
                 gruposInverterSinal={new Set<string>()}
                 gruposAtivosOperacionais={gruposAtivosOperacionais}
                 onUpdateInverterSinal={() => {}}
                 onUpdateAtivosOperacionais={setGruposAtivosOperacionais}
               />
+              </Suspense>
             </TabsContent>
 
             <TabsContent value="configuracao" className="mt-0 min-h-0 flex-1 space-y-3 overflow-auto">
-              <DfcConfigTab />
+              <Suspense fallback={<VariacaoTabFallback />}>
+                <LazyDfcConfigTab />
+              </Suspense>
             </TabsContent>
           </Tabs>
         )}
