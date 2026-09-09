@@ -292,13 +292,13 @@ function ProductButton({ product, onSelectProduct }: Pick<EstoqueProductsTablePr
   return (
     <button
       aria-label={`Abrir ${product.produto}`}
-      className="group flex min-w-0 w-full max-w-full items-center justify-center text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      className="group flex min-w-0 w-full max-w-full items-center justify-start text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       onClick={() => onSelectProduct(product)}
       title={`Codigo ${product.cod_produto}`}
       type="button"
     >
-      <span className="min-w-0 max-w-full text-center">
-        <span className="block truncate font-semibold text-foreground group-hover:text-primary" title={product.produto}>
+      <span className="min-w-0 max-w-full text-left">
+        <span className="block truncate text-left font-semibold text-foreground group-hover:text-primary" title={product.produto}>
           {product.produto}
         </span>
       </span>
@@ -398,14 +398,18 @@ export function EstoqueProductsTable({
                       aria-sort={sortDirectionFromMode(sortMode, sortKey)}
                       style={{ width: `${100 / selectedColumns.length}%` }}
                       className={cn(
-                        'whitespace-nowrap px-2 py-1 text-center text-[10px] font-semibold uppercase text-muted-foreground',
+                        'whitespace-nowrap px-2 py-1 text-[10px] font-semibold uppercase text-muted-foreground',
+                        column.key === 'product' ? 'text-left' : 'text-center',
                       )}
                       key={column.key}
                       scope="col"
                     >
                       <button
                         aria-label={`Ordenar por ${column.label}`}
-                        className="flex h-7 w-full items-center justify-center rounded px-1 text-center hover:bg-background/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
+                        className={cn(
+                          'flex h-7 w-full items-center rounded px-1 hover:bg-background/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring',
+                          column.key === 'product' ? 'justify-start text-left' : 'justify-center text-center',
+                        )}
                         onClick={() => onSortChange(nextSortMode(sortMode, sortKey))}
                         type="button"
                       >
