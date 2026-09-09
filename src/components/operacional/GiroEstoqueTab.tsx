@@ -278,9 +278,6 @@ export function GiroEstoqueTab({ giroData, estoqueData, filters, onStatusFilterC
     <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
       <EstoqueToolbar aria-label="Comandos do giro de estoque">
         {toolbarContent}
-        <span className="ml-auto shrink-0 text-xs tabular-nums text-muted-foreground">
-          <strong className="font-semibold text-foreground">{sorted.length.toLocaleString('pt-BR')}</strong> produtos
-        </span>
         <Button aria-label="Abrir analise de giro" className="h-8 gap-1.5 px-2.5 text-xs" onClick={() => setAnalysisOpen(true)} type="button" variant="outline">
           <BarChart3 aria-hidden="true" className="h-3.5 w-3.5" />
           <span className="hidden sm:inline">Analise de giro</span>
