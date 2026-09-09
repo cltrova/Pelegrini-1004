@@ -131,6 +131,33 @@ describe('mapComissaoLinha', () => {
     expect(totais.get('11')).toBe(250);
   });
 
+  it('soma pedidos abertos nos formatos das procedures CT e CH', () => {
+    const totais = calcularPedidosAbertosPorVendedor([
+      {
+        CodEmpresa_bi: 1004,
+        cod_empresa: 1,
+        cod_pedido: 533914,
+        cod_vendedor: 78,
+        cod_vendedor_interno: 78,
+        status_pedido: 'Pendente',
+        data_faturamento: null,
+        valor_total_pedido: 1_250,
+      },
+      {
+        CodEmpresa_bi: 10041,
+        cod_empresa: 2,
+        cod_pedido: 2356947,
+        cod_vendedor_interno: 11,
+        status_pedido: 'Pendente',
+        data_faturamento: null,
+        valor_total_pedido: 980,
+      },
+    ]);
+
+    expect(totais.get('78')).toBe(1_250);
+    expect(totais.get('11')).toBe(980);
+  });
+
   it('identifica linhas da Forca P na comissao do cliente 1004', () => {
     const dayvid = mapComissaoLinha({ cod_vendedor: '250', nome_vendedor: 'DAYVID' });
     const servico = mapComissaoLinha({ cod_vendedor: '155', nome_vendedor: 'SERVIÇO DE TERCEIRO' });

@@ -25,7 +25,7 @@ vi.mock('@/hooks/useComissaoVendedores', async (importOriginal) => {
 describe('ComissaoPage', () => {
   beforeEach(() => { linhas.length = 0; });
 
-  it('abre o filtro de operacao fiscal com a faixa padrao de A faturar', () => {
+  it('abre o filtro de operacao fiscal com a faixa padrao', () => {
     render(<ComissaoPage />);
 
     const inicial = screen.getByLabelText('Operação fiscal inicial');
@@ -33,6 +33,21 @@ describe('ComissaoPage', () => {
 
     expect(inicial).toHaveValue('0');
     expect(final).toHaveValue('62');
+  });
+
+  it('identifica o restante para atingir a meta com o rotulo correto', () => {
+    linhas.push(mapComissaoLinha({
+      Vendedor: 10,
+      NomeVendedor: 'XEXEU',
+      AFaturar: 53_850.70,
+      PedidosEmAberto: 500,
+    }));
+
+    render(<ComissaoPage />);
+    fireEvent.click(screen.getByRole('button', { name: 'Buscar' }));
+
+    expect(screen.getByRole('columnheader', { name: 'Falta para a meta' })).toBeInTheDocument();
+    expect(screen.queryByRole('columnheader', { name: 'A faturar' })).not.toBeInTheDocument();
   });
 
   it('exibe somente o valor explicito de pedidos em aberto', () => {

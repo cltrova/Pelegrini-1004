@@ -226,7 +226,7 @@ export default function ComissaoPage() {
                     <th className={th}>Obj. diário</th>
                     <th className={th}>Obj. até hoje</th>
                     <th className={th}>Faturado até hoje</th>
-                    <th className={th}>A faturar</th>
+                    <th className={th}>Falta para a meta</th>
                     <th className={th}>Valor total</th>
                     <th className={th}>Pedidos em aberto</th>
                     <th className={th}>Projeção</th>
