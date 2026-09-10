@@ -119,8 +119,10 @@ export default function ComissaoPage() {
       },
       {
         label: 'Valor total',
-        value: formatCurrency(totais.valorTotal),
-        tooltip: 'Soma das vendas diretas e indiretas retornadas pela consulta.',
+        value: totais.pedidosAberto === null
+          ? 'Indisponível'
+          : formatCurrency(totais.faturadoAteHoje + totais.pedidosAberto),
+        tooltip: 'Soma do valor faturado até hoje com os pedidos em aberto.',
       },
       {
         label: 'Pedidos em aberto',

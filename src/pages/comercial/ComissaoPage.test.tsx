@@ -103,6 +103,21 @@ describe('ComissaoPage', () => {
     expect(indicadores).not.toHaveTextContent('Indisponível');
   });
 
+  it('calcula o valor total como faturado mais pedidos em aberto', () => {
+    linhas.push(mapComissaoLinha({
+      Vendedor: 10,
+      NomeVendedor: 'XEXEU',
+      Acumulada: 100,
+      PedidosEmAberto: 50,
+    }));
+    render(<ComissaoPage />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Buscar' }));
+
+    const indicadores = screen.getByLabelText('Indicadores comerciais');
+    expect(within(indicadores).getByText('Valor total').closest('article')).toHaveTextContent('R$ 150,00');
+  });
+
   it('mantem a tabela resumida na viewport compartilhada apos buscar', () => {
     linhas.push(mapComissaoLinha({ Vendedor: 10, NomeVendedor: 'XEXEU' }));
     render(<ComissaoPage />);
