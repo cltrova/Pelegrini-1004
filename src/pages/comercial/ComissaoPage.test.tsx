@@ -119,7 +119,7 @@ describe('ComissaoPage', () => {
     expect(table.getByText('Pedidos em aberto')).toBeInTheDocument();
     expect(table.getByText('Faturado até hoje')).toBeInTheDocument();
     expect(table.getByText('Falta para a meta')).toBeInTheDocument();
-    expect(table.getByText('Total')).toBeInTheDocument();
+    expect(table.getAllByText('Total')).toHaveLength(2);
     expect(table.queryByText('Nome')).not.toBeInTheDocument();
     expect(table.queryByText('PMV')).not.toBeInTheDocument();
     expect(screen.getByText('XEXEU').closest('td')).toHaveAttribute('title', 'XEXEU');
@@ -171,7 +171,7 @@ describe('ComissaoPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Buscar' }));
     const row = screen.getByText('XEXEU').closest('tr')!;
     expect(within(row).getAllByRole('cell')[3]).toHaveTextContent('500,00');
-    const total = screen.getByText('Total', { exact: true }).closest('tr')!;
+    const total = screen.getAllByText('Total', { exact: true }).at(-1)!.closest('tr')!;
     expect(within(total).getAllByRole('cell')[3]).toHaveTextContent('600,00');
     expect(screen.queryByRole('status')).not.toBeInTheDocument();
   });
