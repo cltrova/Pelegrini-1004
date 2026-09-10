@@ -1,5 +1,5 @@
 import { useMemo, useState, type ReactNode } from 'react';
-import { Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { Area, AreaChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { AlertTriangle, ArrowDownRight, ArrowUpRight, BarChart3, CircleDollarSign, Filter, Package, PackageCheck, RefreshCw, ShoppingCart, TrendingUp, X } from 'lucide-react';
 
 import type { EstoqueRecord, GiroRecord, StockQuickFilter } from '@/types/estoque';
@@ -95,7 +95,6 @@ export function EstoqueOverview({ stockData, movementData, activeCompanyCode, on
       <Panel className="lg:col-span-4" title="Maior valor em estoque"><Ranking items={topValue} value={(item) => currency.format(item.valor_estoque)} onSelect={() => onOpenCentral('all')} /></Panel>
       <Panel className="lg:col-span-4" title="Maior risco de ruptura"><Ranking items={topRisk} value={(item) => item.cobertura_meses === null ? 'Sem vendas' : `${item.cobertura_meses.toFixed(1)} meses`} danger onSelect={() => onOpenCentral('critical')} /></Panel>
       <Panel className="lg:col-span-4" title="Maior excesso"><Ranking items={topExcess} value={(item) => currency.format(item.valor_estoque)} attention onSelect={() => onOpenCentral('excess')} /></Panel>
-      <Panel className="lg:col-span-12" title="Comparativo estoque, vendas e cobertura"><div className="h-40"><ResponsiveContainer height="100%" width="100%"><BarChart data={summary.status}><CartesianGrid stroke="hsl(var(--border))" strokeDasharray="3 3" vertical={false} /><XAxis dataKey="name" tick={{ fontSize: 10 }} /><YAxis allowDecimals={false} tick={{ fontSize: 10 }} width={30} /><Tooltip /><Bar dataKey="value" fill="#38bdf8" name="Produtos" radius={[3, 3, 0, 0]} onClick={(item) => { if (item?.name === 'Ruptura') onOpenCentral('out'); }} /></BarChart></ResponsiveContainer></div></Panel>
     </div>
   </div>;
 }
