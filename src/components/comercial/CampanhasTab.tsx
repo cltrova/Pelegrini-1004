@@ -27,8 +27,8 @@ import {
 import {
   Trophy, Plus, Pencil, Trash2, Target, Sparkles, Calendar, Gift,
   TrendingUp, AlertTriangle, ArrowUpRight, Minus, Crown, Medal,
-  Award, DollarSign, Wallet, Filter, X, MessageSquare, Info, ChevronDown,
-  Calculator, Zap, Flame,
+  Award, DollarSign, Wallet, X, MessageSquare, Info, ChevronDown,
+  Calculator, Zap,
 } from 'lucide-react';
 import { formatCurrency } from '@/utils/formatters';
 import { cn } from '@/lib/utils';
@@ -50,6 +50,11 @@ import {
   mesesCampanha1004,
   periodoBuscaCampanha1004,
 } from '@/utils/campanhasPeriodo1004';
+import {
+  ComercialDataViewport,
+  ComercialFilterBar,
+  ComercialMetricStrip,
+} from '@/components/comercial/compact';
 
 const VENDEDORES_CT_CAMPANHA_1004_LABELS = [
   { codigo: '78', nome: 'BRUNO' },
@@ -612,25 +617,12 @@ export function CampanhasTab({ periodoFiltro }: CampanhasTabProps = {}) {
 
   return (
     <TooltipProvider>
-      <div className="space-y-4 animate-fade-in">
-        {/* HEADER */}
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-          <div>
-            <h2 className="text-2xl lg:text-3xl font-bold tracking-tight flex items-center gap-2">
-              <Trophy className="h-7 w-7 text-primary" />
-              Campanhas
-            </h2>
-            <p className="text-sm text-muted-foreground mt-1">
-              Gestão de metas por marca, premiação e performance comercial
-            </p>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2">
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground mr-1">
-              <Filter className="h-3.5 w-3.5" /> Filtros:
-            </div>
+      <div className="flex h-full min-h-0 flex-col gap-2">
+        <ComercialFilterBar
+          ariaLabel="Filtros de campanhas"
+          primary={<>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-[150px] h-9 rounded-lg">
+              <SelectTrigger className="h-9 w-[150px] rounded-md">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
               <SelectContent>
@@ -642,7 +634,7 @@ export function CampanhasTab({ periodoFiltro }: CampanhasTabProps = {}) {
             </Select>
             <Popover>
               <PopoverTrigger asChild>
-                <Button variant="outline" size="sm" className="h-9 rounded-lg gap-1.5 min-w-[160px] justify-between font-normal">
+                <Button variant="outline" size="sm" className="h-9 min-w-[160px] justify-between gap-1.5 rounded-md font-normal">
                   <span className="truncate">
                     {marcaFilter.length === 0
                       ? 'Todas as marcas'
@@ -689,45 +681,62 @@ export function CampanhasTab({ periodoFiltro }: CampanhasTabProps = {}) {
                 onChange={setVendedoresExtras1004}
               />
             )}
+          </>}
+          actions={
             <CampanhaDialog
               onSubmit={async (input) => { await create(input); }}
               isPending={isMutating}
               marcasDisponiveis={marcasDisponiveis}
               trigger={
-                <Button size="sm" className="h-9 gap-1.5 rounded-lg">
+                <Button size="sm" className="h-9 gap-1.5 rounded-md">
                   <Plus className="h-4 w-4" /> Nova Campanha
                 </Button>
               }
             />
-          </div>
-        </div>
-
-        {/* HERO PROGRESSO */}
-        <ProgressHero
-          progresso={kpis.progressoGeral}
-          realizado={kpis.realizadoTotal}
-          meta={kpis.metaTotal}
-          faltante={kpis.faltante}
-          diarioSugerido={kpis.diarioSugerido}
-          premioTotal={kpis.premioTotal}
-          campanhas={campanhasAtivasResumo}
+          }
         />
 
+        <ComercialMetricStrip
+          ariaLabel="Indicadores de campanhas"
+          metrics={[
+            {
+              label: 'Realizado',
+              value: formatCurrency(kpis.realizadoTotal),
+              context: `${kpis.progressoGeral.toFixed(1)}% da meta`,
+              tone: kpis.progressoGeral >= 80 ? 'success' : kpis.progressoGeral >= 40 ? 'warning' : 'danger',
+              tooltip: 'Faturamento acumulado das campanhas no filtro atual.',
+            },
+            {
+              label: 'Meta',
+              value: formatCurrency(kpis.metaTotal),
+              context: `${campanhasAtivasResumo.length} ativa(s)`,
+              tooltip: 'Soma das metas das campanhas no período.',
+            },
+            {
+              label: 'Falta',
+              value: formatCurrency(kpis.faltante),
+              context: `Ritmo ${formatCurrency(kpis.diarioSugerido)}/dia`,
+              tone: kpis.faltante > 0 ? 'warning' : 'success',
+              tooltip: 'Valor restante e ritmo diário necessário para alcançar a meta.',
+            },
+            {
+              label: 'Premiação potencial',
+              value: formatCurrency(kpis.premioTotal),
+              context: `${campanhasFiltradas.length} campanha(s)`,
+              tone: 'success',
+              tooltip: 'Valor potencial das premiações configuradas nas campanhas filtradas.',
+            },
+          ]}
+        />
 
-        {/* INSIGHTS IA */}
-        {(insightsQuery.data && insightsQuery.data.length > 0) && (
-          <Card className="rounded-lg border-primary/20 bg-card">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center gap-2">
-                <div className="p-1.5 rounded-lg bg-primary/10"><Sparkles className="h-4 w-4 text-primary" /></div>
-                Insights Inteligentes
-                <Badge variant="outline" className="ml-1 text-[10px] border-primary/30 text-primary">IA</Badge>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+        <ComercialDataViewport ariaLabel="Campanhas comerciais" className="space-y-2 pr-1">
+          {(insightsQuery.data && insightsQuery.data.length > 0) && (
+          <section aria-label="Alertas e oportunidades" className="rounded-md border border-border/70 bg-card">
+            <div className="border-b border-border/60 px-3 py-2 text-xs font-semibold">Alertas e oportunidades</div>
+            <div className="grid grid-cols-1 gap-2 p-2 md:grid-cols-2 lg:grid-cols-3">
               {insightsQuery.data.map((ins, i) => (
                 <div key={i} className={cn(
-                  'rounded-lg border p-4 transition-colors animate-fade-in',
+                  'rounded-md border p-3',
                   ins.tipo === 'alerta' && 'bg-destructive/5 border-destructive/20',
                   ins.tipo === 'oportunidade' && 'bg-emerald-500/5 border-emerald-500/20',
                   (ins.tipo !== 'alerta' && ins.tipo !== 'oportunidade') && 'bg-primary/5 border-primary/20',
@@ -743,8 +752,8 @@ export function CampanhasTab({ periodoFiltro }: CampanhasTabProps = {}) {
                   </div>
                 </div>
               ))}
-            </CardContent>
-          </Card>
+            </div>
+          </section>
         )}
 
         {/* LISTA DE CAMPANHAS */}
@@ -767,177 +776,9 @@ export function CampanhasTab({ periodoFiltro }: CampanhasTabProps = {}) {
             ))}
           </div>
         )}
+        </ComercialDataViewport>
       </div>
     </TooltipProvider>
-  );
-}
-
-// =================== Progress Hero ===================
-
-function ProgressHero({ progresso, realizado, meta, faltante, diarioSugerido, premioTotal, campanhas }: {
-  progresso: number; realizado: number; meta: number; faltante: number; diarioSugerido: number; premioTotal: number;
-  campanhas: CampanhaCalculada[];
-}) {
-  const campanhasAtivas = useMemo(
-    () => campanhas.filter(c => !c.encerrada && !campanhaEstaEncerrada(c)),
-    [campanhas],
-  );
-  const heroResumo = useMemo(() => {
-    const metaAtiva = campanhasAtivas.reduce((acc, c) => {
-      const meses = Math.max(1, monthsBetween(new Date(c.data_inicio), new Date(c.data_fim)));
-      const metaMarcas = c.marcasCalc.reduce((total, marca) => total + (Number(marca.meta_mensal || 0) * meses), 0);
-      return acc + (metaMarcas || c.metaCampanhaTotal);
-    }, 0);
-    const realizadoAtivo = campanhasAtivas.reduce((acc, c) => acc + c.realizadoTotal, 0);
-    const faltanteAtivo = Math.max(0, metaAtiva - realizadoAtivo);
-    const diasMaxRest = campanhasAtivas.reduce((m, c) => Math.max(m, c.diasRestantes), 0) || 1;
-    const progressoAtivo = metaAtiva > 0 ? (realizadoAtivo / metaAtiva) * 100 : 0;
-    return {
-      progresso: progressoAtivo,
-      realizado: realizadoAtivo,
-      meta: metaAtiva,
-      faltante: faltanteAtivo,
-      diarioSugerido: faltanteAtivo / diasMaxRest,
-    };
-  }, [campanhasAtivas]);
-  const campanhaAtivaLabel = campanhasAtivas.length === 1
-    ? campanhasAtivas[0].nome
-    : `${campanhasAtivas.length} campanhas ativas`;
-  const progressoCt = meta > 0 ? (realizado / meta) * 100 : 0;
-  const faltanteCt = Math.max(0, meta - realizado);
-  const cor = getCampaignProgressTone(heroResumo.progresso);
-  const corCt = getCampaignProgressTone(progressoCt);
-
-  if (heroResumo.meta === 0) return null;
-
-  return (
-    <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">
-      <CampaignSummaryCard
-        icon={<Target className="h-3.5 w-3.5 text-primary" />}
-        title="Meta total da CT"
-        subtitle="Todas as marcas do período"
-        value={realizado}
-        meta={meta}
-        progresso={progressoCt}
-        faltante={faltanteCt}
-        diarioSugerido={diarioSugerido}
-        tone={corCt}
-      />
-
-      <CampaignSummaryCard
-        icon={<Flame className="h-3.5 w-3.5 text-amber-400" />}
-        title="Campanha ativa"
-        subtitle={campanhaAtivaLabel}
-        value={heroResumo.realizado}
-        meta={heroResumo.meta}
-        progresso={heroResumo.progresso}
-        faltante={heroResumo.faltante}
-        diarioSugerido={heroResumo.diarioSugerido}
-        tone={cor}
-      />
-    </div>
-  );
-}
-
-function getCampaignProgressTone(progresso: number) {
-  if (progresso >= 80) {
-    return {
-      ring: 'stroke-emerald-500',
-      text: 'text-emerald-400',
-      label: 'Excelente',
-      bar: 'bg-emerald-500',
-    };
-  }
-  if (progresso >= 40) {
-    return {
-      ring: 'stroke-amber-400',
-      text: 'text-amber-400',
-      label: 'Atenção',
-      bar: 'bg-amber-500',
-    };
-  }
-  return {
-    ring: 'stroke-red-500',
-    text: 'text-red-400',
-    label: 'Crítico',
-    bar: 'bg-red-500',
-  };
-}
-
-function CampaignSummaryCard({
-  icon,
-  title,
-  subtitle,
-  value,
-  meta,
-  progresso,
-  faltante,
-  diarioSugerido,
-  tone,
-}: {
-  icon: React.ReactNode;
-  title: string;
-  subtitle: string;
-  value: number;
-  meta: number;
-  progresso: number;
-  faltante: number;
-  diarioSugerido: number;
-  tone: ReturnType<typeof getCampaignProgressTone>;
-}) {
-  const pct = Math.min(100, progresso);
-  const progressBarClass = progresso >= 80 ? 'bg-emerald-500' : progresso >= 40 ? 'bg-amber-500' : 'bg-red-500';
-
-  return (
-    <Card className="relative overflow-hidden border-border/60 bg-card/80 transition-colors hover:ring-1 hover:ring-primary/20">
-      <div className={cn('absolute inset-x-0 top-0 h-1', tone.bar)} />
-      <CardContent className="relative p-5 lg:p-6">
-        <div className="flex items-start justify-between gap-4">
-          <div className="min-w-0">
-            <p className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground font-medium flex items-center gap-1.5">
-              {icon} {title}
-            </p>
-            <div className="mt-3 flex flex-wrap items-end gap-x-4 gap-y-1">
-              <p className={cn('text-4xl font-extrabold tabular-nums leading-none', tone.text)}>
-                {progresso.toFixed(0)}%
-              </p>
-              <p className="text-2xl font-bold font-mono tabular-nums leading-none">
-                {formatCurrency(value)}
-              </p>
-            </div>
-            <p className="mt-2 text-sm text-muted-foreground line-clamp-1">{subtitle}</p>
-          </div>
-
-          <Badge variant="outline" className={cn('shrink-0 border-border/70 bg-background/30', tone.text)}>
-            {tone.label}
-          </Badge>
-        </div>
-
-        <div className="mt-5">
-          <div className="h-2.5 rounded-full bg-muted/60 overflow-hidden">
-            <div
-              className={cn('h-full transition-all duration-700', progressBarClass)}
-              style={{ width: `${pct}%` }}
-            />
-          </div>
-          <div className="mt-2 flex items-center justify-between gap-4 text-[11px] text-muted-foreground">
-            <span>Meta {formatCurrency(meta)}</span>
-            <span>{pct.toFixed(1)}% atingido</span>
-          </div>
-        </div>
-
-        <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-2">
-          <div className="rounded-md border border-border/60 bg-background/30 px-3 py-2.5">
-            <p className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground">Falta</p>
-            <p className="text-base font-bold font-mono text-amber-300 tabular-nums">{formatCurrency(faltante)}</p>
-          </div>
-          <div className="rounded-md border border-border/60 bg-background/30 px-3 py-2.5">
-            <p className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground">Ritmo diário</p>
-            <p className="text-base font-bold font-mono text-emerald-300 tabular-nums">{formatCurrency(diarioSugerido)}</p>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
   );
 }
 

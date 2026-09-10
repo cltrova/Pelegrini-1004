@@ -5,21 +5,18 @@ import { LoadingState } from '@/components/common/LoadingState';
 import { ErrorState } from '@/components/common/ErrorState';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
-  Users,
   TrendingUp,
   TrendingDown,
   MapPin,
   AlertTriangle,
   Sparkles,
   Target,
-  Brain,
-  Crown,
   ArrowUpRight,
   ArrowDownRight,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import {
-  BarChart,
-  Bar,
   AreaChart,
   Area,
   XAxis,
@@ -28,16 +25,13 @@ import {
   Tooltip,
   ResponsiveContainer,
   Legend,
-  Cell,
 } from 'recharts';
 import { cn } from '@/lib/utils';
 import {
   EnterpriseBadge,
   EnterpriseDataPanel,
   EnterpriseMetricCard,
-  EnterprisePageHeader,
   EnterpriseSearchFilter,
-  EnterpriseTable,
   EnterpriseTbody,
   EnterpriseTd,
   EnterpriseTh,
@@ -45,6 +39,12 @@ import {
   EnterpriseTr,
 } from '@/components/enterprise';
 import { EnterpriseComercialFilters } from '@/components/comercial/EnterpriseComercialFilters';
+import {
+  ComercialCommandBar,
+  ComercialCompactPage,
+  ComercialDataViewport,
+  ComercialMetricStrip,
+} from '@/components/comercial/compact';
 import type { ComercialFilters as ComercialFiltersType } from '@/types/comercial';
 
 // Paleta enterprise: usa primário do sistema + neutros + status colors.
@@ -63,6 +63,7 @@ const RANK_COLORS = [
 ];
 
 const ANOS_DISPONIVEIS = ['2023', '2024', '2025', '2026'];
+const CLIENTES_PER_PAGE = 50;
 
 const hoje = new Date();
 const anoAtual = String(hoje.getFullYear());
@@ -83,6 +84,7 @@ const filtrosIniciais: ComercialFiltersType = {
 /* ------------------------------------------------------------------ */
 export default function ClientesPage() {
   const [searchTerm, setSearchTerm] = useState('');
+  const [rankingPage, setRankingPage] = useState(1);
   const [activeTab, setActiveTab] = useState('ranking');
 
   const [pendingFilters, setPendingFilters] = useState<ComercialFiltersType>(filtrosIniciais);
@@ -102,23 +104,31 @@ export default function ClientesPage() {
 
   const handleBuscar = useCallback(() => {
     setAppliedFilters(pendingFilters);
+    setRankingPage(1);
   }, [pendingFilters]);
 
   const handleClearFilters = useCallback(() => {
     setPendingFilters(filtrosIniciais);
     setAppliedFilters(filtrosIniciais);
+    setRankingPage(1);
   }, []);
 
   const clientesFiltrados = clientesPerformance.filter(c =>
     c.razao.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (c.fantasia?.toLowerCase().includes(searchTerm.toLowerCase()))
   );
+  const totalRankingPages = Math.max(1, Math.ceil(clientesFiltrados.length / CLIENTES_PER_PAGE));
+  const currentRankingPage = Math.min(rankingPage, totalRankingPages);
+  const rankingStartIndex = (currentRankingPage - 1) * CLIENTES_PER_PAGE;
+  const clientesDaPagina = clientesFiltrados.slice(rankingStartIndex, rankingStartIndex + CLIENTES_PER_PAGE);
+  const rankingRangeStart = clientesFiltrados.length === 0 ? 0 : rankingStartIndex + 1;
+  const rankingRangeEnd = Math.min(rankingStartIndex + CLIENTES_PER_PAGE, clientesFiltrados.length);
+  const rankingViewportKey = `${currentRankingPage}:${searchTerm}:${JSON.stringify(appliedFilters)}`;
 
-  const top10Treemap = clientesPerformance.slice(0, 10).map((c, i) => ({
-    name: c.fantasia || c.razao,
-    size: c.faturamentoLiquido,
-    fill: RANK_COLORS[i % RANK_COLORS.length],
-  }));
+  const handleSearchChange = useCallback((value: string) => {
+    setSearchTerm(value);
+    setRankingPage(1);
+  }, []);
 
   const distribuicaoPorUF = useMemo(() => {
     const ufMap = new Map<string, number>();
@@ -244,10 +254,21 @@ export default function ClientesPage() {
     return `${months[parseInt(month) - 1]}/${year.slice(2)}`;
   };
 
-  if (isLoading) return <LoadingState message="Carregando clientes..." />;
-  if (error) return <ErrorState message="Erro ao carregar clientes" />;
-
-  const top5Clientes = clientesPerformance.slice(0, 5);
+  if (isLoading || error) {
+    return (
+      <ComercialCompactPage
+        as="div"
+        className="clientes-page h-[calc(100dvh-9.5rem)] max-h-[calc(100dvh-9.5rem)] px-3 pb-3 pt-2 sm:px-4 md:h-full md:max-h-full"
+      >
+        <ComercialCommandBar title="Clientes" context="Carteira comercial" />
+        <ComercialDataViewport ariaLabel="Estado da carteira de clientes" className="flex items-center justify-center">
+          {isLoading
+            ? <LoadingState message="Carregando clientes..." className="w-full max-w-md rounded-md shadow-none" size="sm" />
+            : <ErrorState message="Erro ao carregar clientes" />}
+        </ComercialDataViewport>
+      </ComercialCompactPage>
+    );
+  }
 
   const toneBg = (t: 'success' | 'warning' | 'danger' | 'default') => ({
     success: 'text-success bg-success/10 ring-success/15',
@@ -257,17 +278,19 @@ export default function ClientesPage() {
   }[t]);
 
   return (
-    <div className="enterprise-page-shell">
-      <EnterprisePageHeader
-        title="Análise de Clientes"
-        subtitle="Ranking, evolução e insights da base de clientes"
-        icon={Users}
+    <ComercialCompactPage
+      as="div"
+      className="clientes-page h-[calc(100dvh-9.5rem)] max-h-[calc(100dvh-9.5rem)] px-3 pb-3 pt-2 sm:px-4 md:h-full md:max-h-full"
+    >
+      <ComercialCommandBar
+        title="Clientes"
+        context={`${clientesPerformance.length} clientes no período`}
         actions={
           <EnterpriseSearchFilter
-            label="Busca"
+            label="Buscar clientes"
             value={searchTerm}
-            onChange={setSearchTerm}
-            placeholder="Buscar cliente..."
+            onChange={handleSearchChange}
+            placeholder="Nome, razão social ou fantasia"
           />
         }
       />
@@ -285,127 +308,33 @@ export default function ClientesPage() {
         useNativeControls
       />
 
-      {/* ===== KPIs ===== */}
-      <div className="enterprise-grid-metrics">
-        <EnterpriseMetricCard label="Total Clientes" value={kpis.qtdClientes} icon={<Users className="h-4 w-4" />} />
-        <EnterpriseMetricCard label="Novos (30 dias)" value={novosClientes.length} icon={<Sparkles className="h-4 w-4" />} tone="positive" />
-        <EnterpriseMetricCard label="Em Risco" value={clientesEmRisco.length} icon={<AlertTriangle className="h-4 w-4" />} tone="warning" />
-        <EnterpriseMetricCard label="Estados Atendidos" value={ufsUnicas.length} icon={<MapPin className="h-4 w-4" />} />
-      </div>
+      <ComercialMetricStrip
+        ariaLabel="Indicadores da carteira"
+        metrics={[
+          { label: 'Total de clientes', value: kpis.qtdClientes },
+          { label: 'Novos em 30 dias', value: novosClientes.length, tone: 'success' },
+          { label: 'Em risco', value: clientesEmRisco.length, tone: 'warning' },
+          { label: 'Estados atendidos', value: ufsUnicas.length },
+        ]}
+      />
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="flex min-h-0 flex-1 flex-col overflow-hidden">
-        <TabsList className="shrink-0">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="flex min-h-0 flex-1 flex-col gap-2 overflow-hidden">
+        <TabsList className="h-9 w-fit max-w-full shrink-0 justify-start overflow-x-auto">
           <TabsTrigger value="ranking">Ranking</TabsTrigger>
           <TabsTrigger value="evolucao">Evolução</TabsTrigger>
-          <TabsTrigger value="insights">
-            <Brain className="h-3.5 w-3.5 mr-1" /> Insights IA
-          </TabsTrigger>
+          <TabsTrigger value="insights">Carteira</TabsTrigger>
           <TabsTrigger value="geografico">Geográfico</TabsTrigger>
         </TabsList>
 
         {/* =================================================== RANKING */}
-        <TabsContent value="ranking" className="mt-3 min-h-0 flex-1 space-y-3 overflow-auto">
-          {/* Podium Top 5 */}
-          {top5Clientes.length > 0 && (
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-              {top5Clientes.map((c, i) => {
-                const isFirst = i === 0;
-                return (
-                  <article
-                    key={c.codigo}
-                    className={cn(
-                      'min-w-0 rounded-lg border bg-card p-4 transition-colors hover:border-border',
-                      isFirst ? 'md:col-span-2 border-primary/30' : 'border-border',
-                    )}
-                    style={{ animation: `cliRise 0.4s ${0.08 + i * 0.06}s ease-out backwards` }}
-                  >
-                    <div className="flex items-center justify-between gap-2 mb-2">
-                      <div className="flex min-w-0 items-center gap-2">
-                        {isFirst ? (
-                          <Crown className="h-4 w-4 shrink-0 text-primary" />
-                        ) : (
-                          <span className="shrink-0 text-[11px] font-semibold italic text-muted-foreground">#{i + 1}</span>
-                        )}
-                        <span className="truncate text-[10px] uppercase font-semibold text-muted-foreground">
-                          {isFirst ? 'Líder' : i === 1 ? 'Vice' : `Top ${i + 1}`}
-                        </span>
-                      </div>
-                      <EnterpriseBadge tone={isFirst ? 'info' : 'neutral'}>
-                        {formatPercent(c.participacao)}
-                      </EnterpriseBadge>
-                    </div>
-                    <p className={cn('truncate font-semibold', isFirst ? 'text-base' : 'text-sm')}>
-                      {c.fantasia || c.razao}
-                    </p>
-                    {c.cidade && (
-                      <p className="mb-2 truncate text-[11px] text-muted-foreground">
-                        {c.cidade}/{c.uf}
-                      </p>
-                    )}
-                    <p
-                      className={cn(
-                        'mono-value font-bold tracking-tight',
-                        isFirst ? 'text-xl text-primary' : 'text-base text-foreground',
-                      )}
-                    >
-                      {formatCurrency(c.faturamentoLiquido, !isFirst)}
-                    </p>
-                    <div className="mt-2 h-1 rounded-full bg-muted/60 overflow-hidden">
-                      <div
-                        className="h-full rounded-full bg-primary/80"
-                        style={{
-                          width: `${Math.min((c.faturamentoLiquido / (top5Clientes[0]?.faturamentoLiquido || 1)) * 100, 100)}%`,
-                          animation: `cliBar 0.7s ${0.2 + i * 0.08}s cubic-bezier(.22,.9,.32,1) backwards`,
-                          transformOrigin: 'left center',
-                        }}
-                      />
-                    </div>
-                  </article>
-                );
-              })}
-            </div>
-          )}
-
-          {/* Concentração */}
-          <EnterpriseDataPanel title="Concentração Top 10 Clientes" density="compact">
-            <div className="h-[300px] min-w-0">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={top10Treemap} layout="vertical">
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-border/40" horizontal={false} />
-                  <XAxis
-                    type="number"
-                    tickFormatter={(v) => formatCurrency(v, true)}
-                    tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }}
-                  />
-                  <YAxis
-                    type="category"
-                    dataKey="name"
-                    width={140}
-                    tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }}
-                  />
-                  <Tooltip
-                    cursor={{ fill: 'hsl(var(--primary) / 0.05)' }}
-                    formatter={(value: number) => formatCurrency(value)}
-                    contentStyle={{
-                      backgroundColor: 'hsl(var(--card))',
-                      border: '1px solid hsl(var(--border))',
-                      borderRadius: '8px',
-                      fontSize: 12,
-                    }}
-                  />
-                  <Bar dataKey="size" name="Faturamento" radius={[0, 4, 4, 0]} animationDuration={800}>
-                    {top10Treemap.map((_, index) => (
-                      <Cell key={`cell-${index}`} fill={RANK_COLORS[index % RANK_COLORS.length]} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </EnterpriseDataPanel>
-
-          {/* Tabela de ranking */}
-          <EnterpriseDataPanel title="Ranking Completo" density="compact" noPadding>
-            <EnterpriseTable className="rounded-none border-0">
+        <TabsContent value="ranking" className="mt-0 flex h-full max-h-full min-h-0 flex-1 flex-col overflow-hidden data-[state=inactive]:hidden">
+          <ComercialDataViewport
+            key={rankingViewportKey}
+            ariaLabel="Ranking completo de clientes"
+            className="h-full max-h-full"
+          >
+            <table aria-label="Ranking completo de clientes" className="w-full min-w-max border-collapse text-xs">
+              <caption className="sr-only">Ranking completo de clientes</caption>
               <EnterpriseThead>
                 <EnterpriseTr>
                   <EnterpriseTh numeric>#</EnterpriseTh>
@@ -419,22 +348,24 @@ export default function ClientesPage() {
                 </EnterpriseTr>
               </EnterpriseThead>
               <EnterpriseTbody>
-                    {clientesFiltrados.slice(0, 20).map((c, i) => (
-                      <EnterpriseTr key={c.codigo}>
+                    {clientesDaPagina.map((c, i) => {
+                      const ranking = rankingStartIndex + i;
+                      return (
+                      <EnterpriseTr key={c.codigo} className="h-11">
                         <EnterpriseTd numeric>
-                          {i < 3 ? (
-                            <EnterpriseBadge tone={i === 0 ? 'info' : 'neutral'} className="justify-center">
-                              {i + 1}°
+                          {ranking < 3 ? (
+                            <EnterpriseBadge tone={ranking === 0 ? 'info' : 'neutral'} className="justify-center">
+                              {ranking + 1}°
                             </EnterpriseBadge>
                           ) : (
-                            <span className="text-muted-foreground italic">{i + 1}</span>
+                            <span className="text-muted-foreground italic">{ranking + 1}</span>
                           )}
                         </EnterpriseTd>
                         <EnterpriseTd>
                           <div className="min-w-0">
-                            <p className="truncate font-medium">{c.fantasia || c.razao}</p>
+                            <p className="truncate font-medium" title={c.fantasia || c.razao}>{c.fantasia || c.razao}</p>
                             {c.fantasia && (
-                              <p className="truncate text-xs text-muted-foreground">{c.razao}</p>
+                              <p className="truncate text-xs text-muted-foreground" title={c.razao}>{c.razao}</p>
                             )}
                           </div>
                         </EnterpriseTd>
@@ -457,14 +388,44 @@ export default function ClientesPage() {
                             : '-'}
                         </EnterpriseTd>
                       </EnterpriseTr>
-                    ))}
+                      );
+                    })}
               </EnterpriseTbody>
-            </EnterpriseTable>
-          </EnterpriseDataPanel>
+            </table>
+          </ComercialDataViewport>
+          <nav
+            aria-label="Paginação do ranking"
+            className="flex shrink-0 items-center justify-between gap-2 border-t border-border px-2 py-1.5"
+          >
+            <span aria-live="polite" className="text-xs tabular-nums text-muted-foreground">
+              {rankingRangeStart}–{rankingRangeEnd} de {clientesFiltrados.length}
+            </span>
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                aria-label="Página anterior"
+                className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
+                disabled={currentRankingPage === 1}
+                onClick={() => setRankingPage(currentRankingPage - 1)}
+              >
+                <ChevronLeft aria-hidden="true" className="h-4 w-4" />
+              </button>
+              <button
+                type="button"
+                aria-label="Próxima página"
+                className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
+                disabled={currentRankingPage === totalRankingPages}
+                onClick={() => setRankingPage(currentRankingPage + 1)}
+              >
+                <ChevronRight aria-hidden="true" className="h-4 w-4" />
+              </button>
+            </div>
+          </nav>
         </TabsContent>
 
         {/* =================================================== EVOLUÇÃO */}
-        <TabsContent value="evolucao" className="mt-3 min-h-0 flex-1 space-y-3 overflow-auto">
+        <TabsContent value="evolucao" className="mt-0 flex h-full max-h-full min-h-0 flex-1 flex-col overflow-hidden data-[state=inactive]:hidden">
+          <ComercialDataViewport ariaLabel="Evolução dos clientes" className="h-full max-h-full space-y-3">
           {evolucaoStats && (
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
               <EnterpriseMetricCard label="Último mês" value={formatCurrency(evolucaoStats.ultimo, true)} />
@@ -487,7 +448,6 @@ export default function ClientesPage() {
           <EnterpriseDataPanel
             title="Evolução de Vendas · Top 5 Clientes"
             density="compact"
-            actions={<EnterpriseBadge tone="info"><Brain className="h-3 w-3" /> Analisado por IA</EnterpriseBadge>}
           >
             <div className="h-[360px] min-w-0">
               <ResponsiveContainer width="100%" height="100%">
@@ -540,15 +500,17 @@ export default function ClientesPage() {
               </ResponsiveContainer>
             </div>
           </EnterpriseDataPanel>
+          </ComercialDataViewport>
         </TabsContent>
 
-        {/* =================================================== INSIGHTS IA */}
-        <TabsContent value="insights" className="mt-3 min-h-0 flex-1 space-y-3 overflow-auto">
+        {/* =================================================== CARTEIRA */}
+        <TabsContent value="insights" className="mt-0 flex h-full max-h-full min-h-0 flex-1 flex-col overflow-hidden data-[state=inactive]:hidden">
+          <ComercialDataViewport ariaLabel="Alertas e oportunidades da carteira" className="h-full max-h-full space-y-3">
           {insightsIA.length > 0 && (
             <EnterpriseDataPanel
-              title="Insights Inteligentes"
+              title="Alertas e oportunidades"
               density="compact"
-              actions={<EnterpriseBadge tone="info">{insightsIA.length} análises</EnterpriseBadge>}
+              actions={<EnterpriseBadge tone="info">{insightsIA.length} alertas</EnterpriseBadge>}
             >
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {insightsIA.map((ins, i) => (
@@ -631,10 +593,12 @@ export default function ClientesPage() {
               )}
             </EnterpriseDataPanel>
           </div>
+          </ComercialDataViewport>
         </TabsContent>
 
         {/* =================================================== GEOGRÁFICO */}
-        <TabsContent value="geografico" className="mt-3 min-h-0 flex-1 space-y-3 overflow-auto">
+        <TabsContent value="geografico" className="mt-0 flex h-full max-h-full min-h-0 flex-1 flex-col overflow-hidden data-[state=inactive]:hidden">
+          <ComercialDataViewport ariaLabel="Distribuição geográfica dos clientes" className="h-full max-h-full">
           <EnterpriseDataPanel title="Top 10 Estados" density="compact">
             <div className="space-y-3">
               {distribuicaoPorUF.map((item, i) => {
@@ -672,6 +636,7 @@ export default function ClientesPage() {
               })}
             </div>
           </EnterpriseDataPanel>
+          </ComercialDataViewport>
         </TabsContent>
       </Tabs>
 
@@ -685,6 +650,6 @@ export default function ClientesPage() {
           to { transform: scaleX(1); }
         }
       `}</style>
-    </div>
+    </ComercialCompactPage>
   );
 }

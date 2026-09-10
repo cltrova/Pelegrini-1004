@@ -2,17 +2,39 @@ import { describe, expect, it } from 'vitest';
 import {
   calcularPedidosAbertosPorVendedor,
   buildComissaoSearchParams,
+  buildPedidosAbertosSearchParams,
   comissaoLinhaPertenceForcaP1004,
   deveExcluirForcaPComissao1004,
   getValorPedidoAberto,
   mapComissaoLinha,
-  resolvePedidosAbertosPath,
+  resolveComissaoPedidosPath,
   resolveComissaoVendedoresPath,
+  fetchTodosPedidos,
 } from './useComissaoVendedores';
 
 describe('mapComissaoLinha', () => {
-  it('usa o endpoint dedicado para pedidos em aberto', () => {
-    expect(resolvePedidosAbertosPath()).toBe('/comercial/pedidos-abertos');
+  it('carrega pedidos em lotes grandes para evitar o timeout da tela de comissao', async () => {
+    const primeiroLote = Array.from({ length: 5_000 }, (_, index) => ({ cod_pedido: index + 1 }));
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce({ ok: true, json: async () => primeiroLote })
+      .mockResolvedValueOnce({ ok: true, json: async () => [{ cod_pedido: 5_001 }] });
+    vi.stubGlobal('fetch', fetchMock);
+
+    try {
+      const rows = await fetchTodosPedidos(
+        { endpoint_url: 'https://api.example.com' },
+        '/comercial/pedidos_ch',
+        new URLSearchParams({ data_ini: '2026-09-01', data_fim: '2026-09-10' }),
+        {},
+        new AbortController().signal,
+      );
+
+      expect(rows).toHaveLength(5_001);
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+      expect(String(fetchMock.mock.calls[0][0])).toContain('page_size%3D5000');
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 
   it('interpreta os campos do relatorio sintetico FAT da Pelegrini', () => {
@@ -93,7 +115,7 @@ describe('mapComissaoLinha', () => {
     expect(linha.aFaturar).toBeCloseTo(53_850.70, 2);
   });
 
-  it('mantem pedidos em aberto nulo quando a API de comissao nao informa o campo', () => {
+  it('mantem pedidos em aberto indisponivel quando o campo calculado nao vem', () => {
     expect(mapComissaoLinha({ AFaturar: 100, PedidosEmAberto: null }).pedidosAberto).toBeNull();
     expect(mapComissaoLinha({ AFaturar: 100, PedidosEmAberto: '' }).pedidosAberto).toBeNull();
   });
@@ -102,33 +124,36 @@ describe('mapComissaoLinha', () => {
     expect(mapComissaoLinha({ PedidosAberto: 0 }).pedidosAberto).toBe(0);
     expect(mapComissaoLinha({ 'PEDIDOS EM ABERTO': '1.234,56' }).pedidosAberto).toBeCloseTo(1234.56, 2);
     expect(mapComissaoLinha({ a_faturar_pedidos: 100 }).pedidosAberto).toBe(100);
+    expect(mapComissaoLinha({ valor_total_pedido: '2.345,67' }).pedidosAberto).toBeNull();
+    expect(mapComissaoLinha({ AFaturar: 200 }).pedidosAberto).toBeNull();
     expect(mapComissaoLinha({}).pedidosAberto).toBeNull();
   });
 
-  it('retorna nulo para valor total de pedido faturado', () => {
-    expect(getValorPedidoAberto({
-      status_pedido: 'Faturado',
-      data_faturamento: '2026-09-08',
-      valor_total_pedido: 900,
-    })).toBeNull();
-    expect(getValorPedidoAberto({
-      status_pedido: 'Pendente',
-      data_faturamento: null,
-      valor_total_pedido: '1.234,56',
-    })).toBeCloseTo(1234.56, 2);
+  it('considera aberto somente quando data_faturamento nao esta preenchida', () => {
+    expect(getValorPedidoAberto({ data_faturamento: null, valor_total_pedido: '1.234,56' })).toBeCloseTo(1234.56, 2);
+    expect(getValorPedidoAberto({ data_faturamento: '', valor_total_pedido: 500 })).toBe(500);
+    expect(getValorPedidoAberto({ data_faturamento: '2026-09-09', valor_total_pedido: 900 })).toBeNull();
   });
 
-  it('soma somente pedidos abertos e nao repete o pedido por item', () => {
+  it('soma pedidos abertos por vendedor sem repetir o mesmo pedido', () => {
     const totais = calcularPedidosAbertosPorVendedor([
-      { cod_empresa: 2, cod_pedido: 100, cod_vendedor: 10, status_pedido: 'Pendente', data_faturamento: null, cod_operacao: 10, valor_total_pedido: 500 },
-      { cod_empresa: 2, cod_pedido: 100, cod_vendedor: 10, status_pedido: 'Pendente', data_faturamento: null, cod_operacao: 10, valor_total_pedido: 500 },
-      { cod_empresa: 2, cod_pedido: 101, cod_vendedor: 10, status_pedido: 'Faturado', data_faturamento: '2026-09-08', cod_operacao: 10, valor_total_pedido: 900 },
-      { cod_empresa: 2, cod_pedido: 102, cod_vendedor: 11, status_pedido: 'Pendente', data_faturamento: null, cod_operacao: 62, valor_total_pedido: 250 },
-      { cod_empresa: 2, cod_pedido: 103, cod_vendedor: 11, status_pedido: 'Pendente', data_faturamento: null, cod_operacao: 80, valor_total_pedido: 700 },
-    ], { operacaoInicial: 0, operacaoFinal: 62 });
+      { cod_empresa: 1, cod_pedido: 10, cod_vendedor: 8, data_faturamento: null, valor_total_pedido: 500 },
+      { cod_empresa: 1, cod_pedido: 10, cod_vendedor: 8, data_faturamento: null, valor_total_pedido: 500 },
+      { cod_empresa: 1, cod_pedido: 11, cod_vendedor: 8, data_faturamento: '2026-09-09', valor_total_pedido: 900 },
+      { cod_empresa: 1, cod_pedido: 12, cod_vendedor: 10, data_faturamento: null, valor_total_pedido: 250 },
+    ]);
 
-    expect(totais.get('10')).toBe(500);
-    expect(totais.get('11')).toBe(250);
+    expect(totais.get('8')).toBe(500);
+    expect(totais.get('10')).toBe(250);
+  });
+
+  it('restringe os pedidos da Casa da Chevrolet a P.Empresa 2', () => {
+    const totais = calcularPedidosAbertosPorVendedor([
+      { cod_empresa: 2, cod_pedido: 20, cod_vendedor: 10, data_faturamento: null, valor_total_pedido: 300 },
+      { cod_empresa: 1, cod_pedido: 21, cod_vendedor: 10, data_faturamento: null, valor_total_pedido: 50_000 },
+    ], { codEmpresa: '2' });
+
+    expect(totais.get('10')).toBe(300);
   });
 
   it('soma pedidos abertos nos formatos das procedures CT e CH', () => {
@@ -181,6 +206,46 @@ describe('mapComissaoLinha', () => {
     expect(resolveComissaoVendedoresPath('10041')).toBe('/comercial/comissoes_ch');
     expect(resolveComissaoVendedoresPath('1004', 'chevrolet')).toBe('/comercial/comissoes_ch');
     expect(resolveComissaoVendedoresPath('1004', 'transmissao')).toBe('/comercial/comissoes');
+  });
+
+  it('busca os pedidos Chevrolet no endpoint ligado a procedure sp_api_pedido_venda_ch', () => {
+    expect(resolveComissaoPedidosPath({ cod_empresa_bi: '10041' }, 'chevrolet')).toBe('/comercial/pedidos_ch');
+    expect(resolveComissaoPedidosPath({
+      cod_empresa_bi: '1004',
+      endpoint_path_comercial_pedidos: '/comercial/pedidos',
+      endpoint_path_comercial_pedidos_ch: '/comercial/pedidos_ch',
+    }, 'chevrolet')).toBe('/comercial/pedidos_ch');
+  });
+
+  it('envia ao endpoint de pedidos apenas o periodo exclusivo e a empresa', () => {
+    const params = buildPedidosAbertosSearchParams({
+      data_ini: '2026-09-01',
+      data_fim: '2026-09-09',
+      deduzir_devolucao: true,
+      calcula_st: false,
+      exibir_valores_margem: true,
+      operacao_fiscal_inicial: '0',
+      operacao_fiscal_final: '62',
+    }, '10041', false);
+
+    expect(params.get('data_ini')).toBe('2026-09-01');
+    expect(params.get('data_fim')).toBe('2026-09-10');
+    expect(params.has('cod_empresa_bi')).toBe(false);
+    expect(params.has('deduzir_devolucao')).toBe(false);
+    expect(params.has('operacao_fiscal_inicial')).toBe(false);
+  });
+
+  it('limita o mes atual ao dia seguinte de hoje para a procedure com fim exclusivo', () => {
+    const params = buildPedidosAbertosSearchParams({
+      data_ini: '2026-09-01',
+      data_fim: '2026-09-30',
+      deduzir_devolucao: true,
+      calcula_st: false,
+      exibir_valores_margem: true,
+    }, '10041', false, new Date('2026-09-09T12:00:00'));
+
+    expect(params.get('data_ini')).toBe('2026-09-01');
+    expect(params.get('data_fim')).toBe('2026-09-10');
   });
 
   it('envia filtro de operacao fiscal quando preenchido manualmente', () => {

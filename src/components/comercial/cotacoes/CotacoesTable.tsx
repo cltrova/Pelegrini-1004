@@ -108,11 +108,10 @@ export function CotacoesTable({ mode, rows, motivos, onEditMotivo, onSelectCotac
   const isOpenQuotes = mode === 'abertas';
 
   return (
-    <section aria-label="Lista de cotacoes">
-      <div className="hidden overflow-x-auto border border-border md:block">
+    <section aria-label="Lista de cotacoes" className="min-h-0">
+      <div className="hidden min-w-0 border border-border md:block">
         {rows.length === 0 ? <EmptyState mode={mode} /> : (
-          <div className="max-h-[34rem] min-w-[67rem] overflow-y-auto">
-            <table className="w-full text-left text-sm">
+            <table className="min-w-[67rem] w-full text-left text-sm">
               <thead className="sticky top-0 z-10 bg-muted">
                 <tr className="border-b border-border text-xs text-muted-foreground">
                   <th scope="col" className="px-3 py-2 font-medium">Cotacao</th>
@@ -133,7 +132,7 @@ export function CotacoesTable({ mode, rows, motivos, onEditMotivo, onSelectCotac
               </thead>
               <tbody>
                 {rows.map((row) => (
-                  <tr key={row.idCotacao} className="border-b border-border/70 last:border-b-0 hover:bg-muted/50">
+                  <tr key={row.idCotacao} className="h-10 border-b border-border/70 last:border-b-0 hover:bg-muted/50">
                     <td className="px-3 py-2 font-medium tabular-nums">{row.numeroCotacao}</td>
                     <td className="px-3 py-2 whitespace-nowrap tabular-nums">{formatDate(row.dataCotacao)}</td>
                     {isOpenQuotes && <td className="px-3 py-2 whitespace-nowrap tabular-nums">{formatDate(row.dataValidade)}</td>}
@@ -152,7 +151,6 @@ export function CotacoesTable({ mode, rows, motivos, onEditMotivo, onSelectCotac
                 ))}
               </tbody>
             </table>
-          </div>
         )}
       </div>
 
@@ -177,10 +175,10 @@ export function CotacoesTable({ mode, rows, motivos, onEditMotivo, onSelectCotac
                 </>
               ) : (
                 <>
-                  <div><dt className="text-xs text-muted-foreground">Data</dt><dd className="tabular-nums">{formatDate(row.dataCotacao)}</dd></div>
+                  <div className="col-span-2"><dt className="text-xs text-muted-foreground">Motivo</dt><dd className="truncate" title={getMotivoLabel(row, motivos)}>{getMotivoLabel(row, motivos)}</dd></div>
                   <div><dt className="text-xs text-muted-foreground">Valor</dt><dd className="font-medium tabular-nums">{formatCurrency(row.valor)}</dd></div>
                   <div><dt className="text-xs text-muted-foreground">Vendedor</dt><dd className="truncate" title={row.nomeVendedor}>{row.nomeVendedor || '--'}</dd></div>
-                  <div><dt className="text-xs text-muted-foreground">Motivo</dt><dd className="truncate" title={getMotivoLabel(row, motivos)}>{getMotivoLabel(row, motivos)}</dd></div>
+                  <div className="col-span-2"><dt className="text-xs text-muted-foreground">Data</dt><dd className="tabular-nums">{formatDate(row.dataCotacao)}</dd></div>
                 </>
               )}
             </dl>

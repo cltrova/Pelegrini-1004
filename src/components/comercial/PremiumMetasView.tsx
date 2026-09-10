@@ -9,13 +9,14 @@ import {
   Line, ComposedChart, Legend,
 } from 'recharts';
 import {
-  Sparkles, Target, AlertTriangle, TrendingDown, Trophy, Calendar,
-  ArrowUp, ArrowDown, Minus, Check, DollarSign, Users, TrendingUp, Activity,
+  Target, AlertTriangle, TrendingDown, Trophy, Calendar,
+  ArrowUp, ArrowDown, Minus, Check, DollarSign,
   LucideIcon,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { formatCurrency, formatPercent, formatCompactNumber } from '@/utils/formatters';
 import { getDiasUteisNoMes } from '@/types/comercial';
+import { ComercialMetricStrip } from '@/components/comercial/compact';
 
 /** Converte valores em formato brasileiro ("R$ 61.000,00", "61.000,00") para number puro. */
 function parseBRLToNumber(value: unknown): number {
@@ -442,121 +443,56 @@ export function PremiumMetasView({
     return { ok, total };
   }, [chartView, dadosGrafico]);
 
+  const receitaResumo = kpisGerais.totalFaturado || 0;
+  const vendasResumo = kpisGerais.qtdPedidos || pedidos.length || 0;
+  const clientesResumo = kpisGerais.clientesAtendidos || 0;
+  const ticketResumo = kpisGerais.ticketMedio ?? (vendasResumo > 0 ? receitaResumo / vendasResumo : 0);
+
   return (
     <div className="space-y-4">
-      {/* ============== TOTALIZADORES (mesmo layout da Visão Geral) ============== */}
-      {(() => {
-        const receita = kpisGerais.totalFaturado || 0;
-        const vendas = kpisGerais.qtdPedidos || pedidos.length || 0;
-        const clientes = kpisGerais.clientesAtendidos || 0;
-        const ticket = kpisGerais.ticketMedio ?? (vendas > 0 ? receita / vendas : 0);
-        const pctMeta = kpisGerais.percentualFaturado || 0;
-        const totalizadores = [
+      <ComercialMetricStrip
+        ariaLabel="Indicadores detalhados de metas"
+        className="metas-metric-strip rounded-md border border-border/70"
+        metrics={[
           {
-            key: 'receita',
             label: 'Receita',
-            value: formatCurrency(receita),
-            icon: TrendingUp,
-            hint: `Meta ${formatCurrency(kpisGerais.totalMeta)} · ${formatPercent(pctMeta)}`,
-            border: 'hover:border-primary/35',
-            iconColor: 'text-primary',
-            bar: Math.min(100, pctMeta),
-            barColor: 'bg-primary',
+            value: formatCurrency(receitaResumo),
+            context: `${formatPercent(kpisGerais.percentualFaturado || 0)} da meta`,
+            tone: 'success',
+            tooltip: `Meta do período: ${formatCurrency(kpisGerais.totalMeta)}`,
           },
           {
-            key: 'ticket',
-            label: 'Ticket Médio',
-            value: formatCurrency(ticket),
-            icon: Target,
-            hint: `${vendas.toLocaleString('pt-BR')} vendas no período`,
-            border: 'hover:border-amber-500/35',
-            iconColor: 'text-amber-500',
-            bar: null as number | null,
-            barColor: 'bg-amber-500',
+            label: 'Ticket médio',
+            value: formatCurrency(ticketResumo),
+            context: `${vendasResumo.toLocaleString('pt-BR')} vendas`,
+            tooltip: 'Receita dividida pela quantidade de vendas do período.',
           },
           {
-            key: 'clientes',
             label: 'Clientes',
-            value: clientes.toLocaleString('pt-BR'),
-            icon: Users,
-            hint: `${vendas > 0 ? (vendas / Math.max(1, clientes)).toFixed(1) : '0'} pedidos por cliente`,
-            border: 'hover:border-violet-500/35',
-            iconColor: 'text-violet-400',
-            bar: null as number | null,
-            barColor: 'bg-violet-500',
+            value: clientesResumo.toLocaleString('pt-BR'),
+            context: `${vendasResumo > 0 ? (vendasResumo / Math.max(1, clientesResumo)).toFixed(1) : '0'} pedidos/cliente`,
+            tooltip: 'Clientes atendidos no período selecionado.',
           },
           {
-            key: 'devolucoes',
             label: 'Devoluções',
             value: formatCurrency(kpisGerais.totalDevolucoes || 0),
-            icon: TrendingDown,
-            hint: 'Σ ValorDevolucao (linhas DEVOLUCAO)',
-            border: 'hover:border-destructive/35',
-            iconColor: 'text-destructive',
-            bar: null as number | null,
-            barColor: 'bg-destructive',
+            tone: 'danger',
+            tooltip: 'Total das devoluções registradas no período.',
           },
           {
-            key: 'vendas',
             label: 'Vendas',
-            value: vendas.toLocaleString('pt-BR'),
-            icon: Activity,
-            hint: `${kpisGerais.totalVendedores} vendedor(es) ativo(s)`,
-            border: 'hover:border-emerald-500/35',
-            iconColor: 'text-emerald-400',
-            bar: null as number | null,
-            barColor: 'bg-emerald-500',
+            value: vendasResumo.toLocaleString('pt-BR'),
+            context: `${kpisGerais.totalVendedores} vendedor(es)`,
+            tooltip: 'Quantidade de vendas e vendedores ativos no período.',
           },
-        ];
-        return (
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-            {totalizadores.map((t) => {
-              const Icon = t.icon;
-              return (
-                <Card
-                  key={t.key}
-                  className={cn(
-                    'relative overflow-hidden rounded-lg border-border/60 bg-card transition-colors duration-300',
-                    'hover:bg-muted/30',
-                    t.border
-                  )}
-                >
-                  <CardContent className="relative p-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground font-medium">
-                        {t.label}
-                      </span>
-                      <div className={cn(
-                        'h-7 w-7 rounded-md flex items-center justify-center bg-muted/40 ring-1 ring-border/60'
-                      )}>
-                        <Icon className={cn('h-3.5 w-3.5', t.iconColor)} />
-                      </div>
-                    </div>
-                    <div className="text-2xl xl:text-[26px] font-bold font-mono tracking-tight leading-none">
-                      {t.value}
-                    </div>
-                    <div className="mt-2 text-[11px] text-muted-foreground truncate">{t.hint}</div>
-                    {t.bar != null && (
-                      <div className="mt-2 h-1 rounded-full bg-muted/60 overflow-hidden">
-                        <div
-                          className={cn('h-full rounded-full transition-[width] duration-700', t.barColor)}
-                          style={{ width: `${t.bar}%` }}
-                        />
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-        );
-      })()}
+        ]}
+      />
 
-      {/* ============== INSIGHTS INTELIGENTES ============== */}
+      {/* ============== SINAIS DO PERÍODO ============== */}
       <div>
         <div className="flex items-center gap-2 mb-2">
-          <Sparkles className="h-4 w-4 text-primary" />
-          <span className="text-xs font-semibold uppercase tracking-wider text-primary">Insights Inteligentes</span>
+          <TrendingDown className="h-4 w-4 text-primary" />
+          <span className="text-xs font-semibold text-foreground">Sinais do período</span>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           {insights.map((ins, i) => {

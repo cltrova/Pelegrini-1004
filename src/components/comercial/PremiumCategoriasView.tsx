@@ -37,10 +37,12 @@ interface Props {
   periodoLabel?: string;
   selectedCategoria?: string | null;
   onSelectCategoria?: (c: string | null) => void;
+  showInsights?: boolean;
+  embedded?: boolean;
 }
 
 export function PremiumCategoriasView({
-  porCategoria, periodoLabel, selectedCategoria, onSelectCategoria,
+  porCategoria, periodoLabel, selectedCategoria, onSelectCategoria, showInsights = true, embedded = false,
 }: Props) {
   const [busca, setBusca] = useState('');
   const [mostrar, setMostrar] = useState(20);
@@ -176,13 +178,14 @@ export function PremiumCategoriasView({
       console.error('categorias-insights error', e);
       setAiInsights(buildFallbackInsights());
       setAiUsedFallback(true);
-      toast.error('IA indisponível; mostrando insights calculados pelos dados.');
+      toast.error('Análise remota indisponível; mostrando os cálculos locais.');
     } finally {
       setAiLoading(false);
     }
   };
 
   useEffect(() => {
+    if (!showInsights) return;
     if (escopoIA.length === 0) {
       setAiInsights([]);
       return;
@@ -205,7 +208,7 @@ export function PremiumCategoriasView({
       fetchInsights(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [datasetSignature]);
+  }, [datasetSignature, showInsights]);
 
   // ============ HANDLERS ============
   const toggleCategoria = (chave: string) => {
@@ -216,8 +219,9 @@ export function PremiumCategoriasView({
   const totalCategoriasGeral = porCategoria.length;
 
   return (
-    <div className="space-y-4">
+    <div className={embedded ? 'h-full min-h-0 space-y-2' : 'space-y-4'}>
       {/* HEADER + AÇÕES */}
+      {!embedded && (
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div className="flex items-center gap-2">
           <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -253,14 +257,15 @@ export function PremiumCategoriasView({
           </div>
         </div>
       </div>
+      )}
 
-      {/* INSIGHTS DA IA */}
-      <div>
+      {/* ANÁLISES DO PERÍODO */}
+      {showInsights && <div>
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
             <Sparkles className="h-3.5 w-3.5 text-primary" />
             <span className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">
-              {selectedCategoria ? `Insights IA · ${selectedCategoria}` : 'Insights IA · Todas categorias'}
+              {selectedCategoria ? `Análises · ${selectedCategoria}` : 'Análises · Todas categorias'}
             </span>
             {aiUsedFallback && (
               <Badge variant="outline" className="h-4 text-[9px] px-1.5">cálculo local</Badge>
@@ -297,9 +302,10 @@ export function PremiumCategoriasView({
             />
           ))}
         </div>
-      </div>
+      </div>}
 
       {/* KPIS RÁPIDOS */}
+      {!embedded && (
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <KpiCard
           label="Categorias"
@@ -330,11 +336,12 @@ export function PremiumCategoriasView({
           color="warning"
         />
       </div>
+      )}
 
       {/* RANKING PREMIUM */}
-      <Card className="premium-card overflow-hidden">
+      <Card className={cn('overflow-hidden shadow-none', !embedded && 'premium-card')}>
         <CardContent className="p-0">
-          <div className="px-4 py-2.5 border-b border-border/60 flex items-center justify-between bg-muted/20">
+          {!embedded && <div className="px-4 py-2.5 border-b border-border/60 flex items-center justify-between bg-muted/20">
             <div className="flex items-center gap-2">
               <Crown className="h-3.5 w-3.5 text-warning" />
               <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -344,9 +351,9 @@ export function PremiumCategoriasView({
             <span className="text-[10px] text-muted-foreground tabular-nums">
               {visiveis.length} de {filtradas.length}
             </span>
-          </div>
+          </div>}
 
-          <div className="max-h-[640px] overflow-y-auto divide-y divide-border/40">
+          <div className={cn('divide-y divide-border/40', !embedded && 'max-h-[640px] overflow-y-auto')}>
             {visiveis.map((c, idx) => {
               const isSelected = selectedCategoria === c.chave;
               const ticketSku = c.produtos > 0 ? c.faturamento / c.produtos : 0;

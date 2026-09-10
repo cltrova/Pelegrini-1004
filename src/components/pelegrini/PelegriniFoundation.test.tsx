@@ -284,13 +284,18 @@ describe('Pelegrini visual foundation', () => {
     expect(css).toContain('background-color: hsl(var(--primary) / 0.68)');
   });
 
-  it('keeps the commercial overview cards sized by their actual content for Pelegrini', () => {
+  it('keeps the commercial overview compact and free from decorative KPI cards', () => {
     const source = readFileSync(join(process.cwd(), 'src/components/comercial/VisaoGeralRapida1004.tsx'), 'utf8');
 
+    expect(source).toContain('ComercialMetricStrip');
+    expect(source).toContain("label: 'Faturamento'");
+    expect(source).toContain("label: 'Meta mensal'");
+    expect(source).toContain("label: 'Pedidos'");
+    expect(source).toContain("label: 'Atingimento'");
+    expect(source).not.toContain('pelegrini-kpi-card');
+    expect(source).not.toContain('bg-gradient-to-br pointer-events-none');
+    expect(source).not.toContain('pelegrini-compact-card pelegrini-led-card');
     expect(source).toContain('pelegrini-compact-card');
-    expect(source).toContain('pelegrini-period-chip');
-    expect(source).toContain('h-6 w-6');
-    expect(source).toContain('px-2 py-1');
     expect(source).toContain('isEmpresaPelegrini ? \'h-[230px]\' : \'h-72\'');
     expect(source).toContain('isEmpresaPelegrini ? { top: 28, right: 12, left: -10, bottom: 8 }');
     expect(source).toContain("label={{ value: 'Hoje', position: 'insideTop'");
@@ -302,16 +307,61 @@ describe('Pelegrini visual foundation', () => {
     expect(source).toContain('gridTemplateColumns: `7rem repeat(${totalDiasMes}, minmax(12px, 1fr))`');
   });
 
+  it('uses the compact commercial shell and neutral analysis labels on the dashboard', () => {
+    const source = readFileSync(join(process.cwd(), 'src/pages/comercial/MetasVendedoresPage.tsx'), 'utf8');
+
+    expect(source).toContain('ComercialCompactPage');
+    expect(source).toContain('ComercialCommandBar');
+    expect(source).not.toContain('EnterprisePageHeader');
+    expect(source).not.toContain('Insights IA');
+    expect(source).not.toContain('Insights Executivos (IA)');
+    expect(source).toContain("'h-9 w-max min-w-full justify-start'");
+    expect(source).not.toContain('if (isLoading && !vendedoresPerformance.length)');
+    expect(source).toContain('message="Carregando visão comercial..."');
+  });
+
   it('keeps Pelegrini ranking dense while preserving readable labels and interactions', () => {
     const chartSource = readFileSync(join(process.cwd(), 'src/components/comercial/RankingVendedoresChart.tsx'), 'utf8');
     const labelSource = readFileSync(join(process.cwd(), 'src/components/comercial/RankingVendedoresLabels.tsx'), 'utf8');
 
     expect(chartSource).toContain('pelegrini-ranking-card');
+    expect(chartSource).not.toContain('pelegrini-ranking-card pelegrini-led-card');
+    expect(chartSource).not.toContain("accent={isBlue ? 'pelegrini-led-card");
     expect(chartSource).toContain("isBlue ? 'p-3 pb-2' : 'pb-3 relative'");
     expect(chartSource).toContain("isBlue ? 'grid-cols-3 gap-1.5 mt-2' : 'grid-cols-1 md:grid-cols-3 gap-2 mt-4'");
     expect(chartSource).toContain("isBlue ? 'h-[160px]' : 'h-[280px] sm:h-[320px]'");
     expect(chartSource).toContain('setHoverKey(String(d.codigo))');
     expect(labelSource).toContain("variant === 'pelegriniBlue'");
     expect(labelSource).toContain('min-h-[48px]');
+  });
+
+  it('keeps campaigns operational, compact and free from AI presentation', () => {
+    const source = readFileSync(join(process.cwd(), 'src/components/comercial/CampanhasTab.tsx'), 'utf8');
+
+    expect(source).toContain('ComercialFilterBar');
+    expect(source).toContain('ComercialMetricStrip');
+    expect(source).toContain('ComercialDataViewport');
+    expect(source).not.toContain('Gestão de metas por marca, premiação e performance comercial');
+    expect(source).not.toContain('Insights Inteligentes');
+    expect(source).not.toContain('CampaignSummaryCard');
+  });
+
+  it('uses operational language and compact states in commercial analysis', () => {
+    const insightsSource = readFileSync(join(process.cwd(), 'src/components/comercial/InsightsIATab.tsx'), 'utf8');
+    const metasSource = readFileSync(join(process.cwd(), 'src/components/comercial/PremiumMetasView.tsx'), 'utf8');
+
+    expect(insightsSource).not.toMatch(/Insights com IA|Gerados pela IA|Analisando dados com IA|Sparkles/);
+    expect(insightsSource).toContain('Análises comerciais');
+    expect(insightsSource).toContain('min-h-48');
+    expect(metasSource).not.toContain('Insights Inteligentes');
+    expect(metasSource).toContain('Sinais do período');
+  });
+
+  it('removes duplicated category chrome when products embeds the analysis', () => {
+    const source = readFileSync(join(process.cwd(), 'src/components/comercial/PremiumCategoriasView.tsx'), 'utf8');
+
+    expect(source).toContain('{!embedded && (');
+    expect(source).toContain("!embedded && 'premium-card'");
+    expect(source).toContain("embedded ? 'h-full min-h-0 space-y-2' : 'space-y-4'");
   });
 });

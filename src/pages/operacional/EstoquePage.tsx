@@ -75,10 +75,16 @@ function EstoqueTabFallback() {
   );
 }
 
-export default function EstoquePage() {
+type EstoqueTab = 'overview' | 'central' | 'giro' | 'assistente';
+
+interface EstoquePageProps {
+  initialTab?: EstoqueTab;
+}
+
+export default function EstoquePage({ initialTab = 'overview' }: EstoquePageProps) {
   const { activeCompanyCode, consolidadoData, detalhadoData, giroData, isLoading, isInitialLoading, empresa, sourceErrors, sourceStatus, sourceLastUpdated, lastSuccessfulUpdate, partialSources, recoveredSources, recoveryStatus, isFetching, refetch } = useEstoqueData();
   const { codEmpresaContexto, filialAtiva } = useFilialSelecionada();
-  const [activeTab, setActiveTab] = useState('central');
+  const [activeTab, setActiveTab] = useState<EstoqueTab>(initialTab);
   const [requestedQuickFilter, setRequestedQuickFilter] = useState<StockQuickFilter | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>('consolidado');
   const [giroFilters, setGiroFilters] = useState<GiroFiltersState>(DEFAULT_GIRO_FILTERS);

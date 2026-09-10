@@ -8,9 +8,8 @@ import { ErrorState } from '@/components/common/ErrorState';
 import { 
   Target, TrendingUp, TrendingDown, DollarSign, Calendar,
   Users, FileText, ReceiptText, Trophy, AlertTriangle,
-  Sparkles, ChevronUp, ChevronDown, Minus, Crown, Medal, Award, User, Eye
+  ChevronUp, ChevronDown, Minus, Crown, Medal, Award, User, Eye
 } from 'lucide-react';
-import { EnterprisePageHeader } from '@/components/enterprise';
 import { VendedorDetailsDialog } from '@/components/comercial/VendedorDetailsDialog';
 import { getDiasUteisNoMes, getDiasUteisDecorridos, type ComercialFilters as ComercialFiltersType, type Pedido } from '@/types/comercial';
 import type { ProdutoItem } from '@/types/comercialProdutos';
@@ -53,6 +52,7 @@ import {
 } from '@/utils/vendedores1004';
 import { invalidarConsultasComerciais } from '@/utils/comercialQueryInvalidation';
 import { resolverContagemTotalizadorPelegrini } from '@/utils/comercialKpiFallback';
+import { ComercialCommandBar, ComercialCompactPage } from '@/components/comercial/compact';
 
 type VendedorDetalheRow = {
   codigo: string | number;
@@ -629,24 +629,7 @@ export default function MetasVendedoresPage() {
     return <LayoutAlternativoComercial />;
   }
 
-  if (isLoading && !vendedoresPerformance.length) {
-    return (
-      <div className="p-6">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          {[...Array(4)].map((_, i) => (
-            <Card key={i} className="animate-pulse">
-              <CardContent className="p-4 h-24" />
-            </Card>
-          ))}
-        </div>
-        <Card className="animate-pulse h-96" />
-      </div>
-    );
-  }
-
-  if (error) {
-    return <ErrorState message="Erro ao carregar dados comerciais" />;
-  }
+  const isInitialLoading = isLoading && !vendedoresPerformance.length;
 
   // Observação: NÃO substituímos a página inteira quando não há vendedores.
   // O aviso de "sem vendedores" é renderizado inline dentro da seção afetada
@@ -662,7 +645,7 @@ export default function MetasVendedoresPage() {
   const semVendedores = !vendedoresBaseVisual.length;
   const isCampanhas1004Ativa = isPelegriniPage && activeTab === 'campanhas';
   const tabTriggerClass = cn(
-    'flex-none whitespace-nowrap px-4 text-sm',
+    'h-8 flex-none whitespace-nowrap px-3 text-xs',
     isPelegriniPage
       ? 'text-muted-foreground transition-colors hover:text-foreground data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm'
       : undefined,
@@ -686,14 +669,13 @@ export default function MetasVendedoresPage() {
   };
 
   return (
-    <div className={cn(
-      'enterprise-page',
+    <ComercialCompactPage as="div" className={cn(
+      'dashboard-commercial-page enterprise-page',
       isPelegriniPage && 'bg-background text-foreground',
     )}>
-      <EnterprisePageHeader
-        title="Dashboard Comercial"
-        subtitle="Faturamento, margem, devoluções e ranking"
-        metadata={`${kpis.qtdPedidos.toLocaleString('pt-BR')} pedidos | ${kpis.qtdClientes.toLocaleString('pt-BR')} clientes`}
+      <ComercialCommandBar
+        title="Visão comercial"
+        context={`${filialNome || 'Comercial'} · ${mesFormatado}`}
       />
 
       {!isCampanhas1004Ativa && (
@@ -715,21 +697,21 @@ export default function MetasVendedoresPage() {
       )}
 
       {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v); try { sessionStorage.setItem('comercial:metas:tab', v); } catch { /* storage pode estar bloqueado pelo navegador */ } }} className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden">
+      <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v); try { sessionStorage.setItem('comercial:metas:tab', v); } catch { /* storage pode estar bloqueado pelo navegador */ } }} className="flex min-h-0 flex-1 flex-col gap-2 overflow-hidden">
       <Suspense fallback={<ComercialTabFallback />}>
         <div className="w-full shrink-0 overflow-x-auto overscroll-x-contain rounded-md [scrollbar-width:thin]">
         <TabsList className={cn(
-          'flex h-12 w-max min-w-full justify-start',
+          'h-9 w-max min-w-full justify-start',
           isPelegriniPage && 'border border-border/60 bg-muted/40 p-1 text-muted-foreground shadow-none [&_button:hover]:text-foreground [&_button[data-state=active]]:bg-primary [&_button[data-state=active]]:text-primary-foreground [&_button[data-state=active]]:shadow-sm',
         )}>
-          <TabsTrigger value="visao-geral" className={tabTriggerClass}>Visão Geral</TabsTrigger>
+          <TabsTrigger value="visao-geral" className={tabTriggerClass}>Visão geral</TabsTrigger>
           {isPelegriniPage && (
           <TabsTrigger value="detalhes" className={tabTriggerClass}>Detalhes</TabsTrigger>
           )}
-          <TabsTrigger value="metas-diarias" className={tabTriggerClass}>Metas Diárias</TabsTrigger>
+          <TabsTrigger value="metas-diarias" className={tabTriggerClass}>Metas</TabsTrigger>
           <TabsTrigger value="ranking" className={tabTriggerClass}>Ranking</TabsTrigger>
           <TabsTrigger value="comparativos" className={tabTriggerClass}>Comparativos</TabsTrigger>
-          <TabsTrigger value="insights" className={tabTriggerClass}>Insights IA</TabsTrigger>
+          <TabsTrigger value="insights" className={tabTriggerClass}>Análises</TabsTrigger>
           {isPelegriniPage && (
             <TabsTrigger value="campanhas" className={tabTriggerClass}>Campanhas</TabsTrigger>
           )}
@@ -739,7 +721,15 @@ export default function MetasVendedoresPage() {
 
         {/* ==================== ABA: VISÃO GERAL ==================== */}
         <TabsContent value="visao-geral" className="mt-0 min-h-0 flex-1 space-y-3 overflow-auto">
-          {isLayoutPremium ? (
+          {error ? (
+            <ErrorState message="Erro ao carregar dados comerciais" />
+          ) : isInitialLoading ? (
+            <LoadingState
+              message="Carregando visão comercial..."
+              className="h-full min-h-48 rounded-md shadow-none"
+              size="sm"
+            />
+          ) : isLayoutPremium ? (
             <VisaoGeralRapida1004
               vendedoresComMeta={vendedoresComMetaFonteFinal}
               vendedoresGrafico={vendedoresGraficoVisaoGeral1004}
@@ -938,10 +928,10 @@ export default function MetasVendedoresPage() {
 
           {/* Grid Insights + Ranking */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Insights Executivos */}
+            {/* Análises executivas */}
             <PremiumSectionCard
-              title="Insights Executivos (IA)"
-              icon={Sparkles}
+              title="Análises executivas"
+              icon={TrendingUp}
               tone="azul"
               className="lg:col-span-2"
             >
@@ -1161,7 +1151,7 @@ export default function MetasVendedoresPage() {
           </>
         </TabsContent>
 
-        {/* ==================== ABA: INSIGHTS IA ==================== */}
+        {/* ==================== ABA: ANÁLISES ==================== */}
         <TabsContent value="insights" className="mt-0 min-h-0 flex-1 space-y-3 overflow-auto">
           <LazyInsightsIATab vendedores={vendedoresBaseVisual} kpis={kpisGerais} />
         </TabsContent>
@@ -1197,6 +1187,6 @@ export default function MetasVendedoresPage() {
           error={errorProdutos1004}
         />
       )}
-    </div>
+    </ComercialCompactPage>
   );
 }

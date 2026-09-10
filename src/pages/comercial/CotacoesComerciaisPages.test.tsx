@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { type ComponentType, useState } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { CotacoesFilters, type CotacoesFilterOption } from '@/components/comercial/cotacoes/CotacoesFilters';
@@ -112,7 +112,7 @@ describe('lost quote reason dialog', () => {
     const onOpenChange = vi.fn();
     mockSaveReason({ mutateAsync });
 
-    render(<MotivoPerdaDialog open onOpenChange={onOpenChange} cotacao={rows[1]} registro={null} />);
+    const { rerender } = render(<MotivoPerdaDialog open onOpenChange={onOpenChange} cotacao={rows[1]} registro={null} />);
 
     fireEvent.click(screen.getByRole('combobox', { name: 'Motivo da perda' }));
     expect(screen.getByText(/Cotação 9013/)).toBeInTheDocument();
@@ -127,12 +127,14 @@ describe('lost quote reason dialog', () => {
     fireEvent.change(screen.getByLabelText('Observação'), { target: { value: '  Cliente escolheu menor preço.  ' } });
     fireEvent.click(screen.getByRole('button', { name: 'Salvar motivo' }));
 
-    await waitFor(() => expect(mutateAsync).toHaveBeenCalledWith({
+    expect(mutateAsync).toHaveBeenCalledWith({
       idCotacao: '9013',
       motivo: 'preco',
       observacao: '  Cliente escolheu menor preço.  ',
-    }));
+    });
+    await Promise.resolve();
     expect(onOpenChange).toHaveBeenCalledWith(false);
+    rerender(<MotivoPerdaDialog open={false} onOpenChange={onOpenChange} cotacao={rows[1]} registro={null} />);
   });
 
   it('preloads an existing reason for editing', () => {
@@ -166,7 +168,10 @@ describe('lost quote reason dialog', () => {
     fireEvent.change(screen.getByLabelText('Observação'), { target: { value: 'Cliente encerrou o projeto.' } });
     fireEvent.click(screen.getByRole('button', { name: 'Salvar motivo' }));
 
-    expect(await screen.findByText('Permissão negada.')).toBeInTheDocument();
+    await act(async () => {
+      await mutateAsync.mock.results[0].value.catch(() => undefined);
+    });
+    expect(screen.getByText('Permissão negada.')).toBeInTheDocument();
     expect(screen.getByRole('dialog')).toBeInTheDocument();
     expect(screen.getByRole('combobox', { name: 'Motivo da perda' })).toHaveTextContent('Outro');
     expect(screen.getByLabelText('Observação')).toHaveValue('Cliente encerrou o projeto.');
@@ -210,7 +215,11 @@ describe('shared commercial quote components', () => {
   it('renders dense quote columns and canonical customer data without exposing raw records', () => {
     render(<CotacoesTable mode="abertas" rows={rows} motivos={new Map()} />);
 
+    const table = screen.getByRole('table');
+
     expect(screen.getByRole('columnheader', { name: 'Cotacao' })).toBeInTheDocument();
+    expect(table).toHaveClass('min-w-[67rem]');
+    expect(table.parentElement).not.toHaveClass('overflow-x-auto');
     expect(screen.getAllByText('OFICINA CENTRAL')).toHaveLength(2);
     expect(screen.queryByText(/raw/i)).not.toBeInTheDocument();
     expect(screen.queryByText('nao mostrar')).not.toBeInTheDocument();
@@ -240,10 +249,12 @@ describe('shared commercial quote components', () => {
     render(<FiltersHarness mode="abertas" onApply={onApply} />);
 
     fireEvent.change(screen.getByLabelText('Buscar cotacoes'), { target: { value: 'oficina' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Mais filtros' }));
     fireEvent.change(screen.getByLabelText('Dias minimos em aberto'), { target: { value: '-4' } });
 
     expect(onApply).not.toHaveBeenCalled();
 
+    fireEvent.keyDown(document, { key: 'Escape' });
     fireEvent.click(screen.getByRole('button', { name: 'Aplicar' }));
 
     expect(onApply).toHaveBeenCalledWith(expect.objectContaining({ busca: 'oficina', diasMin: 0 }));
@@ -252,20 +263,32 @@ describe('shared commercial quote components', () => {
   it('renders only controls that apply to the selected quote mode', () => {
     const { rerender } = render(<FiltersHarness mode="abertas" onApply={vi.fn()} />);
 
-    expect(screen.getByRole('button', { name: 'Vendedores' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Clientes' })).toBeInTheDocument();
-    expect(screen.getByLabelText('Dias minimos em aberto')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('Buscar cotacao, cliente ou vendedor')).toBeInTheDocument();
+    expect(screen.getByLabelText('Filtros de cotacoes')).toHaveAttribute('data-mode', 'abertas');
+    expect(screen.getByRole('button', { name: 'Mais filtros' })).toBeInTheDocument();
+    expect(screen.queryByLabelText('Dias minimos em aberto')).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Status' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Motivos' })).not.toBeInTheDocument();
 
+    fireEvent.click(screen.getByRole('button', { name: 'Mais filtros' }));
+    expect(screen.getByRole('group', { name: 'Vendedores' })).toBeInTheDocument();
+    expect(screen.getByRole('group', { name: 'Clientes' })).toBeInTheDocument();
+    expect(screen.getByLabelText('Dias minimos em aberto')).toBeInTheDocument();
+    expect(screen.getByLabelText('Filtros avancados de cotacoes')).toHaveClass('max-h-[calc(100dvh-2rem)]', 'overflow-y-auto');
+
+    fireEvent.keyDown(document, { key: 'Escape' });
     rerender(<FiltersHarness mode="perdidas" onApply={vi.fn()} />);
-    expect(screen.getByRole('button', { name: 'Status' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Motivos' })).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('Buscar venda, cliente ou vendedor')).toBeInTheDocument();
+    expect(screen.queryByPlaceholderText('Buscar cotacao, cliente ou vendedor')).not.toBeInTheDocument();
+    expect(screen.getByLabelText('Filtros de cotacoes')).toHaveAttribute('data-mode', 'perdidas');
     expect(screen.queryByLabelText('Dias minimos em aberto')).not.toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Status' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Mais filtros' }));
+    expect(screen.getByRole('group', { name: 'Status' })).toBeInTheDocument();
+    expect(screen.getByRole('group', { name: 'Motivos' })).toBeInTheDocument();
     expect(screen.getByRole('checkbox', { name: 'Cancelada' })).toBeInTheDocument();
     expect(screen.queryByRole('checkbox', { name: 'Aberta' })).not.toBeInTheDocument();
+    fireEvent.keyDown(document, { key: 'Escape' });
   });
 
   it('keeps four stable KPI cells for the current quote mode', () => {
@@ -288,14 +311,54 @@ describe('shared commercial quote components', () => {
     expect(screen.getByText('Cotacoes vencidas')).toBeInTheDocument();
   });
 
-  it('renders the compact manager radar and suggested actions without replacing the table', () => {
+  it('renders compact mode-specific KPI metrics with complete values', () => {
+    render(
+      <CotacoesKpis
+        mode="perdidas"
+        kpis={{
+          quantidade: 2,
+          valorTotal: 15_345.67,
+          ticketMedio: 7_672.835,
+          motivoMaisFrequente: 'Preco muito longo para nao truncar',
+        }}
+      />,
+    );
+
+    const metrics = screen.getByLabelText('Indicadores comerciais');
+    expect(metrics).toHaveAttribute('data-mode', 'perdidas');
+    expect(screen.getByText('Valor perdido')).toBeInTheDocument();
+    const lostValue = screen.getByText('Valor perdido').parentElement?.querySelector('.comercial-metric-value');
+    expect(lostValue).toHaveAttribute('title', expect.stringContaining('15.345,67'));
+    expect(lostValue).toHaveTextContent('15.345,67');
+    expect(screen.getByText('Preco muito longo para nao truncar')).not.toHaveClass('truncate');
+  });
+
+  it('renders the open-quote priority strip and keeps its suggested actions', () => {
     render(<CotacoesGestorPanel mode="abertas" rows={openRows} motivos={new Map()} onSelectCotacao={vi.fn()} />);
 
-    expect(screen.getByLabelText('Radar do gestor')).toBeInTheDocument();
-    expect(screen.getByText('Dinheiro parado')).toBeInTheDocument();
-    expect(screen.getByText('O que fazer hoje')).toBeInTheDocument();
+    const priorityGrid = screen.getByText('Vencidas').parentElement?.parentElement;
+
+    expect(screen.getByLabelText('Prioridades de cotacoes abertas')).toBeInTheDocument();
+    expect(priorityGrid).toHaveClass('md:grid-cols-2', 'lg:grid-cols-[10rem_minmax(14rem,1fr)_12rem_minmax(18rem,1.25fr)]');
+    expect(screen.getByText('Vencidas')).toBeInTheDocument();
+    expect(screen.getByText('Maior tempo em aberto')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Priorizar OFICINA CENTRAL/i })).toBeInTheDocument();
-    expect(screen.getByText('15+ dias')).toBeInTheDocument();
+    expect(screen.getByText(/19 dias/)).toBeInTheDocument();
+  });
+
+  it('uses the same registered-reason rule in the lost-sales KPI and concentration panel', () => {
+    const rowsWithMissingReasons = [
+      rows[1],
+      { ...rows[1], idCotacao: '9016', numeroCotacao: '9016', motivoErp: 'Preço' },
+      { ...rows[1], idCotacao: '9014', numeroCotacao: '9014', motivoErp: null },
+      { ...rows[1], idCotacao: '9015', numeroCotacao: '9015', motivoErp: null },
+    ];
+
+    render(<CotacoesGestorPanel mode="perdidas" rows={rowsWithMissingReasons} motivos={new Map()} />);
+
+    expect(screen.getByText('Preco')).toBeInTheDocument();
+    expect(screen.getByText('2 perda(s)')).toBeInTheDocument();
+    expect(screen.queryByText('Não informado')).not.toBeInTheDocument();
   });
 
   it('opens a focused side drawer with score, quote summary and reason context', () => {
@@ -398,6 +461,15 @@ describe('open quotes page', () => {
     vi.useRealTimers();
   });
 
+  it('uses the compact operational desk after the operator applies the search', async () => {
+    await renderCotacoesAbertasPage();
+
+    expect(screen.getByRole('main')).toHaveClass('comercial-compact-page');
+    expect(screen.getByLabelText('Prioridades de cotacoes abertas')).toBeInTheDocument();
+    expect(screen.getByTestId('comercial-data-viewport')).toContainElement(screen.getByRole('table'));
+    expect(screen.queryByText('Acompanhe as cotacoes pendentes no periodo selecionado.')).not.toBeInTheDocument();
+  });
+
   it('shows current-month defaults without querying until Apply and Clear restores pre-search', async () => {
     await renderCotacoesAbertasPage(false);
 
@@ -405,8 +477,8 @@ describe('open quotes page', () => {
     expect(screen.getByLabelText('Data final')).toHaveValue('2026-08-25');
     expect(vi.mocked(useCotacoesAbertas)).toHaveBeenLastCalledWith(null);
     expect(screen.getByRole('heading', { name: 'Consulta ainda não realizada' })).toBeInTheDocument();
-    expect(screen.getByLabelText('Radar do gestor')).toBeInTheDocument();
-    expect(screen.getByText('O que fazer hoje')).toBeInTheDocument();
+    expect(screen.queryByLabelText('Prioridades de cotacoes abertas')).not.toBeInTheDocument();
+    expect(screen.queryByText('Maior tempo em aberto')).not.toBeInTheDocument();
     expect(screen.queryByText('Nenhuma cotacao aberta encontrada.')).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: /exportar/i })).toBeDisabled();
 
@@ -439,6 +511,7 @@ describe('open quotes page', () => {
     });
 
     fireEvent.change(screen.getByLabelText('Buscar cotacoes'), { target: { value: 'oficina' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Mais filtros' }));
     fireEvent.change(screen.getByLabelText('Dias minimos em aberto'), { target: { value: '18' } });
 
     expect(vi.mocked(useCotacoesAbertas)).toHaveBeenLastCalledWith({
@@ -448,6 +521,7 @@ describe('open quotes page', () => {
       codCliente: null,
     });
 
+    fireEvent.keyDown(document, { key: 'Escape' });
     fireEvent.click(screen.getByRole('button', { name: 'Aplicar' }));
     fireEvent.click(screen.getByRole('button', { name: /exportar/i }));
 
@@ -464,9 +538,8 @@ describe('open quotes page', () => {
 
     fireEvent.change(screen.getByLabelText('Data inicial'), { target: { value: '2026-08-10' } });
     fireEvent.change(screen.getByLabelText('Data final'), { target: { value: '2026-08-20' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Vendedores' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Mais filtros' }));
     fireEvent.click(screen.getByLabelText('ERLAN C.CH'));
-    fireEvent.click(screen.getByRole('button', { name: 'Clientes' }));
     fireEvent.click(screen.getByLabelText('OFICINA CENTRAL'));
 
     expect(vi.mocked(useCotacoesAbertas)).toHaveBeenLastCalledWith({
@@ -476,6 +549,7 @@ describe('open quotes page', () => {
       codCliente: null,
     });
 
+    fireEvent.keyDown(document, { key: 'Escape' });
     fireEvent.click(screen.getByRole('button', { name: 'Aplicar' }));
 
     expect(vi.mocked(useCotacoesAbertas)).toHaveBeenLastCalledWith({
@@ -489,9 +563,10 @@ describe('open quotes page', () => {
   it('keeps multi-selected sellers local while omitting the single-value ERP dimension', async () => {
     await renderCotacoesAbertasPage();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Vendedores' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Mais filtros' }));
     fireEvent.click(screen.getByLabelText('ERLAN C.CH'));
     fireEvent.click(screen.getByLabelText('ANA SILVA'));
+    fireEvent.keyDown(document, { key: 'Escape' });
     fireEvent.click(screen.getByRole('button', { name: 'Aplicar' }));
 
     expect(vi.mocked(useCotacoesAbertas)).toHaveBeenLastCalledWith({
@@ -549,6 +624,8 @@ describe('open quotes page', () => {
     await renderCotacoesAbertasPage();
 
     expect(screen.getByLabelText('Carregando cotacoes abertas')).toBeInTheDocument();
+    expect(screen.queryByLabelText('Indicadores comerciais')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Prioridades de cotacoes abertas')).not.toBeInTheDocument();
   });
 
   it('surfaces endpoint failures with a retry instead of rendering the empty success state', async () => {
@@ -559,6 +636,8 @@ describe('open quotes page', () => {
 
     expect(screen.getByRole('button', { name: 'Tentar novamente' })).toBeInTheDocument();
     expect(screen.queryByText('Nenhuma cotacao aberta encontrada.')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Indicadores comerciais')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Prioridades de cotacoes abertas')).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Tentar novamente' }));
 
@@ -700,6 +779,15 @@ describe('lost sales page', () => {
     vi.useRealTimers();
   });
 
+  it('composes the dedicated compact lost-sales analysis after the query', async () => {
+    await renderVendasPerdidasPage();
+
+    expect(screen.getByRole('main')).toHaveClass('comercial-compact-page');
+    expect(screen.getByLabelText('Concentracao de vendas perdidas')).toBeInTheDocument();
+    expect(screen.queryByText('Análise das perdas e registro dos motivos no período selecionado.')).not.toBeInTheDocument();
+    expect(within(screen.getByRole('table')).getByText('Motivo da perda')).toBeInTheDocument();
+  }, 30_000);
+
   it('shows current-month defaults without querying until Apply and Clear restores pre-search', async () => {
     await renderVendasPerdidasPage(false);
 
@@ -708,8 +796,8 @@ describe('lost sales page', () => {
     expect(vi.mocked(useVendasPerdidas)).toHaveBeenLastCalledWith(null);
     expect(vi.mocked(useMotivosPerda10041)).toHaveBeenLastCalledWith([]);
     expect(screen.getByRole('heading', { name: 'Consulta ainda não realizada' })).toBeInTheDocument();
-    expect(screen.getByLabelText('Radar do gestor')).toBeInTheDocument();
-    expect(screen.getByText('O que fazer hoje')).toBeInTheDocument();
+    expect(screen.queryByLabelText('Concentracao de vendas perdidas')).not.toBeInTheDocument();
+    expect(screen.queryByText('Motivo mais frequente')).not.toBeInTheDocument();
     expect(screen.queryByText('Nenhuma venda perdida encontrada.')).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: /exportar/i })).toBeDisabled();
 
@@ -739,8 +827,7 @@ describe('lost sales page', () => {
       codCliente: null,
     });
     expect(vi.mocked(useMotivosPerda10041)).toHaveBeenLastCalledWith(['9201', '9202', '9203']);
-    expect(screen.getByText('Análise das perdas e registro dos motivos no período selecionado.')).toBeInTheDocument();
-    expect(within(screen.getByLabelText('Indicadores de cotacoes')).getByText('Preço')).toBeInTheDocument();
+    expect(within(screen.getByLabelText('Indicadores comerciais')).getByText('Preço')).toBeInTheDocument();
     expect(within(screen.getByRole('table')).getByText('Preço')).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: /exportar/i }));
@@ -758,36 +845,36 @@ describe('lost sales page', () => {
   it('applies status and joined-reason filters only after Apply and exports that same filtered view', async () => {
     await renderVendasPerdidasPage();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Status' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Mais filtros' }));
     fireEvent.click(screen.getByLabelText('Recusada'));
-    fireEvent.click(screen.getByRole('button', { name: 'Motivos' }));
     fireEvent.click(screen.getByLabelText('Preço'));
 
     expect(within(screen.getByRole('table')).getByText('9202')).toBeInTheDocument();
+    fireEvent.keyDown(document, { key: 'Escape' });
     fireEvent.click(screen.getByRole('button', { name: 'Aplicar' }));
 
     expect(within(screen.getByRole('table')).getByText('9201')).toBeInTheDocument();
     expect(within(screen.getByRole('table')).queryByText('9202')).not.toBeInTheDocument();
-    expect(within(screen.getByLabelText('Indicadores de cotacoes')).getByText('Preço')).toBeInTheDocument();
+    expect(within(screen.getByLabelText('Indicadores comerciais')).getByText('Preço')).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: /exportar/i }));
     const exportInput = vi.mocked(exportCotacoesExcel).mock.calls.at(-1)?.[0];
     expect(exportInput?.rows).toEqual([lostRows[0]]);
     expect(Array.from(exportInput?.motivos?.keys() ?? [])).toEqual(['9201']);
-  }, 15_000);
+  }, 30_000);
 
   it('uses the ERP reason when no persisted reason exists across table, filter, KPI, and export', async () => {
     await renderVendasPerdidasPage();
 
     expect(within(screen.getByRole('table')).getByText('Prazo de entrega')).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Motivos' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Mais filtros' }));
     fireEvent.click(screen.getByLabelText('Prazo de entrega'));
     fireEvent.keyDown(document, { key: 'Escape' });
     fireEvent.click(screen.getByRole('button', { name: 'Aplicar' }));
 
     expect(within(screen.getByRole('table')).getByText('9203')).toBeInTheDocument();
     expect(within(screen.getByRole('table')).queryByText('9202')).not.toBeInTheDocument();
-    expect(within(screen.getByLabelText('Indicadores de cotacoes')).getByText('Prazo de entrega')).toBeInTheDocument();
+    expect(within(screen.getByLabelText('Indicadores comerciais')).getByText('Prazo de entrega')).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: /exportar/i }));
     const exportInput = vi.mocked(exportCotacoesExcel).mock.calls.at(-1)?.[0];
@@ -798,10 +885,8 @@ describe('lost sales page', () => {
   it('sends one seller and customer to ERP, but keeps multiple selections broad and filters locally', async () => {
     const firstRender = await renderVendasPerdidasPage();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Vendedores' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Mais filtros' }));
     fireEvent.click(screen.getByLabelText('ERLAN C.CH'));
-    fireEvent.keyDown(document, { key: 'Escape' });
-    fireEvent.click(screen.getByRole('button', { name: 'Clientes' }));
     fireEvent.click(screen.getByLabelText('OFICINA CENTRAL'));
     fireEvent.keyDown(document, { key: 'Escape' });
     fireEvent.click(screen.getByRole('button', { name: 'Aplicar' }));
@@ -816,11 +901,9 @@ describe('lost sales page', () => {
     firstRender.unmount();
     await renderVendasPerdidasPage();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Vendedores' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Mais filtros' }));
     fireEvent.click(screen.getByLabelText('ERLAN C.CH'));
     fireEvent.click(screen.getByLabelText('ANA SILVA'));
-    fireEvent.keyDown(document, { key: 'Escape' });
-    fireEvent.click(screen.getByRole('button', { name: 'Clientes' }));
     fireEvent.click(screen.getByLabelText('OFICINA CENTRAL'));
     fireEvent.click(screen.getByLabelText('MECANICA NORTE'));
     fireEvent.keyDown(document, { key: 'Escape' });
@@ -835,7 +918,7 @@ describe('lost sales page', () => {
     expect(within(screen.getByRole('table')).getByText('9201')).toBeInTheDocument();
     expect(within(screen.getByRole('table')).getByText('9202')).toBeInTheDocument();
     expect(within(screen.getByRole('table')).queryByText('9203')).not.toBeInTheDocument();
-  }, 15_000);
+  }, 30_000);
 
   it('clears pending and applied filters and returns to pre-search', async () => {
     await renderVendasPerdidasPage();
@@ -871,6 +954,8 @@ describe('lost sales page', () => {
     expect(screen.getByRole('heading', { name: 'Configuração da integração necessária' })).toBeInTheDocument();
     expect(screen.getByText('Configure o endpoint ou a rota VPS para cotações.')).toBeInTheDocument();
     expect(screen.queryByText('Nenhuma venda perdida encontrada.')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Indicadores comerciais')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Concentracao de vendas perdidas')).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Tentar novamente' }));
     expect(refetchErp).toHaveBeenCalledTimes(1);

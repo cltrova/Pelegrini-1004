@@ -9,7 +9,6 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Calendar as CalendarUI } from '@/components/ui/calendar';
@@ -18,7 +17,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
-import { Calendar, Building2, Search, ArrowLeftRight, RotateCcw, User, Users, ChevronDown, ChevronUp, Filter, Award, X, type LucideIcon } from 'lucide-react';
+import { Calendar, Building2, Search, ArrowLeftRight, RotateCcw, User, Users, ChevronDown, ChevronUp, Filter, Award, Check, X, type LucideIcon } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
@@ -50,6 +49,20 @@ const MESES = [
   { value: '11', label: 'novembro' },
   { value: '12', label: 'dezembro' },
 ];
+
+function SelectionMark({ checked }: { checked: boolean }) {
+  return (
+    <span
+      aria-hidden="true"
+      className={cn(
+        'flex h-4 w-4 shrink-0 items-center justify-center rounded-sm border border-primary',
+        checked ? 'bg-primary text-primary-foreground' : 'bg-background',
+      )}
+    >
+      {checked && <Check className="h-3 w-3" strokeWidth={3} />}
+    </span>
+  );
+}
 
 export const COMERCIAL_MESES = MESES;
 
@@ -212,7 +225,7 @@ function MesPeriodoPicker({
                       checked && 'bg-primary/10'
                     )}
                   >
-                    <Checkbox checked={checked} className="pointer-events-none" />
+                    <SelectionMark checked={checked} />
                     <span>{m.label.charAt(0).toUpperCase() + m.label.slice(1)}</span>
                   </button>
                 );
@@ -599,7 +612,7 @@ export function ComercialFilters({
                                 checked && 'bg-primary/10'
                               )}
                             >
-                              <Checkbox checked={checked} className="pointer-events-none" />
+                              <SelectionMark checked={checked} />
                               <span>{ano}</span>
                             </button>
                           );
@@ -756,7 +769,7 @@ export function ComercialFilters({
                                 checked && 'bg-primary/10'
                               )}
                             >
-                              <Checkbox checked={checked} className="pointer-events-none" />
+                              <SelectionMark checked={checked} />
                               <span className="truncate">{v.nome}</span>
                             </button>
                           );
@@ -938,7 +951,7 @@ export function ComercialFilters({
                                   checked && 'bg-primary/10'
                                 )}
                               >
-                                <Checkbox checked={checked} className="pointer-events-none" />
+                                <SelectionMark checked={checked} />
                                 <span className="truncate">{m}</span>
                               </button>
                             );

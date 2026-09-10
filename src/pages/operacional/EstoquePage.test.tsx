@@ -65,25 +65,30 @@ function createHookResult(overrides: Record<string, unknown> = {}) {
   };
 }
 
-function renderEstoquePage({ withBranchSwitcher = false } = {}) {
+function renderEstoquePage({ withBranchSwitcher = false, initialTab = 'central' }: {
+  withBranchSwitcher?: boolean;
+  initialTab?: 'central' | 'overview';
+} = {}) {
   const queryClient = new QueryClient({
     defaultOptions: {
       queries: { retry: false },
     },
   });
 
-  return render(
+  const result = render(
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <EmpresaSelecionadaProvider>
           <FilialSelecionadaProvider>
             {withBranchSwitcher && <PelegriniBranchSwitcher />}
-            <EstoquePage />
+            <EstoquePage initialTab={initialTab} />
           </FilialSelecionadaProvider>
         </EmpresaSelecionadaProvider>
       </AuthProvider>
     </QueryClientProvider>,
   );
+
+  return result;
 }
 
 beforeAll(() => {
@@ -325,10 +330,11 @@ describe('EstoquePage', () => {
     expect(screen.getByLabelText(`Estado da fonte de estoque: ${label}`)).toHaveAttribute('data-issue', 'true');
   });
 
-  it('transforma o Giro em mesa operacional sem compatibilidade temporaria de scroll', () => {
+  it('transforma o Giro em mesa operacional sem compatibilidade temporaria de scroll', async () => {
     renderEstoquePage();
     fireEvent.click(screen.getByRole('tab', { name: 'Giro de Estoque' }));
     const giroPanel = screen.getByRole('tabpanel', { name: 'Giro de Estoque' });
+    await within(giroPanel).findByRole('toolbar', { name: 'Comandos do giro de estoque' });
     expect(giroPanel).toHaveClass('min-h-0', 'flex-1', 'overflow-hidden');
     expect(giroPanel).not.toHaveClass('overflow-y-auto', 'p-3');
     expect(within(giroPanel).getByRole('toolbar', { name: 'Comandos do giro de estoque' })).toBeInTheDocument();
@@ -410,14 +416,14 @@ describe('EstoquePage', () => {
     expect(screen.queryByText('Estoque indisponivel')).not.toBeInTheDocument();
   });
 
-  it('abre a Central de Estoque e remove as abas legadas', () => {
-    renderEstoquePage();
+  it('abre a Visão geral por padrão ao entrar no módulo de estoque', () => {
+    renderEstoquePage({ initialTab: 'overview' });
 
-    expect(screen.getByRole('tab', { name: 'Central de Estoque' })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByRole('tab', { name: 'Visão geral' })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByRole('tab', { name: 'Central de Estoque' })).toHaveAttribute('aria-selected', 'false');
     expect(screen.getByRole('tab', { name: 'Giro de Estoque' })).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: 'Assistente' })).toBeInTheDocument();
     expect(screen.queryByRole('tab', { name: 'Detalhes do Produto' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('tab', { name: 'Visão Geral' })).not.toBeInTheDocument();
   });
 
   it('renderiza a central real com os dados retornados por useEstoqueData', () => {
@@ -454,11 +460,11 @@ describe('EstoquePage', () => {
     expect(screen.queryByText(/Nenhum produto disponivel/i)).not.toBeInTheDocument();
   });
 
-  it('mantem busca de Giro pendente ate a aplicacao explicita', () => {
+  it('mantem busca de Giro pendente ate a aplicacao explicita', async () => {
     renderEstoquePage();
     fireEvent.click(screen.getByRole('tab', { name: 'Giro de Estoque' }));
 
-    const search = screen.getByPlaceholderText('Buscar produto, fabricante, marca...');
+    const search = await screen.findByPlaceholderText('Buscar produto, fabricante, marca...');
     const table = screen.getByRole('table');
     fireEvent.change(search, { target: { value: 'bomba' } });
 
@@ -485,7 +491,7 @@ describe('EstoquePage', () => {
     fireEvent.click(screen.getByRole('tab', { name: 'Assistente' }));
 
     expect(screen.queryByRole('heading', { name: 'Assistente de Estoque' })).not.toBeInTheDocument();
-    expect(screen.getByRole('region', { name: 'Assistente de estoque' })).toBeInTheDocument();
+    expect(await screen.findByRole('region', { name: 'Assistente de estoque' })).toBeInTheDocument();
     expect(screen.getByPlaceholderText('Pergunte sobre seu estoque...')).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: 'Insights' })).toBeInTheDocument();
     expect(screen.queryByRole('tab', { name: 'Cérebro' })).not.toBeInTheDocument();
@@ -494,7 +500,7 @@ describe('EstoquePage', () => {
     expect(screen.getByRole('button', { name: 'Resumo diario' })).toBeInTheDocument();
   });
 
-  it('sincroniza filtro de status acionado pelo KPI com controles pendentes, aplicar e limpar', () => {
+  it('sincroniza filtro de status acionado pelo KPI com controles pendentes, aplicar e limpar', async () => {
     const alertaStock = {
       ...estoqueFixtureComTresItens[0],
       cod_produto: 707,
@@ -522,7 +528,7 @@ describe('EstoquePage', () => {
     renderEstoquePage();
     fireEvent.click(screen.getByRole('tab', { name: 'Giro de Estoque' }));
 
-    fireEvent.click(screen.getByRole('button', { name: /Alerta: 1/i }));
+    fireEvent.click(await screen.findByRole('button', { name: /Alerta: 1/i }));
     const filterBar = screen.getByRole('button', { name: /Filtros:.*Alerta/i });
     expect(filterBar).toBeInTheDocument();
     expect(within(screen.getByRole('table')).getByText('PRODUTO EM ALERTA')).toBeInTheDocument();
@@ -538,7 +544,7 @@ describe('EstoquePage', () => {
     expect(within(screen.getByRole('table')).getByText('PRODUTO EM RUPTURA')).toBeInTheDocument();
   });
 
-  it('mantem a tabela filtrada ao limpar um chip individual ate pesquisar', () => {
+  it('mantem a tabela filtrada ao limpar um chip individual ate pesquisar', async () => {
     const alertaStock = {
       ...estoqueFixtureComTresItens[0],
       cod_produto: 707,
@@ -565,7 +571,7 @@ describe('EstoquePage', () => {
     });
     renderEstoquePage();
     fireEvent.click(screen.getByRole('tab', { name: 'Giro de Estoque' }));
-    fireEvent.click(screen.getByRole('button', { name: /Alerta: 1/i }));
+    fireEvent.click(await screen.findByRole('button', { name: /Alerta: 1/i }));
     fireEvent.click(screen.getByRole('button', { name: /Filtros:.*Alerta/i }));
 
     const statusChip = screen.getByText('Status:').closest('button');

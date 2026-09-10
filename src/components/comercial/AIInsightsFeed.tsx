@@ -87,7 +87,7 @@ export function AIInsightsFeed({ contexto }: Props) {
             </div>
           )}
           {error && insights.length === 0 && (
-            <p className="text-xs text-muted-foreground">IA indisponível no momento.</p>
+            <p className="text-xs text-muted-foreground">Análise indisponível no momento.</p>
           )}
           {insights.length > 0 && (
             <div className="ai-feed-marquee">

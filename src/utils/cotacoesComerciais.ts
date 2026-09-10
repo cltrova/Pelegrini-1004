@@ -27,6 +27,12 @@ export interface MotivoPerdaConsolidado {
   observacao: string;
 }
 
+export interface MotivoPerdaFrequente {
+  codigo: MotivoPerdaCodigo;
+  label: string;
+  quantidade: number;
+}
+
 export type MotivosPerdaMapa = ReadonlyMap<string, MotivoPerdaPersistido>;
 export type CotacaoPrioridadeNivel = 'quente' | 'atencao' | 'frio';
 
@@ -262,19 +268,30 @@ export function motivoMaisFrequente(
   rows: readonly CotacaoComercial[],
   motivos: MotivosPerdaMapa = EMPTY_MOTIVOS,
 ): string | null {
-  const counts = new Map<MotivoPerdaCodigo, { count: number; label: string }>();
-  let maisFrequente: { count: number; label: string } | null = null;
+  return motivoMaisFrequenteDetalhe(rows, motivos)?.label ?? null;
+}
+
+export function motivoMaisFrequenteDetalhe(
+  rows: readonly CotacaoComercial[],
+  motivos: MotivosPerdaMapa = EMPTY_MOTIVOS,
+): MotivoPerdaFrequente | null {
+  const counts = new Map<MotivoPerdaCodigo, MotivoPerdaFrequente>();
+  let maisFrequente: MotivoPerdaFrequente | null = null;
 
   rows.forEach((row) => {
     const motivo = consolidarMotivoPerda(row, motivos);
     if (!motivo.codigo) return;
     const current = counts.get(motivo.codigo);
-    const next = { count: (current?.count ?? 0) + 1, label: current?.label ?? motivo.label };
+    const next = {
+      codigo: motivo.codigo,
+      label: current?.label ?? motivo.label,
+      quantidade: (current?.quantidade ?? 0) + 1,
+    };
     counts.set(motivo.codigo, next);
-    if (!maisFrequente || next.count > maisFrequente.count) maisFrequente = next;
+    if (!maisFrequente || next.quantidade > maisFrequente.quantidade) maisFrequente = next;
   });
 
-  return maisFrequente?.label ?? null;
+  return maisFrequente;
 }
 
 export function calcularCotacoesKpis(rows: readonly CotacaoComercial[], motivos: MotivosPerdaMapa): CotacoesKpis {

@@ -31,12 +31,13 @@ interface PremiumTopProdutosProps {
   selectedMarca: string | null;
   onSelectMarca: (marca: string | null) => void;
   onHoverMarca?: (marca: string | null) => void;
+  showInsights?: boolean;
 }
 
 const PAGE_SIZE = 20;
 
 export function PremiumTopProdutos({
-  produtos, resumoVendas = [], selectedMarca, onSelectMarca,
+  produtos, resumoVendas = [], selectedMarca, onSelectMarca, showInsights = true,
 }: PremiumTopProdutosProps) {
   const [busca, setBusca] = useState('');
   const [mostrar, setMostrar] = useState(PAGE_SIZE);
@@ -160,13 +161,14 @@ export function PremiumTopProdutos({
       console.error('produtos-insights error', e);
       setAiInsights(buildFallbackInsights());
       setAiUsedFallback(true);
-      toast.error('IA indisponível; mostrando insights calculados pelos dados.');
+      toast.error('Análise remota indisponível; mostrando os cálculos locais.');
     } finally {
       setAiLoading(false);
     }
   };
 
   useEffect(() => {
+    if (!showInsights) return;
     if (filtrados.length === 0) {
       setAiInsights([]);
       return;
@@ -192,7 +194,7 @@ export function PremiumTopProdutos({
       fetchInsights(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [datasetSignature]);
+  }, [datasetSignature, showInsights]);
 
 
 
@@ -244,6 +246,7 @@ export function PremiumTopProdutos({
   return (
     <div className="space-y-4 animate-fade-in">
       {/* Insights estratégicos da IA — substitui totalizadores repetidos */}
+      {showInsights && <>
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <div className="h-8 w-8 rounded-lg bg-primary/10 border border-primary/30 flex items-center justify-center">
@@ -290,6 +293,7 @@ export function PremiumTopProdutos({
           <InsightCard key={i} insight={ins} />
         ))}
       </div>
+      </>}
 
 
       {/* Card principal premium */}

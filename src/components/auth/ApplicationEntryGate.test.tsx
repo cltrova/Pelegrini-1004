@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, createEvent, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PasswordGate } from '@/App';
 
@@ -96,5 +96,30 @@ describe('Application entry gate', () => {
 
     await waitFor(() => expect(authState.login).toHaveBeenCalledWith('gestor@pelegrini.com.br', 'senha123'));
     expect(screen.getByRole('alert')).toHaveTextContent('Credenciais inválidas');
+  });
+
+  it('shows actionable validation before calling authentication', async () => {
+    render(<PasswordGate><p>Conteudo protegido</p></PasswordGate>);
+
+    fireEvent.submit(screen.getByRole('button', { name: 'Entrar no sistema' }).closest('form')!);
+
+    expect(await screen.findByText('Informe seu email.')).toBeInTheDocument();
+    expect(screen.getByText('Informe sua senha.')).toBeInTheDocument();
+    expect(screen.getByLabelText('Email')).toHaveAttribute('aria-invalid', 'true');
+    expect(screen.getByLabelText('Senha')).toHaveAttribute('aria-invalid', 'true');
+    expect(authState.login).not.toHaveBeenCalled();
+  });
+
+  it('warns when caps lock is active while typing the password', () => {
+    render(<PasswordGate><p>Conteudo protegido</p></PasswordGate>);
+
+    const passwordInput = screen.getByLabelText('Senha');
+    const capsLockEvent = createEvent.keyDown(passwordInput, { key: 'A' });
+    Object.defineProperty(capsLockEvent, 'getModifierState', {
+      value: (key: string) => key === 'CapsLock',
+    });
+    fireEvent(passwordInput, capsLockEvent);
+
+    expect(screen.getByRole('status')).toHaveTextContent('Caps Lock ativado');
   });
 });

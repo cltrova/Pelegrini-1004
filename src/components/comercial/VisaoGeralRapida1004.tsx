@@ -3,19 +3,17 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { formatCurrency, formatFiltroPeriodoLabel, formatPercent } from '@/utils/formatters';
+import { formatCurrency, formatPercent } from '@/utils/formatters';
 import {
   ResponsiveContainer, ComposedChart, Area, Line, XAxis, YAxis, CartesianGrid,
   Tooltip, ReferenceLine, BarChart, Bar, PieChart, Pie, Cell, Legend, LineChart
 } from 'recharts';
-import {
-  CalendarDays, Target, Zap, Users, TrendingUp, TrendingDown, Crown, Activity, Flame
-} from 'lucide-react';
+import { Zap, Crown, Flame } from 'lucide-react';
 import { RankingVendedoresChart } from './RankingVendedoresChart';
 import { useEmpresaAtiva } from '@/hooks/useEmpresaAtiva';
 import { useFilialSelecionada } from '@/contexts/FilialSelecionadaContext';
 import { isContextoChevrolet10041, vendedorOcultoFiltroContextual1004 } from '@/utils/vendedores1004';
-import { PelegriniResponsiveValue } from '@/components/pelegrini';
+import { ComercialMetricStrip } from '@/components/comercial/compact';
 
 
 interface Props {
@@ -85,12 +83,7 @@ export function VisaoGeralRapida1004({
   const isContextoChevrolet10041Ativo = isContextoChevrolet10041(codEmpresaAtiva, filialAtiva, empresaComFilial);
   const isEmpresa1001 = codEmpresaAtiva === '1001';
   const isEmpresaPelegrini = codEmpresaAtiva === '1004' || codEmpresaAtiva === '10041' || isContextoChevrolet10041Ativo;
-  const showDevolucoesCard = isEmpresa1001 || isEmpresaPelegrini;
   const [selectedHeatCell, setSelectedHeatCell] = useState<{ nome: string; dia: number; valor: number } | null>(null);
-  const periodoLabel = useMemo(
-    () => formatFiltroPeriodoLabel(periodoAplicado, periodoFiltros),
-    [periodoAplicado, periodoFiltros],
-  );
 
   const { ano, mes } = periodoFiltros;
   const hoje = new Date();
@@ -282,15 +275,6 @@ export function VisaoGeralRapida1004({
     };
   }, [kpisGerais, diasUteisNoMes, diasUteisDecorridos]);
 
-  // sparkline 7 dias
-  const spark7 = useMemo(() => {
-    const arr = dadosAcumulado
-      .filter(d => d.realizado != null)
-      .slice(-7)
-      .map((d, i) => ({ i, v: d.realizado }));
-    return arr;
-  }, [dadosAcumulado]);
-
   // ============ Totalizadores simples ============
   // Alinhado com a aba Detalhes: usa TODOS os pedidos do período (inclui devoluções)
   // e conta clientes únicos por cliente_codigo.
@@ -307,159 +291,41 @@ export function VisaoGeralRapida1004({
 
   const totalizadores = [
     {
-      key: 'receita',
-      label: 'Receita',
+      label: 'Faturamento',
       value: formatCurrency(totais.receita),
-      icon: TrendingUp,
-      hint: `Meta ${formatCurrency(kpiDecisao.meta)} · ${formatPercent(kpiDecisao.pct)}`,
-      accent: 'from-primary/25 via-primary/5 to-transparent',
-      ring: 'hover:ring-primary/40',
-      iconColor: 'text-primary',
-      bar: Math.min(100, kpiDecisao.pct),
-      barColor: 'bg-primary',
+      context: `${totais.clientes.toLocaleString('pt-BR')} clientes`,
+      tone: 'success' as const,
+      tooltip: `Faturamento líquido do período. Devoluções: ${formatCurrency(kpisGerais.totalDevolucoes || 0)}.`,
+      onClick: onReceitaClick,
+      actionLabel: 'Abrir detalhamento do faturamento',
     },
     {
-      key: 'ticket',
-      label: 'Ticket Médio',
-      value: formatCurrency(totais.ticket),
-      icon: Target,
-      hint: `${totais.vendas} vendas no período`,
-      accent: 'from-amber-500/25 via-amber-500/5 to-transparent',
-      ring: 'hover:ring-amber-500/40',
-      iconColor: 'text-amber-500',
-      bar: null,
-      barColor: 'bg-amber-500',
+      label: 'Meta mensal',
+      value: formatCurrency(kpiDecisao.meta),
+      context: kpiDecisao.gap > 0 ? `Falta ${formatCurrency(kpiDecisao.gap)}` : 'Meta atingida',
+      tooltip: 'Soma das metas mensais dos vendedores no filtro atual.',
     },
     {
-      key: 'clientes',
-      label: 'Clientes',
-      value: totais.clientes.toLocaleString('pt-BR'),
-      icon: Users,
-      hint: `${totais.vendas > 0 ? (totais.vendas / Math.max(1, totais.clientes)).toFixed(1) : '0'} pedidos por cliente`,
-      accent: 'from-violet-500/25 via-violet-500/5 to-transparent',
-      ring: 'hover:ring-violet-500/40',
-      iconColor: 'text-violet-400',
-      bar: null,
-      barColor: 'bg-violet-500',
-    },
-    ...(showDevolucoesCard ? [{
-      key: 'devolucoes',
-      label: 'Devoluções',
-      value: formatCurrency(kpisGerais.totalDevolucoes || 0),
-      icon: TrendingDown,
-      hint: isEmpresa1001 ? 'Σ Valor_Devolucao' : 'Σ ValorDevolucao (linhas DEVOLUCAO)',
-      accent: 'from-destructive/25 via-destructive/5 to-transparent',
-      ring: 'hover:ring-destructive/40',
-      iconColor: 'text-destructive',
-      bar: null,
-      barColor: 'bg-destructive',
-    }] : []),
-    {
-      key: 'vendas',
-      label: 'Vendas',
+      label: 'Pedidos',
       value: totais.vendas.toLocaleString('pt-BR'),
-      icon: Activity,
-      hint: `${kpiDecisao.totalEq} vendedor(es) ativo(s)`,
-      accent: 'from-emerald-500/25 via-emerald-500/5 to-transparent',
-      ring: 'hover:ring-emerald-500/40',
-      iconColor: 'text-emerald-400',
-      bar: null,
-      barColor: 'bg-emerald-500',
+      context: `Ticket médio ${formatCurrency(totais.ticket)}`,
+      tooltip: 'Quantidade de pedidos considerada no período selecionado.',
+    },
+    {
+      label: 'Atingimento',
+      value: formatPercent(kpiDecisao.pct),
+      context: `${kpiDecisao.totalEq} vendedores ativos`,
+      tone: (kpiDecisao.pct >= 100 ? 'success' : kpiDecisao.pct >= 80 ? 'warning' : 'danger') as const,
+      tooltip: 'Percentual do faturamento realizado em relação à meta mensal.',
     },
   ];
 
   return (
     <div className={cn(
-      'space-y-4',
-      isEmpresaPelegrini && 'rounded-2xl border border-border/60 bg-card p-3 text-foreground shadow-none md:p-4',
+      'space-y-2',
+      isEmpresaPelegrini && 'dashboard-overview-grid min-h-0 text-foreground',
     )}>
-      {isEmpresaPelegrini && (
-        <div className="pelegrini-period-chip inline-flex max-w-full items-center gap-2 rounded-md border border-border/60 bg-muted/30 px-2 py-1 shadow-none">
-          <div className="flex min-w-0 items-center gap-2">
-            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-primary/15 text-primary ring-1 ring-primary/20">
-              <CalendarDays className="h-3.5 w-3.5" />
-            </span>
-            <div className="min-w-0">
-              <p className="truncate text-xs font-semibold leading-none text-foreground">{periodoLabel}</p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ================= Totalizadores premium ================= */}
-      <div className={cn(
-        "grid gap-3",
-        isEmpresaPelegrini
-          ? "grid-cols-[repeat(auto-fit,minmax(min(100%,12rem),1fr))]"
-          : (showDevolucoesCard ? "grid-cols-5" : "grid-cols-4"),
-      )}>
-        {totalizadores.map((t) => {
-          const Icon = t.icon;
-          const clickable = t.key === 'receita' && !!onReceitaClick;
-          const pelegriniAccent = {
-            receita: 'from-primary/10 via-primary/5 to-transparent',
-            ticket: 'from-primary/8 via-muted/20 to-transparent',
-            clientes: 'from-primary/8 via-muted/20 to-transparent',
-            devolucoes: 'from-destructive/8 via-muted/20 to-transparent',
-            vendas: 'from-primary/8 via-muted/20 to-transparent',
-          }[t.key] || 'from-primary/8 to-transparent';
-          return (
-            <Card
-              key={t.key}
-              role={clickable ? 'button' : undefined}
-              tabIndex={clickable ? 0 : undefined}
-              onClick={clickable ? onReceitaClick : undefined}
-              onKeyDown={clickable ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onReceitaClick?.(); } } : undefined}
-              title={clickable ? 'Clique para ver o detalhamento da Receita' : undefined}
-              className={cn(
-                'group pelegrini-kpi-card relative min-w-0 overflow-hidden transition-all duration-300',
-                isEmpresaPelegrini
-                  ? 'pelegrini-led-card border-border/60 bg-card text-foreground hover:-translate-y-0.5'
-                  : 'border-border/60 hover:-translate-y-0.5 hover:shadow-lg hover:ring-1',
-                clickable && (isEmpresaPelegrini
-                  ? 'cursor-pointer ring-1 ring-primary/20 hover:ring-primary/50'
-                  : 'cursor-pointer ring-1 ring-primary/20 hover:ring-primary/60'),
-                !isEmpresaPelegrini && t.ring
-              )}
-            >
-              <div className={cn('absolute inset-0 bg-gradient-to-br pointer-events-none', isEmpresaPelegrini ? `opacity-45 ${pelegriniAccent}` : `opacity-70 ${t.accent}`)} />
-              {!isEmpresaPelegrini && (
-                <div className="absolute -right-6 -top-6 h-24 w-24 rounded-full bg-gradient-to-br from-white/5 to-transparent blur-2xl opacity-0 group-hover:opacity-100 transition-opacity" />
-              )}
-              <CardContent className="relative p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <span className={cn(
-                    "text-[10px] uppercase tracking-[0.14em] font-medium",
-                    isEmpresaPelegrini ? 'text-muted-foreground' : 'text-muted-foreground',
-                  )}>
-                    {t.label}
-                  </span>
-                  <div className={cn(
-                    'h-7 w-7 rounded-md flex items-center justify-center backdrop-blur-sm ring-1',
-                    isEmpresaPelegrini ? 'bg-background/60 text-primary ring-border/50' : 'bg-background/60 ring-border/50',
-                    'transition-transform group-hover:scale-110 group-hover:rotate-[-4deg]',
-                  )}>
-                    <Icon className={cn('h-3.5 w-3.5', isEmpresaPelegrini ? 'text-primary' : t.iconColor)} />
-                  </div>
-                </div>
-                <PelegriniResponsiveValue as="div" size="md" className={cn(isEmpresaPelegrini ? 'text-foreground' : 'tracking-tight')}>
-                  {t.value}
-                </PelegriniResponsiveValue>
-                
-                {t.bar != null && (
-                  <div className={cn("mt-2 h-1 rounded-full overflow-hidden", isEmpresaPelegrini ? 'bg-muted/60' : 'bg-muted/60')}>
-                    <div
-                      className={cn('h-full rounded-full transition-all duration-700', isEmpresaPelegrini ? 'bg-primary' : t.barColor)}
-                      style={{ width: `${t.bar}%` }}
-                    />
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          );
-        })}
-
-      </div>
+      <ComercialMetricStrip metrics={totalizadores} ariaLabel="Indicadores do dashboard comercial" />
 
 
       {/* ================= Faturamento por vendedor (interativo) ================= */}
@@ -471,7 +337,7 @@ export function VisaoGeralRapida1004({
       />
 
       {/* ================= Gráfico Acumulado ================= */}
-      <Card className={cn(isEmpresaPelegrini && 'pelegrini-compact-card pelegrini-led-card border-border/60 bg-card text-foreground')}>
+      <Card className={cn(isEmpresaPelegrini && 'pelegrini-compact-card border-border/70 bg-card text-foreground shadow-none')}>
         <CardContent className={cn(isEmpresaPelegrini ? 'p-2' : 'pt-6')}>
 
           <div className={cn(isEmpresaPelegrini ? 'h-[230px]' : 'h-72')}>
@@ -534,7 +400,7 @@ export function VisaoGeralRapida1004({
       {/* ================= Grid extras ================= */}
       <div className={cn("grid grid-cols-1 lg:grid-cols-2", isEmpresaPelegrini ? "gap-2" : "gap-4")}>
         {/* Donut participação */}
-        <Card className={cn(isEmpresaPelegrini && 'pelegrini-compact-card pelegrini-led-card border-border/60 bg-card text-foreground')}>
+        <Card className={cn(isEmpresaPelegrini && 'pelegrini-compact-card border-border/70 bg-card text-foreground shadow-none')}>
           <CardContent className={cn(isEmpresaPelegrini ? 'p-2' : 'pt-6')}>
 
             <div className={cn("flex flex-col", isEmpresaPelegrini ? 'h-auto min-h-0' : isEmpresa1001 ? 'h-96' : 'h-64')}>
@@ -584,7 +450,7 @@ export function VisaoGeralRapida1004({
 
 
         {/* Heatmap dias x vendedores */}
-        <Card className={cn(isEmpresaPelegrini && 'pelegrini-compact-card pelegrini-led-card border-border/60 bg-card text-foreground')}>
+        <Card className={cn(isEmpresaPelegrini && 'pelegrini-compact-card border-border/70 bg-card text-foreground shadow-none')}>
           <CardContent className={cn(isEmpresaPelegrini ? 'p-2' : 'pt-6')}>
 
             <div className="overflow-x-auto">

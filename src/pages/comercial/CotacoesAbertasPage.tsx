@@ -7,6 +7,11 @@ import { CotacoesFilters, type CotacoesFilterOption } from '@/components/comerci
 import { CotacoesGestorPanel } from '@/components/comercial/cotacoes/CotacoesGestorPanel';
 import { CotacoesKpis } from '@/components/comercial/cotacoes/CotacoesKpis';
 import { CotacoesTable } from '@/components/comercial/cotacoes/CotacoesTable';
+import {
+  ComercialCommandBar,
+  ComercialCompactPage,
+  ComercialDataViewport,
+} from '@/components/comercial/compact';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useCotacoesAbertas } from '@/hooks/useCotacoesComerciais';
@@ -143,20 +148,19 @@ export default function CotacoesAbertasPage() {
   };
 
   return (
-    <div className="enterprise-page-shell">
-      <header className="flex shrink-0 flex-col gap-2 border-b border-border pb-3 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h1 className="text-xl font-semibold tracking-normal">Cotacoes abertas</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Acompanhe as cotacoes pendentes no periodo selecionado.</p>
-        </div>
-        <Button type="button" variant="outline" size="sm" onClick={exportCurrentRows} disabled={!consulta || isLoading || isError || filteredRows.length === 0}>
+    <ComercialCompactPage>
+      <ComercialCommandBar
+        title="Cotacoes abertas"
+        actions={(
+          <Button type="button" variant="outline" size="sm" onClick={exportCurrentRows} disabled={!consulta || isLoading || isError || filteredRows.length === 0}>
           <Download aria-hidden="true" className="h-4 w-4" />
           Exportar Excel
-        </Button>
-      </header>
+          </Button>
+        )}
+      />
 
-      <section aria-label="Periodo de cotacoes" className="flex flex-wrap items-end gap-2">
-        <div>
+      <section aria-label="Periodo de cotacoes" className="flex flex-wrap items-end gap-2 border-b border-border pb-2">
+        <div className="space-y-1">
           <label htmlFor="cotacoes-data-inicial" className="mb-1 block text-xs text-muted-foreground">Data inicial</label>
           <input
             id="cotacoes-data-inicial"
@@ -166,7 +170,7 @@ export default function CotacoesAbertasPage() {
             className="h-9 rounded-md border border-input bg-background px-2 text-sm tabular-nums"
           />
         </div>
-        <div>
+        <div className="space-y-1">
           <label htmlFor="cotacoes-data-final" className="mb-1 block text-xs text-muted-foreground">Data final</label>
           <input
             id="cotacoes-data-final"
@@ -189,9 +193,14 @@ export default function CotacoesAbertasPage() {
         onClear={clearPendingFilters}
       />
 
-      <CotacoesGestorPanel mode="abertas" rows={filteredRows} motivos={emptyMotivos} onSelectCotacao={setSelectedQuote} />
+      {consulta && !isLoading && !isError && (
+        <>
+          <CotacoesKpis mode="abertas" kpis={kpis} />
+          <CotacoesGestorPanel mode="abertas" rows={filteredRows} motivos={emptyMotivos} onSelectCotacao={setSelectedQuote} />
+        </>
+      )}
 
-      <div className="min-h-0 flex-1 overflow-auto pr-1">
+      <ComercialDataViewport>
         {!consulta ? (
           <EmptyState
             title="Consulta ainda não realizada"
@@ -209,12 +218,9 @@ export default function CotacoesAbertasPage() {
         ) : isLoading ? (
           <CotacoesLoading />
         ) : (
-          <div className="space-y-3">
-            <CotacoesKpis mode="abertas" kpis={kpis} />
-            <CotacoesTable mode="abertas" rows={filteredRows} motivos={emptyMotivos} onSelectCotacao={setSelectedQuote} />
-          </div>
+          <CotacoesTable mode="abertas" rows={filteredRows} motivos={emptyMotivos} onSelectCotacao={setSelectedQuote} />
         )}
-      </div>
+      </ComercialDataViewport>
 
       <CotacaoDetailDrawer
         open={selectedQuote !== null}
@@ -225,6 +231,6 @@ export default function CotacoesAbertasPage() {
         cotacao={selectedQuote}
         motivos={emptyMotivos}
       />
-    </div>
+    </ComercialCompactPage>
   );
 }

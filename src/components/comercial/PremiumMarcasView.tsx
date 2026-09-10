@@ -18,6 +18,8 @@ interface PremiumMarcasViewProps {
   selectedMarca: string | null;
   onSelectMarca: (marca: string | null) => void;
   periodoLabel?: string;
+  showInsights?: boolean;
+  embedded?: boolean;
 }
 
 interface AIInsight {
@@ -173,7 +175,14 @@ function lucroBg(margem: number) {
   return 'bg-destructive/15 text-destructive border-destructive/30';
 }
 
-export function PremiumMarcasView({ porMarca, selectedMarca, onSelectMarca, periodoLabel }: PremiumMarcasViewProps) {
+export function PremiumMarcasView({
+  porMarca,
+  selectedMarca,
+  onSelectMarca,
+  periodoLabel,
+  showInsights = true,
+  embedded = false,
+}: PremiumMarcasViewProps) {
   const totalReceita = porMarca.reduce((a, m) => a + m.faturamento, 0);
   const maxReceita = porMarca[0]?.faturamento || 0;
 
@@ -246,7 +255,7 @@ export function PremiumMarcasView({ porMarca, selectedMarca, onSelectMarca, peri
       const fallback = buildFallbackInsights(porMarca, selectedMarca);
       setAiInsights(fallback.length ? fallback : null);
       setAiError(fallback.length ? null : msg);
-      toast.error('IA indisponível no momento; mantendo insights calculados pelos dados.');
+      toast.error('Análise remota indisponível; mantendo os cálculos locais.');
     } finally {
       setAiLoading(false);
     }
@@ -254,10 +263,11 @@ export function PremiumMarcasView({ porMarca, selectedMarca, onSelectMarca, peri
 
   // Auto-fetch: usa cache se existir, senão chama IA. Roda quando fingerprint muda.
   useEffect(() => {
+    if (!showInsights) return;
     if (!porMarca.length) return;
     fetchInsights(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fingerprint]);
+  }, [fingerprint, showInsights]);
 
   // Tendência simulada por margem (placeholder visual)
   const tendencia = (m: MarcaAgg): 'up' | 'down' | 'flat' => {
@@ -268,13 +278,13 @@ export function PremiumMarcasView({ porMarca, selectedMarca, onSelectMarca, peri
 
   return (
     <div className="space-y-4 animate-fade-in">
-      {/* INSIGHTS POR IA — cards diretos, reagem ao filtro de marca */}
-      <div className="space-y-2">
+      {/* ANÁLISES — cards diretos, reagem ao filtro de marca */}
+      {showInsights && <div className="space-y-2">
         <div className="flex items-center justify-between gap-2 px-1">
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <Brain className={cn("h-3.5 w-3.5 text-primary", aiLoading && 'animate-pulse')} />
             <span className="uppercase tracking-widest font-medium">
-              {selectedMarca ? `Insights de IA · ${selectedMarca}` : 'Insights de IA · Visão geral'}
+              {selectedMarca ? `Análises · ${selectedMarca}` : 'Análises · Visão geral'}
             </span>
           </div>
           <button
@@ -325,20 +335,15 @@ export function PremiumMarcasView({ porMarca, selectedMarca, onSelectMarca, peri
             })}
           </div>
         )}
-      </div>
+      </div>}
 
       {/* TABELA UNIFICADA — Ranking + Receita + Share + Margem */}
-      <Card className="premium-card border-border/60">
-        <CardHeader className="pb-2">
+      <Card className={cn('border-border/60 shadow-none', !embedded && 'premium-card')}>
+        {!embedded && <CardHeader className="pb-2">
           <div className="flex items-center justify-between gap-2 flex-wrap">
             <CardTitle className="text-base flex items-center gap-2">
               <Trophy className="h-4 w-4 text-primary" />
-              <div>
-                <div>Ranking de Marcas</div>
-                <div className="text-[10px] font-normal text-muted-foreground uppercase tracking-widest mt-0.5">
-                  Clique em uma linha para filtrar tudo abaixo
-                </div>
-              </div>
+              <span>Ranking de Marcas</span>
             </CardTitle>
             <div className="flex items-center gap-3">
               {selectedMarca && (
@@ -356,10 +361,19 @@ export function PremiumMarcasView({ porMarca, selectedMarca, onSelectMarca, peri
               </span>
             </div>
           </div>
-        </CardHeader>
-        <CardContent className="p-0 sm:p-6 sm:pt-0">
+        </CardHeader>}
+        <CardContent className={cn('p-0', !embedded && 'sm:p-6 sm:pt-0')}>
+          {porMarca.length === 0 ? (
+            <p className="p-8 text-center text-sm text-muted-foreground">
+              Nenhuma marca encontrada no recorte atual.
+            </p>
+          ) : <>
           {/* DESKTOP TABLE */}
-          <div className="hidden md:block overflow-y-auto max-h-[600px] rounded-md border border-border/60 mx-3 sm:mx-0">
+          <div className={cn(
+            'hidden rounded-md border border-border/60 md:block',
+            !embedded && 'mx-3 sm:mx-0',
+            !embedded && 'max-h-[600px] overflow-y-auto',
+          )}>
             <table className="w-full text-sm">
               <thead className="sticky top-0 z-20">
                 <tr className="text-left text-[11px] uppercase tracking-wider text-muted-foreground [&>th]:bg-card [&>th]:border-b [&>th]:border-border">
@@ -385,6 +399,15 @@ export function PremiumMarcasView({ porMarca, selectedMarca, onSelectMarca, peri
                     <tr
                       key={m.marca}
                       onClick={() => onSelectMarca(isSelected ? null : m.marca)}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter' || event.key === ' ') {
+                          event.preventDefault();
+                          onSelectMarca(isSelected ? null : m.marca);
+                        }
+                      }}
+                      tabIndex={0}
+                      aria-selected={isSelected}
+                      aria-label={`Filtrar pela marca ${m.marca}`}
                       className={cn(
                         "border-t border-border/40 cursor-pointer transition-colors duration-150 group",
                         isSelected
@@ -480,11 +503,14 @@ export function PremiumMarcasView({ porMarca, selectedMarca, onSelectMarca, peri
               const swatch = BRAND_SWATCHES[i % BRAND_SWATCHES.length];
               const pctMax = maxReceita > 0 ? (m.faturamento / maxReceita) * 100 : 0;
               return (
-                <div
+                <button
+                  type="button"
                   key={m.marca}
                   onClick={() => onSelectMarca(isSelected ? null : m.marca)}
+                  aria-pressed={isSelected}
+                  aria-label={`Filtrar pela marca ${m.marca}`}
                   className={cn(
-                    "p-3 rounded-lg border transition-colors cursor-pointer",
+                    "w-full p-3 rounded-lg border text-left transition-colors cursor-pointer",
                     isSelected
                       ? 'border-primary/60 bg-primary/10'
                       : 'border-border/60 bg-card hover:border-border',
@@ -534,7 +560,7 @@ export function PremiumMarcasView({ porMarca, selectedMarca, onSelectMarca, peri
                       }}
                     />
                   </div>
-                </div>
+                </button>
               );
             })}
           </div>
@@ -546,6 +572,7 @@ export function PremiumMarcasView({ porMarca, selectedMarca, onSelectMarca, peri
             </span>
             <span className="font-semibold tabular-nums">{formatCurrency(totalReceita)}</span>
           </div>
+          </>}
         </CardContent>
       </Card>
     </div>

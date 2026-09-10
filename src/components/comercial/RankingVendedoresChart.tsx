@@ -90,7 +90,7 @@ export function RankingVendedoresChart({ data, periodo, onClick, variant = 'defa
     <Card className={cn(
       'overflow-hidden relative transition-shadow duration-300',
       isBlue
-        ? 'pelegrini-ranking-card pelegrini-led-card border-border/60 bg-card text-foreground'
+        ? 'pelegrini-ranking-card border-border/70 bg-card text-foreground shadow-none'
         : 'border-border/60 bg-card',
     )}>
       <CardHeader className={cn(isBlue ? 'p-3 pb-2' : 'pb-3 relative')}>
@@ -136,21 +136,21 @@ export function RankingVendedoresChart({ data, periodo, onClick, variant = 'defa
             label="Líder"
             value={lider?.nome || '—'}
             hint={lider ? formatCurrency(lider.mes) : ''}
-            accent={isBlue ? 'pelegrini-led-card bg-background/35 text-foreground border-border/50' : 'bg-amber-500/10'}
+            accent={isBlue ? 'bg-muted/25 text-foreground border-border/60' : 'bg-amber-500/10'}
           />
           <StatChip
             icon={<TrendingUp className={cn('h-3.5 w-3.5', isBlue ? 'text-primary' : 'text-violet-400')} />}
             label="Média por vendedor"
             value={formatCurrency(media)}
             hint={`${enriched.length} vendedor(es)`}
-            accent={isBlue ? 'pelegrini-led-card bg-primary/5 text-foreground border-border/50' : 'bg-violet-500/10'}
+            accent={isBlue ? 'bg-muted/25 text-foreground border-border/60' : 'bg-violet-500/10'}
           />
           <StatChip
             icon={<Flame className={cn('h-3.5 w-3.5', isBlue ? 'text-primary' : 'text-emerald-400')} />}
             label="Bateram meta"
             value={`${acima}/${enriched.length}`}
             hint={enriched.length ? `${((acima / enriched.length) * 100).toFixed(0)}%` : ''}
-            accent={isBlue ? 'pelegrini-led-card bg-primary/5 text-foreground border-border/50' : 'bg-emerald-500/10'}
+            accent={isBlue ? 'bg-muted/25 text-foreground border-border/60' : 'bg-emerald-500/10'}
           />
         </div>
       </CardHeader>

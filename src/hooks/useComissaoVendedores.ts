@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { buildApiProxyUrl } from '@/utils/apiEndpointResolver';
 import { useEmpresaAtiva } from '@/hooks/useEmpresaAtiva';
 import { useFilialSelecionada } from '@/contexts/FilialSelecionadaContext';
-import { resolveCodEmpresaBiParam } from '@/utils/filialEndpoint';
+import { resolveCodEmpresaBiParam, resolveComercialEndpointPath } from '@/utils/filialEndpoint';
 import { isContextoChevrolet10041, vendedorForcaP1004 } from '@/utils/vendedores1004';
 
 export interface ComissaoFiltros {
@@ -81,7 +81,15 @@ export function mapComissaoLinha(row: Record<string, unknown>): ComissaoLinha {
   const vendaDireta = num(pick(row, 'venda_direta', 'VendaDireta', 'Venda_Direta', 'valor_venda_direta'));
   const vendaIndireta = num(pick(row, 'venda_indireta', 'VendaIndireta', 'Venda_Indireta', 'valor_venda_indireta'));
   const vendaTotal = vendaDireta + vendaIndireta;
-  const pedidosAberto = pick(row, 'PedidosAberto', 'PedidosEmAberto', 'pedidos_em_aberto', 'pedidos_aberto', 'PEDIDOS EM ABERTO', 'a_faturar_pedidos');
+  const pedidosAberto = pick(
+    row,
+    'PedidosAberto',
+    'PedidosEmAberto',
+    'pedidos_em_aberto',
+    'pedidos_aberto',
+    'PEDIDOS EM ABERTO',
+    'a_faturar_pedidos',
+  );
 
   return {
     vendedor: String(codigoVendedor ?? ''),
@@ -103,65 +111,35 @@ export function mapComissaoLinha(row: Record<string, unknown>): ComissaoLinha {
   };
 }
 
-const PEDIDOS_ABERTOS_PAGE_SIZE = 500;
-
-export function resolvePedidosAbertosPath(): string {
-  return '/comercial/pedidos-abertos';
-}
-
-function normalizeStatus(value: unknown): string {
-  return String(value ?? '')
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .trim()
-    .toLowerCase();
-}
-
-function hasValue(value: unknown): boolean {
-  const normalized = normalizeStatus(value);
-  return normalized !== '' && normalized !== 'null' && normalized !== 'undefined' && normalized !== '0';
-}
-
 function normalizeVendedor(value: unknown): string {
   const normalized = String(value ?? '').trim();
-  if (!/^\d+$/.test(normalized)) return normalized;
-  return normalized.replace(/^0+(?=\d)/, '');
+  return /^\d+$/.test(normalized) ? normalized.replace(/^0+(?=\d)/, '') : normalized;
+}
+
+function hasDataFaturamento(value: unknown): boolean {
+  const normalized = String(value ?? '').trim().toLowerCase();
+  return normalized !== '' && normalized !== 'null' && normalized !== 'undefined';
 }
 
 export function getValorPedidoAberto(row: Record<string, unknown>): number | null {
-  const status = normalizeStatus(pick(row, 'status_pedido', 'StatusPedido', 'status', 'Status', 'situacao', 'Situacao'));
-  const dataFaturamento = pick(row, 'data_faturamento', 'DataFaturamento', 'Data_Faturamento', 'DtFaturamento');
-  const numeroNota = pick(row, 'num_nf', 'NumNF', 'NumDocumento', 'numero_nf', 'NumeroNF');
-  const faturado = status.includes('faturad') || hasValue(dataFaturamento) || hasValue(numeroNota);
-  if (faturado) return null;
+  const dataFaturamento = pick(row, 'data_faturamento', 'DataFaturamento', 'Data_Faturamento');
+  if (hasDataFaturamento(dataFaturamento)) return null;
 
-  const valor = pick(
-    row,
-    'valor_total_pedido',
-    'ValorTotalPedido',
-    'Pedido.Valor Total',
-    'Pedido.ValorVenda2',
-  );
+  const valor = pick(row, 'valor_total_pedido', 'ValorTotalPedido');
   return valor === undefined ? null : num(valor);
 }
 
 export function calcularPedidosAbertosPorVendedor(
   rows: Record<string, unknown>[],
-  options?: { operacaoInicial?: number; operacaoFinal?: number },
+  options?: { codEmpresa?: string },
 ): Map<string, number> {
   const totais = new Map<string, number>();
   const pedidosProcessados = new Set<string>();
 
   rows.forEach((row, index) => {
-    const operacaoRaw = pick(row, 'cod_operacao', 'CodOperacao', 'codigo_operacao', 'Pedido.Codigo Operacao');
-    if (operacaoRaw !== undefined) {
-      const operacao = num(operacaoRaw);
-      if (options?.operacaoInicial !== undefined && operacao < options.operacaoInicial) return;
-      if (options?.operacaoFinal !== undefined && operacao > options.operacaoFinal) return;
-    }
-
     const empresa = String(pick(row, 'cod_empresa', 'CodEmpresa', 'empresa', 'Empresa') ?? '').trim();
-    const pedido = String(pick(row, 'cod_pedido', 'CodPedido', 'pedido', 'Pedido.Codigo Pedido') ?? '').trim();
+    if (options?.codEmpresa && empresa !== options.codEmpresa) return;
+    const pedido = String(pick(row, 'cod_pedido', 'CodPedido', 'pedido') ?? '').trim();
     const pedidoKey = pedido ? `${empresa}|${pedido}` : `linha:${index}`;
     if (pedidosProcessados.has(pedidoKey)) return;
     pedidosProcessados.add(pedidoKey);
@@ -169,14 +147,7 @@ export function calcularPedidosAbertosPorVendedor(
     const valor = getValorPedidoAberto(row);
     if (valor === null) return;
 
-    const vendedor = normalizeVendedor(pick(
-      row,
-      'cod_vendedor',
-      'CodVendedor',
-      'cod_vendedor_interno',
-      'CodVendInterno',
-      'Pedido.Cod Vendedor Interno',
-    ));
+    const vendedor = normalizeVendedor(pick(row, 'cod_vendedor', 'CodVendedor', 'cod_vendedor_interno', 'CodVendInterno'));
     if (!vendedor) return;
     totais.set(vendedor, (totais.get(vendedor) ?? 0) + valor);
   });
@@ -184,10 +155,10 @@ export function calcularPedidosAbertosPorVendedor(
   return totais;
 }
 
-export function aplicarPedidosAbertosNasComissoes(
+function aplicarPedidosAbertosNasComissoes(
   linhas: ComissaoLinha[],
   pedidos: Record<string, unknown>[],
-  options?: { operacaoInicial?: number; operacaoFinal?: number },
+  options?: { codEmpresa?: string },
 ): ComissaoLinha[] {
   const totais = calcularPedidosAbertosPorVendedor(pedidos, options);
   return linhas.map((linha) => ({
@@ -199,37 +170,31 @@ export function aplicarPedidosAbertosNasComissoes(
 function extractRows(json: unknown): Record<string, unknown>[] {
   if (Array.isArray(json)) return json as Record<string, unknown>[];
   if (!json || typeof json !== 'object') return [];
-
   const payload = json as Record<string, unknown>;
-  const nested = payload.pedidos
-    || payload.Pedidos
-    || payload.dados
-    || payload.data
-    || payload.registros
-    || payload.items
-    || payload.resultados;
+  const nested = payload.pedidos || payload.dados || payload.data || payload.registros || payload.items;
   return Array.isArray(nested) ? nested as Record<string, unknown>[] : [];
 }
 
-async function fetchPedidosAbertos(
+export async function fetchTodosPedidos(
   empresa: Parameters<typeof buildApiProxyUrl>[0],
+  path: string,
   params: URLSearchParams,
   headers: Record<string, string>,
   signal: AbortSignal,
 ): Promise<Record<string, unknown>[] | null> {
   const rows: Record<string, unknown>[] = [];
+  const pageSize = 5_000;
 
-  for (let page = 1; page <= 100; page += 1) {
+  for (let page = 1; page <= 20; page += 1) {
     const pageParams = new URLSearchParams(params);
     pageParams.set('page', String(page));
-    pageParams.set('page_size', String(PEDIDOS_ABERTOS_PAGE_SIZE));
-    const url = buildApiProxyUrl(empresa, `${resolvePedidosAbertosPath()}?${pageParams.toString()}`);
+    pageParams.set('page_size', String(pageSize));
+    const url = buildApiProxyUrl(empresa, `${path}?${pageParams.toString()}`);
     const response = await fetch(url, { headers, signal });
     if (!response.ok) return null;
-
     const batch = extractRows(await response.json());
     rows.push(...batch);
-    if (batch.length < PEDIDOS_ABERTOS_PAGE_SIZE) return rows;
+    if (batch.length < pageSize) return rows;
   }
 
   return rows;
@@ -254,6 +219,44 @@ export function resolveComissaoVendedoresPath(codEmpresaAtiva: unknown, filialAt
     : '/comercial/comissoes';
 }
 
+export function resolveComissaoPedidosPath(
+  empresa: Parameters<typeof resolveComercialEndpointPath>[1],
+  filialAtiva?: string | null,
+): string {
+  if (isContextoChevrolet10041(empresa?.cod_empresa_bi, filialAtiva, empresa)) {
+    return empresa?.endpoint_path_comercial_pedidos_ch?.trim() || '/comercial/pedidos_ch';
+  }
+  return resolveComercialEndpointPath('pedidos', empresa, filialAtiva);
+}
+
+export function buildPedidosAbertosSearchParams(
+  filtros: ComissaoFiltros,
+  codBiParam?: string | null,
+  includeCodEmpresaBi = true,
+  hoje = new Date(),
+): URLSearchParams {
+  const params = new URLSearchParams();
+  const hojeKey = [
+    hoje.getFullYear(),
+    String(hoje.getMonth() + 1).padStart(2, '0'),
+    String(hoje.getDate()).padStart(2, '0'),
+  ].join('-');
+  const dataFimInclusiva = filtros.data_ini <= hojeKey && hojeKey < filtros.data_fim
+    ? hojeKey
+    : filtros.data_fim;
+  const dataFimExclusiva = new Date(`${dataFimInclusiva}T00:00:00`);
+  dataFimExclusiva.setDate(dataFimExclusiva.getDate() + 1);
+
+  params.set('data_ini', filtros.data_ini);
+  params.set('data_fim', [
+    dataFimExclusiva.getFullYear(),
+    String(dataFimExclusiva.getMonth() + 1).padStart(2, '0'),
+    String(dataFimExclusiva.getDate()).padStart(2, '0'),
+  ].join('-'));
+  if (includeCodEmpresaBi && codBiParam) params.set('cod_empresa_bi', codBiParam);
+  return params;
+}
+
 export function buildComissaoSearchParams(filtros: ComissaoFiltros, codBiParam?: string | null): URLSearchParams {
   const params = new URLSearchParams();
   params.set('data_ini', filtros.data_ini);
@@ -276,33 +279,38 @@ export function useComissaoVendedores(filtros: ComissaoFiltros | null, enabled =
   const { filialAtiva } = useFilialSelecionada();
 
   const path = resolveComissaoVendedoresPath(codEmpresaAtiva, filialAtiva, empresa);
+  const pedidosPath = resolveComissaoPedidosPath(empresa, filialAtiva);
   const codBiParam = resolveCodEmpresaBiParam(empresa, filialAtiva);
   const deveExcluirForcaP1004 = deveExcluirForcaPComissao1004(codEmpresaAtiva, filialAtiva);
 
   return useQuery({
-    queryKey: ['comissao-vendedores', codEmpresaAtiva, filialAtiva, filtros],
+    queryKey: ['comissao-vendedores', 'pedidos-null-v7', codEmpresaAtiva, filialAtiva, filtros],
     enabled: !!empresa && !!filtros && enabled,
     staleTime: 5 * 60 * 1000,
-    queryFn: async (): Promise<ComissaoLinha[]> => {
+    placeholderData: (previousData) => previousData,
+    queryFn: async ({ signal }): Promise<ComissaoLinha[]> => {
       if (!filtros) return [];
       const params = buildComissaoSearchParams(filtros, codBiParam);
+      const pedidosParams = buildPedidosAbertosSearchParams(filtros, codBiParam, !/_ch(?:\?|$)/.test(pedidosPath));
 
       const url = buildApiProxyUrl(empresa, `${path}?${params.toString()}`);
-      const pedidosParams = new URLSearchParams();
-      pedidosParams.set('data_ini', filtros.data_ini);
-      pedidosParams.set('data_fim', filtros.data_fim);
-      if (codBiParam) pedidosParams.set('cod_empresa_bi', codBiParam);
-      if (filtros.operacao_fiscal_inicial) pedidosParams.set('operacao_fiscal_inicial', filtros.operacao_fiscal_inicial);
-      if (filtros.operacao_fiscal_final) pedidosParams.set('operacao_fiscal_final', filtros.operacao_fiscal_final);
       console.log('[Comissao] URL:', `${path}?${params.toString()}`);
 
-      const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), 60000);
+      const comissaoController = new AbortController();
+      const pedidosController = new AbortController();
+      const abortFromQuery = () => {
+        comissaoController.abort();
+        pedidosController.abort();
+      };
+      signal.addEventListener('abort', abortFromQuery, { once: true });
+      const comissaoTimer = setTimeout(() => comissaoController.abort(), 60000);
+      const pedidosTimer = setTimeout(() => pedidosController.abort(), 90000);
       try {
         const headers = { Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` };
         const [res, pedidos] = await Promise.all([
-          fetch(url, { headers, signal: controller.signal }),
-          fetchPedidosAbertos(empresa, pedidosParams, headers, controller.signal).catch(() => null),
+          fetch(url, { headers, signal: comissaoController.signal }),
+          fetchTodosPedidos(empresa, pedidosPath, pedidosParams, headers, pedidosController.signal)
+            .catch(() => null),
         ]);
         if (!res.ok) throw new Error(`Comissões: HTTP ${res.status}`);
         const json: unknown = await res.json();
@@ -315,17 +323,17 @@ export function useComissaoVendedores(filtros: ComissaoFiltros | null, enabled =
         const linhas = arr
           .map(mapComissaoLinha)
           .filter((linha) => !deveExcluirForcaP1004 || !comissaoLinhaPertenceForcaP1004(linha));
-
         if (!pedidos) {
-          console.warn('[Comissao] Endpoint de pedidos em aberto indisponível; AFaturar não será usado como substituto.');
+          console.warn('[Comissao] Pedidos indisponiveis; a coluna nao sera preenchida com zero artificial.');
           return linhas;
         }
         return aplicarPedidosAbertosNasComissoes(linhas, pedidos, {
-          operacaoInicial: filtros.operacao_fiscal_inicial ? num(filtros.operacao_fiscal_inicial) : undefined,
-          operacaoFinal: filtros.operacao_fiscal_final ? num(filtros.operacao_fiscal_final) : undefined,
+          codEmpresa: /_ch(?:\?|$)/.test(pedidosPath) ? '2' : undefined,
         });
       } finally {
-        clearTimeout(timer);
+        clearTimeout(comissaoTimer);
+        clearTimeout(pedidosTimer);
+        signal.removeEventListener('abort', abortFromQuery);
       }
     },
   });
