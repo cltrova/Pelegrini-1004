@@ -21,6 +21,15 @@
   background: hsl(var(--sidebar-background));
   box-shadow: none;
   border-right: 1px solid hsl(var(--sidebar-border));
+  transition-duration: 220ms;
+}
+
+[data-module-shell='operacional'] .pelegrini-sidebar::before {
+  background-image: none;
+}
+
+[data-module-shell='operacional'] .sidebar-mobile-control {
+  border-radius: 4px;
 }
 
 [data-module-shell='operacional'] .sidebar-action {

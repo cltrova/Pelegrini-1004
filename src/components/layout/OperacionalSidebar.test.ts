@@ -7,7 +7,7 @@ describe('buildOperacionalMenuItems', () => {
   it('requests indexed navigation for the operational sidebar', () => {
     const source = readFileSync(join(process.cwd(), 'src', 'components', 'layout', 'OperacionalSidebar.tsx'), 'utf8');
 
-    expect(source).toContain('indexed');
+    expect(source).toMatch(/<PelegriniModuleSidebar\s+indexed(?:\s|\/?>)/);
   });
 
   it('adds Distribuidores as a standalone sidebar destination for Casa da Transmissao', () => {

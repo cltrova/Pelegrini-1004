@@ -39,6 +39,14 @@ function renderSidebar({
 }
 
 describe('PelegriniModuleSidebar', () => {
+  it('keeps the default navigation unindexed', () => {
+    renderSidebar();
+
+    const sidebar = screen.getByTestId('module-sidebar');
+    expect(sidebar).toHaveAttribute('data-navigation-style', 'default');
+    expect(sidebar.querySelector('.sidebar-item-index')).not.toBeInTheDocument();
+  });
+
   it('numbers links only when indexed navigation is requested', () => {
     renderSidebar({ indexed: true });
 
@@ -147,12 +155,17 @@ describe('PelegriniModuleSidebar', () => {
   it('keeps the mobile menu trigger inside the compact 44 px header rail', () => {
     renderSidebar();
 
-    expect(screen.getByRole('button', { name: 'Abrir menu' })).toHaveClass(
+    const openButton = screen.getByRole('button', { name: 'Abrir menu' });
+    const closeButton = screen.getByRole('button', { name: 'Fechar menu' });
+
+    expect(openButton).toHaveClass(
       'left-1.5',
       'top-0',
       'h-11',
       'w-11',
     );
+    expect(openButton).toHaveClass('sidebar-mobile-control');
+    expect(closeButton).toHaveClass('sidebar-mobile-control');
   });
 
   it('gives the future-section label an explicit zero-width styling hook', () => {

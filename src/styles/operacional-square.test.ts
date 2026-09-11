@@ -4,6 +4,10 @@ import { describe, expect, it } from 'vitest';
 
 describe('operational square visual scope', () => {
   const css = readFileSync(join(process.cwd(), 'src/styles/operacional-square.css'), 'utf8');
+  const sidebarSource = readFileSync(
+    join(process.cwd(), 'src/components/pelegrini/PelegriniModuleSidebar.tsx'),
+    'utf8',
+  );
 
   it('scopes structural rules to the operational shell', () => {
     expect(css).toContain("[data-module-shell='operacional']");
@@ -14,5 +18,24 @@ describe('operational square visual scope', () => {
     expect(css).toContain('--operational-panel-radius: 2px');
     expect(css).toContain('--operational-control-radius: 4px');
     expect(css).toContain('@media (prefers-reduced-motion: reduce)');
+  });
+
+  it('removes the shared decorative grid from the operational sidebar', () => {
+    expect(css).toMatch(
+      /\[data-module-shell='operacional'\] \.pelegrini-sidebar::before\s*{[^}]*background-image:\s*none;/,
+    );
+  });
+
+  it('caps the operational mobile sidebar transition at 220ms', () => {
+    expect(css).toMatch(
+      /\[data-module-shell='operacional'\] \.pelegrini-sidebar\s*{[^}]*transition-duration:\s*220ms;/,
+    );
+  });
+
+  it('caps both operational mobile menu controls at a 4px radius', () => {
+    expect(sidebarSource.match(/sidebar-mobile-control/g) ?? []).toHaveLength(2);
+    expect(css).toMatch(
+      /\[data-module-shell='operacional'\] \.sidebar-mobile-control\s*{[^}]*border-radius:\s*4px;/,
+    );
   });
 });
