@@ -1657,7 +1657,7 @@ function MarcaInteractiveCard({ c, m, index }: { c: CampanhaCalculada; m: MarcaC
           </div>
         </button>
       </DialogTrigger>
-      <DialogContent className="max-w-3xl rounded-lg p-0 overflow-hidden border border-border/60 shadow-xl">
+      <DialogContent className="commercial-overlay max-w-3xl rounded-lg p-0 overflow-hidden border border-border/60 shadow-xl">
         <div className="relative overflow-hidden border-b border-border/60 bg-card px-6 pb-7 pt-6">
           <DialogHeader className="relative">
             <DialogTitle className="flex items-center gap-3">
@@ -1848,7 +1848,7 @@ function ResumoBox({ label, valor, sub, icon, highlight, premium, details }: { l
       <DialogTrigger asChild>
         <button type="button" className="block w-full">{content}</button>
       </DialogTrigger>
-      <DialogContent className="max-w-2xl rounded-lg p-0 overflow-hidden border border-border/60 shadow-xl">
+      <DialogContent className="commercial-overlay max-w-2xl rounded-lg p-0 overflow-hidden border border-border/60 shadow-xl">
         <div className="relative overflow-hidden border-b border-border/60 bg-card px-6 pb-8 pt-6">
           <DialogHeader className="relative">
             <DialogTitle className="flex items-center gap-3">

@@ -1,4 +1,6 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useIsFetching } from '@tanstack/react-query';
@@ -140,13 +142,13 @@ describe('MetasVendedoresPage commercial dashboard', () => {
     expect(screen.getByLabelText('Indicadores do dashboard comercial')).toHaveClass('commercial-metric-strip');
   });
 
-  it('neutraliza a sombra do trigger ativo somente na faixa de abas comercial', async () => {
+  it('deixa a neutralizacao da sombra do trigger ativo a cargo do shell comercial', async () => {
     render(<MetasVendedoresPage />);
 
     const activeTab = await screen.findByRole('tab', { name: 'Visão geral' });
     expect(activeTab).toHaveAttribute('data-state', 'active');
-    expect(activeTab).toHaveClass('data-[state=active]:shadow-none');
-    expect(activeTab).not.toHaveClass('data-[state=active]:shadow-sm');
+    expect(activeTab).not.toHaveClass('data-[state=active]:shadow-none');
+    expect(activeTab).toHaveClass('data-[state=active]:shadow-sm');
   });
 
   it('percorre disabled, loading e dados sem perder o conteudo no refetch', async () => {
@@ -244,6 +246,20 @@ describe('CampanhasTab loading lifecycle', () => {
       isLoading: true,
     };
     vi.mocked(useIsFetching).mockImplementation(() => fetchingState.value);
+  });
+
+  it('marks both ported shadow dialogs as commercial overlays', () => {
+    const source = readFileSync(
+      join(process.cwd(), 'src/components/comercial/CampanhasTab.tsx'),
+      'utf8',
+    );
+    const portedDialogClasses = [...source.matchAll(/<DialogContent className="([^"]*shadow-xl[^"]*)">/g)]
+      .map((match) => match[1]);
+
+    expect(portedDialogClasses).toHaveLength(2);
+    portedDialogClasses.forEach((className) => {
+      expect(className).toContain('commercial-overlay');
+    });
   });
 
   it('percorre disabled, loading e dados sem perder campanhas no refetch', async () => {

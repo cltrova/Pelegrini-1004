@@ -133,6 +133,10 @@
   transition-duration: var(--commercial-motion-fast);
 }
 
+[data-module-shell='comercial'] [role='tab'][data-state='active'] {
+  box-shadow: none !important;
+}
+
 [data-module-shell='comercial'] .transition-transform {
   transition-property: color, background-color, border-color, opacity;
 }

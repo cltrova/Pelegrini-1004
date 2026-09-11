@@ -71,6 +71,17 @@ describe('commercial square visual scope', () => {
     );
   });
 
+  it('neutralizes active tab shadows only inside the commercial shell', () => {
+    const shadowlessSelectors = selectorsApplying(css, 'box-shadow: none !important').join('\n');
+
+    expect(shadowlessSelectors).toContain(
+      "[data-module-shell='comercial'] [role='tab'][data-state='active']",
+    );
+    expect(shadowlessSelectors).not.toMatch(
+      /(^|\n)\s*\[role='tab'\]\[data-state='active'\]/,
+    );
+  });
+
   it('limits reduced motion overrides to the commercial shell and its overlay', () => {
     const reducedMotion = css.slice(css.indexOf('@media (prefers-reduced-motion: reduce)'));
 
