@@ -26,10 +26,12 @@ export function PelegriniModuleShell({
   return (
     <div
       className={cn(
-        'flex h-screen w-full overflow-hidden bg-background',
+        'pelegrini-module-shell flex h-screen w-full overflow-hidden bg-background',
         usesHeader && 'flex-col',
         className,
       )}
+      data-testid="pelegrini-module-shell"
+      data-module-shell={moduleKey}
       data-pelegrini-theme={theme.key}
       style={{
         '--pelegrini-primary': theme.primary,

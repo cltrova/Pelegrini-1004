@@ -206,7 +206,7 @@ describe('Pelegrini visual components', () => {
 
   it('contains sidebar shell content without changing the header variant inset', () => {
     const { rerender } = render(
-      <PelegriniModuleShell sidebar={<aside>Menu</aside>}>
+      <PelegriniModuleShell sidebar={<aside>Menu</aside>} moduleKey="operacional">
         <span data-testid="module-content">Conteudo</span>
       </PelegriniModuleShell>,
     );
@@ -216,6 +216,10 @@ describe('Pelegrini visual components', () => {
     expect(main).toHaveClass('md:ml-[72px]', 'min-w-0', 'overflow-x-clip');
     expect(main).not.toHaveClass('md:ml-[232px]', 'overflow-x-hidden');
     expect(screen.getByTestId('module-content').parentElement).toHaveClass('min-w-0');
+    expect(screen.getByTestId('pelegrini-module-shell')).toHaveAttribute(
+      'data-module-shell',
+      'operacional',
+    );
 
     rerender(
       <PelegriniModuleShell sidebar={<header>Cabecalho</header>} variant="header">

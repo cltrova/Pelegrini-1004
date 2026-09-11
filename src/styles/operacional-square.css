@@ -1,0 +1,29 @@
+[data-module-shell='operacional'] {
+  --operational-panel-radius: 2px;
+  --operational-control-radius: 4px;
+  --operational-motion-fast: 150ms;
+  --operational-motion-sidebar: 220ms;
+}
+
+[data-module-shell='operacional'] .pelegrini-page-surface {
+  background: hsl(var(--background));
+}
+
+[data-module-shell='operacional'] .pelegrini-surface-pattern {
+  display: none;
+}
+
+[data-module-shell='operacional'] * {
+  letter-spacing: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-module-shell='operacional'] *,
+  [data-module-shell='operacional'] *::before,
+  [data-module-shell='operacional'] *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
