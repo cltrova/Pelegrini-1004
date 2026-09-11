@@ -447,7 +447,7 @@ describe('CampanhasTab commercial overlays', () => {
       'utf8',
     );
     const portalledContents = source.match(
-      /<(?:PopoverContent|SelectContent|DialogContent)\b[^>]*>/g,
+      /<(?:PopoverContent|SelectContent|DialogContent|AlertDialogContent|TooltipContent)\b[^>]*>/g,
     ) ?? [];
 
     expect(portalledContents.length).toBeGreaterThan(0);

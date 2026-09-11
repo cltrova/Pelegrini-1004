@@ -1178,7 +1178,7 @@ function CampanhaFullCard({
               <AlertDialogTrigger asChild>
                 <Button size="icon" variant="ghost" className="h-8 w-8 hover:bg-muted"><Trash2 className="h-3.5 w-3.5" /></Button>
               </AlertDialogTrigger>
-              <AlertDialogContent className="rounded-lg">
+              <AlertDialogContent className="commercial-overlay rounded-lg">
                 <AlertDialogHeader>
                   <AlertDialogTitle>Excluir campanha?</AlertDialogTitle>
                   <AlertDialogDescription>"{c.nome}" será removida permanentemente.</AlertDialogDescription>
@@ -1717,7 +1717,7 @@ function MarcaInteractiveCard({ c, m, index }: { c: CampanhaCalculada; m: MarcaC
                           <div className="text-[10px] text-muted-foreground">{mo}/{y.slice(2)}</div>
                         </div>
                       </TooltipTrigger>
-                      <TooltipContent>
+                      <TooltipContent className="commercial-overlay">
                         <p className="text-xs font-semibold">{mo}/{y}</p>
                         <p className="text-xs">{formatCurrency(valor)}</p>
                       </TooltipContent>
