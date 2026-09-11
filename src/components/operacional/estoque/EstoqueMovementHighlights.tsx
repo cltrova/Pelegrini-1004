@@ -43,7 +43,7 @@ function HighlightList({
     <div aria-label={ariaLabel} className="min-w-0 divide-y divide-border/70">
       {products.map((product) => (
         <button
-          className="group flex min-h-14 min-w-0 w-full max-w-full items-center gap-3 py-2 text-left hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
+          className="operational-action-row flex min-h-14 min-w-0 w-full max-w-full items-center gap-3 py-2 text-left hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
           key={`${product.cod_empresa}:${product.cod_produto}`}
           onClick={() => onSelectProduct(product)}
           type="button"
@@ -62,7 +62,7 @@ function HighlightList({
             ) : null}
           </span>
           <span className="shrink-0 text-xs font-semibold tabular-nums text-foreground">{metric(product)}</span>
-          <ArrowRight aria-hidden="true" className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
+          <ArrowRight aria-hidden="true" className="h-4 w-4 shrink-0 text-muted-foreground" />
         </button>
       ))}
     </div>
@@ -105,7 +105,7 @@ export function EstoqueMovementHighlights({ products, onSelectProduct }: Estoque
 
   return (
     <section className="grid min-w-0 gap-4 lg:grid-cols-2" aria-label="Destaques do estoque">
-      <PelegriniDataPanel eyebrow="Giro no periodo" title="Mais movimentados">
+      <PelegriniDataPanel className="operational-panel" eyebrow="Giro no periodo" title="Mais movimentados">
         <div
           aria-label="Tipo de movimento"
           className="mb-2 flex min-w-0 flex-wrap items-center gap-1"
@@ -154,7 +154,7 @@ export function EstoqueMovementHighlights({ products, onSelectProduct }: Estoque
         )}
       </PelegriniDataPanel>
 
-      <PelegriniDataPanel eyebrow="Sem giro recente" title="Produtos parados">
+      <PelegriniDataPanel className="operational-panel" eyebrow="Sem giro recente" title="Produtos parados">
         {stagnant.length ? (
           <HighlightList
             ariaLabel="Produtos parados"

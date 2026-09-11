@@ -56,7 +56,7 @@ export function EstoqueMovementTimeline({ movements }: EstoqueMovementTimelinePr
     .slice(0, 20);
 
   return (
-    <section aria-labelledby="stock-movement-title" className="min-w-0 border-t border-border pt-5">
+    <section aria-labelledby="stock-movement-title" className="operational-panel min-w-0 border-t border-border pt-5">
       <h3 className="text-sm font-semibold text-foreground" id="stock-movement-title">Historico recente</h3>
 
       {recentMovements.length === 0 ? (
@@ -71,7 +71,7 @@ export function EstoqueMovementTimeline({ movements }: EstoqueMovementTimelinePr
 
             return (
               <li
-                className="flex min-w-0 items-center gap-3 py-3"
+                className="operational-action-row flex min-w-0 items-center gap-3 py-3"
                 key={`${movement.cod_empresa}:${movement.cod_produto}:${movement.data_movimento}:${index}`}
               >
                 <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-border bg-muted/30">

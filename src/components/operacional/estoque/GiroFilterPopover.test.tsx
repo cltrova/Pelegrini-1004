@@ -68,6 +68,7 @@ describe('GiroFilterPopover', () => {
     fireEvent.click(trigger);
 
     const dialog = screen.getByRole('dialog', { name: 'Filtros do giro' });
+    expect(dialog).toHaveClass('operational-overlay');
     expect(dialog.parentElement).toHaveClass('relative');
     expect(trigger).toHaveAttribute('aria-expanded', 'true');
     expect(trigger).toHaveAttribute('aria-controls', dialog.id);

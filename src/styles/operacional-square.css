@@ -114,6 +114,22 @@
   border-bottom: 1px solid hsl(var(--border) / 0.7);
 }
 
+[data-module-shell='operacional'] :where(.operational-giro, .operational-assistant) .operational-panel {
+  border-radius: 2px;
+  box-shadow: none;
+  background-image: none;
+}
+
+[data-module-shell='operacional'] .operational-action-row {
+  min-height: 2.75rem;
+  border-bottom: 1px solid hsl(var(--border) / 0.7);
+  transition: background-color 150ms ease;
+}
+
+[data-module-shell='operacional'] .operational-action-row:hover {
+  background: hsl(var(--muted) / 0.35);
+}
+
 .operational-overlay {
   border-radius: 4px !important;
   background: hsl(var(--popover)) !important;

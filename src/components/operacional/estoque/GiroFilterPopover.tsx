@@ -55,7 +55,7 @@ export function GiroFilterPopover({
       {open && (
         <div
           aria-label="Filtros do giro"
-          className="absolute right-0 top-full z-50 mt-1 w-[min(92vw,44rem)] space-y-3 rounded-md border bg-popover p-3 text-popover-foreground shadow-md"
+          className="operational-overlay absolute right-0 top-full z-50 mt-1 w-[min(92vw,44rem)] space-y-3 rounded-md border bg-popover p-3 text-popover-foreground shadow-md"
           id={panelId}
           ref={(node) => {
             if (node && !node.contains(document.activeElement)) {

@@ -47,6 +47,12 @@ beforeAll(() => {
 afterAll(() => vi.unstubAllGlobals());
 
 describe('GiroEstoqueTab', () => {
+  it('expoe a raiz visual da aba de giro', () => {
+    render(<GiroEstoqueTab estoqueData={estoqueFixtureComTresItens} filters={{ ...filters, statusFilter: [] }} giroData={giroFixture} onStatusFilterChange={vi.fn()} />);
+
+    expect(screen.getByRole('region', { name: /^giro de estoque$/i })).toHaveClass('operational-giro');
+  });
+
   it('usa um unico viewport de dados sem scroll vertical local na tabela', () => {
     render(<GiroEstoqueTab estoqueData={estoqueFixtureComTresItens} filters={{ ...filters, statusFilter: [] }} giroData={giroFixture} onStatusFilterChange={vi.fn()} />);
 

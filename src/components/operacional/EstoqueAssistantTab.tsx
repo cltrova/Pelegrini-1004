@@ -370,7 +370,7 @@ function InsightsTab({ estoqueData, giroData, now }: Props) {
           )}
         </div>
         <Button variant="outline" size="sm" onClick={generateInsights} disabled={isLoading} className="gap-2">
-          <RefreshCw className={`h-3.5 w-3.5 ${isLoading ? 'animate-spin' : ''}`} />
+          <RefreshCw className={`h-3.5 w-3.5 ${isLoading ? 'animate-spin motion-reduce:animate-none' : ''}`} />
           {isLoading ? 'Analisando...' : insights.length > 0 ? 'Atualizar' : 'Gerar Insights'}
         </Button>
       </div>
@@ -383,7 +383,7 @@ function InsightsTab({ estoqueData, giroData, now }: Props) {
         </div>
       ) : isLoading && insights.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-8 space-y-3">
-          <Loader2 className="h-8 w-8 text-amber-500 animate-spin" />
+          <Loader2 className="h-8 w-8 animate-spin text-amber-500 motion-reduce:animate-none" />
           <p className="text-sm text-muted-foreground">Analisando estoque como um gerente especialista...</p>
         </div>
       ) : (
@@ -394,7 +394,7 @@ function InsightsTab({ estoqueData, giroData, now }: Props) {
               <button
                 key={cat.id}
                 onClick={() => setActiveCategory(cat.id)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all border ${
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors border ${
                   activeCategory === cat.id
                     ? 'bg-amber-500/15 border-amber-500/40 text-amber-600 dark:text-amber-400'
                     : 'bg-muted/50 border-border hover:bg-muted text-muted-foreground'
@@ -414,7 +414,7 @@ function InsightsTab({ estoqueData, giroData, now }: Props) {
             {filteredInsights.map((insight, i) => (
               <article
                 key={i}
-                className={`cursor-pointer px-1 py-3 transition-colors duration-150 hover:bg-muted/30 ${SEVERITY_STYLES[insight.severity] || SEVERITY_STYLES.info}`}
+                className={`operational-action-row cursor-pointer px-1 py-3 transition-colors duration-150 hover:bg-muted/30 ${SEVERITY_STYLES[insight.severity] || SEVERITY_STYLES.info}`}
                 onClick={() => setExpandedInsight(expandedInsight === i ? null : i)}
               >
                 <div className="space-y-2">
@@ -709,7 +709,7 @@ function ChatTab({ estoqueData, giroData, now, customPrompt, codEmpresaBi, credi
         {isLoading && (
           <div className="flex gap-3">
             <div className="h-8 w-8 rounded-full bg-amber-500/20 flex items-center justify-center">
-              <Loader2 className="h-4 w-4 text-amber-500 animate-spin" />
+              <Loader2 className="h-4 w-4 animate-spin text-amber-500 motion-reduce:animate-none" />
             </div>
             <div className="bg-muted rounded-lg p-3">
               <p className="text-sm text-muted-foreground">Analisando dados...</p>
@@ -721,7 +721,7 @@ function ChatTab({ estoqueData, giroData, now, customPrompt, codEmpresaBi, credi
       <div data-testid="stock-assistant-composer" className="shrink-0 border-t border-border bg-background px-3 py-3">
         {isRecording && (
           <div className="flex items-center gap-3 mb-3 px-3 py-2 rounded-lg bg-red-500/10 border border-red-500/20">
-            <div className="h-2.5 w-2.5 rounded-full bg-red-500 animate-pulse" />
+            <div className="h-2.5 w-2.5 rounded-full bg-red-500" />
             <span className="text-xs font-medium text-red-600 dark:text-red-400">Gravando {formatTime(recordingTime)}</span>
             <Button size="sm" variant="ghost" className="ml-auto h-7 text-xs gap-1.5 text-red-600" onClick={stopRecording}>
               <MicOff className="h-3.5 w-3.5" /> Parar
@@ -730,7 +730,7 @@ function ChatTab({ estoqueData, giroData, now, customPrompt, codEmpresaBi, credi
         )}
         {isTranscribing && (
           <div className="flex items-center gap-2 mb-3 px-3 py-2 rounded-lg bg-muted">
-            <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
+            <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground motion-reduce:animate-none" />
             <span className="text-xs text-muted-foreground">Transcrevendo áudio...</span>
           </div>
         )}
@@ -881,7 +881,7 @@ function BrainTab({ codEmpresaBi }: { codEmpresaBi: string }) {
   if (isLoadingPrompt) {
     return (
       <div className="flex items-center justify-center py-16">
-        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground motion-reduce:animate-none" />
       </div>
     );
   }
@@ -908,7 +908,7 @@ function BrainTab({ codEmpresaBi }: { codEmpresaBi: string }) {
             disabled={isSaving || !hasChanges}
             className="gap-2"
           >
-            {isSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : hasChanges ? <Save className="h-3.5 w-3.5" /> : <Check className="h-3.5 w-3.5" />}
+            {isSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin motion-reduce:animate-none" /> : hasChanges ? <Save className="h-3.5 w-3.5" /> : <Check className="h-3.5 w-3.5" />}
             {isSaving ? 'Salvando...' : hasChanges ? 'Salvar' : 'Salvo'}
           </Button>
         </div>
@@ -951,7 +951,7 @@ function BrainTab({ codEmpresaBi }: { codEmpresaBi: string }) {
               disabled={isAiLoading || !aiRequest.trim()}
               className="gap-2 shrink-0"
             >
-              {isAiLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+              {isAiLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin motion-reduce:animate-none" /> : <Sparkles className="h-3.5 w-3.5" />}
               Sugerir
             </Button>
           </div>
@@ -1047,7 +1047,7 @@ export function EstoqueAssistantTab({ giroData, estoqueData, now, onProductActio
   const creditPercent = credits.limit > 0 ? Math.min((credits.used / credits.limit) * 100, 100) : 0;
 
   return (
-    <section aria-label="Assistente de estoque" className="flex min-h-0 min-w-0 flex-1 flex-col bg-background">
+    <section aria-label="Assistente de estoque" className="operational-assistant flex min-h-0 min-w-0 flex-1 flex-col bg-background">
       <Tabs className="flex min-h-0 flex-1 flex-col" onValueChange={(value) => setActiveView(value as 'chat' | 'insights')} value={activeView}>
         <EstoqueToolbar aria-label="Comandos do assistente de estoque" className="justify-between">
           <TabsList aria-label="Areas do assistente" className="flex h-full shrink-0 items-end justify-start gap-4 rounded-none bg-transparent p-0">
@@ -1067,7 +1067,7 @@ export function EstoqueAssistantTab({ giroData, estoqueData, now, onProductActio
             </div>
             <div className="h-1 w-14 overflow-hidden rounded-full bg-muted">
               <div
-                className={`h-full rounded-full transition-all ${creditPercent > 90 ? 'bg-red-500' : creditPercent > 70 ? 'bg-amber-500' : 'bg-emerald-500'}`}
+                className={`h-full rounded-full transition-colors ${creditPercent > 90 ? 'bg-red-500' : creditPercent > 70 ? 'bg-amber-500' : 'bg-emerald-500'}`}
                 style={{ width: `${creditPercent}%` }}
               />
             </div>

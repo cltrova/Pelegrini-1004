@@ -43,6 +43,12 @@ describe('EstoqueAssistantTab', () => {
     mockRpc.mockResolvedValue({ data: null });
   });
 
+  it('expoe a raiz visual da aba do assistente', () => {
+    render(<EstoqueAssistantTab estoqueData={estoqueFixture} giroData={giroFixture} />);
+
+    expect(screen.getByRole('region', { name: /^assistente de estoque$/i })).toHaveClass('operational-assistant');
+  });
+
   it('remove o cabecalho duplicado e mantem historico e compositor no viewport', () => {
     render(<EstoqueAssistantTab estoqueData={estoqueFixture} giroData={giroFixture} />);
 

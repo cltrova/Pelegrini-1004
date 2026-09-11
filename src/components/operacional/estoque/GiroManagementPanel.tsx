@@ -28,6 +28,7 @@ export function GiroManagementPanel({ products, activeStatuses, onStatusFilterCh
   return (
     <EstoqueMetricStrip
       activeKeys={activeStatuses}
+      className="operational-panel"
       metrics={metrics}
       onMetricClick={(key) => {
         if (!['atendendo', 'alerta', 'faltando', 'excesso'].includes(key)) return;

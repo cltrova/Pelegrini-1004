@@ -23,9 +23,11 @@ describe('GiroManagementPanel', () => {
     );
 
     const region = screen.getByRole('region', { name: 'Indicadores de estoque' });
+    expect(region).toHaveClass('operational-panel');
     expect(region).toHaveClass('h-11', 'overflow-x-auto');
     container.querySelectorAll('[data-stock-summary]').forEach((card) => {
-      expect(card).toHaveClass('h-full', 'min-w-[8rem]');
+      expect(card).toHaveClass('h-full');
+      expect((card as HTMLElement).style.minWidth).toMatch(/^max\(9rem, calc\(\d+ch \+ 3rem\)\)$/);
     });
   });
 

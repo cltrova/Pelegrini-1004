@@ -275,7 +275,7 @@ export function GiroEstoqueTab({ giroData, estoqueData, filters, onStatusFilterC
 
   return (
     <TooltipProvider delayDuration={0}>
-    <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+    <section aria-label="Giro de estoque" className="operational-giro flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
       <EstoqueToolbar aria-label="Comandos do giro de estoque">
         {toolbarContent}
         <Button aria-label="Abrir analise de giro" className="h-8 gap-1.5 px-2.5 text-xs" onClick={() => setAnalysisOpen(true)} type="button" variant="outline">
@@ -285,7 +285,7 @@ export function GiroEstoqueTab({ giroData, estoqueData, filters, onStatusFilterC
       </EstoqueToolbar>
 
       <Sheet onOpenChange={setAnalysisOpen} open={analysisOpen}>
-        <SheetContent className="w-[min(96vw,48rem)] overflow-x-hidden overflow-y-auto p-0 sm:max-w-3xl" side="right">
+        <SheetContent className="operational-overlay w-[min(96vw,48rem)] overflow-x-hidden overflow-y-auto p-0 sm:max-w-3xl" side="right">
           <SheetHeader className="border-b border-border px-4 py-3 pr-12 text-left">
             <SheetTitle>Analise de giro</SheetTitle>
             <SheetDescription>Tendencia mensal e produtos que merecem acompanhamento.</SheetDescription>
@@ -588,7 +588,7 @@ export function GiroEstoqueTab({ giroData, estoqueData, filters, onStatusFilterC
             </div>
           )}
       </EstoqueDataViewport>
-    </div>
+    </section>
     </TooltipProvider>
   );
 }

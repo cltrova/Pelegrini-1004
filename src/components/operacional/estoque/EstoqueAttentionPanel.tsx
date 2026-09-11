@@ -39,7 +39,7 @@ export function EstoqueAttentionPanel({ products, onSelectProduct }: EstoqueAtte
     .slice(0, 6);
 
   return (
-    <PelegriniDataPanel eyebrow="Prioridade operacional" title="Atencao no estoque">
+    <PelegriniDataPanel className="operational-panel" eyebrow="Prioridade operacional" title="Atencao no estoque">
       {prioritized.length === 0 ? (
         <div className="flex min-w-0 items-center gap-2 py-3 text-sm text-muted-foreground">
           <CircleCheck aria-hidden="true" className="h-5 w-5 shrink-0 text-emerald-600" />
@@ -52,7 +52,7 @@ export function EstoqueAttentionPanel({ products, onSelectProduct }: EstoqueAtte
             const Icon = config.icon;
             return (
               <button
-                className="flex min-h-14 min-w-0 w-full max-w-full items-center gap-3 px-1 py-2 text-left transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
+                className="operational-action-row flex min-h-14 min-w-0 w-full max-w-full items-center gap-3 px-1 py-2 text-left transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
                 key={`${item.cod_empresa}:${item.cod_produto}`}
                 onClick={() => onSelectProduct(item)}
                 type="button"
