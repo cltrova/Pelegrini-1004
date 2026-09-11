@@ -206,7 +206,7 @@ describe('Pelegrini visual components', () => {
 
   it('contains sidebar shell content without changing the header variant inset', () => {
     const { rerender } = render(
-      <PelegriniModuleShell sidebar={<aside>Menu</aside>} moduleKey="operacional">
+      <PelegriniModuleShell sidebar={<aside>Menu</aside>} moduleKey="comercial">
         <span data-testid="module-content">Conteudo</span>
       </PelegriniModuleShell>,
     );
@@ -218,16 +218,20 @@ describe('Pelegrini visual components', () => {
     expect(screen.getByTestId('module-content').parentElement).toHaveClass('min-w-0');
     expect(screen.getByTestId('pelegrini-module-shell')).toHaveAttribute(
       'data-module-shell',
-      'operacional',
+      'comercial',
     );
 
     rerender(
-      <PelegriniModuleShell sidebar={<header>Cabecalho</header>} variant="header">
+      <PelegriniModuleShell sidebar={<header>Cabecalho</header>} variant="header" moduleKey="financeiro">
         <span>Conteudo com cabecalho</span>
       </PelegriniModuleShell>,
     );
 
     expect(screen.getByRole('main')).not.toHaveClass('md:ml-[72px]');
+    expect(screen.getByTestId('pelegrini-module-shell')).toHaveAttribute(
+      'data-module-shell',
+      'financeiro',
+    );
   });
 
   it('gives the mobile header theme control a stable 44 px hit target', () => {

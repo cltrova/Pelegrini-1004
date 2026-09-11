@@ -1,0 +1,82 @@
+[data-module-shell='comercial'] {
+  --commercial-panel-radius: 2px;
+  --commercial-control-radius: 4px;
+  --commercial-motion-fast: 150ms;
+  --commercial-motion-sidebar: 220ms;
+}
+
+[data-module-shell='comercial'] .pelegrini-page-surface {
+  background: hsl(var(--background));
+}
+
+[data-module-shell='comercial'] .pelegrini-surface-pattern {
+  display: none;
+}
+
+[data-module-shell='comercial'] * {
+  letter-spacing: 0;
+}
+
+[data-module-shell='comercial'] .pelegrini-sidebar {
+  box-shadow: none;
+  transition-duration: var(--commercial-motion-sidebar);
+}
+
+[data-module-shell='comercial'] .pelegrini-sidebar::before {
+  background-image: none;
+}
+
+[data-module-shell='comercial'] :where(.premium-card, .premium-hover-card, .dashboard-header-card, .bg-card, .pelegrini-data-panel, .pelegrini-kpi-card, .pelegrini-chart-frame, table, th, td, section) {
+  border-radius: var(--commercial-panel-radius) !important;
+  box-shadow: none !important;
+  background-image: none !important;
+  backdrop-filter: none !important;
+}
+
+[data-module-shell='comercial'] :where(.rounded-md, .rounded-lg, .rounded-xl, .rounded-2xl) {
+  border-radius: var(--commercial-panel-radius) !important;
+}
+
+[data-module-shell='comercial'] :where(button, input, select, textarea, [role='button'], [role='combobox'], [role='menu'], [role='dialog'], [role='tab']) {
+  border-radius: var(--commercial-control-radius) !important;
+}
+
+[data-module-shell='comercial'] :where(button, [role='button'], [role='tab']) {
+  transition-property: color, background-color, border-color, opacity;
+  transition-duration: var(--commercial-motion-fast);
+}
+
+[data-module-shell='comercial'] .transition-transform {
+  transition-property: color, background-color, border-color, opacity;
+}
+
+[data-module-shell='comercial'] [class*='hover:translate']:hover,
+[data-module-shell='comercial'] .group:hover [class*='group-hover:translate'],
+[data-module-shell='comercial'] :where(.premium-card, .premium-hover-card, .dashboard-header-card):hover {
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+.commercial-overlay {
+  border-radius: var(--commercial-control-radius, 4px) !important;
+  background-image: none !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-module-shell='comercial'] *,
+  [data-module-shell='comercial'] *::before,
+  [data-module-shell='comercial'] *::after,
+  .commercial-overlay,
+  .commercial-overlay::before,
+  .commercial-overlay::after,
+  .commercial-overlay *,
+  .commercial-overlay *::before,
+  .commercial-overlay *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
