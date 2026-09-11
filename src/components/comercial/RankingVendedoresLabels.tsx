@@ -30,7 +30,6 @@ export function RankingVendedoresLabels({ data, modo, variant }: Props) {
       style={{ gridTemplateColumns: `repeat(${data.length}, minmax(0, 1fr))` }}
     >
       {data.map((row, index) => {
-        const shortName = row.nome.length > 14 ? `${row.nome.slice(0, 13)}…` : row.nome;
         const valueLabel = modo === 'meta'
           ? formatPercent(row.pctMeta || 0)
           : formatCurrency(row.mes || 0);
@@ -38,19 +37,19 @@ export function RankingVendedoresLabels({ data, modo, variant }: Props) {
         return (
           <div key={String(row.codigo ?? index)} className="min-w-0 text-center" title={row.nome}>
             <span
-              className={cn("block truncate text-muted-foreground", isPelegrini && "leading-tight")}
+              className={cn("block break-words text-muted-foreground", isPelegrini && "leading-tight")}
               style={{
-                fontSize: isPelegrini ? 10 : layout.sellerFontSize,
+                fontSize: isPelegrini ? 11 : layout.sellerFontSize,
                 fontWeight: isPelegrini ? 700 : layout.sellerFontWeight,
               }}
             >
-              {index + 1}. {shortName}
+              {index + 1}. {row.nome}
             </span>
             <span
               className={cn("block whitespace-nowrap font-mono text-foreground", isPelegrini ? "mt-0.5" : "mt-1")}
               style={{
-                fontSize: isPelegrini ? 12 : layout.valueFontSize,
-                fontWeight: isPelegrini ? 800 : layout.valueFontWeight,
+                fontSize: isPelegrini ? 13 : layout.valueFontSize,
+                fontWeight: isPelegrini ? 750 : layout.valueFontWeight,
               }}
             >
               {valueLabel}

@@ -2,7 +2,7 @@ import { useCallback, useMemo, useState, useEffect } from 'react';
 import { useCampanhas, type Campanha, type CampanhaInput, type CampanhaMarca } from '@/hooks/useCampanhas';
 import { useComercialProdutos } from '@/hooks/useComercialProdutos';
 import { supabase } from '@/integrations/supabase/client';
-import { useQuery } from '@tanstack/react-query';
+import { keepPreviousData, useIsFetching, useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -383,6 +383,8 @@ interface CampanhasTabProps {
 
 export function CampanhasTab({ periodoFiltro }: CampanhasTabProps = {}) {
   const { campanhas, isLoading, create, update, remove, isMutating } = useCampanhas();
+  const campanhasFetchCount = useIsFetching({ queryKey: ['campanhas'] });
+  const [hasRenderedData, setHasRenderedData] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string>('todas');
   const [marcaFilter, setMarcaFilter] = useState<string[]>([]);
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -597,6 +599,7 @@ export function CampanhasTab({ periodoFiltro }: CampanhasTabProps = {}) {
     queryKey: ['campanhas-insights', campanhasFiltradas.map(c => `${c.id}:${Math.round(c.realizadoTotal)}`).join(',')],
     enabled: campanhasFiltradas.length > 0,
     staleTime: 5 * 60 * 1000,
+    placeholderData: keepPreviousData,
     queryFn: async () => {
       const payload = campanhasFiltradas.map(c => ({
         id: c.id, nome: c.nome, status: c.status,
@@ -613,11 +616,24 @@ export function CampanhasTab({ periodoFiltro }: CampanhasTabProps = {}) {
     },
   });
 
-  if (isLoading) return <CampanhasSkeleton />;
+  useEffect(() => {
+    if (!isLoading) setHasRenderedData(true);
+  }, [isLoading]);
+
+  const showInitialLoading = isLoading && !hasRenderedData;
+  const isFetching = campanhasFetchCount > 0 || insightsQuery.isFetching;
+  const isRefreshing = isFetching && hasRenderedData;
+
+  if (showInitialLoading) return <CampanhasSkeleton />;
 
   return (
     <TooltipProvider>
       <div className="flex h-full min-h-0 flex-col gap-2">
+        {isRefreshing && (
+          <div aria-label="Atualizando campanhas comerciais" className="commercial-refresh-indicator shrink-0 text-xs text-muted-foreground" role="status">
+            Atualizando campanhas comerciais...
+          </div>
+        )}
         <ComercialFilterBar
           ariaLabel="Filtros de campanhas"
           primary={<>
@@ -731,7 +747,7 @@ export function CampanhasTab({ periodoFiltro }: CampanhasTabProps = {}) {
 
         <ComercialDataViewport ariaLabel="Campanhas comerciais" className="space-y-2 pr-1">
           {(insightsQuery.data && insightsQuery.data.length > 0) && (
-          <section aria-label="Alertas e oportunidades" className="rounded-md border border-border/70 bg-card">
+          <section aria-label="Alertas e oportunidades" className="commercial-dashboard-panel rounded-md border border-border/70 bg-card">
             <div className="border-b border-border/60 px-3 py-2 text-xs font-semibold">Alertas e oportunidades</div>
             <div className="grid grid-cols-1 gap-2 p-2 md:grid-cols-2 lg:grid-cols-3">
               {insightsQuery.data.map((ins, i) => (
@@ -747,7 +763,7 @@ export function CampanhasTab({ periodoFiltro }: CampanhasTabProps = {}) {
                     {ins.tipo !== 'alerta' && ins.tipo !== 'oportunidade' && <Minus className="h-4 w-4 text-primary mt-0.5 shrink-0" />}
                     <div className="min-w-0">
                       <p className="font-semibold text-sm leading-tight">{ins.titulo}</p>
-                      <p className="text-xs text-muted-foreground leading-relaxed mt-1">{ins.descricao}</p>
+                      <p className="commercial-insight-action mt-1 whitespace-normal break-words text-xs leading-relaxed text-muted-foreground">{ins.descricao}</p>
                     </div>
                   </div>
                 </div>
@@ -784,7 +800,7 @@ export function CampanhasTab({ periodoFiltro }: CampanhasTabProps = {}) {
 
 function KpiCard({ icon, label, value, sub, color, trendPositive }: { icon: React.ReactNode; label: string; value: string; sub?: string; color: string; trendPositive?: boolean; }) {
   return (
-    <Card className="overflow-hidden rounded-lg border-border/60 bg-card">
+    <Card className="commercial-dashboard-panel overflow-hidden rounded-lg border-border/60 bg-card">
       <CardContent className="p-5">
         <div className={cn('mb-3 inline-block rounded-lg p-2.5 text-white', color)}>{icon}</div>
         <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">{label}</p>
@@ -835,7 +851,7 @@ function KpiCardPremium({ icon, label, value, sub, campanhas, premioTotal }: { i
   return (
     <>
       <button type="button" onClick={() => setOpen(true)} className="text-left w-full">
-        <Card className="relative cursor-pointer overflow-hidden rounded-lg border-amber-500/30 bg-card transition-colors hover:border-amber-500/45">
+        <Card className="commercial-dashboard-panel relative cursor-pointer overflow-hidden rounded-lg border-amber-500/30 bg-card transition-colors hover:border-amber-500/45">
           <CardContent className="p-5 relative">
             <div className="mb-3 inline-block rounded-lg bg-amber-500/10 p-3 text-amber-500 ring-1 ring-amber-500/25">{icon}</div>
             <p className="text-[11px] uppercase tracking-wider text-amber-700 dark:text-amber-300 font-bold">{label}</p>
@@ -959,7 +975,7 @@ function KpiCardPremium({ icon, label, value, sub, campanhas, premioTotal }: { i
 
 function KpiCardProgress({ icon, label, value, sub, progress }: { icon: React.ReactNode; label: string; value: string; sub?: string; progress: number; }) {
   return (
-    <Card className="overflow-hidden rounded-lg border-border/60 bg-card">
+    <Card className="commercial-dashboard-panel overflow-hidden rounded-lg border-border/60 bg-card">
       <CardContent className="p-5">
         <div className="flex items-start justify-between mb-3">
           <div className="rounded-lg bg-emerald-500/10 p-2.5 text-emerald-500 ring-1 ring-emerald-500/20">{icon}</div>
@@ -1095,7 +1111,7 @@ function CampanhaFullCard({
   const progressoCompacto = Math.min(100, Math.max(0, c.progressoGeral || 0));
   return (
     <Card className={cn(
-      'group relative overflow-hidden border-border/60 bg-card transition-colors hover:ring-1 hover:ring-primary/20',
+      'commercial-dashboard-panel group relative overflow-hidden border-border/60 bg-card transition-colors hover:ring-1 hover:ring-primary/20',
       expanded && 'ring-1 ring-primary/25',
       c.statusVisual === 'expired' && 'opacity-80',
     )}>
@@ -1311,7 +1327,7 @@ function CampanhaMesesTabs({ cOrig }: { cOrig: CampanhaCalculada }) {
 
   return (
     <Tabs defaultValue={defaultKey} className="space-y-4">
-      <TabsList className="flex flex-wrap h-auto gap-1 rounded-lg border border-border/60 bg-muted/25 p-1">
+      <TabsList className="commercial-tab-strip flex flex-wrap h-auto gap-1 rounded-lg border border-border/60 bg-muted/25 p-1">
         {meses.map(m => (
           <TabsTrigger key={m.key} value={m.key} className="gap-2 rounded-md px-4 py-2 data-[state=active]:bg-background">
             <span className="font-semibold capitalize">{m.label}</span>
@@ -1672,7 +1688,7 @@ function MarcaInteractiveCard({ c, m, index }: { c: CampanhaCalculada; m: MarcaC
               <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
                 <TrendingUp className="h-4 w-4 text-primary" /> Evolução mensal
               </h4>
-              <div className="flex items-end gap-2 h-32">
+              <div className="commercial-chart-frame flex h-32 items-end gap-2">
                 {evolucaoMensal.map(([key, valor]) => {
                   const h = Math.max(4, (valor / maxMes) * 100);
                   const [y, mo] = key.split('-');
@@ -2177,7 +2193,7 @@ function VendedorDetalheDialog({
 
 function EmptyCampanhas({ onCreate, isPending }: { onCreate: (i: CampanhaInput) => Promise<void>; isPending: boolean }) {
   return (
-    <Card className="rounded-lg border-dashed">
+    <Card className="commercial-dashboard-panel rounded-lg border-dashed">
       <CardContent className="py-14 flex flex-col items-center text-center gap-3">
         <div className="rounded-lg bg-primary/5 p-4"><Trophy className="h-10 w-10 text-primary/40" /></div>
         <div>

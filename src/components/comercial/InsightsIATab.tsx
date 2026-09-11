@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import { BarChart3, AlertTriangle, TrendingUp, Info, CheckCircle2, Loader2, RefreshCw } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
@@ -27,6 +26,9 @@ const tipoConfig = {
 export function InsightsIATab({ vendedores, kpis }: Props) {
   const [insights, setInsights] = useState<Insight[] | null>(null);
   const [loading, setLoading] = useState(false);
+  const hasRenderedData = insights !== null;
+  const showInitialLoading = loading && !hasRenderedData;
+  const isRefreshing = loading && hasRenderedData;
 
   const gerarInsights = async () => {
     setLoading(true);
@@ -66,7 +68,7 @@ export function InsightsIATab({ vendedores, kpis }: Props) {
     );
   }
 
-  if (loading) {
+  if (showInitialLoading) {
     return (
       <div className="flex min-h-48 flex-col items-center justify-center rounded-md border border-border/70 bg-card text-center">
         <Loader2 className="mb-3 h-6 w-6 animate-spin text-primary motion-reduce:animate-none" />
@@ -83,40 +85,42 @@ export function InsightsIATab({ vendedores, kpis }: Props) {
           <h3 className="text-sm font-semibold">Análises comerciais</h3>
         </div>
         <Button variant="outline" size="sm" onClick={gerarInsights} disabled={loading}>
-          <RefreshCw className="h-4 w-4 mr-2" />
-          Atualizar
+          <RefreshCw className={cn('h-4 w-4 mr-2', isRefreshing && 'animate-spin motion-reduce:animate-none')} />
+          {isRefreshing ? 'Atualizando' : 'Atualizar'}
         </Button>
       </div>
 
+      {isRefreshing && (
+        <div aria-label="Atualizando análises comerciais" className="commercial-refresh-indicator text-xs text-muted-foreground" role="status">
+          Atualizando análises comerciais...
+        </div>
+      )}
+
       {insights && insights.length === 0 ? (
-        <Card>
-          <CardContent className="py-10 text-center text-muted-foreground">
-            Nenhum insight foi gerado. Tente novamente.
-          </CardContent>
-        </Card>
+        <div className="commercial-dashboard-panel border border-border/60 bg-card py-10 text-center text-muted-foreground">
+          Nenhum insight foi gerado. Tente novamente.
+        </div>
       ) : (
         <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
           {insights?.map((ins, i) => {
             const cfg = tipoConfig[ins.tipo] || tipoConfig.info;
             const Icon = cfg.icon;
             return (
-              <Card
+              <article
                 key={i}
                 className={cn(
-                  'rounded-md border-border/60 shadow-none transition-colors hover:border-primary/30 hover:bg-muted/30',
+                  'commercial-dashboard-panel rounded-md border border-border/60 p-3 shadow-none transition-colors hover:border-primary/30 hover:bg-muted/30',
                   cfg.bg,
                 )}
               >
-                <CardContent className="p-3">
-                  <div className="flex items-start gap-3">
-                    <Icon className={cn('h-5 w-5 mt-0.5 shrink-0', cfg.color)} />
-                    <div className="flex-1">
-                      <h4 className="font-semibold text-sm mb-1">{ins.titulo}</h4>
-                      <p className="text-sm text-muted-foreground">{ins.descricao}</p>
-                    </div>
+                <div className="flex items-start gap-3">
+                  <Icon className={cn('h-5 w-5 mt-0.5 shrink-0', cfg.color)} />
+                  <div className="min-w-0 flex-1">
+                    <h4 className="font-semibold text-sm mb-1">{ins.titulo}</h4>
+                    <p className="commercial-insight-action whitespace-normal break-words text-sm text-muted-foreground">{ins.descricao}</p>
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              </article>
             );
           })}
         </div>

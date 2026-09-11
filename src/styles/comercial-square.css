@@ -5,11 +5,23 @@
   --commercial-motion-sidebar: 220ms;
 }
 
-[data-module-shell='comercial'] :where(.commercial-workspace, .commercial-toolbar, .commercial-metric-strip, .commercial-data-viewport) {
+[data-module-shell='comercial'] :where(.commercial-workspace, .commercial-toolbar, .commercial-metric-strip, .commercial-data-viewport, .commercial-dashboard, .commercial-tab-strip, .commercial-dashboard-panel, .commercial-chart-frame) {
   border-radius: var(--commercial-panel-radius);
   background-image: none;
   box-shadow: none;
   backdrop-filter: none;
+}
+
+[data-module-shell='comercial'] .commercial-insight-action {
+  overflow: visible;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  text-overflow: clip;
+}
+
+[data-module-shell='comercial'] .commercial-refresh-indicator {
+  border-radius: var(--commercial-panel-radius);
+  box-shadow: none;
 }
 
 [data-module-shell='comercial'] .commercial-filter-control,

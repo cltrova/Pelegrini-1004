@@ -1,5 +1,5 @@
 import { lazy, Suspense, useMemo, useState, useCallback, useEffect } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
+import { useIsFetching, useQueryClient } from '@tanstack/react-query';
 import { useComercialData } from '@/hooks/useComercialData';
 import { useEmpresaAtiva } from '@/hooks/useEmpresaAtiva';
 import { useFilialSelecionada } from '@/contexts/FilialSelecionadaContext';
@@ -8,7 +8,7 @@ import { ErrorState } from '@/components/common/ErrorState';
 import { 
   Target, TrendingUp, TrendingDown, DollarSign, Calendar,
   Users, FileText, ReceiptText, Trophy, AlertTriangle,
-  ChevronUp, ChevronDown, Minus, Crown, Medal, Award, User, Eye
+  ChevronUp, ChevronDown, Minus, Crown, Medal, Award, User, Eye, Loader2
 } from 'lucide-react';
 import { VendedorDetailsDialog } from '@/components/comercial/VendedorDetailsDialog';
 import { getDiasUteisNoMes, getDiasUteisDecorridos, type ComercialFilters as ComercialFiltersType, type Pedido } from '@/types/comercial';
@@ -106,6 +106,12 @@ const ANOS_DISPONIVEIS = ['2023', '2024', '2025', '2026'];
 
 export default function MetasVendedoresPage() {
   const queryClient = useQueryClient();
+  const commercialFetchCount = useIsFetching({
+    predicate: (query) => {
+      const rootKey = query.queryKey[0];
+      return typeof rootKey === 'string' && rootKey.startsWith('comercial');
+    },
+  });
   const { empresa, codEmpresaAtiva, isLoading: isLoadingEmpresa } = useEmpresaAtiva();
   const { filialAtiva, filialNome } = useFilialSelecionada();
   const codEmpresaNorm = String(codEmpresaAtiva ?? '').trim();
@@ -119,6 +125,7 @@ export default function MetasVendedoresPage() {
   const isPelegriniPage = isEmpresa1004Page || isEmpresa10041Page;
   const isLayoutPremium = isPelegriniPage;
   const [initialized, setInitialized] = useState(false);
+  const [hasRenderedData, setHasRenderedData] = useState(false);
   const [activeTab, setActiveTab] = useState<string>(() => {
     try { return sessionStorage.getItem('comercial:metas:tab') || 'visao-geral'; } catch { return 'visao-geral'; }
   });
@@ -173,8 +180,11 @@ export default function MetasVendedoresPage() {
   }, [codEmpresaAtiva, isPelegriniPage, pendingFilters]);
 
   const { vendedoresPerformance, pedidos, devolucoes, evolucaoDiaria, evolucaoMensal, clientesPerformance, insights, kpis, periodoDisponivel, vendedoresDisponiveis, isLoading, error } = useComercialData(filtrosAplicadosParaDados, {
-    keepPreviousData: !isPelegriniPage,
+    keepPreviousData: true,
   });
+  useEffect(() => {
+    if (!isLoading) setHasRenderedData(true);
+  }, [isLoading]);
   const [chartView, setChartView] = useState<'mensal' | 'diario'>('diario');
   const [vendedorDetalhe, setVendedorDetalhe] = useState<{ row: VendedorDetalheRow; ranking: number } | null>(null);
   const [receitaDetalheOpen, setReceitaDetalheOpen] = useState(false);
@@ -187,14 +197,14 @@ export default function MetasVendedoresPage() {
     isLoading: isLoadingProdutos1004,
     error: errorProdutos1004,
   } = useComercialProdutos(filtrosAplicadosParaDados, {
-    keepPreviousData: !isPelegriniPage,
+    keepPreviousData: true,
   });
   const {
     produtos: produtos1004Totalizadores,
     receitaTotalizada: receita1004TotalizadaGeral,
     pedidosDistintosTotalizados: pedidos1004DistintosGeral,
   } = useComercialProdutos(filtrosTotalizadores1004, {
-    keepPreviousData: !isPelegriniPage,
+    keepPreviousData: true,
   });
   const {
     pedidos: pedidosTotalizadorOficial,
@@ -204,7 +214,7 @@ export default function MetasVendedoresPage() {
     null,
     {
       enabled: isEmpresa10041Page,
-      keepPreviousData: false,
+      keepPreviousData: true,
     },
   );
   const {
@@ -629,7 +639,9 @@ export default function MetasVendedoresPage() {
     return <LayoutAlternativoComercial />;
   }
 
-  const isInitialLoading = isLoading && !vendedoresPerformance.length;
+  const showInitialLoading = isLoading && !hasRenderedData;
+  const isFetching = commercialFetchCount > 0;
+  const isRefreshing = isFetching && hasRenderedData;
 
   // Observação: NÃO substituímos a página inteira quando não há vendedores.
   // O aviso de "sem vendedores" é renderizado inline dentro da seção afetada
@@ -669,14 +681,26 @@ export default function MetasVendedoresPage() {
   };
 
   return (
-    <ComercialCompactPage as="div" className={cn(
-      'dashboard-commercial-page enterprise-page',
+    <ComercialCompactPage className={cn(
+      'commercial-dashboard dashboard-commercial-page enterprise-page',
       isPelegriniPage && 'bg-background text-foreground',
     )}>
       <ComercialCommandBar
         title="Visão comercial"
         context={`${filialNome || 'Comercial'} · ${mesFormatado}`}
       />
+
+      {isRefreshing && (
+        <div
+          aria-label="Atualizando dados comerciais"
+          aria-live="polite"
+          className="commercial-refresh-indicator flex shrink-0 items-center gap-2 border border-border/70 bg-card px-3 py-1.5 text-xs text-muted-foreground"
+          role="status"
+        >
+          <Loader2 className="h-3.5 w-3.5 animate-spin motion-reduce:animate-none" />
+          Atualizando dados comerciais...
+        </div>
+      )}
 
       {!isCampanhas1004Ativa && (
         <EnterpriseComercialFilters
@@ -701,7 +725,7 @@ export default function MetasVendedoresPage() {
       <Suspense fallback={<ComercialTabFallback />}>
         <div className="w-full shrink-0 overflow-x-auto overscroll-x-contain rounded-md [scrollbar-width:thin]">
         <TabsList className={cn(
-          'h-9 w-max min-w-full justify-start',
+          'commercial-tab-strip h-9 w-max min-w-full justify-start',
           isPelegriniPage && 'border border-border/60 bg-muted/40 p-1 text-muted-foreground shadow-none [&_button:hover]:text-foreground [&_button[data-state=active]]:bg-primary [&_button[data-state=active]]:text-primary-foreground [&_button[data-state=active]]:shadow-sm',
         )}>
           <TabsTrigger value="visao-geral" className={tabTriggerClass}>Visão geral</TabsTrigger>
@@ -723,10 +747,10 @@ export default function MetasVendedoresPage() {
         <TabsContent value="visao-geral" className="mt-0 min-h-0 flex-1 space-y-3 overflow-auto">
           {error ? (
             <ErrorState message="Erro ao carregar dados comerciais" />
-          ) : isInitialLoading ? (
+          ) : showInitialLoading ? (
             <LoadingState
               message="Carregando visão comercial..."
-              className="h-full min-h-48 rounded-md shadow-none"
+              className="commercial-dashboard-panel h-full min-h-48 rounded-md shadow-none"
               size="sm"
             />
           ) : isLayoutPremium ? (
@@ -786,6 +810,7 @@ export default function MetasVendedoresPage() {
             subtitle="Performance por vendedor ordenada por valor líquido"
             icon={Trophy}
             tone="amarelo"
+            className="commercial-dashboard-panel"
             contentClassName="pt-0"
           >
             <div className="overflow-x-auto">
@@ -933,7 +958,7 @@ export default function MetasVendedoresPage() {
               title="Análises executivas"
               icon={TrendingUp}
               tone="azul"
-              className="lg:col-span-2"
+              className="commercial-dashboard-panel lg:col-span-2"
             >
               <LazyInsightsIATab vendedores={vendedoresBaseVisual} kpis={kpisGerais} />
             </PremiumSectionCard>
@@ -943,6 +968,7 @@ export default function MetasVendedoresPage() {
               title="Ranking de Performance"
               icon={Trophy}
               tone="amarelo"
+              className="commercial-dashboard-panel"
               contentClassName="space-y-4 pt-2"
             >
                 {vendedoresBaseVisual.slice(0, 3).map((v, idx) => (
@@ -1006,6 +1032,7 @@ export default function MetasVendedoresPage() {
             subtitle="Análise de cada vendedor com base em diferentes cenários de performance"
             icon={Target}
             tone="verde"
+            className="commercial-dashboard-panel"
           >
               <div className="flex flex-wrap gap-4 mb-6 text-xs text-muted-foreground">
                 <div className="flex items-center gap-1.5">

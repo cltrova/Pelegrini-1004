@@ -24,5 +24,6 @@ describe('RankingVendedoresLabels', () => {
     expect(valor.closest('svg')).toBeNull();
     expect(nome).toHaveStyle({ fontSize: '11px', fontWeight: '700' });
     expect(valor).toHaveStyle({ fontSize: '13px', fontWeight: '750' });
+    expect(nome).not.toHaveClass('truncate');
   });
 });

@@ -337,7 +337,7 @@ export function VisaoGeralRapida1004({
       />
 
       {/* ================= Gráfico Acumulado ================= */}
-      <Card className={cn(isEmpresaPelegrini && 'pelegrini-compact-card border-border/70 bg-card text-foreground shadow-none')}>
+      <Card className={cn('commercial-dashboard-panel commercial-chart-frame', isEmpresaPelegrini && 'pelegrini-compact-card border-border/70 bg-card text-foreground shadow-none')}>
         <CardContent className={cn(isEmpresaPelegrini ? 'p-2' : 'pt-6')}>
 
           <div className={cn(isEmpresaPelegrini ? 'h-[230px]' : 'h-72')}>
@@ -400,7 +400,7 @@ export function VisaoGeralRapida1004({
       {/* ================= Grid extras ================= */}
       <div className={cn("grid grid-cols-1 lg:grid-cols-2", isEmpresaPelegrini ? "gap-2" : "gap-4")}>
         {/* Donut participação */}
-        <Card className={cn(isEmpresaPelegrini && 'pelegrini-compact-card border-border/70 bg-card text-foreground shadow-none')}>
+        <Card className={cn('commercial-dashboard-panel', isEmpresaPelegrini && 'pelegrini-compact-card border-border/70 bg-card text-foreground shadow-none')}>
           <CardContent className={cn(isEmpresaPelegrini ? 'p-2' : 'pt-6')}>
 
             <div className={cn("flex flex-col", isEmpresaPelegrini ? 'h-auto min-h-0' : isEmpresa1001 ? 'h-96' : 'h-64')}>
@@ -450,7 +450,7 @@ export function VisaoGeralRapida1004({
 
 
         {/* Heatmap dias x vendedores */}
-        <Card className={cn(isEmpresaPelegrini && 'pelegrini-compact-card border-border/70 bg-card text-foreground shadow-none')}>
+        <Card className={cn('commercial-dashboard-panel commercial-chart-frame', isEmpresaPelegrini && 'pelegrini-compact-card border-border/70 bg-card text-foreground shadow-none')}>
           <CardContent className={cn(isEmpresaPelegrini ? 'p-2' : 'pt-6')}>
 
             <div className="overflow-x-auto">
@@ -488,6 +488,7 @@ export function VisaoGeralRapida1004({
                           aria-label={`${linha.nome}, dia ${dia}, ${formatCurrency(val)}`}
                           title={`Dia ${dia}: ${formatCurrency(val)}`}
                           onMouseEnter={() => setSelectedHeatCell({ nome: linha.nome, dia, valor: val })}
+                          onMouseLeave={() => setSelectedHeatCell(null)}
                           onFocus={() => setSelectedHeatCell({ nome: linha.nome, dia, valor: val })}
                           onClick={() => setSelectedHeatCell({ nome: linha.nome, dia, valor: val })}
                           onKeyDown={(event) => {

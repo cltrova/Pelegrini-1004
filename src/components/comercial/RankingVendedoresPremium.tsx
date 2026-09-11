@@ -158,7 +158,7 @@ export function RankingVendedoresPremium({ vendedores, pedidos, limit = 12 }: Pr
               <div
                 key={String(v.codigo)}
                 className={cn(
-                  'group relative overflow-hidden rounded-lg border bg-card',
+                  'commercial-dashboard-panel group relative overflow-hidden rounded-lg border bg-card',
                   'transition-colors duration-300 hover:border-primary/30',
                   config.border,
                   isCenter && 'md:scale-105 md:-mt-2'
@@ -211,7 +211,7 @@ export function RankingVendedoresPremium({ vendedores, pedidos, limit = 12 }: Pr
                   </div>
 
                   {sparkline.length > 1 && (
-                    <div className="h-12 -mx-1 opacity-80 group-hover:opacity-100 transition-opacity">
+                    <div className="commercial-chart-frame h-12 -mx-1 opacity-80 group-hover:opacity-100 transition-opacity">
                       <ResponsiveContainer width="100%" height="100%">
                         <AreaChart data={sparkline} margin={{ top: 4, right: 4, bottom: 0, left: 4 }}>
                           <defs>
@@ -238,7 +238,7 @@ export function RankingVendedoresPremium({ vendedores, pedidos, limit = 12 }: Pr
         </div>
       )}
 
-      <div className="relative overflow-hidden rounded-lg border border-border/60 bg-card transition-colors duration-300">
+      <div className="commercial-dashboard-panel relative overflow-hidden rounded-lg border border-border/60 bg-card transition-colors duration-300">
         <div className="relative px-6 pt-6 pb-2 flex items-center justify-between">
           <div>
             <h2 className="text-base font-semibold tracking-tight">Ranking completo</h2>
@@ -280,7 +280,7 @@ export function RankingVendedoresPremium({ vendedores, pedidos, limit = 12 }: Pr
                   </div>
 
                   {sparkline.length > 1 && (
-                    <div className="hidden lg:block h-7 w-20 opacity-60 group-hover:opacity-100 transition-opacity">
+                    <div className="commercial-chart-frame hidden lg:block h-7 w-20 opacity-60 group-hover:opacity-100 transition-opacity">
                       <ResponsiveContainer width="100%" height="100%">
                         <AreaChart data={sparkline} margin={{ top: 2, right: 0, bottom: 0, left: 0 }}>
                           <defs>
@@ -389,7 +389,7 @@ function InsightCard({ icon: Icon, label, value, sub, accent, trend, delay = 0, 
   const a = ACCENT_MAP[accent];
   return (
     <div
-      className="group relative overflow-hidden rounded-lg border border-border/60 bg-card p-4 transition-colors duration-200 hover:border-primary/30"
+      className="commercial-dashboard-panel group relative overflow-hidden rounded-lg border border-border/60 bg-card p-4 transition-colors duration-200 hover:border-primary/30"
       style={{
         animation: `slideUpFade 0.5s ${delay}ms ease-out backwards`,
       }}

@@ -500,7 +500,7 @@ export function PremiumMetasView({
             return (
               <Card
                 key={i}
-                className="relative overflow-hidden rounded-lg border-border/60 bg-card transition-colors duration-300 hover:border-primary/30 hover:bg-muted/30 cursor-default"
+                className="commercial-dashboard-panel relative overflow-hidden rounded-lg border-border/60 bg-card transition-colors duration-300 hover:border-primary/30 hover:bg-muted/30 cursor-default"
               >
                 <div className={cn(
                   'absolute left-0 top-0 bottom-0 w-1',
@@ -522,7 +522,7 @@ export function PremiumMetasView({
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className={cn('text-sm font-semibold leading-tight', ins.color)}>{ins.title}</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">{ins.subtitle}</p>
+                    <p className="commercial-insight-action mt-0.5 whitespace-normal break-words text-xs text-muted-foreground">{ins.subtitle}</p>
                   </div>
                 </CardContent>
               </Card>
@@ -534,7 +534,7 @@ export function PremiumMetasView({
       {/* ============== LINHA 1: Vendedores | Total/Meta | Gauge | Média por vendedor ============== */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
         {/* Lista vendedores */}
-        <Card className="lg:col-span-2 overflow-hidden">
+        <Card className="commercial-dashboard-panel lg:col-span-2 overflow-hidden">
           <CardContent className="p-3">
             <div className="flex items-center justify-between mb-2">
               <div>
@@ -584,7 +584,7 @@ export function PremiumMetasView({
 
         {/* Valor Total + Meta Total empilhados */}
         <div className="lg:col-span-3 grid grid-rows-2 gap-3">
-          <Card className="relative overflow-hidden rounded-lg border-border/60 bg-card transition-colors duration-300 hover:border-emerald-500/35 hover:bg-muted/30">
+          <Card className="commercial-dashboard-panel relative overflow-hidden rounded-lg border-border/60 bg-card transition-colors duration-300 hover:border-emerald-500/35 hover:bg-muted/30">
             <CardContent className="p-4 flex flex-col justify-between h-full relative">
               <div className="flex items-start justify-between">
                 <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Valor Total</p>
@@ -603,7 +603,7 @@ export function PremiumMetasView({
               </div>
             </CardContent>
           </Card>
-          <Card className="relative overflow-hidden rounded-lg border-border/60 bg-card transition-colors duration-300 hover:border-violet-500/35 hover:bg-muted/30">
+          <Card className="commercial-dashboard-panel relative overflow-hidden rounded-lg border-border/60 bg-card transition-colors duration-300 hover:border-violet-500/35 hover:bg-muted/30">
             <CardContent className="p-4 flex flex-col justify-between h-full relative">
               <div className="flex items-start justify-between">
                 <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Meta Total</p>
@@ -632,7 +632,7 @@ export function PremiumMetasView({
 
         {/* Gauge % Meta - Premium SaaS Enterprise (Donut Gauge) */}
         <Card
-          className="lg:col-span-3 relative overflow-hidden bg-card border-border"
+          className="commercial-dashboard-panel lg:col-span-3 relative overflow-hidden bg-card border-border"
           style={{
             fontFamily: 'Inter, "SF Pro Display", -apple-system, BlinkMacSystemFont, sans-serif',
           }}
@@ -660,7 +660,7 @@ export function PremiumMetasView({
 
 
         {/* Média mensal por vendedor */}
-        <Card className="lg:col-span-4">
+        <Card className="commercial-dashboard-panel lg:col-span-4">
           <CardHeader className="pb-2">
             <CardTitle className="text-base">Média Mensal por Vendedor</CardTitle>
             <p className="text-xs text-muted-foreground">{qtdMesesPeriodo} {qtdMesesPeriodo === 1 ? 'mês' : 'meses'} no período</p>
@@ -727,7 +727,7 @@ export function PremiumMetasView({
       {/* ============== LINHA 2: Realizado vs Meta + Média Mensal Geral ============== */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
         {/* Gráfico Realizado vs Meta */}
-        <Card className="lg:col-span-7">
+        <Card className="commercial-dashboard-panel commercial-chart-frame lg:col-span-7">
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between flex-wrap gap-2">
               <div>
@@ -847,7 +847,7 @@ export function PremiumMetasView({
         </Card>
 
         {/* Média mensal geral */}
-        <Card className="lg:col-span-5">
+        <Card className="commercial-dashboard-panel commercial-chart-frame lg:col-span-5">
           <CardHeader className="pb-2">
             <CardTitle className="text-base">Média Mensal Geral</CardTitle>
             <p className="text-xs text-muted-foreground">Faturamento e meta por período · evolução vs mesmo mês ano anterior</p>
