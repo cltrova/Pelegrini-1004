@@ -47,6 +47,30 @@ describe('commercial square visual scope', () => {
     expect(css).toMatch(/--commercial-motion-sidebar:\s*(?:1[2-9]0|20[0-9]|210|220)ms/);
   });
 
+  it('applies compact geometry through commercial semantic primitives', () => {
+    const panelGeometrySelectors = selectorsApplying(
+      css,
+      'border-radius: var(--commercial-panel-radius)',
+    ).join('\n');
+    const controlGeometrySelectors = selectorsApplying(
+      css,
+      'border-radius: var(--commercial-control-radius)',
+    ).join('\n');
+
+    expect(panelGeometrySelectors).toContain('.commercial-workspace');
+    expect(panelGeometrySelectors).toContain('.commercial-toolbar');
+    expect(panelGeometrySelectors).toContain('.commercial-metric-strip');
+    expect(panelGeometrySelectors).toContain('.commercial-data-viewport');
+    expect(controlGeometrySelectors).toContain('.commercial-filter-control');
+    expect(controlGeometrySelectors).toContain('.commercial-overlay');
+  });
+
+  it('limits compact primitive motion to color and opacity', () => {
+    expect(css).toMatch(
+      /\.commercial-(?:toolbar|filter-control)[^{}]*\{[^}]*transition-property:\s*color, background-color, border-color, opacity;/s,
+    );
+  });
+
   it('limits reduced motion overrides to the commercial shell and its overlay', () => {
     const reducedMotion = css.slice(css.indexOf('@media (prefers-reduced-motion: reduce)'));
 

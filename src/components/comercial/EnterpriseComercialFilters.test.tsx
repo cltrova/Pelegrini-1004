@@ -65,9 +65,9 @@ vi.mock('@/components/ui/select', async () => {
     return <span>{value}</span>;
   }
 
-  function SelectContent({ children }: { children: React.ReactNode }) {
+  function SelectContent({ children, className }: { children: React.ReactNode; className?: string }) {
     const { open } = React.useContext(SelectContext);
-    return open ? <div role="listbox">{children}</div> : null;
+    return open ? <div className={className} role="listbox">{children}</div> : null;
   }
 
   function SelectItem({ children, value }: { children: React.ReactNode; value: string }) {
@@ -88,6 +88,29 @@ vi.mock('@/components/ui/select', async () => {
   }
 
   return { Select, SelectContent, SelectItem, SelectTrigger, SelectValue };
+});
+
+vi.mock('@/components/ui/popover', async () => {
+  const React = await import('react');
+
+  const PopoverContext = React.createContext({ open: false, setOpen: (_open: boolean) => undefined });
+
+  function Popover({ children }: { children: React.ReactNode }) {
+    const [open, setOpen] = React.useState(false);
+    return <PopoverContext.Provider value={{ open, setOpen }}>{children}</PopoverContext.Provider>;
+  }
+
+  function PopoverTrigger({ children }: { asChild?: boolean; children: React.ReactElement }) {
+    const { open, setOpen } = React.useContext(PopoverContext);
+    return React.cloneElement(children, { onClick: () => setOpen(!open) });
+  }
+
+  function PopoverContent({ children, className }: { children: React.ReactNode; className?: string }) {
+    const { open } = React.useContext(PopoverContext);
+    return open ? <div className={className} role="dialog">{children}</div> : null;
+  }
+
+  return { Popover, PopoverContent, PopoverTrigger };
 });
 
 import { EnterpriseComercialFilters } from './EnterpriseComercialFilters';
@@ -127,5 +150,43 @@ describe('EnterpriseComercialFilters', () => {
     expect(onPendingFiltersChange).toHaveBeenCalledWith(
       expect.objectContaining({ cliente: 'B' }),
     );
+  });
+
+  it('marks portalled filter content as a commercial overlay', () => {
+    render(
+      <EnterpriseComercialFilters
+        anos={['2026']}
+        appliedFilters={baseFilters}
+        clientes={[{ codigo: 'A', nome: 'Cliente A' }]}
+        hasChanges={false}
+        onApply={() => undefined}
+        onClear={() => undefined}
+        onPendingFiltersChange={() => undefined}
+        pendingFilters={baseFilters}
+        showClienteFilter
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('combobox', { name: 'Cliente' }));
+
+    expect(screen.getByRole('listbox')).toHaveClass('commercial-overlay');
+  });
+
+  it('marks portalled multi-select content as a commercial overlay', () => {
+    render(
+      <EnterpriseComercialFilters
+        anos={['2026']}
+        appliedFilters={baseFilters}
+        hasChanges={false}
+        onApply={() => undefined}
+        onClear={() => undefined}
+        onPendingFiltersChange={() => undefined}
+        pendingFilters={baseFilters}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /Periodo:/ }));
+
+    expect(screen.getByRole('dialog')).toHaveClass('commercial-overlay');
   });
 });

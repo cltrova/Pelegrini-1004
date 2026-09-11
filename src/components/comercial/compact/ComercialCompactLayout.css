@@ -89,7 +89,8 @@
   min-block-size: 64px;
   min-inline-size: 0;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  overflow: hidden;
+  overflow-x: auto;
+  overflow-y: hidden;
   border-block: 1px solid hsl(var(--border));
   background: hsl(var(--card));
   container-type: inline-size;

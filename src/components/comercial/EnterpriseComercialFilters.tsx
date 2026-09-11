@@ -1,10 +1,14 @@
-import type { ReactNode } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
+import { Check, ChevronDown, Search, X } from 'lucide-react';
 import {
   EnterpriseFilterBar,
-  EnterpriseMultiSelectFilter,
-  EnterpriseSelectFilter,
   type EnterpriseOption,
 } from '@/components/enterprise';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { cn } from '@/lib/utils';
 import type { ComercialFilters as ComercialFiltersType } from '@/types/comercial';
 import {
   COMERCIAL_MESES,
@@ -53,6 +57,128 @@ const monthOptions: EnterpriseOption[] = COMERCIAL_MESES.map((mes) => ({
   value: mes.value,
   label: mes.label.replace(/^./, (char) => char.toUpperCase()),
 }));
+
+function CommercialFieldShell({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <label className="min-w-[9rem] max-w-full flex-1 space-y-1 sm:flex-none">
+      <span className="block text-[10px] font-semibold uppercase text-muted-foreground">{label}</span>
+      {children}
+    </label>
+  );
+}
+
+function CommercialSelectFilter({
+  label,
+  value,
+  options,
+  onChange,
+  allLabel = 'Todos',
+}: {
+  label: string;
+  value?: string;
+  options: EnterpriseOption[];
+  onChange: (value: string | undefined) => void;
+  allLabel?: string;
+}) {
+  return (
+    <CommercialFieldShell label={label}>
+      <Select value={value ?? '__all'} onValueChange={(next) => onChange(next === '__all' ? undefined : next)}>
+        <SelectTrigger aria-label={label} className="h-8 min-w-[9rem] bg-background text-xs">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent className="commercial-overlay">
+          <SelectItem value="__all">{allLabel}</SelectItem>
+          {options.map((option) => (
+            <SelectItem key={option.value} value={option.value}>
+              {option.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </CommercialFieldShell>
+  );
+}
+
+function CommercialMultiSelectFilter({
+  label,
+  values,
+  options,
+  onChange,
+  searchable = true,
+  allLabel = 'Todos',
+}: {
+  label: string;
+  values: string[];
+  options: EnterpriseOption[];
+  onChange: (values: string[]) => void;
+  searchable?: boolean;
+  allLabel?: string;
+}) {
+  const [search, setSearch] = useState('');
+  const selected = new Set(values);
+  const filtered = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    return query
+      ? options.filter((option) => `${option.label} ${option.value}`.toLowerCase().includes(query))
+      : options;
+  }, [options, search]);
+  const display = values.length === 0
+    ? allLabel
+    : values.length === 1
+      ? options.find((option) => option.value === values[0])?.label ?? values[0]
+      : `${values.length} selecionados`;
+
+  return (
+    <div className="min-w-[9rem] max-w-full flex-1 space-y-1 sm:flex-none">
+      <span className="block text-[10px] font-semibold uppercase text-muted-foreground">{label}</span>
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button aria-label={`${label}: ${display}`} className="h-8 min-w-[9rem] max-w-[15rem] justify-between bg-background px-2 text-xs font-normal" type="button" variant="outline">
+            <span className="truncate">{display}</span>
+            <ChevronDown aria-hidden="true" className="h-3.5 w-3.5 text-muted-foreground" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent align="start" className="commercial-overlay w-[18rem] p-2">
+          {searchable && (
+            <div className="relative mb-2">
+              <Search aria-hidden="true" className="pointer-events-none absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+              <Input className="h-8 pl-7 text-xs" onChange={(event) => setSearch(event.target.value)} placeholder="Buscar..." value={search} />
+            </div>
+          )}
+          <button className="mb-1 flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs hover:bg-muted" onClick={() => onChange([])} type="button">
+            <span className="flex h-4 w-4 items-center justify-center rounded border border-border">{values.length === 0 && <Check className="h-3 w-3" />}</span>
+            {allLabel}
+          </button>
+          <div className="max-h-56 overflow-y-auto">
+            {filtered.map((option) => {
+              const active = selected.has(option.value);
+              return (
+                <button
+                  className={cn('flex w-full min-w-0 items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs hover:bg-muted', active && 'bg-muted/70')}
+                  key={option.value}
+                  onClick={() => onChange(active ? values.filter((selectedValue) => selectedValue !== option.value) : [...values, option.value])}
+                  type="button"
+                >
+                  <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded border border-border bg-background">
+                    {active && <Check aria-hidden="true" className="h-3 w-3" />}
+                  </span>
+                  <span className="min-w-0 flex-1 truncate">{option.label}</span>
+                  {option.description && <span className="shrink-0 text-[10px] text-muted-foreground">{option.description}</span>}
+                </button>
+              );
+            })}
+          </div>
+          {values.length > 0 && (
+            <Button className="mt-2 h-8 w-full gap-1.5 text-xs" onClick={() => onChange([])} size="sm" type="button" variant="ghost">
+              <X aria-hidden="true" className="h-3.5 w-3.5" />
+              Limpar {label.toLowerCase()}
+            </Button>
+          )}
+        </PopoverContent>
+      </Popover>
+    </div>
+  );
+}
 
 const toPeriodo = (anos: string[] = [], meses: string[] = []): ComercialFiltersType['periodo'] => {
   const anosValidos = Array.from(
@@ -173,7 +299,7 @@ export function EnterpriseComercialFilters({
       onOpenChange={onOpenChange}
       summary={summary}
     >
-      <EnterpriseSelectFilter
+      <CommercialSelectFilter
         allLabel="Todos os anos"
         label="Ano"
         onChange={(value) =>
@@ -182,7 +308,7 @@ export function EnterpriseComercialFilters({
         options={anos.map((ano) => ({ value: ano, label: ano }))}
         value={pendingFilters.anos?.[0]}
       />
-      <EnterpriseMultiSelectFilter
+      <CommercialMultiSelectFilter
         allLabel="Todos os meses"
         label="Periodo"
         onChange={(values) => updatePeriodo((pendingFilters.anos || []).map(String), values)}
@@ -190,7 +316,7 @@ export function EnterpriseComercialFilters({
         values={(pendingFilters.meses || []).map(String)}
       />
       {showVendedorFilter && (
-        <EnterpriseMultiSelectFilter
+        <CommercialMultiSelectFilter
           allLabel="Todos os vendedores"
           label="Vendedor"
           onChange={(values) =>
@@ -204,7 +330,7 @@ export function EnterpriseComercialFilters({
         />
       )}
       {showClienteFilter && (
-        <EnterpriseSelectFilter
+        <CommercialSelectFilter
           allLabel="Todos os clientes"
           label="Cliente"
           onChange={(value) => update({ cliente: value })}
@@ -213,7 +339,7 @@ export function EnterpriseComercialFilters({
         />
       )}
       {showMarcaFilter && (
-        <EnterpriseMultiSelectFilter
+        <CommercialMultiSelectFilter
           allLabel="Todas as marcas"
           label="Marca"
           onChange={(values) =>
@@ -226,7 +352,7 @@ export function EnterpriseComercialFilters({
           values={pendingMarcas}
         />
       )}
-      <EnterpriseSelectFilter
+      <CommercialSelectFilter
         allLabel="Pedidos e devolucoes"
         label="Tipo"
         onChange={(value) => update({ tipo: (value as ComercialFiltersType['tipo']) || 'todos' })}

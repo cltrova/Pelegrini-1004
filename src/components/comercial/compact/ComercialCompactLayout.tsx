@@ -51,12 +51,12 @@ export interface ComercialDataViewportProps extends PropsWithChildren {
 }
 
 export function ComercialCompactPage({ children, className, as: Component = 'main' }: ComercialCompactPageProps) {
-  return <Component className={cn('comercial-compact-page min-h-0 min-w-0 max-w-full overflow-x-hidden', className)}>{children}</Component>;
+  return <Component className={cn('comercial-compact-page commercial-workspace min-h-0 min-w-0 max-w-full overflow-x-hidden', className)}>{children}</Component>;
 }
 
 export function ComercialCommandBar({ title, context, actions, className }: ComercialCommandBarProps) {
   return (
-    <header className={cn('comercial-command-bar', className)}>
+    <header className={cn('comercial-command-bar commercial-toolbar', className)}>
       <div className="min-w-0">
         <h1>{title}</h1>
         {context && <span className="comercial-command-context">{context}</span>}
@@ -76,7 +76,7 @@ export function ComercialFilterBar({
   className,
 }: ComercialFilterBarProps) {
   return (
-    <section aria-label={ariaLabel} className={cn('comercial-filter-bar', className)} data-density="compact" data-mode={mode}>
+    <section aria-label={ariaLabel} className={cn('comercial-filter-bar commercial-filter-control', className)} data-density="compact" data-mode={mode}>
       {search && <div className="comercial-filter-search">{search}</div>}
       {primary && <div className="comercial-filter-primary">{primary}</div>}
       {children && <div className="comercial-filter-secondary">{children}</div>}
@@ -86,6 +86,9 @@ export function ComercialFilterBar({
 }
 
 function ComercialMetricCell({ label, value, context, tone = 'neutral', tooltip, onClick, actionLabel }: ComercialMetric) {
+  const valueLength = typeof value === 'string' || typeof value === 'number'
+    ? String(value).length
+    : undefined;
   const cell = (
     <article
       aria-label={onClick ? actionLabel || `Abrir detalhes de ${label}` : undefined}
@@ -99,6 +102,7 @@ function ComercialMetricCell({ label, value, context, tone = 'neutral', tooltip,
         }
       } : undefined}
       role={onClick ? 'button' : undefined}
+      style={valueLength === undefined ? undefined : { minWidth: `max(9rem, calc(${valueLength}ch + 3rem))` }}
       tabIndex={tooltip || onClick ? 0 : undefined}
     >
       <span className="comercial-metric-label">{label}</span>
@@ -127,7 +131,7 @@ export function ComercialMetricStrip({
     <TooltipProvider delayDuration={300}>
       <section
         aria-label={ariaLabel}
-        className={cn('comercial-metric-strip', className)}
+        className={cn('comercial-metric-strip commercial-metric-strip', className)}
         data-density="compact"
         data-mode={mode}
       >
@@ -145,6 +149,7 @@ export function ComercialDataViewport({ children, className, ariaLabel }: Comerc
       aria-label={ariaLabel}
       className={cn(
         'comercial-data-viewport min-h-0 min-w-0 max-w-full overflow-auto',
+        'commercial-data-viewport',
         isOperational && 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset',
         className,
       )}

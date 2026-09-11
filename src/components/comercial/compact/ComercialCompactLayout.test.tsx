@@ -24,9 +24,10 @@ describe('ComercialCompactLayout', () => {
 
     expect(screen.getByRole('heading', { name: 'Cotacoes abertas' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Exportar' })).toBeInTheDocument();
-    expect(screen.getByLabelText('Indicadores comerciais')).toHaveAttribute('data-density', 'compact');
-    expect(workspace).toHaveClass('min-h-0', 'min-w-0', 'max-w-full', 'overflow-x-hidden');
-    expect(viewport).toHaveClass('min-h-0', 'min-w-0', 'max-w-full', 'overflow-auto');
+    expect(screen.getByLabelText('Indicadores comerciais')).toHaveClass('commercial-metric-strip');
+    expect(workspace).toHaveClass('commercial-workspace', 'min-h-0', 'min-w-0', 'max-w-full', 'overflow-x-hidden');
+    expect(screen.getByRole('banner')).toHaveClass('commercial-toolbar');
+    expect(viewport).toHaveClass('commercial-data-viewport', 'min-h-0', 'min-w-0', 'max-w-full', 'overflow-auto');
   });
 
   it('uses a neutral compact shell inside an existing main landmark', () => {
@@ -72,6 +73,7 @@ describe('ComercialCompactLayout', () => {
 
     const filters = screen.getByLabelText('Filtros comerciais');
     expect(filters).toHaveAttribute('data-density', 'compact');
+    expect(filters).toHaveClass('commercial-filter-control');
     expect(screen.getByLabelText('Buscar')).toBeInTheDocument();
     expect(screen.getByLabelText('Periodo')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Aplicar' })).toBeInTheDocument();
@@ -84,6 +86,25 @@ describe('ComercialCompactLayout', () => {
     expect(value).toHaveAttribute('title', 'R$ 1.234.567,89');
     expect(value).toHaveClass('tabular-nums');
     expect(value).not.toHaveClass('truncate', 'overflow-hidden');
+  });
+
+  it('sizes each textual metric intrinsically without widening the whole strip', () => {
+    render(
+      <ComercialMetricStrip
+        metrics={[
+          { label: 'Valor em aberto', value: 'R$ 1.234.567.890,12' },
+          { label: 'Pedidos', value: '42' },
+        ]}
+      />,
+    );
+
+    const strip = screen.getByLabelText('Indicadores comerciais');
+    const longMetric = screen.getByText('R$ 1.234.567.890,12').closest('article');
+    const shortMetric = screen.getByText('42').closest('article');
+
+    expect(longMetric).toHaveStyle({ minWidth: 'max(9rem, calc(19ch + 3rem))' });
+    expect(shortMetric).toHaveStyle({ minWidth: 'max(9rem, calc(2ch + 3rem))' });
+    expect(strip).not.toHaveAttribute('style');
   });
 
   it('lets consumers specialize commercial filter and metric semantics', () => {
