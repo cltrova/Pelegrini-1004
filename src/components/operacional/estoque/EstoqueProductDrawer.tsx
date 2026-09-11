@@ -126,7 +126,7 @@ export function EstoqueProductDrawer({ product, open, onOpenChange }: EstoquePro
     <Sheet open={open && product !== null} onOpenChange={onOpenChange}>
       {product ? (
         <SheetContent
-          className="w-full min-w-0 max-w-full overflow-y-auto sm:max-w-xl lg:max-w-2xl"
+          className="operational-overlay w-full min-w-0 max-w-full overflow-y-auto sm:max-w-xl lg:max-w-2xl"
           onCloseAutoFocus={(event) => {
             if (!returnFocusRef.current) return;
             event.preventDefault();

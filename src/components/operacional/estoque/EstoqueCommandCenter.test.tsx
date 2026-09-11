@@ -364,7 +364,9 @@ describe('EstoqueCommandCenter', () => {
     render(<EstoqueCommandCenter {...fixtureProps} />);
 
     const commandCenter = screen.getByRole('region', { name: 'Central de estoque' });
-    expect(commandCenter).toHaveClass('min-w-0', 'max-w-full');
+    expect(commandCenter).toHaveClass('operational-command-center', 'min-w-0', 'max-w-full');
+    expect(within(commandCenter).getByRole('region', { name: 'Busca e filtros do estoque' }))
+      .toHaveClass('operational-filter-control');
 
     const orderedSections = [
       within(commandCenter).getByRole('toolbar', { name: 'Comandos do estoque' }),
@@ -378,7 +380,8 @@ describe('EstoqueCommandCenter', () => {
 
     expect(screen.queryByText('Atencao no estoque')).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: /Abrir painel de atencao/i }));
-    expect(screen.getByRole('dialog', { name: 'Atencao no estoque' })).toBeInTheDocument();
+    expect(screen.getByRole('dialog', { name: 'Atencao no estoque' }))
+      .toHaveClass('operational-overlay');
     expect(screen.getByText('Mais movimentados')).toBeInTheDocument();
     expect(screen.getByText('Produtos parados')).toBeInTheDocument();
   });
@@ -417,6 +420,8 @@ describe('EstoqueCommandCenter', () => {
 
     render(<Harness />);
     fireEvent.click(screen.getByRole('button', { name: /Filtros/i }));
+    expect(screen.getByRole('dialog', { name: 'Filtros do estoque' }))
+      .toHaveClass('operational-overlay');
     fireEvent.click(screen.getByRole('button', { name: /Marca:.*Todas/i }));
     fireEvent.click(screen.getByRole('button', { name: 'ZF' }));
     fireEvent.click(screen.getByRole('button', { name: /Grupo:.*Todos/i }));

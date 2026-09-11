@@ -96,6 +96,7 @@ export default function EstoquePage({ initialTab = 'overview' }: EstoquePageProp
     () => viewMode === 'consolidado' ? consolidadoData : detalhadoData,
     [consolidadoData, detalhadoData, viewMode],
   );
+  const hasCachedData = consolidadoData.length > 0 || detalhadoData.length > 0 || giroData.length > 0;
   const branchKey = `${codEmpresaContexto ?? empresa?.cod_empresa_bi ?? 'empresa'}:${filialAtiva ?? 'sem-filial'}`;
   const stockError = sourceErrors?.[viewMode];
   const movementError = sourceErrors?.giro;
@@ -217,7 +218,7 @@ export default function EstoquePage({ initialTab = 'overview' }: EstoquePageProp
     </Alert>
   ) : null;
 
-  if (isLoading) {
+  if (isLoading && !hasCachedData) {
     return (
       <EstoqueWorkspace>
         <EstoqueDataViewport className="p-4"><LoadingState /></EstoqueDataViewport>
@@ -233,7 +234,7 @@ export default function EstoquePage({ initialTab = 'overview' }: EstoquePageProp
     );
   }
 
-  if (isInitialLoading) {
+  if (isInitialLoading && !hasCachedData) {
     return (
       <EstoqueWorkspace>
         <EstoqueDataViewport

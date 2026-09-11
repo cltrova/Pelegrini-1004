@@ -29,7 +29,7 @@ function Metric({ label, value, icon: Icon, tone = 'normal', onClick }: { label:
 }
 
 function Panel({ title, action, children, className }: { title: string; action?: ReactNode; children: ReactNode; className?: string }) {
-  return <section className={cn('flex h-auto min-h-0 min-w-0 flex-col overflow-hidden border border-border/70 bg-card/60 p-2.5', className)}><div className="mb-2 flex shrink-0 items-center justify-between gap-2"><h2 className="min-w-0 truncate text-xs font-semibold text-foreground">{title}</h2>{action}</div><div className="min-h-0 overflow-hidden">{children}</div></section>;
+  return <section className={cn('operational-panel flex h-auto min-h-0 min-w-0 flex-col overflow-hidden border border-border/70 bg-card/60 p-2.5', className)}><div className="mb-2 flex shrink-0 items-center justify-between gap-2"><h2 className="min-w-0 truncate text-xs font-semibold text-foreground">{title}</h2>{action}</div><div className="min-h-0 overflow-hidden">{children}</div></section>;
 }
 
 export function EstoqueOverview({ stockData, movementData, activeCompanyCode, onOpenCentral, isFetching = false, onRefresh }: Props) {
@@ -59,14 +59,14 @@ export function EstoqueOverview({ stockData, movementData, activeCompanyCode, on
 
   if (!stockData.length && !movementData.length) return <div className="flex flex-1 items-center justify-center p-4"><EmptyState message="Nenhum dado de estoque disponível para montar a visão geral." /></div>;
 
-  return <div aria-label="Visão geral do estoque" className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-    <div aria-label="Controles da visão geral" className="flex min-h-10 shrink-0 items-center gap-2 border-b border-border/60 bg-background/95 px-2.5 py-1.5" role="toolbar">
+  return <div aria-label="Visão geral do estoque" className="operational-dashboard flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden" role="region">
+    <div aria-label="Controles da visão geral" className="operational-filter-control flex min-h-10 shrink-0 items-center gap-2 border-b border-border/60 bg-background/95 px-2.5 py-1.5" role="toolbar">
       <Button aria-label="Abrir filtros da visão geral" className="h-7 w-7" onClick={() => setFiltersOpen(true)} size="icon" type="button" variant="outline" title="Filtros"><Filter className="h-3.5 w-3.5" /></Button>
       <span className="text-[11px] text-muted-foreground">{number.format(filtered.length)} produtos analisados</span>
       <div className="ml-auto flex items-center gap-1"><span className="hidden text-[11px] text-muted-foreground sm:inline">{months} meses</span>{onRefresh && <Button aria-label="Atualizar visão geral" className="h-7 w-7" disabled={isFetching} onClick={onRefresh} size="icon" type="button" variant="ghost"><RefreshCw className={cn('h-3.5 w-3.5', isFetching && 'animate-spin')} /></Button>}</div>
     </div>
     <Dialog open={filtersOpen} onOpenChange={setFiltersOpen}>
-      <DialogContent className="max-w-md border-border/80 bg-card p-4">
+      <DialogContent className="operational-overlay max-w-md border-border/80 bg-card p-4">
         <DialogHeader><DialogTitle className="flex items-center gap-2 text-sm"><Filter className="h-4 w-4 text-primary" />Filtros da visão geral</DialogTitle></DialogHeader>
         <div className="grid gap-3 pt-2">
           <label className="grid gap-1 text-xs text-muted-foreground">Período<select aria-label="Período da visão geral" className="h-9 border border-border bg-background px-2 text-sm text-foreground" value={months} onChange={(event) => setMonths(Number(event.target.value))}><option value={3}>Últimos 3 meses</option><option value={6}>Últimos 6 meses</option><option value={12}>Últimos 12 meses</option></select></label>
@@ -77,7 +77,7 @@ export function EstoqueOverview({ stockData, movementData, activeCompanyCode, on
         </div>
       </DialogContent>
     </Dialog>
-    <div className="grid shrink-0 grid-cols-2 gap-px border-b border-border/60 bg-border/60 sm:grid-cols-4 lg:grid-cols-8">
+    <div className="operational-kpi-grid grid shrink-0 grid-cols-2 gap-px border-b border-border/60 bg-border/60 sm:grid-cols-4 lg:grid-cols-8">
       <Metric label="Produtos" value={number.format(summary.totalProducts)} icon={Package} onClick={() => onOpenCentral('all')} />
       <Metric label="Com estoque" value={number.format(summary.withStock)} icon={PackageCheck} tone="positive" onClick={() => onOpenCentral('with-stock')} />
       <Metric label="Valor estoque" value={currency.format(summary.totalValue)} icon={CircleDollarSign} />
@@ -110,5 +110,5 @@ function OverviewTooltip({ active, payload, label, metric }: { active?: boolean;
   const item = payload[0];
   const value = item.value ?? 0;
   const formatted = metric === 'value' ? currency.format(value) : metric === 'quantity' ? number.format(value) : `${value.toFixed(1)}%`;
-  return <div className="rounded border border-border/80 bg-card/95 px-3 py-2 text-xs shadow-lg"><div className="mb-1 text-muted-foreground">{label ?? item.name}</div><strong className="font-semibold text-foreground">{formatted}</strong></div>;
+  return <div className="operational-overlay rounded border border-border/80 bg-card/95 px-3 py-2 text-xs shadow-lg"><div className="mb-1 text-muted-foreground">{label ?? item.name}</div><strong className="font-semibold text-foreground">{formatted}</strong></div>;
 }

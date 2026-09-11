@@ -88,7 +88,7 @@ export function EstoqueSummaryCards({
   };
 
   return (
-    <section aria-label="Resumo do estoque" className="min-w-0 shrink-0">
+    <section aria-label="Resumo do estoque" className="operational-kpi-grid min-w-0 shrink-0">
       <EstoqueMetricStrip
         activeKey={activeFilter}
         metrics={summaries}

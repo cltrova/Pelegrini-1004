@@ -202,7 +202,7 @@ export function StockColumnPicker({
           <span>Colunas</span>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="max-h-[24rem] w-64 overflow-y-auto">
+      <DropdownMenuContent align="end" className="operational-overlay max-h-[24rem] w-64 overflow-y-auto">
         <DropdownMenuLabel>Colunas visiveis</DropdownMenuLabel>
         {stockColumns.map((column) => (
           <DropdownMenuCheckboxItem
@@ -363,7 +363,7 @@ export function EstoqueProductsTable({
     : 'Nenhum produto corresponde aos filtros atuais.';
 
   return (
-    <section aria-label="Produtos do estoque" className="estoque-products-table flex h-full min-h-0 min-w-0 max-w-full flex-1 flex-col overflow-hidden border border-border/70 bg-background">
+    <section aria-label="Produtos do estoque" className="operational-table-frame estoque-products-table flex h-full min-h-0 min-w-0 max-w-full flex-1 flex-col overflow-hidden border border-border/70 bg-background">
       {!isControlled && <div
         aria-label="Opcoes da tabela"
         className="flex min-w-0 shrink-0 flex-wrap items-center justify-end gap-1.5 border-b border-border/70 px-2.5 py-1"
@@ -388,7 +388,7 @@ export function EstoqueProductsTable({
             <p className="px-4 py-10 text-center text-sm text-muted-foreground">{emptyMessage}</p>
           ) : (
             <div className="min-h-full min-w-full">
-              <table className="w-full table-fixed text-sm">
+              <table className="operational-stock-table w-full table-fixed text-sm">
                 <thead aria-label="Cabecalho da tabela" className="sticky top-0 z-10 bg-muted">
                 <tr className="border-b border-border">
                   {selectedColumns.map((column) => {

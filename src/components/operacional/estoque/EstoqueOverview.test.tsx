@@ -70,6 +70,13 @@ describe('EstoqueOverview', () => {
       />,
     );
 
+    expect(screen.getByRole('region', { name: 'Visão geral do estoque' }))
+      .toHaveClass('operational-dashboard');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Abrir filtros da visão geral' }));
+    expect(screen.getByRole('dialog', { name: 'Filtros da visão geral' }))
+      .toHaveClass('operational-overlay');
+
     const tooltip = screen.getAllByTestId('chart-tooltip-active').at(-1);
     expect(tooltip).toHaveTextContent('false');
 

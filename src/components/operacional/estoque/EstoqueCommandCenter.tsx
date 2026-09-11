@@ -176,7 +176,7 @@ export function EstoqueCommandCenter({
   return (
     <section
       aria-label="Central de estoque"
-      className="estoque-manager-view flex h-full min-h-0 min-w-0 max-w-full flex-col overflow-hidden"
+      className="operational-command-center estoque-manager-view flex h-full min-h-0 min-w-0 max-w-full flex-col overflow-hidden"
     >
       <EstoqueToolbar>
         <EstoqueSmartFilters
@@ -191,7 +191,7 @@ export function EstoqueCommandCenter({
                     {attentionCount > 0 && <span className="tabular-nums text-xs">{attentionCount}</span>}
                   </Button>
                 </SheetTrigger>
-                <SheetContent className="w-[min(96vw,42rem)] overflow-y-auto p-0 sm:max-w-2xl" side="right">
+                <SheetContent className="operational-overlay w-[min(96vw,42rem)] overflow-y-auto p-0 sm:max-w-2xl" side="right">
                   <SheetHeader className="border-b border-border px-4 py-3 pr-12 text-left">
                     <SheetTitle>Atencao no estoque</SheetTitle>
                     <SheetDescription>Alertas e movimentos que merecem acompanhamento.</SheetDescription>

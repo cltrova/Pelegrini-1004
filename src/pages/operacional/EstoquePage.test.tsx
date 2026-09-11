@@ -133,6 +133,9 @@ afterEach(() => {
 describe('EstoquePage', () => {
   it('mantem uma carga inicial unica ate todas as fontes do estoque terminarem', () => {
     testState.hookResult = createHookResult({
+      consolidadoData: [],
+      detalhadoData: [],
+      giroData: [],
       isInitialLoading: true,
       sourceStatus: { consolidado: 'ready', detalhado: 'loading', giro: 'ready' },
     });
@@ -190,6 +193,23 @@ describe('EstoquePage', () => {
     const refresh = screen.getByRole('button', { name: 'Atualizando dados do estoque' });
     expect(refresh).toBeDisabled();
     expect(refresh.querySelector('svg')).toHaveClass('animate-spin');
+  });
+
+  it('mantem dados anteriores montados durante uma nova consulta', () => {
+    testState.hookResult = createHookResult({
+      consolidadoData: [{
+        ...estoqueFixtureComTresItens[0],
+        produto: 'Produto preservado',
+      }],
+      isFetching: true,
+      isLoading: true,
+    });
+
+    renderEstoquePage();
+
+    expect(within(screen.getByRole('table')).getByText('Produto preservado')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Atualizando dados do estoque' }))
+      .toBeDisabled();
   });
 
   it('nao apresenta totalizadores zerados quando a API falha e permite tentar novamente', () => {
@@ -602,7 +622,12 @@ describe('EstoquePage', () => {
   });
 
   it('preserva o guard de carregamento', () => {
-    testState.hookResult = createHookResult({ isLoading: true });
+    testState.hookResult = createHookResult({
+      consolidadoData: [],
+      detalhadoData: [],
+      giroData: [],
+      isLoading: true,
+    });
 
     renderEstoquePage();
 

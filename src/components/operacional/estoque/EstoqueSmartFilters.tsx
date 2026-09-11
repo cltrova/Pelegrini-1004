@@ -97,7 +97,7 @@ export function EstoqueSmartFilters({
   return (
     <section
       className={cn(
-        'min-w-0 text-xs',
+        'operational-filter-control min-w-0 text-xs',
         compact ? 'flex min-w-max flex-1 flex-nowrap items-center' : 'space-y-2',
       )}
       aria-label="Busca e filtros do estoque"
@@ -124,7 +124,7 @@ export function EstoqueSmartFilters({
               {activeCount > 0 && <span className="tabular-nums text-xs">{activeCount}</span>}
             </Button>
           </SheetTrigger>
-          <SheetContent className="w-[min(92vw,25rem)] p-0 sm:max-w-md" side="right">
+          <SheetContent className="operational-overlay w-[min(92vw,25rem)] p-0 sm:max-w-md" side="right">
             <SheetHeader className="border-b border-border px-4 py-3 pr-12 text-left">
               <SheetTitle>Filtros do estoque</SheetTitle>
               <SheetDescription>Refine a listagem sem perder o contexto da consulta.</SheetDescription>

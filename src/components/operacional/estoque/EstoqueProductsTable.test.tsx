@@ -237,7 +237,8 @@ describe('EstoqueProductsTable', () => {
     const products = screen.getByRole('region', { name: 'Produtos do estoque' });
     const dataScroller = screen.getByRole('region', { name: 'Rolagem dos produtos do estoque' });
     const desktop = screen.getByLabelText('Tabela de produtos do estoque');
-    expect(products).toHaveClass('flex', 'h-full', 'min-h-0', 'flex-col', 'overflow-hidden');
+    expect(products).toHaveClass('operational-table-frame', 'flex', 'h-full', 'min-h-0', 'flex-col', 'overflow-hidden');
+    expect(screen.getByRole('table')).toHaveClass('operational-stock-table');
     expect(dataScroller).toHaveClass('min-h-0', 'flex-1', 'overflow-auto');
     expect(desktop).toHaveClass('hidden', 'md:block', 'min-w-0');
     expect(desktop).not.toHaveClass('overflow-x-auto', 'overflow-auto');
@@ -360,6 +361,7 @@ describe('EstoqueProductsTable', () => {
     render(<EstoqueProductsTable {...baseProps} />);
 
     openColumnsMenu();
+    expect(screen.getByRole('menu')).toHaveClass('operational-overlay');
     expect(screen.getAllByRole('menuitemcheckbox')).toHaveLength(7);
     expect(screen.getByRole('menuitemcheckbox', { name: 'Produto' })).toBeDisabled();
     expect(screen.getByRole('menuitemcheckbox', { name: 'Quantidade' })).toBeDisabled();

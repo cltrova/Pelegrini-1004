@@ -60,7 +60,7 @@ describe('EstoqueProductDrawer', () => {
     render(<EstoqueProductDrawer product={criticalInsight} open onOpenChange={vi.fn()} />);
 
     const dialog = screen.getByRole('dialog', { name: 'KIT EMBREAGEM PESADA' });
-    expect(dialog).toHaveClass('w-full', 'sm:max-w-xl', 'lg:max-w-2xl', 'min-w-0');
+    expect(dialog).toHaveClass('operational-overlay', 'w-full', 'sm:max-w-xl', 'lg:max-w-2xl', 'min-w-0');
     expect(within(dialog).getByText('Critico')).toBeInTheDocument();
     expect(within(dialog).getByRole('img', { name: 'Situacao: Critico' })).toBeInTheDocument();
   });
