@@ -134,6 +134,7 @@ export function EstoqueSmartFilters({
                 <p className="text-xs font-semibold uppercase text-muted-foreground">Classificacao</p>
                 <div className="flex flex-wrap gap-2">
                   <FilterDropdownChip
+          contentClassName="operational-overlay"
           displayValue={brands.length ? `${brands.length} selecionada(s)` : 'Todas'}
           isActive={brands.length > 0}
           label="Marca"
@@ -148,6 +149,7 @@ export function EstoqueSmartFilters({
           />
                   </FilterDropdownChip>
                   <FilterDropdownChip
+          contentClassName="operational-overlay"
           displayValue={groups.length ? `${groups.length} selecionado(s)` : 'Todos'}
           isActive={groups.length > 0}
           label="Grupo"
@@ -162,6 +164,7 @@ export function EstoqueSmartFilters({
           />
                   </FilterDropdownChip>
                   <FilterDropdownChip
+          contentClassName="operational-overlay"
           displayValue={lines.length ? `${lines.length} selecionada(s)` : 'Todas'}
           isActive={lines.length > 0}
           label="Linha"

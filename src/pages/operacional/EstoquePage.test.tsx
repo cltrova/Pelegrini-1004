@@ -67,7 +67,7 @@ function createHookResult(overrides: Record<string, unknown> = {}) {
 
 function renderEstoquePage({ withBranchSwitcher = false, initialTab = 'central' }: {
   withBranchSwitcher?: boolean;
-  initialTab?: 'central' | 'overview';
+  initialTab?: 'central' | 'overview' | 'giro' | 'assistente';
 } = {}) {
   const queryClient = new QueryClient({
     defaultOptions: {
@@ -210,6 +210,23 @@ describe('EstoquePage', () => {
     expect(within(screen.getByRole('table')).getByText('Produto preservado')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Atualizando dados do estoque' }))
       .toBeDisabled();
+  });
+
+  it.each([
+    { initialTab: 'overview' as const, emptySource: 'consolidadoData' },
+    { initialTab: 'central' as const, emptySource: 'consolidadoData' },
+    { initialTab: 'giro' as const, emptySource: 'giroData' },
+    { initialTab: 'assistente' as const, emptySource: 'giroData' },
+  ])('mantem o carregamento quando $initialTab ainda nao tem dados, mesmo com outra fonte preenchida', ({ initialTab, emptySource }) => {
+    testState.hookResult = createHookResult({
+      [emptySource]: [],
+      isLoading: true,
+    });
+
+    renderEstoquePage({ initialTab });
+
+    expect(screen.getByText('Carregando dados da filial')).toBeInTheDocument();
+    expect(screen.queryByRole('tab', { name: 'Central de Estoque' })).not.toBeInTheDocument();
   });
 
   it('nao apresenta totalizadores zerados quando a API falha e permite tentar novamente', () => {

@@ -89,3 +89,36 @@ Commit previsto nesta entrega: `feat: square stock overview and central workspac
 - Os dois testes de troca de filial continuam instaveis por estado de contexto fora do escopo da Task 4.
 - A suite de `EstoquePage` continua emitindo warnings preexistentes de `act(...)` do `AuthProvider`.
 - Validacao visual em navegador e suite ampla pertencem a Task 7 e nao foram executadas aqui.
+
+## Fix Round 1
+
+### Correcoes
+
+- O guard de carga passou a considerar somente a fonte exigida pela aba renderizada: `consolidadoData` na Visao geral, `estoqueData` conforme o `viewMode` na Central e `giroData` no Giro e no Assistente.
+- A Visao geral passou a receber explicitamente `consolidadoData`; a Central continua recebendo `estoqueData` e preserva a alternancia entre consolidado e detalhado.
+- `FilterDropdownChip` recebeu a prop opcional e neutra `contentClassName`. Sem a prop, o painel portado conserva as classes anteriores.
+- Os tres chips de Marca, Grupo e Linha em `EstoqueSmartFilters` passam `operational-overlay` ao painel portado, sem alterar o estilo padrao dos demais consumidores.
+
+### TDD RED
+
+- `EstoquePage.test.tsx`, filtro `mantem o carregamento quando`: 4/4 casos falharam porque dados de outra fonte liberavam indevidamente a tela atual.
+- `FilterDropdownChip.test.tsx`: 1 teste passou e 1 falhou porque `contentClassName` ainda nao era aplicado ao portal.
+- `EstoqueCommandCenter.test.tsx`, filtro `combina filtros`: 1 falha porque o painel portado da Marca nao possuia `operational-overlay`.
+
+### Verificacao focada
+
+- `EstoquePage.test.tsx`, filtro `mantem o carregamento quando`, com `--testTimeout=15000 --hookTimeout=15000`: 4 passaram e 34 foram ignorados. Permaneceram warnings preexistentes de `act(...)` no `AuthProvider`.
+- `FilterDropdownChip.test.tsx`, com os mesmos timeouts: 2/2 passaram.
+- `EstoqueCommandCenter.test.tsx`, filtro `combina filtros`, com os mesmos timeouts: o teste concluiu como aprovado (`1 passed`, 15 ignorados), mas o processo nao encerrou apos imprimir o resumo e foi interrompido.
+- A regressao isolada `mantem dados anteriores montados durante uma nova consulta` nao produziu resultado em 30 segundos nesta rodada e foi interrompida. Seu GREEN anterior permanece registrado acima; a implementacao continua preservando dados somente quando pertencem a aba atual.
+- Nenhuma suite ampla foi executada.
+
+### Arquivos do Round 1
+
+- `src/pages/operacional/EstoquePage.tsx`
+- `src/pages/operacional/EstoquePage.test.tsx`
+- `src/components/common/FilterDropdownChip.tsx`
+- `src/components/common/FilterDropdownChip.test.tsx`
+- `src/components/operacional/estoque/EstoqueSmartFilters.tsx`
+- `src/components/operacional/estoque/EstoqueCommandCenter.test.tsx`
+- `.superpowers/sdd/2026-09-11-identidade-operacional-quadrada/task-4-report.md`

@@ -185,6 +185,8 @@ describe('EstoqueCommandCenter', () => {
     expect(screen.queryByRole('button', { name: /Marca:.*Todas/i })).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: /Filtros/i }));
     fireEvent.click(screen.getByRole('button', { name: /Marca:.*Todas/i }));
+    expect(screen.getByRole('button', { name: 'ZF' }).closest('.operational-overlay'))
+      .toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'ZF' }));
     fireEvent.click(screen.getByRole('button', { name: /Grupo:.*Todos/i }));
     fireEvent.click(screen.getByRole('button', { name: 'EMBREAGEM' }));

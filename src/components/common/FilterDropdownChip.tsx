@@ -8,6 +8,7 @@ interface FilterDropdownChipProps {
   label: string;
   /** What to show on the chip when collapsed */
   displayValue?: string;
+  contentClassName?: string;
   children: ReactNode;
   /** Whether this filter has active selections */
   isActive?: boolean;
@@ -21,6 +22,7 @@ interface FilterDropdownChipProps {
 export function FilterDropdownChip({
   label,
   displayValue,
+  contentClassName,
   children,
   isActive = false,
   onClear,
@@ -86,7 +88,7 @@ export function FilterDropdownChip({
         <div
           ref={panelRef}
           style={{ position: 'fixed', top: pos.top, left: pos.left, zIndex: 9999 }}
-          className="min-w-[200px] max-w-[300px] bg-popover border border-border rounded-lg shadow-xl p-2 animate-fade-in"
+          className={cn('min-w-[200px] max-w-[300px] bg-popover border border-border rounded-lg shadow-xl p-2 animate-fade-in', contentClassName)}
           onClick={(e) => e.stopPropagation()}
           onMouseDown={(e) => e.stopPropagation()}
         >

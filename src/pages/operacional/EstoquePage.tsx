@@ -96,7 +96,11 @@ export default function EstoquePage({ initialTab = 'overview' }: EstoquePageProp
     () => viewMode === 'consolidado' ? consolidadoData : detalhadoData,
     [consolidadoData, detalhadoData, viewMode],
   );
-  const hasCachedData = consolidadoData.length > 0 || detalhadoData.length > 0 || giroData.length > 0;
+  const hasCurrentViewData = activeTab === 'overview'
+    ? consolidadoData.length > 0
+    : activeTab === 'central'
+      ? estoqueData.length > 0
+      : giroData.length > 0;
   const branchKey = `${codEmpresaContexto ?? empresa?.cod_empresa_bi ?? 'empresa'}:${filialAtiva ?? 'sem-filial'}`;
   const stockError = sourceErrors?.[viewMode];
   const movementError = sourceErrors?.giro;
@@ -218,7 +222,7 @@ export default function EstoquePage({ initialTab = 'overview' }: EstoquePageProp
     </Alert>
   ) : null;
 
-  if (isLoading && !hasCachedData) {
+  if (isLoading && !hasCurrentViewData) {
     return (
       <EstoqueWorkspace>
         <EstoqueDataViewport className="p-4"><LoadingState /></EstoqueDataViewport>
@@ -234,7 +238,7 @@ export default function EstoquePage({ initialTab = 'overview' }: EstoquePageProp
     );
   }
 
-  if (isInitialLoading && !hasCachedData) {
+  if (isInitialLoading && !hasCurrentViewData) {
     return (
       <EstoqueWorkspace>
         <EstoqueDataViewport
@@ -341,7 +345,7 @@ export default function EstoquePage({ initialTab = 'overview' }: EstoquePageProp
               movementData={giroData}
               onOpenCentral={openCentralFromOverview}
               onRefresh={() => { void refetch(); }}
-              stockData={estoqueData}
+              stockData={consolidadoData}
             />
           </Suspense>
         </TabsContent>
