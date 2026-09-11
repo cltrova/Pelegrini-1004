@@ -139,7 +139,7 @@ export function EstoqueMetricStrip({
     <section
       aria-label="Indicadores de estoque"
       className={cn(
-        'flex h-11 min-w-0 shrink-0 overflow-x-auto border-y border-border/60 bg-card/85',
+        'operational-metric-strip flex h-11 min-w-0 shrink-0 overflow-x-auto border-y border-border/60 bg-card/85',
         className,
       )}
     >

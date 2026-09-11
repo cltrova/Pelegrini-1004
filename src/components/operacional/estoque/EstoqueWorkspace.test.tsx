@@ -24,6 +24,10 @@ describe('EstoqueWorkspace', () => {
     const toolbar = screen.getByRole('toolbar', { name: 'Comandos do estoque' });
     const viewport = screen.getByRole('region', { name: 'Dados do estoque' });
 
+    expect(workspace).toHaveClass('operational-workspace');
+    expect(header).toHaveClass('operational-workspace-header');
+    expect(toolbar).toHaveClass('operational-toolbar');
+    expect(viewport).toHaveClass('operational-data-viewport');
     expect(workspace).toHaveClass(
       'h-[calc(100dvh-var(--estoque-shell-offset,0px))]',
       'min-h-0',

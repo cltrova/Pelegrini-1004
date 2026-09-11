@@ -49,6 +49,7 @@ describe('EstoqueMetricStrip', () => {
 
     const strip = screen.getByRole('region', { name: 'Indicadores de estoque' });
     const critical = screen.getByRole('button', { name: 'Criticos: 1.624' });
+    expect(strip).toHaveClass('operational-metric-strip');
     expect(strip).toHaveClass('h-11', 'shrink-0', 'overflow-x-auto');
     expect(critical).toHaveAttribute('aria-pressed', 'true');
     const descriptionId = critical.getAttribute('aria-describedby');
@@ -76,7 +77,7 @@ describe('EstoqueMetricStrip', () => {
     const value = screen.getByText(longCurrencyValue);
 
     expect(informative).toHaveAttribute('tabindex', '0');
-    expect(informative.style.minWidth).toContain(`${longCurrencyValue.length}ch`);
+    expect(informative.parentElement).toHaveClass('min-w-[54rem]');
     expect(value).toHaveClass(
       'min-w-0',
       'max-w-full',

@@ -16,7 +16,7 @@ export function EstoqueWorkspace({
     <section
       aria-label={ariaLabel}
       className={cn(
-        'flex h-[calc(100dvh-var(--estoque-shell-offset,0px))] min-h-0 min-w-0 flex-col overflow-hidden',
+        'operational-workspace flex h-[calc(100dvh-var(--estoque-shell-offset,0px))] min-h-0 min-w-0 flex-col overflow-hidden',
         className,
       )}
       {...props}
@@ -36,7 +36,7 @@ export function EstoqueWorkspaceHeader({
     <header
       aria-label={ariaLabel}
       className={cn(
-        'flex h-10 min-w-0 shrink-0 items-center border-b border-border/60 bg-card/95 px-2.5 max-md:pl-14',
+        'operational-workspace-header flex h-10 min-w-0 shrink-0 items-center border-b border-border/60 bg-card/95 px-2.5 max-md:pl-14',
         className,
       )}
       {...props}
@@ -56,7 +56,7 @@ export function EstoqueToolbar({
     <div
       aria-label={ariaLabel}
       className={cn(
-        'flex h-10 min-w-0 shrink-0 flex-nowrap items-center gap-1.5 overflow-x-auto overscroll-x-contain border-b border-border/60 bg-background/95 px-2.5',
+        'operational-toolbar flex h-10 min-w-0 shrink-0 flex-nowrap items-center gap-1.5 overflow-x-auto overscroll-x-contain border-b border-border/60 bg-background/95 px-2.5',
         className,
       )}
       role="toolbar"
@@ -76,7 +76,10 @@ export function EstoqueDataViewport({
   return (
     <section
       aria-label={ariaLabel}
-      className={cn('flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden', className)}
+      className={cn(
+        'operational-data-viewport flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden',
+        className,
+      )}
       {...props}
     >
       {children}
