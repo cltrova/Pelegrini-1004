@@ -426,6 +426,20 @@ describe('EstoquePage', () => {
     expect(screen.queryByRole('tab', { name: 'Detalhes do Produto' })).not.toBeInTheDocument();
   });
 
+  it('oculta Distribuidores na empresa Casa da Chevrolet', () => {
+    testState.hookResult = createHookResult({ activeCompanyCode: '10041' });
+    renderEstoquePage();
+
+    expect(screen.queryByRole('tab', { name: 'Distribuidores' })).not.toBeInTheDocument();
+  });
+
+  it('nao exibe Distribuidores entre as subabas da Casa da Transmissao', () => {
+    testState.hookResult = createHookResult({ activeCompanyCode: '1004' });
+    renderEstoquePage();
+
+    expect(screen.queryByRole('tab', { name: 'Distribuidores' })).not.toBeInTheDocument();
+  });
+
   it('renderiza a central real com os dados retornados por useEstoqueData', () => {
     renderEstoquePage();
 
