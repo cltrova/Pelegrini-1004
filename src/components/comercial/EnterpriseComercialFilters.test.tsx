@@ -173,6 +173,8 @@ describe('EnterpriseComercialFilters', () => {
   });
 
   it('marks portalled multi-select content as a commercial overlay', () => {
+    const onPendingFiltersChange = vi.fn();
+
     render(
       <EnterpriseComercialFilters
         anos={['2026']}
@@ -180,7 +182,7 @@ describe('EnterpriseComercialFilters', () => {
         hasChanges={false}
         onApply={() => undefined}
         onClear={() => undefined}
-        onPendingFiltersChange={() => undefined}
+        onPendingFiltersChange={onPendingFiltersChange}
         pendingFilters={baseFilters}
       />,
     );
@@ -188,5 +190,14 @@ describe('EnterpriseComercialFilters', () => {
     fireEvent.click(screen.getByRole('button', { name: /Periodo:/ }));
 
     expect(screen.getByRole('dialog')).toHaveClass('commercial-overlay');
+    const search = screen.getByPlaceholderText('Buscar...');
+    search.focus();
+    fireEvent.change(search, { target: { value: 'fev' } });
+    expect(search).toHaveFocus();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Fevereiro' }));
+    expect(onPendingFiltersChange).toHaveBeenCalledWith(
+      expect.objectContaining({ anos: ['2026'], meses: ['07', '02'] }),
+    );
   });
 });

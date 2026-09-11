@@ -163,4 +163,40 @@ describe('enterprise visual foundation', () => {
     expect(screen.getByLabelText('Status')).toBeInTheDocument();
     expect(screen.getByText('2 selecionados')).toBeInTheDocument();
   });
+
+  it('forwards an optional content class to select and multi-select portals', () => {
+    const onSelectChange = vi.fn();
+
+    render(
+      <div>
+        <EnterpriseSelectFilter
+          contentClassName="scope-overlay"
+          label="Status"
+          options={[{ value: 'aberto', label: 'Aberto' }]}
+          onChange={onSelectChange}
+        />
+        <EnterpriseMultiSelectFilter
+          contentClassName="scope-overlay"
+          label="Marca"
+          options={[{ value: 'gm', label: 'GM' }]}
+          values={[]}
+          onChange={() => undefined}
+        />
+      </div>,
+    );
+
+    const selectTrigger = screen.getByRole('combobox', { name: 'Status' });
+    fireEvent.click(selectTrigger);
+    expect(screen.getByRole('listbox')).toHaveClass('scope-overlay');
+    fireEvent.click(screen.getByRole('option', { name: 'Aberto' }));
+    expect(onSelectChange).toHaveBeenCalledWith('aberto');
+    expect(selectTrigger).toHaveFocus();
+
+    const multiSelectTrigger = screen.getByRole('button', { name: 'Marca: Todos' });
+    fireEvent.click(multiSelectTrigger);
+    expect(screen.getByRole('dialog')).toHaveClass('scope-overlay');
+    expect(screen.getByPlaceholderText('Buscar...')).toHaveFocus();
+    fireEvent.click(multiSelectTrigger);
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
 });

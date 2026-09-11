@@ -51,12 +51,14 @@ export function EnterpriseSelectFilter({
   options,
   onChange,
   allLabel = 'Todos',
+  contentClassName,
 }: {
   label: string;
   value?: string;
   options: EnterpriseOption[];
   onChange: (value: string | undefined) => void;
   allLabel?: string;
+  contentClassName?: string;
 }) {
   return (
     <FieldShell label={label}>
@@ -64,7 +66,7 @@ export function EnterpriseSelectFilter({
         <SelectTrigger aria-label={label} className="h-8 min-w-[9rem] bg-background text-xs">
           <SelectValue />
         </SelectTrigger>
-        <SelectContent>
+        <SelectContent className={contentClassName}>
           <SelectItem value="__all">{allLabel}</SelectItem>
           {options.map((option) => (
             <SelectItem key={option.value} value={option.value}>
@@ -84,6 +86,7 @@ export function EnterpriseMultiSelectFilter({
   onChange,
   searchable = true,
   allLabel = 'Todos',
+  contentClassName,
 }: {
   label: string;
   values: string[];
@@ -91,6 +94,7 @@ export function EnterpriseMultiSelectFilter({
   onChange: (values: string[]) => void;
   searchable?: boolean;
   allLabel?: string;
+  contentClassName?: string;
 }) {
   const [search, setSearch] = useState('');
   const selected = new Set(values);
@@ -110,7 +114,7 @@ export function EnterpriseMultiSelectFilter({
             <ChevronDown aria-hidden="true" className="h-3.5 w-3.5 text-muted-foreground" />
           </Button>
         </PopoverTrigger>
-        <PopoverContent align="start" className="w-[18rem] p-2">
+        <PopoverContent align="start" className={cn('w-[18rem] p-2', contentClassName)}>
           {searchable && (
             <div className="relative mb-2">
               <Search aria-hidden="true" className="pointer-events-none absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />

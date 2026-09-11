@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
@@ -105,6 +107,16 @@ describe('ComercialCompactLayout', () => {
     expect(longMetric).toHaveStyle({ minWidth: 'max(9rem, calc(19ch + 3rem))' });
     expect(shortMetric).toHaveStyle({ minWidth: 'max(9rem, calc(2ch + 3rem))' });
     expect(strip).not.toHaveAttribute('style');
+  });
+
+  it('keeps metric tracks intrinsic in one horizontally scrollable row', () => {
+    const css = readFileSync(join(process.cwd(), 'src/components/comercial/compact/ComercialCompactLayout.css'), 'utf8');
+    const stripRule = css.match(/\.comercial-metric-strip\s*\{([^}]*)\}/)?.[1] ?? '';
+
+    expect(stripRule).toMatch(/grid-auto-flow:\s*column/);
+    expect(stripRule).toMatch(/grid-auto-columns:\s*minmax\(max-content,\s*1fr\)/);
+    expect(stripRule).toMatch(/overflow-x:\s*auto/);
+    expect(stripRule).not.toMatch(/grid-template-columns/);
   });
 
   it('lets consumers specialize commercial filter and metric semantics', () => {
