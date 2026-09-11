@@ -34,7 +34,10 @@
    };
  
    return (
-     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-lg border-t border-border safe-area-bottom">
+    <nav
+      aria-label="Navegacao comercial mobile"
+      className="commercial-mobile-navigation fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-card safe-area-bottom"
+    >
        <div className="flex h-16 items-center justify-around px-2">
          {navItems.map((item) => {
            const active = isActive(item);
@@ -43,13 +46,13 @@
                key={item.path}
                onClick={() => navigate(item.path)}
                className={cn(
-                 'flex h-14 min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-xl px-1 py-2 transition-all duration-200',
+                 'flex h-14 min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-sm px-1 py-2 transition-colors duration-150',
                  active 
                    ? 'text-primary bg-primary/10' 
-                   : 'text-muted-foreground hover:text-foreground active:scale-95'
+                   : 'text-muted-foreground hover:text-foreground'
                )}
              >
-               <item.icon className={cn('h-5 w-5', active && 'scale-110')} />
+               <item.icon className="h-5 w-5" />
                <span className={cn(
                  'text-[10px] font-medium',
                  active && 'font-semibold'
@@ -65,13 +68,13 @@
                <button
                  type="button"
                  className={cn(
-                   'flex h-14 min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-xl px-1 py-2 transition-all duration-200',
+                   'flex h-14 min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-sm px-1 py-2 transition-colors duration-150',
                    isQuoteRoute
                      ? 'bg-primary/10 text-primary'
-                     : 'text-muted-foreground hover:text-foreground active:scale-95',
+                     : 'text-muted-foreground hover:text-foreground',
                  )}
                >
-                 <MoreHorizontal className={cn('h-5 w-5', isQuoteRoute && 'scale-110')} />
+                 <MoreHorizontal className="h-5 w-5" />
                  <span className={cn('text-[10px] font-medium', isQuoteRoute && 'font-semibold')}>Mais</span>
                </button>
              </PopoverTrigger>

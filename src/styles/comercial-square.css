@@ -18,11 +18,64 @@
 }
 
 [data-module-shell='comercial'] .pelegrini-sidebar {
+  background: hsl(var(--sidebar-background));
   box-shadow: none;
+  border-right: 1px solid hsl(var(--sidebar-border));
   transition-duration: var(--commercial-motion-sidebar);
 }
 
 [data-module-shell='comercial'] .pelegrini-sidebar::before {
+  background-image: none;
+}
+
+[data-module-shell='comercial'] .sidebar-mobile-control {
+  border-radius: var(--commercial-control-radius);
+}
+
+[data-module-shell='comercial'] .sidebar-action {
+  border-radius: var(--commercial-panel-radius);
+  transition: color var(--commercial-motion-fast) ease, background-color var(--commercial-motion-fast) ease;
+}
+
+[data-module-shell='comercial'] .sidebar-item-active {
+  position: relative;
+  background: hsl(var(--sidebar-accent)) !important;
+  box-shadow: none;
+}
+
+[data-module-shell='comercial'] .sidebar-item-active::before {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  width: 3px;
+  background: var(--pelegrini-accent);
+  content: '';
+  pointer-events: none;
+}
+
+[data-module-shell='comercial'] .sidebar-item-index {
+  width: 1.5rem;
+  flex: 0 0 1.5rem;
+  color: hsl(var(--sidebar-muted));
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.625rem;
+  font-variant-numeric: tabular-nums;
+}
+
+[data-module-shell='comercial'] header.safe-area-top,
+[data-module-shell='comercial'] .commercial-mobile-navigation {
+  background: hsl(var(--card));
+  box-shadow: none;
+  backdrop-filter: none;
+}
+
+[data-module-shell='comercial'] .commercial-mobile-navigation {
+  border-color: hsl(var(--border));
+}
+
+[data-module-shell='comercial'] .commercial-branch-placeholder-icon {
+  border-radius: var(--commercial-panel-radius);
+  box-shadow: none;
   background-image: none;
 }
 
@@ -62,6 +115,22 @@
   background-image: none !important;
   box-shadow: none !important;
   backdrop-filter: none !important;
+}
+
+@media (min-width: 768px) {
+  [data-module-shell='comercial'] .pelegrini-sidebar-collapsible {
+    transition: width var(--commercial-motion-sidebar) cubic-bezier(0.22, 1, 0.36, 1);
+    box-shadow: none;
+  }
+
+  [data-module-shell='comercial'] .pelegrini-sidebar-collapsible:hover,
+  [data-module-shell='comercial'] .pelegrini-sidebar-collapsible:focus-within {
+    box-shadow: none;
+  }
+
+  [data-module-shell='comercial'] .pelegrini-sidebar-collapsible:not(:hover):not(:focus-within) .sidebar-item-index {
+    display: none;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -39,8 +39,8 @@ export function ComercialLayout() {
 
   const placeholder = (
     <div className="min-h-[60vh] flex flex-col items-center justify-center gap-4 text-center px-6 animate-in fade-in duration-300">
-      <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center shadow-inner">
-        <Building2 className="h-8 w-8 text-primary" />
+      <div className="commercial-branch-placeholder-icon flex h-12 w-12 items-center justify-center border bg-card">
+        <Building2 className="h-6 w-6 text-primary" />
       </div>
       <div>
         <h2 className="text-lg font-semibold">Selecione uma filial para continuar</h2>

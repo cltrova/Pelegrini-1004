@@ -9,7 +9,6 @@ import { useMotivosPerda10041, useSalvarMotivoPerda10041 } from '@/hooks/useMoti
 import { ComercialSidebar } from './ComercialSidebar';
 import * as ComercialSidebarModule from './ComercialSidebar';
 import { ComercialMobileBottomNav } from './ComercialMobileBottomNav';
-import * as AppModule from '@/App';
 
 vi.mock('@/hooks/useEmpresaAtiva', () => ({
   useEmpresaAtiva: vi.fn(),
@@ -45,7 +44,7 @@ type ComercialSidebarExports = typeof ComercialSidebarModule & {
   getComercialMenuItems?: (codEmpresa: string) => ComercialMenuItem[];
 };
 
-type AppExports = typeof AppModule & {
+type AppExports = typeof import('@/App') & {
   VENDAS_PERDIDAS_ROUTE?: {
     path: string;
     Component: ComponentType;
@@ -144,6 +143,14 @@ describe('commercial sidebar menu access', () => {
     expect(screen.getByRole('complementary')).toHaveAttribute('data-desktop-state', 'collapsed');
   });
 
+  it('uses indexed navigation for the commercial desktop sidebar', () => {
+    mockCompany('1004');
+    render(createElement(MemoryRouter, { initialEntries: ['/comercial/dashboard'], future: { v7_startTransition: true, v7_relativeSplatPath: true } }, createElement(ComercialSidebar)));
+
+    expect(screen.getByRole('complementary')).toHaveAttribute('data-navigation-style', 'indexed');
+    expect(screen.getByText('01')).toHaveClass('sidebar-item-index');
+  });
+
   it('respects reduced motion for the mobile sidebar transition', () => {
     mockCompany('1004');
     render(createElement(MemoryRouter, { initialEntries: ['/comercial/dashboard'], future: { v7_startTransition: true, v7_relativeSplatPath: true } }, createElement(ComercialSidebar)));
@@ -158,6 +165,18 @@ describe('commercial sidebar menu access', () => {
     expect(screen.queryByRole('link', { name: 'Cotações Abertas' })).not.toBeInTheDocument();
     expect(screen.getByText('Em breve')).toBeInTheDocument();
     expect(screen.getAllByText('BREVE')).toHaveLength(2);
+  });
+
+  it('labels the commercial mobile navigation and exposes its visual hook', () => {
+    mockCompany('1004');
+    render(createElement(
+      MemoryRouter,
+      { initialEntries: ['/comercial/dashboard'], future: { v7_startTransition: true, v7_relativeSplatPath: true } },
+      createElement(ComercialMobileBottomNav),
+    ));
+
+    expect(screen.getByRole('navigation', { name: 'Navegacao comercial mobile' }))
+      .toHaveClass('commercial-mobile-navigation');
   });
 
   it('exposes both quote routes in the 1004 mobile secondary navigation', () => {
@@ -195,7 +214,8 @@ describe('commercial sidebar menu access', () => {
     expect(screen.queryByRole('link', { name: 'Vendas Perdidas' })).not.toBeInTheDocument();
   });
 
-  it('renders the App-registered lost-sales route for company 1004', () => {
+  it('renders the App-registered lost-sales route for company 1004', async () => {
+    const AppModule = await import('@/App');
     const route = (AppModule as AppExports).VENDAS_PERDIDAS_ROUTE;
 
     expect(route).toMatchObject({ path: 'perdidas', Component: expect.any(Function) });
@@ -211,7 +231,11 @@ describe('commercial sidebar menu access', () => {
       createElement(Route, { path: '/comercial/dashboard', element: createElement('p', undefined, 'Dashboard comercial') }),
     );
     render(createElement(MemoryRouter, { initialEntries: ['/comercial/perdidas'], future: { v7_startTransition: true, v7_relativeSplatPath: true } }, productionRoutes));
-    expect(screen.getByRole('heading', { name: 'Vendas perdidas' })).toBeInTheDocument();
+    expect(await screen.findByRole(
+      'heading',
+      { name: 'Vendas perdidas' },
+      { timeout: 5_000 },
+    )).toBeInTheDocument();
 
     mockCompany('9999');
     cleanup();

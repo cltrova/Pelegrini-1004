@@ -51,6 +51,7 @@ export function ComercialSidebar() {
 
   return (
     <PelegriniModuleSidebar
+      indexed
       theme={theme}
       items={comercialMenuItems}
       futureItems={showFutureItems ? futureMenuItems : undefined}
