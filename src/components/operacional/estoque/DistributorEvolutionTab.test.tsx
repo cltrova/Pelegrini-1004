@@ -66,6 +66,7 @@ describe('DistributorEvolutionTab', () => {
     expect(screen.getByRole('group', { name: 'Marcas analisadas' })).toBeInTheDocument();
     const filterPanel = screen.getByRole('dialog', { name: 'Filtros dos distribuidores' });
     expect(filterPanel).toHaveClass('z-40');
+    expect(filterPanel).toHaveClass('operational-overlay');
     expect(filterPanel).not.toHaveClass('z-50');
     expect(screen.getAllByText(/R\$\s*120/).length).toBeGreaterThan(0);
     expect(screen.queryByRole('heading', { name: 'Evolução mensal' })).not.toBeInTheDocument();
@@ -76,10 +77,16 @@ describe('DistributorEvolutionTab', () => {
 
     const table = screen.getByRole('table', { name: 'Comparativo mensal dos distribuidores' });
     expect(table).toHaveClass('w-full', 'table-fixed');
-    expect(table.parentElement?.parentElement).toHaveClass('overflow-hidden');
+    expect(table.parentElement?.parentElement).toHaveClass(
+      'operational-comparison-matrix',
+      'overflow-hidden',
+    );
     expect(table).not.toHaveClass('min-w-[760px]');
+    expect(screen.getByRole('region', { name: 'Comparativo de vendas e compras' }))
+      .toHaveClass('operational-chart-panel', 'operational-panel');
     fireEvent.click(within(table).getByRole('button', { name: /ZF em agosto de 2026/i }));
-    expect(screen.getByRole('dialog', { name: /ZF.*agosto de 2026/i })).toBeInTheDocument();
+    expect(screen.getByRole('dialog', { name: /ZF.*agosto de 2026/i }))
+      .toHaveClass('operational-overlay');
     expect(screen.getByText('Margem de venda')).toBeInTheDocument();
   });
 

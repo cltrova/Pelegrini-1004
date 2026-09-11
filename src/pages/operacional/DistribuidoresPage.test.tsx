@@ -46,6 +46,8 @@ describe('DistribuidoresPage', () => {
     renderRoute();
 
     expect(await screen.findByText('Tela de evolução dos distribuidores')).toHaveAttribute('data-active', 'true');
+    expect(screen.getByRole('region', { name: /evolução de distribuidores/i }))
+      .toHaveClass('operational-distributors');
     expect(screen.getByRole('heading', { name: 'Evolução de Distribuidores' })).toBeInTheDocument();
   });
 
@@ -56,5 +58,13 @@ describe('DistribuidoresPage', () => {
 
     expect(await screen.findByText('Tela de estoque')).toBeInTheDocument();
     expect(screen.queryByText('Tela de evolução dos distribuidores')).not.toBeInTheDocument();
+  });
+
+  it('preserves the distributor page surface during initial loading', () => {
+    companyState.loading = true;
+    renderRoute();
+
+    expect(screen.getByRole('region', { name: /evolução de distribuidores/i }))
+      .toHaveClass('operational-distributors');
   });
 });

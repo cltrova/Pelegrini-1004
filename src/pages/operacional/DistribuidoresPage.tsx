@@ -21,7 +21,7 @@ export default function DistribuidoresPage() {
 
   if (isLoading) {
     return (
-      <EstoqueWorkspace>
+      <EstoqueWorkspace aria-label="Evolução de distribuidores" className="operational-distributors bg-background">
         <EstoqueDataViewport className="p-4" role="status">
           <LoadingState />
         </EstoqueDataViewport>
@@ -34,7 +34,7 @@ export default function DistribuidoresPage() {
   }
 
   return (
-    <EstoqueWorkspace className="bg-background">
+    <EstoqueWorkspace aria-label="Evolução de distribuidores" className="operational-distributors bg-background">
       <EstoqueWorkspaceHeader>
         <div className="min-w-0">
           <h1 className="truncate text-sm font-semibold text-foreground">Evolução de Distribuidores</h1>

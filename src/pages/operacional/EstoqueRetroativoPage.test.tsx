@@ -63,7 +63,8 @@ describe('EstoqueRetroativoPage', () => {
   it('usa a mesa operacional compartilhada com comandos em uma unica barra', () => {
     render(<EstoqueRetroativoPage />);
 
-    expect(screen.getByRole('region', { name: 'Mesa operacional de estoque' })).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: /estoque retroativo/i }))
+      .toHaveClass('operational-retroactive');
     const toolbar = screen.getByRole('toolbar', { name: 'Comandos do estoque retroativo' });
     expect(within(toolbar).getByLabelText('Data do estoque')).toBeInTheDocument();
     expect(within(toolbar).getByRole('button', { name: 'Consultar' })).toBeInTheDocument();

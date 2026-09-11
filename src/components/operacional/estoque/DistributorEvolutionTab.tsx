@@ -206,7 +206,7 @@ export function DistributorEvolutionTab({ active }: { active: boolean }) {
     <div aria-label="Controles dos distribuidores" className="flex min-h-10 shrink-0 items-center gap-2 border-b border-border/60 bg-background/95 px-2.5 py-1.5" role="toolbar">
       <Popover onOpenChange={setFiltersOpen} open={filtersOpen}>
         <PopoverTrigger asChild><Button aria-label="Abrir filtros dos distribuidores" className="h-7 w-7" size="icon" title="Filtros" type="button" variant="outline"><Filter className="h-3.5 w-3.5" /></Button></PopoverTrigger>
-        <PopoverContent aria-label="Filtros dos distribuidores" align="start" className="z-40 w-[min(94vw,30rem)] space-y-4">
+        <PopoverContent aria-label="Filtros dos distribuidores" align="start" className="operational-overlay z-40 w-[min(94vw,30rem)] space-y-4">
           <div><h3 className="text-sm font-semibold">Filtros do relatório</h3><p className="text-xs text-muted-foreground">Padrões equivalentes ao RSYS.</p></div>
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             <div><Label className="text-xs" htmlFor="distributor-start">Data inicial</Label><Input className="h-9" id="distributor-start" onChange={(event) => setPending((current) => ({ ...current, dataInicio: event.target.value }))} type="date" value={pending.dataInicio} /></div>
@@ -249,7 +249,7 @@ export function DistributorEvolutionTab({ active }: { active: boolean }) {
               <h2 className="text-xs font-semibold">Comparativo mensal</h2>
               <div className="flex gap-1 overflow-x-auto">{METRICS.map((item) => <Button aria-pressed={activeMetric === item.key} className="h-7 px-2 text-[11px]" disabled={isPreview && !previewSupports(item.key)} key={item.key} onClick={() => setMetric(item.key)} size="sm" variant={activeMetric === item.key ? 'secondary' : 'ghost'}>{item.label}</Button>)}</div>
             </div>
-            <div className="max-w-full overflow-hidden">
+            <div className="operational-comparison-matrix max-w-full overflow-hidden">
               <Table aria-label="Comparativo mensal dos distribuidores" className="w-full table-fixed text-[10px]">
                 <TableHeader><TableRow><TableHead className="w-[7.25rem] bg-card px-1.5 text-[10px]">Marca / grupo</TableHead>{evolution.months.map((mes) => <TableHead className="px-0.5 text-center text-[10px] leading-3" key={mes}>{monthLabel(mes)}</TableHead>)}</TableRow></TableHeader>
                 <TableBody>{evolution.brands.flatMap((brand) => {
@@ -268,7 +268,7 @@ export function DistributorEvolutionTab({ active }: { active: boolean }) {
             <div className="divide-y divide-border/50">{evolution.brands.find((brand) => brand.marca === mobileBrand)?.months.map((item, index, months) => <button aria-label={`${mobileBrand} em ${monthLabel(item.mes, true)}`} className="flex w-full items-center justify-between gap-3 py-2 text-left" key={item.mes} onClick={() => setSelected(item)} type="button"><span className="text-xs font-medium capitalize">{monthLabel(item.mes, true)}</span><span className="text-right"><strong className="block text-sm tabular-nums">{formatMetric(valueFor(item, activeMetric), activeMetric)}</strong><Delta semantic={activeMetric === 'valor_vendas' || activeMetric === 'margem_venda'} value={calculateVariation(valueFor(item, activeMetric), valueFor(months[index - 1], activeMetric))} /></span></button>)}</div>
         </section>
 
-        <section aria-label="Comparativo de vendas e compras" className="flex min-h-[15rem] flex-1 flex-col p-3">
+        <section aria-label="Comparativo de vendas e compras" className="operational-chart-panel operational-panel flex min-h-[15rem] flex-1 flex-col p-3">
           <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
             <div>
               <h2 className="text-xs font-semibold">Vendas × compras</h2>
@@ -300,7 +300,7 @@ export function DistributorEvolutionTab({ active }: { active: boolean }) {
       </div>}
 
     <Sheet onOpenChange={(open) => { if (!open) setSelected(null); }} open={Boolean(selected)}>
-      <SheetContent aria-label={selected ? `${selected.marca} - ${monthLabel(selected.mes, true)}` : 'Detalhes do distribuidor'} className="w-[min(96vw,32rem)] overflow-y-auto p-0 sm:max-w-lg" side="right">
+      <SheetContent aria-label={selected ? `${selected.marca} - ${monthLabel(selected.mes, true)}` : 'Detalhes do distribuidor'} className="operational-overlay w-[min(96vw,32rem)] overflow-y-auto p-0 sm:max-w-lg" side="right">
         {selected && <><SheetHeader className="border-b border-border/60 p-5"><SheetTitle>{selected.marca} · <span className="capitalize">{monthLabel(selected.mes, true)}</span></SheetTitle><SheetDescription>{selected.grupo} {selected.classe ? `· classe ${selected.classe}` : ''}</SheetDescription></SheetHeader><dl className="grid grid-cols-2 gap-px bg-border/50">{[
           ['Posição do estoque', isPreview ? 'Indisponível' : money.format(selected.valor_estoque)], ['% do estoque', selected.percentual_estoque === null ? 'Indisponível' : `${decimal.format(selected.percentual_estoque)}%`], ['Duração do estoque', selected.duracao_estoque === null ? 'Indisponível' : `${decimal.format(selected.duracao_estoque)} dias`], ['Vendas', money.format(selected.valor_vendas)], ['% das vendas', selected.percentual_vendas === null ? 'Indisponível' : `${decimal.format(selected.percentual_vendas)}%`], ['% acumulado', selected.percentual_acumulado_vendas === null ? 'Indisponível' : `${decimal.format(selected.percentual_acumulado_vendas)}%`], ['Margem de venda', selected.margem_venda === null ? 'Indisponível' : `${decimal.format(selected.margem_venda)}%`], ['Prazo médio de venda', selected.prazo_medio_venda === null ? 'Indisponível' : `${decimal.format(selected.prazo_medio_venda)} dias`], ['Devoluções', money.format(selected.valor_devolucoes)], ['Compras', isPreview ? 'Indisponível' : money.format(selected.valor_compras)], ['% das compras', selected.percentual_compras === null ? 'Indisponível' : `${decimal.format(selected.percentual_compras)}%`], ['Prazo médio de compra', selected.prazo_medio_compra === null ? 'Indisponível' : `${decimal.format(selected.prazo_medio_compra)} dias`], ['Diferença compra/CMV', selected.percentual_diferenca_compra_cmv === null ? 'Indisponível' : `${decimal.format(selected.percentual_diferenca_compra_cmv)}%`],
         ].map(([label, value]) => <div className="min-w-0 bg-background p-3" key={label}><dt className="text-[11px] text-muted-foreground">{label}</dt><dd className="mt-1 break-words text-sm font-semibold tabular-nums">{value}</dd></div>)}</dl></>}

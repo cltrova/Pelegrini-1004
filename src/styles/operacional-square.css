@@ -130,6 +130,23 @@
   background: hsl(var(--muted) / 0.35);
 }
 
+[data-module-shell='operacional'] :where(.operational-retroactive, .operational-distributors) {
+  background: hsl(var(--background));
+}
+
+[data-module-shell='operacional'] .operational-comparison-matrix {
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+}
+
+[data-module-shell='operacional'] .operational-chart-panel {
+  min-height: 14rem;
+  border-radius: 2px;
+  box-shadow: none;
+}
+
 .operational-overlay {
   border-radius: 4px !important;
   background: hsl(var(--popover)) !important;
@@ -150,6 +167,16 @@
 
   [data-module-shell='operacional'] .pelegrini-sidebar-collapsible:not(:hover):not(:focus-within) .sidebar-item-index {
     display: none;
+  }
+}
+
+@media (max-width: 767px) {
+  [data-module-shell='operacional'] .operational-comparison-matrix {
+    overflow-x: hidden;
+  }
+
+  [data-module-shell='operacional'] .operational-chart-panel {
+    min-height: 12rem;
   }
 }
 

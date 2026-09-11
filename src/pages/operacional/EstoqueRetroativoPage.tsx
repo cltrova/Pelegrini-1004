@@ -330,7 +330,7 @@ export default function EstoqueRetroativoPage() {
   ], [filtered.length, resumo, valorExcel]);
 
   return (
-    <EstoqueWorkspace className="bg-background">
+    <EstoqueWorkspace aria-label="Estoque retroativo" className="operational-retroactive bg-background">
       <EstoqueToolbar aria-label="Comandos do estoque retroativo" className="max-md:pl-14">
         <div className="relative shrink-0">
           <Label htmlFor="data_estoque" className="sr-only">Data do estoque</Label>
