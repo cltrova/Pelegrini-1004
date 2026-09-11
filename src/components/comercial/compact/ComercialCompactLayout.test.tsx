@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { render, screen } from '@testing-library/react';
+import postcss from 'postcss';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -117,6 +118,25 @@ describe('ComercialCompactLayout', () => {
     expect(stripRule).toMatch(/grid-auto-columns:\s*minmax\(max-content,\s*1fr\)/);
     expect(stripRule).toMatch(/overflow-x:\s*auto/);
     expect(stripRule).not.toMatch(/grid-template-columns/);
+  });
+
+  it('keeps commission and dashboard metric strips on the square panel radius', () => {
+    const css = readFileSync(join(process.cwd(), 'src/components/comercial/compact/ComercialCompactLayout.css'), 'utf8');
+    const metricRadiusRules: Array<{ selector: string; value: string }> = [];
+
+    postcss.parse(css).walkRules((rule) => {
+      if (!rule.selector.includes('.comercial-metric-strip')) return;
+
+      rule.walkDecls('border-radius', (declaration) => {
+        metricRadiusRules.push({ selector: rule.selector, value: declaration.value });
+      });
+    });
+
+    expect(metricRadiusRules).toEqual(expect.arrayContaining([
+      expect.objectContaining({ selector: expect.stringContaining('.comissao-page .comercial-metric-strip') }),
+      expect.objectContaining({ selector: expect.stringContaining('.dashboard-overview-grid .comercial-metric-strip') }),
+    ]));
+    expect(metricRadiusRules.every(({ value }) => value === 'var(--commercial-panel-radius, 2px)')).toBe(true);
   });
 
   it('lets consumers specialize commercial filter and metric semantics', () => {

@@ -188,7 +188,6 @@
   flex: 1 1 auto;
 }
 
-.comissao-page .comercial-metric-strip,
 .comissao-results,
 .comissao-error {
   border-radius: 6px;
@@ -196,6 +195,7 @@
 
 .comissao-page .comercial-metric-strip {
   border: 1px solid hsl(var(--border) / 0.8);
+  border-radius: var(--commercial-panel-radius, 2px);
 }
 
 .comissao-results {
@@ -229,7 +229,7 @@
 
 .dashboard-overview-grid .comercial-metric-strip {
   border: 1px solid hsl(var(--border) / 0.8);
-  border-radius: 6px;
+  border-radius: var(--commercial-panel-radius, 2px);
 }
 
 @media (max-width: 1024px) {
