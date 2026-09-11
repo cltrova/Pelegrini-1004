@@ -430,7 +430,7 @@ export function CampanhasTab({ periodoFiltro }: CampanhasTabProps = {}) {
     return { inicio: inicios[0], fim: fins[fins.length - 1] };
   }, [campanhas, periodoCampanhas]);
 
-  const { produtos } = useComercialProdutos(
+  const { produtos, isFetching: isFetchingProdutos } = useComercialProdutos(
     periodoProdutosCampanhas ? { periodo: periodoProdutosCampanhas, ignorarEquipePadrao: true } : { ignorarEquipePadrao: true },
   );
 
@@ -630,7 +630,7 @@ export function CampanhasTab({ periodoFiltro }: CampanhasTabProps = {}) {
 
   const hasVisibleCampaignData = hasResolvedData || hasRealCampaignData;
   const showInitialLoading = isLoading && !hasVisibleCampaignData;
-  const isFetching = campanhasFetchCount > 0 || insightsQuery.isFetching;
+  const isFetching = campanhasFetchCount > 0 || isFetchingProdutos || insightsQuery.isFetching;
   const isRefreshing = isFetching && hasVisibleCampaignData;
 
   if (showInitialLoading) return <CampanhasSkeleton />;

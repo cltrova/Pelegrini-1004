@@ -668,7 +668,7 @@ export default function MetasVendedoresPage() {
   const tabTriggerClass = cn(
     'h-8 flex-none whitespace-nowrap px-3 text-xs',
     isPelegriniPage
-      ? 'text-muted-foreground transition-colors hover:text-foreground data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm'
+      ? 'text-muted-foreground transition-colors hover:text-foreground data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-none'
       : undefined,
   );
 
@@ -735,7 +735,7 @@ export default function MetasVendedoresPage() {
         <div className="w-full shrink-0 overflow-x-auto overscroll-x-contain rounded-md [scrollbar-width:thin]">
         <TabsList className={cn(
           'commercial-tab-strip h-9 w-max min-w-full justify-start',
-          isPelegriniPage && 'border border-border/60 bg-muted/40 p-1 text-muted-foreground shadow-none [&_button:hover]:text-foreground [&_button[data-state=active]]:bg-primary [&_button[data-state=active]]:text-primary-foreground [&_button[data-state=active]]:shadow-sm',
+          isPelegriniPage && 'border border-border/60 bg-muted/40 p-1 text-muted-foreground shadow-none [&_button:hover]:text-foreground [&_button[data-state=active]]:bg-primary [&_button[data-state=active]]:text-primary-foreground [&_button[data-state=active]]:shadow-none',
         )}>
           <TabsTrigger value="visao-geral" className={tabTriggerClass}>Visão geral</TabsTrigger>
           {isPelegriniPage && (

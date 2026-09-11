@@ -13,6 +13,7 @@ const {
   empresaState,
   fetchingState,
   insightsQueryState,
+  produtosState,
   supabaseInvoke,
 } = vi.hoisted(() => ({
   campanhasState: {
@@ -34,6 +35,17 @@ const {
   },
   fetchingState: { value: 0 },
   insightsQueryState: { value: { data: [], isFetching: false } },
+  produtosState: {
+    value: {
+      produtos: [],
+      receitaTotalizada: 0,
+      pedidosDistintosTotalizados: 0,
+      receitaPorVendedor1004: new Map(),
+      isLoading: false,
+      isFetching: false,
+      error: null,
+    },
+  },
   supabaseInvoke: vi.fn(),
 }));
 
@@ -51,15 +63,7 @@ vi.mock('@/hooks/useComercialData', () => ({ useComercialData: vi.fn() }));
 vi.mock('@/hooks/useCampanhas', () => ({ useCampanhas: () => campanhasState.value }));
 vi.mock('@/contexts/AuthContext', () => ({ useAuth: () => ({ user: { id: 'user-1' } }) }));
 vi.mock('@/hooks/useComercialProdutos', () => ({
-  useComercialProdutos: () => ({
-    produtos: [],
-    receitaTotalizada: 0,
-    pedidosDistintosTotalizados: 0,
-    receitaPorVendedor1004: new Map(),
-    isLoading: false,
-    isFetching: false,
-    error: null,
-  }),
+  useComercialProdutos: () => produtosState.value,
 }));
 vi.mock('@/hooks/useComercialTotais', () => ({
   useComercialTotaisIdeal: () => ({ pedidos: null, produtos: null }),
@@ -114,6 +118,15 @@ describe('MetasVendedoresPage commercial dashboard', () => {
       isLoading: false,
     };
     fetchingState.value = 0;
+    produtosState.value = {
+      produtos: [],
+      receitaTotalizada: 0,
+      pedidosDistintosTotalizados: 0,
+      receitaPorVendedor1004: new Map(),
+      isLoading: false,
+      isFetching: false,
+      error: null,
+    };
     vi.mocked(useComercialData).mockReturnValue(comercialData as ReturnType<typeof useComercialData>);
     vi.mocked(useIsFetching).mockImplementation(() => fetchingState.value);
   });
@@ -125,6 +138,15 @@ describe('MetasVendedoresPage commercial dashboard', () => {
     expect(screen.getByRole('main')).toHaveClass('commercial-dashboard');
     expect(screen.getByRole('tablist')).toHaveClass('commercial-tab-strip');
     expect(screen.getByLabelText('Indicadores do dashboard comercial')).toHaveClass('commercial-metric-strip');
+  });
+
+  it('neutraliza a sombra do trigger ativo somente na faixa de abas comercial', async () => {
+    render(<MetasVendedoresPage />);
+
+    const activeTab = await screen.findByRole('tab', { name: 'Visão geral' });
+    expect(activeTab).toHaveAttribute('data-state', 'active');
+    expect(activeTab).toHaveClass('data-[state=active]:shadow-none');
+    expect(activeTab).not.toHaveClass('data-[state=active]:shadow-sm');
   });
 
   it('percorre disabled, loading e dados sem perder o conteudo no refetch', async () => {
@@ -199,6 +221,15 @@ describe('CampanhasTab loading lifecycle', () => {
   beforeEach(() => {
     fetchingState.value = 0;
     insightsQueryState.value = { data: [], isFetching: false };
+    produtosState.value = {
+      produtos: [],
+      receitaTotalizada: 0,
+      pedidosDistintosTotalizados: 0,
+      receitaPorVendedor1004: new Map(),
+      isLoading: false,
+      isFetching: false,
+      error: null,
+    };
     campanhasState.value = {
       campanhas: [],
       isLoading: false,
@@ -237,6 +268,66 @@ describe('CampanhasTab loading lifecycle', () => {
     fetchingState.value = 1;
     await act(async () => rerender(<CampanhasTab />));
     expect(screen.getByText('Nenhuma campanha ainda')).toBeInTheDocument();
+    expect(screen.getByRole('status', { name: 'Atualizando campanhas comerciais' })).toBeInTheDocument();
+  });
+
+  it('mantem os dados de produtos visiveis e sinaliza o refetch de campanhas', async () => {
+    empresaState.value = {
+      empresa: { nome: 'Casa da Transmissao', possui_meta_vendedor: true },
+      codEmpresaAtiva: '1004',
+      isLoading: false,
+    };
+    campanhasState.value = {
+      ...campanhasState.value,
+      campanhas: [{
+        id: 'campanha-eaton',
+        cod_empresa_bi: '1004',
+        nome: 'Campanha EATON',
+        marca: null,
+        marcas: [{ marca: 'EATON', meta_mensal: 2500, percentual_premio: 1 }],
+        data_inicio: '2026-08-01',
+        data_fim: '2026-08-31',
+        meta_valor: 2500,
+        meta_geral_mensal: 2500,
+        bonus_meta_geral: 0,
+        premiacao: null,
+        descricao: null,
+        mensagem_equipe: null,
+        observacoes: null,
+        status: 'ativa',
+        criado_por: 'user-1',
+        created_at: '2026-08-01',
+        updated_at: '2026-08-01',
+      }],
+    };
+    produtosState.value = {
+      ...produtosState.value,
+      produtos: [{
+        id: 'produto-eaton',
+        cod_produto: 10,
+        descricao: 'Kit EATON',
+        data_faturamento: '2026-08-10',
+        cod_empresa_bi: '1004',
+        tipo: 'PEDIDO' as const,
+        marca: 'EATON',
+        vendedor_codigo: 98,
+        vendedor_nome: 'DANIEL',
+        quantidade: 1,
+        valor_unitario: 1250,
+        valor_total: 1250,
+      }],
+    };
+
+    const { rerender } = render(<CampanhasTab />);
+
+    expect(await screen.findByText('Campanha EATON')).toBeInTheDocument();
+    expect(screen.getAllByText(/1\.250,00/).length).toBeGreaterThan(0);
+
+    produtosState.value = { ...produtosState.value, isFetching: true };
+    await act(async () => rerender(<CampanhasTab />));
+
+    expect(screen.getByText('Campanha EATON')).toBeInTheDocument();
+    expect(screen.getAllByText(/1\.250,00/).length).toBeGreaterThan(0);
     expect(screen.getByRole('status', { name: 'Atualizando campanhas comerciais' })).toBeInTheDocument();
   });
 });
