@@ -15,9 +15,11 @@ const items = [
 function renderSidebar({
   withFutureItem = false,
   branch = 'transmissao',
+  indexed = false,
 }: {
   withFutureItem?: boolean;
   branch?: 'transmissao' | 'chevrolet';
+  indexed?: boolean;
 } = {}) {
   return render(
     <MemoryRouter
@@ -25,6 +27,7 @@ function renderSidebar({
       future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
     >
       <PelegriniModuleSidebar
+        indexed={indexed}
         theme={resolvePelegriniTheme(branch)}
         items={items}
         futureItems={withFutureItem ? [{ ...items[1], label: 'Em análise', disabled: true }] : undefined}
@@ -36,6 +39,14 @@ function renderSidebar({
 }
 
 describe('PelegriniModuleSidebar', () => {
+  it('numbers links only when indexed navigation is requested', () => {
+    renderSidebar({ indexed: true });
+
+    expect(screen.getByTestId('module-sidebar')).toHaveAttribute('data-navigation-style', 'indexed');
+    expect(screen.getByText('01')).toHaveClass('sidebar-item-index');
+    expect(screen.getByText('02')).toHaveClass('sidebar-item-index');
+  });
+
   it('exposes the shared sidebar with the binding collapsed resting-state marker', () => {
     renderSidebar();
 

@@ -14,6 +14,7 @@ export function OperacionalSidebar() {
 
   return (
     <PelegriniModuleSidebar
+      indexed
       theme={theme}
       items={items}
       mobileOpen={isMobileOpen}

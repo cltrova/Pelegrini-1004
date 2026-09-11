@@ -19,6 +19,7 @@ export interface PelegriniModuleSidebarProps {
   theme: PelegriniTheme;
   items: PelegriniSidebarItem[];
   futureItems?: PelegriniSidebarItem[];
+  indexed?: boolean;
   mobileOpen: boolean;
   onMobileOpenChange: (open: boolean) => void;
   homeLabel?: string;
@@ -73,11 +74,13 @@ function SidebarAction({
 
 interface SidebarLinkProps {
   item: PelegriniSidebarItem;
+  index: number;
+  indexed: boolean;
   active: boolean;
   onNavigate: () => void;
 }
 
-function SidebarLink({ item, active, onNavigate }: SidebarLinkProps) {
+function SidebarLink({ item, index, indexed, active, onNavigate }: SidebarLinkProps) {
   const Icon = item.icon;
   const link = (
     <NavLink
@@ -87,6 +90,11 @@ function SidebarLink({ item, active, onNavigate }: SidebarLinkProps) {
       onClick={onNavigate}
       className={cn('sidebar-action sidebar-item', active ? 'sidebar-item-active' : 'hover:bg-sidebar-accent/50')}
     >
+      {indexed && (
+        <span aria-hidden="true" className="sidebar-item-index">
+          {String(index + 1).padStart(2, '0')}
+        </span>
+      )}
       <span className="sidebar-icon" aria-hidden="true">
         <Icon className={cn('h-5 w-5', active && 'text-sidebar-primary')} />
       </span>
@@ -109,6 +117,7 @@ export function PelegriniModuleSidebar({
   theme,
   items,
   futureItems = [],
+  indexed = false,
   mobileOpen,
   onMobileOpenChange,
   homeLabel = 'Voltar aos módulos',
@@ -147,6 +156,7 @@ export function PelegriniModuleSidebar({
         data-testid="module-sidebar"
         data-state="collapsed"
         data-desktop-state="collapsed"
+        data-navigation-style={indexed ? 'indexed' : 'default'}
         className={cn(
           'pelegrini-sidebar pelegrini-sidebar-collapsible fixed left-0 top-0 z-50 flex h-screen w-[248px] flex-col overflow-hidden bg-sidebar text-sidebar-foreground transition-transform duration-300 motion-reduce:transition-none motion-reduce:duration-0 md:translate-x-0',
           mobileOpen ? 'translate-x-0' : '-translate-x-full',
@@ -195,10 +205,12 @@ export function PelegriniModuleSidebar({
         <div className="mx-3 mt-3 h-px shrink-0 bg-sidebar-border" />
 
         <nav aria-label="Navegação do módulo" className="flex-1 space-y-1 overflow-y-auto overflow-x-hidden px-3 py-3 scrollbar-thin">
-          {items.map((item) => (
+          {items.map((item, index) => (
             <SidebarLink
               key={item.label}
               item={item}
+              index={index}
+              indexed={indexed}
               active={location.pathname === item.path}
               onNavigate={closeMobileSidebar}
             />

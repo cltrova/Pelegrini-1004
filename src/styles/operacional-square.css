@@ -17,6 +17,47 @@
   letter-spacing: 0;
 }
 
+[data-module-shell='operacional'] .pelegrini-sidebar {
+  background: hsl(var(--sidebar-background));
+  box-shadow: none;
+  border-right: 1px solid hsl(var(--sidebar-border));
+}
+
+[data-module-shell='operacional'] .sidebar-action {
+  border-radius: 2px;
+  transition: color 150ms ease, background-color 150ms ease;
+}
+
+[data-module-shell='operacional'] .sidebar-item-active {
+  background: hsl(var(--sidebar-accent)) !important;
+  box-shadow: inset 3px 0 0 var(--pelegrini-accent);
+}
+
+[data-module-shell='operacional'] .sidebar-item-index {
+  width: 1.5rem;
+  flex: 0 0 1.5rem;
+  color: hsl(var(--sidebar-muted));
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.625rem;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (min-width: 768px) {
+  [data-module-shell='operacional'] .pelegrini-sidebar-collapsible {
+    transition: width 220ms cubic-bezier(0.22, 1, 0.36, 1);
+    box-shadow: none;
+  }
+
+  [data-module-shell='operacional'] .pelegrini-sidebar-collapsible:hover,
+  [data-module-shell='operacional'] .pelegrini-sidebar-collapsible:focus-within {
+    box-shadow: none;
+  }
+
+  [data-module-shell='operacional'] .pelegrini-sidebar-collapsible:not(:hover):not(:focus-within) .sidebar-item-index {
+    display: none;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   [data-module-shell='operacional'] *,
   [data-module-shell='operacional'] *::before,

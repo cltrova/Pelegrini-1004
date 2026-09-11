@@ -1,7 +1,15 @@
 import { describe, expect, it } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { buildOperacionalMenuItems } from './operacionalSidebarItems';
 
 describe('buildOperacionalMenuItems', () => {
+  it('requests indexed navigation for the operational sidebar', () => {
+    const source = readFileSync(join(process.cwd(), 'src', 'components', 'layout', 'OperacionalSidebar.tsx'), 'utf8');
+
+    expect(source).toContain('indexed');
+  });
+
   it('adds Distribuidores as a standalone sidebar destination for Casa da Transmissao', () => {
     const items = buildOperacionalMenuItems('1004', 'transmissao');
 
