@@ -211,6 +211,35 @@ describe('EstoquePage', () => {
       .toBeDisabled();
   });
 
+  it('mantem o workspace com fonte atual vazia durante refetch', () => {
+    testState.hookResult = createHookResult({
+      consolidadoData: [],
+      isFetching: true,
+      sourceStatus: { consolidado: 'fetching', detalhado: 'ready', giro: 'ready' },
+    });
+
+    renderEstoquePage();
+
+    expect(screen.getByRole('tab', { name: 'Central de Estoque' })).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Resumo do estoque' })).toBeInTheDocument();
+    expect(screen.getByLabelText('Estado da fonte de estoque: Atualizando dados')).not.toHaveAttribute('data-issue');
+    expect(screen.queryByText('Carregando dados da filial')).not.toBeInTheDocument();
+  });
+
+  it('mantem estado saudavel da Visao geral enquanto fontes nao ativas falham ou atualizam', async () => {
+    testState.hookResult = createHookResult({
+      isFetching: true,
+      sourceErrors: { consolidado: null, detalhado: new Error('Detalhado indisponivel'), giro: new Error('Giro indisponivel') },
+      sourceStatus: { consolidado: 'ready', detalhado: 'error', giro: 'fetching' },
+    });
+
+    renderEstoquePage({ initialTab: 'overview' });
+
+    expect(await screen.findByRole('region', { name: 'Visão geral do estoque' })).toBeInTheDocument();
+    expect(screen.getByLabelText('Estado da fonte de estoque: Dados atualizados')).not.toHaveAttribute('data-issue');
+    expect(screen.getByRole('button', { name: 'Atualizando dados do estoque' })).toBeDisabled();
+  });
+
   it.each([
     { initialTab: 'overview' as const, emptySource: 'consolidadoData', loadingSource: 'consolidado' },
     { initialTab: 'central' as const, emptySource: 'consolidadoData', loadingSource: 'consolidado' },
@@ -333,16 +362,15 @@ describe('EstoquePage', () => {
     await waitFor(() => expect(screen.getByText('Estoque parcial')).toBeInTheDocument());
   });
 
-  it('indica estoque recuperado com giro pendente sem afirmar que o estoque esta atualizado', () => {
+  it('indica estoque recuperado sem incorporar erro de uma fonte nao ativa', () => {
     testState.hookResult = createHookResult({
       recoveredSources: { consolidado: true, detalhado: false },
       sourceErrors: { consolidado: new Error('Fonte recuperada'), detalhado: null, giro: new Error('Giro indisponivel') },
     });
     renderEstoquePage();
 
-    expect(screen.getByLabelText(/Estado da fonte de estoque: Estoque recuperado, giro pendente/i)).toHaveAttribute('data-issue', 'true');
-    expect(screen.queryByLabelText(/Estado da fonte de estoque: Estoque atualizado, giro pendente/i)).not.toBeInTheDocument();
-    expect(screen.getByText(/Movimentacoes indisponiveis/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/Estado da fonte de estoque: Estoque recuperado/i)).not.toHaveAttribute('data-issue');
+    expect(screen.queryByText(/Movimentacoes indisponiveis/i)).not.toBeInTheDocument();
   });
 
   it.each([
@@ -354,6 +382,7 @@ describe('EstoquePage', () => {
         sourceErrors: { consolidado: new Error('Fonte parcial'), detalhado: null, giro: new Error('Giro indisponivel') },
       },
       label: 'Fonte parcial',
+      hasIssue: true,
     },
     {
       name: 'mantem Ultimos dados preservados quando estoque e giro falham com dados em cache',
@@ -361,19 +390,23 @@ describe('EstoquePage', () => {
         sourceErrors: { consolidado: new Error('Estoque indisponivel'), detalhado: null, giro: new Error('Giro indisponivel') },
       },
       label: 'Ultimos dados preservados',
+      hasIssue: true,
     },
     {
-      name: 'usa giro pendente quando apenas o giro falha e o estoque esta saudavel',
+      name: 'mantem a fonte ativa saudavel quando apenas o giro falha',
       overrides: {
         sourceErrors: { consolidado: null, detalhado: null, giro: new Error('Giro indisponivel') },
       },
-      label: 'Estoque atualizado, giro pendente',
+      label: 'Dados atualizados',
+      hasIssue: false,
     },
-  ])('$name', ({ overrides, label }) => {
+  ])('$name', ({ overrides, label, hasIssue }) => {
     testState.hookResult = createHookResult(overrides);
     renderEstoquePage();
 
-    expect(screen.getByLabelText(`Estado da fonte de estoque: ${label}`)).toHaveAttribute('data-issue', 'true');
+    const sourceState = screen.getByLabelText(`Estado da fonte de estoque: ${label}`);
+    if (hasIssue) expect(sourceState).toHaveAttribute('data-issue', 'true');
+    else expect(sourceState).not.toHaveAttribute('data-issue');
   });
 
   it('transforma o Giro em mesa operacional sem compatibilidade temporaria de scroll', async () => {
@@ -413,7 +446,7 @@ describe('EstoquePage', () => {
     });
     renderEstoquePage();
     expect(screen.getAllByText('KIT EMBREAGEM PESADA').length).toBeGreaterThan(0);
-    expect(screen.getByText(/Movimentacoes indisponiveis/i).closest('[role="status"]')).toBeInTheDocument();
+    expect(screen.queryByText(/Movimentacoes indisponiveis/i)).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('tab', { name: 'Giro de Estoque' }));
     expect(screen.getByText('Estoque indisponivel')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('tab', { name: 'Assistente' }));
@@ -452,7 +485,7 @@ describe('EstoquePage', () => {
     const excess = screen.getByText('Capital em excesso').closest('[data-stock-summary]') as HTMLElement;
     expect(within(excess).getByText('Dados insuficientes')).toBeInTheDocument();
     expect(excess.tagName).toBe('ARTICLE');
-    expect(screen.getByText(/Movimentacoes indisponiveis/i).closest('[role="status"]')).toBeInTheDocument();
+    expect(screen.queryByText(/Movimentacoes indisponiveis/i)).not.toBeInTheDocument();
   });
 
   it('preserva o estado vazio quando a API retorna uma lista vazia com sucesso', () => {

@@ -120,7 +120,6 @@ export default function EstoquePage({ initialTab = 'overview' }: EstoquePageProp
   const movementLoading = (activeTab === 'giro' || activeTab === 'assistente') && sourceStatus?.giro === 'loading' && giroData.length === 0;
   const activeSourceLoading = !hasCurrentViewData && !activeSourceError && (
     activeSourceState === 'loading'
-    || activeSourceState === 'fetching'
     || ((activeSourceState === 'idle' || activeSourceState === undefined) && (isLoading || isInitialLoading))
   );
   const partialStock = Boolean(stockSource && partialSources?.[stockSource]);
@@ -128,9 +127,9 @@ export default function EstoquePage({ initialTab = 'overview' }: EstoquePageProp
   const recoveringStock = recoveryStatus === 'loading' && (partialStock || stockUnavailable);
   const activeSourceUnavailable = Boolean(activeSourceError && !hasCurrentViewData);
   const activeError = activeSourceUnavailable && !(stockSource && recoveringStock) ? activeSourceError : null;
-  const sourceHasActiveIssue = activeSource === 'giro'
-    ? movementUnavailable
-    : Boolean(movementError || (stockError && !recoveredStock));
+  const sourceHasActiveIssue = Boolean(
+    (activeSourceError && !recoveredStock) || partialStock || recoveringStock,
+  );
   const activeSourceUpdate = sourceLastUpdated?.[activeSource];
   const displayedUpdate = sourceLastUpdated === undefined ? lastSuccessfulUpdate : activeSourceUpdate;
   const lastUpdateLabel = displayedUpdate
@@ -141,18 +140,16 @@ export default function EstoquePage({ initialTab = 'overview' }: EstoquePageProp
     : activeSourceUnavailable
       ? 'Estoque indisponivel'
       : recoveredStock
-        ? movementError ? 'Estoque recuperado, giro pendente' : 'Estoque recuperado'
+        ? 'Estoque recuperado'
       : partialStock
         ? 'Fonte parcial'
-        : stockError
+        : activeSourceError
           ? 'Ultimos dados preservados'
-          : isFetching
+          : activeSourceState === 'fetching'
             ? 'Atualizando dados'
-            : movementError
-              ? 'Estoque atualizado, giro pendente'
-              : activeSourceState === 'ready'
-                ? 'Dados atualizados'
-                : 'Fonte aguardando consulta';
+            : activeSourceState === 'ready'
+              ? 'Dados atualizados'
+              : 'Fonte aguardando consulta';
 
   const filterOptions = useMemo(() => ({
     marcas: [...new Set(estoqueData.map(r => r.marca))].sort(),
@@ -187,7 +184,7 @@ export default function EstoquePage({ initialTab = 'overview' }: EstoquePageProp
   };
 
   const sourceNoticeFingerprint = sourceHasActiveIssue
-    ? [branchKey, activeSource, partialStock, recoveringStock, stockError?.message, movementError?.message].join('|')
+    ? [branchKey, activeSource, partialStock, recoveringStock, activeSourceError?.message].join('|')
     : `healthy:${branchKey}:${activeSource}`;
 
   useEffect(() => {
@@ -211,7 +208,7 @@ export default function EstoquePage({ initialTab = 'overview' }: EstoquePageProp
           ? 'Reconstruindo o estoque pelo historico completo de movimentacoes.'
           : partialStock
           ? 'Exibindo produtos presentes no giro do periodo enquanto a fonte principal e recuperada.'
-          : movementError
+          : activeSource === 'giro'
             ? 'Movimentacoes indisponiveis; indicadores de giro podem estar incompletos.'
             : 'Os ultimos dados carregados foram preservados e podem estar desatualizados.'}
         <Button variant="ghost" size="sm" className="ml-2 h-7" disabled={isFetching} onClick={() => { void refetch(); }}>

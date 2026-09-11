@@ -157,3 +157,35 @@ Todos os comandos usaram `--testTimeout=15000 --hookTimeout=15000` e somente `Es
 - `src/pages/operacional/EstoquePage.tsx`
 - `src/pages/operacional/EstoquePage.test.tsx`
 - `.superpowers/sdd/2026-09-11-identidade-operacional-quadrada/task-4-report.md`
+
+## Fix Round 3
+
+### Correcoes
+
+- `activeSourceLoading` deixou de tratar `sourceStatus='fetching'` como carga integral. Um resultado valido vazio permanece no workspace durante refetch.
+- O rotulo usa `activeSourceState === 'fetching'` em vez de `isFetching` global; o botao global continua refletindo `isFetching` e `refetch` globais.
+- O indicador e o aviso de problema agora consideram somente erro, parcialidade e recovery da fonte ativa. Erros de giro ou detalhado nao contaminam uma aba saudavel.
+- Foram mantidos os textos existentes, escolhendo apenas o rotulo correspondente ao estado correto.
+
+### TDD RED
+
+- `mantem o workspace com fonte atual vazia durante refetch`: falhou porque `fetching` com array vazio acionava `LoadingState` integral.
+- `mantem estado saudavel da Visao geral enquanto fontes nao ativas falham ou atualizam`: falhou porque `isFetching` e erro de giro globais produziam `Atualizando dados` com `data-issue` na fonte consolidada pronta.
+
+### Verificacao focada
+
+Todos os comandos executaram apenas `EstoquePage.test.tsx` com filtro nominal e `--testTimeout=15000 --hookTimeout=15000`:
+
+- Resultado vazio durante refetch: 1 passou, 41 ignorados.
+- Estado saudavel da Visao geral com fontes nao ativas em erro/refetch: 1 passou, 41 ignorados.
+- Guards ajustados de Overview, Central, Giro e Assistente: 4 passaram, 38 ignorados.
+- Rotulos e avisos ajustados para fonte ativa: 4 passaram, 38 ignorados.
+- Nenhum processo imprimiu PASS e permaneceu aberto neste round.
+- Permaneceram warnings preexistentes de `act(...)` no `AuthProvider`.
+- Nenhuma suite ampla foi executada.
+
+### Arquivos do Round 3
+
+- `src/pages/operacional/EstoquePage.tsx`
+- `src/pages/operacional/EstoquePage.test.tsx`
+- `.superpowers/sdd/2026-09-11-identidade-operacional-quadrada/task-4-report.md`
