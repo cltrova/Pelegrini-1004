@@ -59,6 +59,35 @@ describe('distributorEvolutionData', () => {
     }));
   });
 
+  it('nao totaliza parcialmente indicadores quando um grupo esta indisponivel', () => {
+    const incomplete = buildDistributorEvolution(normalizeDistributorRows([
+      {
+        mes: '2026-08', marca: 'ZF', cod_grupo: '1', grupo: 'ZF Pesado',
+        valor_estoque: 100, valor_vendas: 100,
+      },
+      {
+        mes: '2026-08', marca: 'ZF', cod_grupo: '2', grupo: 'ZF Medio',
+        valor_estoque: null, valor_vendas: null,
+      },
+    ]));
+    const complete = buildDistributorEvolution(normalizeDistributorRows([
+      {
+        mes: '2026-08', marca: 'ZF', cod_grupo: '1', grupo: 'ZF Pesado',
+        valor_estoque: 100, valor_vendas: 100,
+      },
+      {
+        mes: '2026-08', marca: 'ZF', cod_grupo: '2', grupo: 'ZF Medio',
+        valor_estoque: 50, valor_vendas: 50,
+      },
+    ]));
+
+    expect(incomplete.summary.valor_estoque).toBeNull();
+    expect(incomplete.summary.valor_vendas).toBeNull();
+    expect(incomplete.brands[0].months[0].valor_vendas).toBeNull();
+    expect(complete.summary.valor_estoque).toBe(150);
+    expect(complete.summary.valor_vendas).toBe(150);
+  });
+
   it('preserva o percentual acumulado valido em vez de somar acumulados', () => {
     const result = buildDistributorEvolution(normalizeDistributorRows([
       {

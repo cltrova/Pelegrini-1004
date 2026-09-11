@@ -244,7 +244,9 @@ export default function EstoquePage({ initialTab = 'overview' }: EstoquePageProp
     </Alert>
   ) : null;
 
-  if (activeSourceLoading && isLoading && !detailedStockLoading && !movementLoading) {
+  const companyContextLoading = !empresa && (isLoading || isInitialLoading);
+
+  if (companyContextLoading || (activeSourceLoading && isLoading && !detailedStockLoading && !movementLoading)) {
     return (
       <EstoqueWorkspace>
         <EstoqueDataViewport className="p-4"><LoadingState /></EstoqueDataViewport>

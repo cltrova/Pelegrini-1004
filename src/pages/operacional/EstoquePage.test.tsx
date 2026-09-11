@@ -754,6 +754,40 @@ describe('EstoquePage', () => {
     expect(screen.queryByRole('tab', { name: 'Central de Estoque' })).not.toBeInTheDocument();
   });
 
+  it('mantem carregamento enquanto a empresa resolve com queries idle', () => {
+    testState.hookResult = createHookResult({
+      empresa: undefined,
+      consolidadoData: [],
+      detalhadoData: [],
+      giroData: [],
+      isLoading: true,
+      isInitialLoading: true,
+      sourceStatus: { consolidado: 'idle', detalhado: 'idle', giro: 'idle' },
+    });
+
+    renderEstoquePage({ initialTab: 'overview' });
+
+    expect(screen.getByText('Carregando dados da filial')).toBeInTheDocument();
+    expect(screen.queryByText('O módulo Operacional não está ativado para esta empresa.')).not.toBeInTheDocument();
+  });
+
+  it('mantem o guard de modulo quando a empresa ausente ja foi resolvida', () => {
+    testState.hookResult = createHookResult({
+      empresa: undefined,
+      consolidadoData: [],
+      detalhadoData: [],
+      giroData: [],
+      isLoading: false,
+      isInitialLoading: false,
+      sourceStatus: { consolidado: 'idle', detalhado: 'idle', giro: 'idle' },
+    });
+
+    renderEstoquePage({ initialTab: 'overview' });
+
+    expect(screen.getByText('O módulo Operacional não está ativado para esta empresa.')).toBeInTheDocument();
+    expect(screen.queryByText('Carregando dados da filial')).not.toBeInTheDocument();
+  });
+
   it('preserva o guard de modulo operacional desativado', () => {
     testState.hookResult = createHookResult({
       empresa: { cod_empresa_bi: 1004, modulo_operacional: false },

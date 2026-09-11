@@ -95,9 +95,9 @@ function formatMoney(value: number | null): string {
   return value === null ? 'Indisponível' : money.format(value);
 }
 
-function sumAvailable(values: Array<number | null | undefined>): number | null {
-  const available = values.filter((value): value is number => typeof value === 'number' && Number.isFinite(value));
-  return available.length ? available.reduce((sum, value) => sum + value, 0) : null;
+function sumComplete(values: Array<number | null | undefined>): number | null {
+  if (!values.length || values.some((value) => typeof value !== 'number' || !Number.isFinite(value))) return null;
+  return (values as number[]).reduce((sum, value) => sum + value, 0);
 }
 
 function Delta({ value, semantic = false }: { value: number | null; semantic?: boolean }) {
@@ -194,10 +194,10 @@ export function DistributorEvolutionTab({ active }: { active: boolean }) {
     : evolution.brands[0]?.marca;
   const salesPurchasesData = useMemo(() => evolution.months.map((mes) => ({
     mes: monthLabel(mes),
-    vendas: sumAvailable(evolution.brands.map((brand) => brand.months.find((item) => item.mes === mes)?.valor_vendas)),
+    vendas: sumComplete(evolution.brands.map((brand) => brand.months.find((item) => item.mes === mes)?.valor_vendas)),
     compras: isPreview
       ? null
-      : sumAvailable(evolution.brands.map((brand) => brand.months.find((item) => item.mes === mes)?.valor_compras)),
+      : sumComplete(evolution.brands.map((brand) => brand.months.find((item) => item.mes === mes)?.valor_compras)),
   })), [evolution, isPreview]);
   const isRefreshing = query.isFetching || (isPreview && productsQuery.isFetching);
 

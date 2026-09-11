@@ -193,7 +193,12 @@ function aggregateRows(rows: DistributorEvolutionRow[], mes: string, marca: Dist
   result.grupo = rows.length === 1 ? rows[0].grupo : 'Todos os grupos';
   result.classe = rows.length === 1 ? rows[0].classe : null;
   numericFields.forEach((field) => {
-    const values = rows.map((row) => row[field]).filter((value): value is number => value !== null);
+    const fieldValues = rows.map((row) => row[field]);
+    if (!fieldValues.length || fieldValues.some((value) => value === null)) {
+      result[field] = null;
+      return;
+    }
+    const values = fieldValues as number[];
     if (additive.includes(field) || additivePercentages.includes(field)) {
       result[field] = values.length ? values.reduce((sum, value) => sum + value, 0) : null;
       return;
@@ -260,11 +265,8 @@ export function buildDistributorEvolution(rows: DistributorEvolutionRow[]): Dist
   const summary = aggregateRows(latestRows, latestMonth, latestRows[0]?.marca ?? 'MWM');
   const previousMonth = months.at(-2);
   const previousRows = rows.filter((row) => row.mes === previousMonth);
-  const previousValues = previousRows
-    .map((row) => row.valor_estoque)
-    .filter((value): value is number => value !== null);
-  const previousValue = previousValues.length
-    ? previousValues.reduce((sum, value) => sum + value, 0)
+  const previousValue = previousRows.length
+    ? aggregateRows(previousRows, previousMonth ?? '', previousRows[0]?.marca ?? 'MWM').valor_estoque
     : null;
   summary.variacao_valor_estoque = calculateVariation(summary.valor_estoque, previousValue);
   return { months, brands, summary };

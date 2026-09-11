@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const queryState = vi.hoisted(() => ({
@@ -20,6 +20,12 @@ const productsState = vi.hoisted(() => ({
   refetch: vi.fn(),
 }));
 
+const xlsxState = vi.hoisted(() => ({
+  aoaToSheet: vi.fn((rows: unknown[][]) => ({ rows })),
+  appendSheet: vi.fn(),
+  writeFile: vi.fn(),
+}));
+
 vi.mock('@/hooks/useDistributorEvolution', () => ({
   useDistributorEvolution: () => queryState,
 }));
@@ -28,9 +34,20 @@ vi.mock('@/hooks/useComercialProdutos', () => ({
   useComercialProdutos: () => productsState,
 }));
 
+vi.mock('xlsx', () => ({
+  utils: {
+    aoa_to_sheet: xlsxState.aoaToSheet,
+    book_new: () => ({}),
+    book_append_sheet: xlsxState.appendSheet,
+  },
+  writeFile: xlsxState.writeFile,
+}));
+
 vi.mock('recharts', () => ({
   Area: () => null,
-  AreaChart: ({ children }: { children: ReactNode }) => <svg data-testid="sales-purchases-chart">{children}</svg>,
+  AreaChart: ({ children, data }: { children: ReactNode; data: unknown }) => (
+    <svg data-series={JSON.stringify(data)} data-testid="sales-purchases-chart">{children}</svg>
+  ),
   CartesianGrid: () => null,
   Legend: () => null,
   Line: () => null,
@@ -55,6 +72,9 @@ describe('DistributorEvolutionTab', () => {
     productsState.isLoading = false;
     productsState.isFetching = false;
     productsState.refetch.mockReset();
+    xlsxState.aoaToSheet.mockClear();
+    xlsxState.appendSheet.mockClear();
+    xlsxState.writeFile.mockClear();
   });
 
   it('mostra resumo, comparativo mensal e detalhamento do grupo', () => {
@@ -142,6 +162,40 @@ describe('DistributorEvolutionTab', () => {
     const summary = screen.getByLabelText('Resumo dos distribuidores');
     expect(within(summary).getAllByText('Indisponível')).toHaveLength(4);
     expect(summary).not.toHaveTextContent(/R\$\s*0/);
+  });
+
+  it('mantem total incompleto indisponivel na UI, grafico e exportacao', async () => {
+    queryState.data = [
+      {
+        mes: '2026-08', marca: 'ZF', cod_marca: '11', cod_grupo: '1', grupo: 'ZF Pesado', classe: '1',
+        valor_estoque: 100, percentual_estoque: 50, duracao_estoque: 30,
+        valor_vendas: 100, percentual_vendas: 50, percentual_acumulado_vendas: 50,
+        margem_venda: 20, prazo_medio_venda: 10, valor_devolucoes: 2,
+        valor_compras: 25, percentual_compras: 50, prazo_medio_compra: 8,
+        percentual_diferenca_compra_cmv: 5,
+      },
+      {
+        mes: '2026-08', marca: 'ZF', cod_marca: '11', cod_grupo: '2', grupo: 'ZF Medio', classe: '2',
+        valor_estoque: 50, percentual_estoque: 50, duracao_estoque: 20,
+        valor_vendas: null, percentual_vendas: 50, percentual_acumulado_vendas: 100,
+        margem_venda: null, prazo_medio_venda: null, valor_devolucoes: 1,
+        valor_compras: 25, percentual_compras: 50, prazo_medio_compra: 6,
+        percentual_diferenca_compra_cmv: 3,
+      },
+    ];
+
+    render(<DistributorEvolutionTab active />);
+
+    const salesMetric = within(screen.getByLabelText('Resumo dos distribuidores')).getByText('Vendas').parentElement;
+    expect(salesMetric).toHaveTextContent('Indisponível');
+    expect(JSON.parse(screen.getByTestId('sales-purchases-chart').getAttribute('data-series') ?? '[]'))
+      .toEqual([expect.objectContaining({ vendas: null })]);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Exportar distribuidores para Excel' }));
+    await waitFor(() => expect(xlsxState.writeFile).toHaveBeenCalledOnce());
+    const summaryRows = xlsxState.aoaToSheet.mock.calls[0][0];
+    const exportedMonth = summaryRows.find((row) => row[0] === '2026-08' && row[1] === 'ZF');
+    expect(exportedMonth?.[4]).toBeNull();
   });
 
   it('atualiza a fonte oficial e Produtos quando exibe a visualizacao provisoria', () => {
