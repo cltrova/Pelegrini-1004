@@ -650,7 +650,7 @@ export function CampanhasTab({ periodoFiltro }: CampanhasTabProps = {}) {
               <SelectTrigger className="h-9 w-[150px] rounded-md">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="commercial-overlay">
                 <SelectItem value="todas">Todos status</SelectItem>
                 <SelectItem value="ativa">Ativa</SelectItem>
                 <SelectItem value="pausada">Rascunho</SelectItem>
@@ -670,7 +670,7 @@ export function CampanhasTab({ periodoFiltro }: CampanhasTabProps = {}) {
                   <ChevronDown className="h-3.5 w-3.5 opacity-60" />
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-64 p-0" align="end">
+              <PopoverContent className="commercial-overlay w-64 p-0" align="end">
                 <div className="flex items-center justify-between px-3 py-2 border-b">
                   <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Marcas</span>
                   {marcaFilter.length > 0 && (
@@ -871,7 +871,7 @@ function KpiCardPremium({ icon, label, value, sub, campanhas, premioTotal }: { i
       </button>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
+        <DialogContent className="commercial-overlay max-w-3xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Trophy className="h-5 w-5 text-amber-500" />
@@ -1028,7 +1028,7 @@ function CampanhaVendedoresFiltro1004({
           <ChevronDown className="h-3.5 w-3.5 opacity-60" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[360px] p-0" align="end">
+      <PopoverContent className="commercial-overlay w-[360px] p-0" align="end">
         <div className="flex items-center justify-between px-3 py-2 border-b">
           <div>
             <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Vendedores no cálculo</p>
@@ -2009,7 +2009,7 @@ function VendedorDetalheDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-hidden p-0 rounded-lg border-border/70">
+      <DialogContent className="commercial-overlay max-w-3xl max-h-[90vh] overflow-hidden p-0 rounded-lg border-border/70">
         <div className="relative overflow-hidden border-b border-border/60 bg-card px-6 py-5">
           <DialogHeader className="relative">
             <DialogTitle className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
@@ -2301,7 +2301,7 @@ function CampanhaDialog({ initial, onSubmit, isPending, trigger, marcasDisponive
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>{trigger}</DialogTrigger>
-      <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto rounded-lg">
+      <DialogContent className="commercial-overlay max-h-[90vh] max-w-2xl overflow-y-auto rounded-lg">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-lg">
             <Trophy className="h-5 w-5 text-primary" />
@@ -2389,7 +2389,7 @@ function CampanhaDialog({ initial, onSubmit, isPending, trigger, marcasDisponive
                           return (
                             <Select value={m.marca || undefined} onValueChange={v => updateMarca(idx, { marca: v })}>
                               <SelectTrigger className="rounded-lg h-9"><SelectValue placeholder="Selecione a marca" /></SelectTrigger>
-                              <SelectContent className="max-h-64">
+                              <SelectContent className="commercial-overlay max-h-64">
                                 {opcoes.map(op => (
                                   <SelectItem key={op} value={op}>{op}</SelectItem>
                                 ))}
@@ -2494,7 +2494,7 @@ function CampanhaDialog({ initial, onSubmit, isPending, trigger, marcasDisponive
               <Label className="text-xs">Status</Label>
               <Select value={form.status} onValueChange={v => setForm({ ...form, status: v })}>
                 <SelectTrigger className="rounded-lg"><SelectValue /></SelectTrigger>
-                <SelectContent>
+                <SelectContent className="commercial-overlay">
                   <SelectItem value="ativa">Ativa</SelectItem>
                   <SelectItem value="pausada">Rascunho</SelectItem>
                   <SelectItem value="encerrada">Encerrada</SelectItem>

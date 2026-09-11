@@ -439,3 +439,18 @@ describe('PremiumMetasView management signals', () => {
     expect(container.querySelector('.commercial-chart-frame')).toBeInTheDocument();
   });
 });
+
+describe('CampanhasTab commercial overlays', () => {
+  it('marks every portalled content surface with the commercial overlay scope', () => {
+    const source = readFileSync(
+      join(process.cwd(), 'src/components/comercial/CampanhasTab.tsx'),
+      'utf8',
+    );
+    const portalledContents = source.match(
+      /<(?:PopoverContent|SelectContent|DialogContent)\b[^>]*>/g,
+    ) ?? [];
+
+    expect(portalledContents.length).toBeGreaterThan(0);
+    expect(portalledContents.every((tag) => tag.includes('commercial-overlay'))).toBe(true);
+  });
+});
