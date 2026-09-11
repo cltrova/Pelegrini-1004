@@ -122,3 +122,38 @@ Commit previsto nesta entrega: `feat: square stock overview and central workspac
 - `src/components/operacional/estoque/EstoqueSmartFilters.tsx`
 - `src/components/operacional/estoque/EstoqueCommandCenter.test.tsx`
 - `.superpowers/sdd/2026-09-11-identidade-operacional-quadrada/task-4-report.md`
+
+## Fix Round 2
+
+### Correcoes
+
+- A fonte ativa passou a ser explicita por aba: `consolidado` na Visao geral, o `viewMode` na Central e `giro` no Giro e no Assistente.
+- Dados, erro, status e horario ativo agora derivam dessa mesma fonte. Um erro do detalhado nao oculta mais a Visao geral consolidada.
+- O loading de pagina inteira depende do status da fonte ativa sem dados e sem erro. Fonte ativa pronta nao e bloqueada por outra consulta em carga, e erro ativo prevalece sobre `isInitialLoading` global.
+- Os loaders especificos de detalhado e giro continuam dentro do workspace, preservando navegacao e evitando estados vazios intermediarios.
+- Nenhum hook, API, calculo ou texto funcional foi alterado.
+
+### TDD RED
+
+- `mantem a Visao geral consolidada quando a fonte detalhada falha`: falhou porque o erro detalhado continuava ocultando o overview apos a troca de aba.
+- `mostra carregamento ao alternar para a fonte detalhada sem apresentar estoque vazio`: falhou porque `isInitialLoading` global substituia o loader detalhado pelo loading de pagina inteira.
+- `prioriza o erro da fonte ativa enquanto outra fonte ainda carrega`: falhou porque o loading global aparecia no lugar de `Estoque indisponivel`.
+
+### Verificacao focada
+
+Todos os comandos usaram `--testTimeout=15000 --hookTimeout=15000` e somente `EstoquePage.test.tsx` com filtro nominal:
+
+- Visao geral consolidada com erro detalhado: 1 passou, 39 ignorados.
+- Central detalhada vazia/carregando com outras fontes prontas: 1 passou, 39 ignorados.
+- Erro da fonte ativa enquanto outra carrega: 1 passou, 39 ignorados.
+- Fonte ativa pronta enquanto outra termina carga inicial: 1 passou, 39 ignorados.
+- Rechecagem dos quatro guards do Round 1: overview e central passaram; giro e assistente falharam apenas porque a expectativa antiga exigia esconder as abas, embora o loader especifico `Carregando movimentacoes do estoque` estivesse montado. As expectativas foram alinhadas ao contrato do workspace, mas nao foram reexecutadas por instrucao expressa de encerrar testes.
+- Permaneceram warnings preexistentes de `act(...)` no `AuthProvider`.
+- Os testes de troca de filial nao foram executados neste round devido a instabilidade preexistente nominalmente registrada no relatorio.
+- Nenhuma suite ampla foi executada.
+
+### Arquivos do Round 2
+
+- `src/pages/operacional/EstoquePage.tsx`
+- `src/pages/operacional/EstoquePage.test.tsx`
+- `.superpowers/sdd/2026-09-11-identidade-operacional-quadrada/task-4-report.md`

@@ -96,15 +96,21 @@ export default function EstoquePage({ initialTab = 'overview' }: EstoquePageProp
     () => viewMode === 'consolidado' ? consolidadoData : detalhadoData,
     [consolidadoData, detalhadoData, viewMode],
   );
-  const hasCurrentViewData = activeTab === 'overview'
-    ? consolidadoData.length > 0
-    : activeTab === 'central'
-      ? estoqueData.length > 0
-      : giroData.length > 0;
+  const activeSource = activeTab === 'overview'
+    ? 'consolidado'
+    : activeTab === 'central' ? viewMode : 'giro';
+  const activeSourceData = activeSource === 'consolidado'
+    ? consolidadoData
+    : activeSource === 'detalhado' ? detalhadoData : giroData;
+  const hasCurrentViewData = activeSourceData.length > 0;
   const branchKey = `${codEmpresaContexto ?? empresa?.cod_empresa_bi ?? 'empresa'}:${filialAtiva ?? 'sem-filial'}`;
-  const stockError = sourceErrors?.[viewMode];
+  const activeSourceError = sourceErrors?.[activeSource];
+  const activeSourceState = sourceStatus?.[activeSource];
+  const stockSource = activeSource === 'giro' ? null : activeSource;
+  const stockData = stockSource === 'consolidado' ? consolidadoData : stockSource === 'detalhado' ? detalhadoData : [];
+  const stockError = stockSource ? sourceErrors?.[stockSource] : null;
   const movementError = sourceErrors?.giro;
-  const stockUnavailable = Boolean(stockError && estoqueData.length === 0);
+  const stockUnavailable = Boolean(stockError && stockData.length === 0);
   const movementUnavailable = Boolean(movementError);
   const movementAvailable = !movementUnavailable && (
     sourceStatus?.giro === undefined || sourceStatus.giro === 'ready' || (sourceStatus.giro === 'fetching' && giroData.length > 0)
@@ -112,24 +118,27 @@ export default function EstoquePage({ initialTab = 'overview' }: EstoquePageProp
   const detailedStockLoading = activeTab === 'central' && viewMode === 'detalhado'
     && sourceStatus?.detalhado === 'loading' && detalhadoData.length === 0;
   const movementLoading = (activeTab === 'giro' || activeTab === 'assistente') && sourceStatus?.giro === 'loading' && giroData.length === 0;
-  const partialStock = Boolean(partialSources?.[viewMode]);
-  const recoveredStock = Boolean(recoveredSources?.[viewMode]);
+  const activeSourceLoading = !hasCurrentViewData && !activeSourceError && (
+    activeSourceState === 'loading'
+    || activeSourceState === 'fetching'
+    || ((activeSourceState === 'idle' || activeSourceState === undefined) && (isLoading || isInitialLoading))
+  );
+  const partialStock = Boolean(stockSource && partialSources?.[stockSource]);
+  const recoveredStock = Boolean(stockSource && recoveredSources?.[stockSource]);
   const recoveringStock = recoveryStatus === 'loading' && (partialStock || stockUnavailable);
-  const activeError = activeTab === 'central'
-    ? stockUnavailable && stockError && !recoveringStock
-    : (stockUnavailable && stockError) || (movementUnavailable && movementError);
-  const sourceHasActiveIssue = Boolean(movementError || (stockError && !recoveredStock));
-  const activeSourceUpdate = activeTab === 'central'
-    ? sourceLastUpdated?.[viewMode]
-    : sourceLastUpdated?.giro;
+  const activeSourceUnavailable = Boolean(activeSourceError && !hasCurrentViewData);
+  const activeError = activeSourceUnavailable && !(stockSource && recoveringStock) ? activeSourceError : null;
+  const sourceHasActiveIssue = activeSource === 'giro'
+    ? movementUnavailable
+    : Boolean(movementError || (stockError && !recoveredStock));
+  const activeSourceUpdate = sourceLastUpdated?.[activeSource];
   const displayedUpdate = sourceLastUpdated === undefined ? lastSuccessfulUpdate : activeSourceUpdate;
   const lastUpdateLabel = displayedUpdate
     ? `Atualizado as ${displayedUpdate.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`
     : 'Aguardando primeira atualizacao';
-  const stockSourceState = sourceStatus?.[viewMode];
   const sourceStateLabel = recoveringStock
     ? 'Recuperando estoque completo'
-    : stockUnavailable
+    : activeSourceUnavailable
       ? 'Estoque indisponivel'
       : recoveredStock
         ? movementError ? 'Estoque recuperado, giro pendente' : 'Estoque recuperado'
@@ -141,7 +150,7 @@ export default function EstoquePage({ initialTab = 'overview' }: EstoquePageProp
             ? 'Atualizando dados'
             : movementError
               ? 'Estoque atualizado, giro pendente'
-              : stockSourceState === 'ready'
+              : activeSourceState === 'ready'
                 ? 'Dados atualizados'
                 : 'Fonte aguardando consulta';
 
@@ -178,8 +187,8 @@ export default function EstoquePage({ initialTab = 'overview' }: EstoquePageProp
   };
 
   const sourceNoticeFingerprint = sourceHasActiveIssue
-    ? [branchKey, viewMode, partialStock, recoveringStock, stockError?.message, movementError?.message].join('|')
-    : `healthy:${branchKey}:${viewMode}`;
+    ? [branchKey, activeSource, partialStock, recoveringStock, stockError?.message, movementError?.message].join('|')
+    : `healthy:${branchKey}:${activeSource}`;
 
   useEffect(() => {
     setSourceNoticeDismissed(false);
@@ -222,7 +231,7 @@ export default function EstoquePage({ initialTab = 'overview' }: EstoquePageProp
     </Alert>
   ) : null;
 
-  if (isLoading && !hasCurrentViewData) {
+  if (activeSourceLoading && isLoading && !detailedStockLoading && !movementLoading) {
     return (
       <EstoqueWorkspace>
         <EstoqueDataViewport className="p-4"><LoadingState /></EstoqueDataViewport>
@@ -238,7 +247,7 @@ export default function EstoquePage({ initialTab = 'overview' }: EstoquePageProp
     );
   }
 
-  if (isInitialLoading && !hasCurrentViewData) {
+  if (activeSourceLoading && !detailedStockLoading && !movementLoading) {
     return (
       <EstoqueWorkspace>
         <EstoqueDataViewport

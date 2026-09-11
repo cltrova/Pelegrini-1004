@@ -131,7 +131,7 @@ afterEach(() => {
 });
 
 describe('EstoquePage', () => {
-  it('mantem uma carga inicial unica ate todas as fontes do estoque terminarem', () => {
+  it('nao bloqueia a fonte ativa pronta enquanto outra fonte termina a carga inicial', () => {
     testState.hookResult = createHookResult({
       consolidadoData: [],
       detalhadoData: [],
@@ -142,10 +142,9 @@ describe('EstoquePage', () => {
 
     renderEstoquePage();
 
-    expect(screen.getByRole('status', { name: 'Carregando dados completos do estoque' })).toBeInTheDocument();
-    expect(screen.getByText('Carregando dados da filial')).toBeInTheDocument();
-    expect(screen.queryByRole('tab', { name: 'Central de Estoque' })).not.toBeInTheDocument();
-    expect(screen.queryByText('Recuperando estoque completo')).not.toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'Central de Estoque' })).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Resumo do estoque' })).toBeInTheDocument();
+    expect(screen.queryByText('Carregando dados da filial')).not.toBeInTheDocument();
   });
 
   it('mostra filial, ultima atualizacao e estado da fonte no cabecalho compacto', () => {
@@ -213,20 +212,30 @@ describe('EstoquePage', () => {
   });
 
   it.each([
-    { initialTab: 'overview' as const, emptySource: 'consolidadoData' },
-    { initialTab: 'central' as const, emptySource: 'consolidadoData' },
-    { initialTab: 'giro' as const, emptySource: 'giroData' },
-    { initialTab: 'assistente' as const, emptySource: 'giroData' },
-  ])('mantem o carregamento quando $initialTab ainda nao tem dados, mesmo com outra fonte preenchida', ({ initialTab, emptySource }) => {
+    { initialTab: 'overview' as const, emptySource: 'consolidadoData', loadingSource: 'consolidado' },
+    { initialTab: 'central' as const, emptySource: 'consolidadoData', loadingSource: 'consolidado' },
+    { initialTab: 'giro' as const, emptySource: 'giroData', loadingSource: 'giro' },
+    { initialTab: 'assistente' as const, emptySource: 'giroData', loadingSource: 'giro' },
+  ])('mantem o carregamento quando $initialTab ainda nao tem dados, mesmo com outra fonte preenchida', ({ initialTab, emptySource, loadingSource }) => {
     testState.hookResult = createHookResult({
       [emptySource]: [],
       isLoading: true,
+      sourceStatus: {
+        consolidado: loadingSource === 'consolidado' ? 'loading' : 'ready',
+        detalhado: 'ready',
+        giro: loadingSource === 'giro' ? 'loading' : 'ready',
+      },
     });
 
     renderEstoquePage({ initialTab });
 
     expect(screen.getByText('Carregando dados da filial')).toBeInTheDocument();
-    expect(screen.queryByRole('tab', { name: 'Central de Estoque' })).not.toBeInTheDocument();
+    if (loadingSource === 'giro') {
+      expect(screen.getByRole('status', { name: 'Carregando movimentacoes do estoque' })).toBeInTheDocument();
+      expect(screen.getByRole('tab', { name: 'Central de Estoque' })).toBeInTheDocument();
+    } else {
+      expect(screen.queryByRole('tab', { name: 'Central de Estoque' })).not.toBeInTheDocument();
+    }
   });
 
   it('nao apresenta totalizadores zerados quando a API falha e permite tentar novamente', () => {
@@ -463,6 +472,22 @@ describe('EstoquePage', () => {
     expect(screen.queryByRole('tab', { name: 'Detalhes do Produto' })).not.toBeInTheDocument();
   });
 
+  it('mantem a Visao geral consolidada quando a fonte detalhada falha', async () => {
+    testState.hookResult = createHookResult({
+      detalhadoData: [],
+      sourceErrors: { consolidado: null, detalhado: new Error('Detalhado indisponivel'), giro: null },
+      sourceStatus: { consolidado: 'ready', detalhado: 'error', giro: 'ready' },
+    });
+    renderEstoquePage();
+    fireEvent.click(screen.getByRole('button', { name: 'Detalhado' }));
+    expect(screen.getByText('Estoque indisponivel')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('tab', { name: 'Visão geral' }));
+
+    expect(await screen.findByRole('region', { name: 'Visão geral do estoque' })).toBeInTheDocument();
+    expect(screen.queryByText('Estoque indisponivel')).not.toBeInTheDocument();
+  });
+
   it('oculta Distribuidores na empresa Casa da Chevrolet', () => {
     testState.hookResult = createHookResult({ activeCompanyCode: '10041' });
     renderEstoquePage();
@@ -499,6 +524,7 @@ describe('EstoquePage', () => {
   it('mostra carregamento ao alternar para a fonte detalhada sem apresentar estoque vazio', () => {
     testState.hookResult = createHookResult({
       detalhadoData: [],
+      isInitialLoading: true,
       sourceStatus: { consolidado: 'ready', detalhado: 'loading', giro: 'ready' },
     });
 
@@ -509,6 +535,21 @@ describe('EstoquePage', () => {
     expect(screen.queryByRole('region', { name: 'Resumo do estoque' })).not.toBeInTheDocument();
     expect(screen.queryByText(/^0 produtos$/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/Nenhum produto disponivel/i)).not.toBeInTheDocument();
+  });
+
+  it('prioriza o erro da fonte ativa enquanto outra fonte ainda carrega', () => {
+    testState.hookResult = createHookResult({
+      consolidadoData: [],
+      isInitialLoading: true,
+      sourceErrors: { consolidado: new Error('Consolidado indisponivel'), detalhado: null, giro: null },
+      sourceStatus: { consolidado: 'error', detalhado: 'loading', giro: 'ready' },
+    });
+
+    renderEstoquePage();
+
+    expect(screen.getByText('Estoque indisponivel')).toBeInTheDocument();
+    expect(screen.getByText(/Consolidado indisponivel/)).toBeInTheDocument();
+    expect(screen.queryByText('Carregando dados da filial')).not.toBeInTheDocument();
   });
 
   it('mantem busca de Giro pendente ate a aplicacao explicita', async () => {
@@ -644,6 +685,7 @@ describe('EstoquePage', () => {
       detalhadoData: [],
       giroData: [],
       isLoading: true,
+      sourceStatus: { consolidado: 'loading', detalhado: 'loading', giro: 'loading' },
     });
 
     renderEstoquePage();
