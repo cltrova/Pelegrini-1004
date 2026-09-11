@@ -26,7 +26,7 @@
   background-image: none;
 }
 
-[data-module-shell='comercial'] :where(.premium-card, .premium-hover-card, .dashboard-header-card, .bg-card, .pelegrini-data-panel, .pelegrini-kpi-card, .pelegrini-chart-frame, table, th, td, section) {
+[data-module-shell='comercial'] :where(.premium-card, .premium-hover-card, .dashboard-header-card, .pelegrini-data-panel, .pelegrini-kpi-card, .pelegrini-chart-frame) {
   border-radius: var(--commercial-panel-radius) !important;
   box-shadow: none !important;
   background-image: none !important;
