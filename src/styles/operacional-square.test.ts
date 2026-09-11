@@ -38,4 +38,14 @@ describe('operational square visual scope', () => {
       /\[data-module-shell='operacional'\] \.sidebar-mobile-control\s*{[^}]*border-radius:\s*4px;/,
     );
   });
+
+  it('neutralizes decorative descendant transforms without targeting loading animations', () => {
+    expect(css).toMatch(
+      /\[data-module-shell='operacional'\] \.transition-transform\s*{[^}]*transition-property:\s*color, background-color, border-color, opacity;/,
+    );
+    expect(css).toMatch(
+      /\[data-module-shell='operacional'\] \.group:hover \[class\*='group-hover:translate'\]\s*{[^}]*transform:\s*none !important;/,
+    );
+    expect(css).not.toMatch(/animate-spin/);
+  });
 });

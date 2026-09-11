@@ -69,15 +69,20 @@ describe('EstoqueMetricStrip', () => {
     expect(onMetricClick).toHaveBeenCalledWith('critical');
   });
 
-  it('mantem metricas informativas focaveis sem acionar filtros', () => {
+  it('reserva largura para valores longos sem recortar ou sobrepor a metrica seguinte', () => {
     const onMetricClick = vi.fn();
     render(<EstoqueMetricStrip metrics={metrics} onMetricClick={onMetricClick} />);
 
+    const strip = screen.getByRole('region', { name: 'Indicadores de estoque' });
     const informative = screen.getByRole('article', { name: `Valor do estoque: ${longCurrencyValue}` });
+    const followingMetric = screen.getByRole('button', { name: 'Criticos: 1.624' });
     const value = screen.getByText(longCurrencyValue);
 
+    expect(strip).toHaveClass('overflow-x-auto');
+    expect(informative.parentElement).toHaveClass('flex', 'min-w-[54rem]');
     expect(informative).toHaveAttribute('tabindex', '0');
-    expect(informative.parentElement).toHaveClass('min-w-[54rem]');
+    expect(informative).toHaveStyle({ minWidth: 'max(9rem, calc(21ch + 3rem))' });
+    expect(followingMetric).toHaveStyle({ minWidth: 'max(9rem, calc(5ch + 3rem))' });
     expect(value).toHaveClass(
       'min-w-0',
       'max-w-full',

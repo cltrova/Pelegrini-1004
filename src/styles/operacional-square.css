@@ -70,6 +70,15 @@
   transition-duration: var(--operational-motion-fast);
 }
 
+[data-module-shell='operacional'] .transition-transform {
+  transition-property: color, background-color, border-color, opacity;
+}
+
+[data-module-shell='operacional'] [class*='hover:translate']:hover,
+[data-module-shell='operacional'] .group:hover [class*='group-hover:translate'] {
+  transform: none !important;
+}
+
 [data-module-shell='operacional'] :where(.premium-card, .premium-hover-card, .dashboard-header-card):hover {
   transform: none !important;
   box-shadow: none !important;

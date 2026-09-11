@@ -54,8 +54,9 @@ function MetricContent({ icon: Icon, label, value }: Pick<EstoqueMetric, 'icon' 
 function MetricItem({ active, metric, onMetricClick }: MetricItemProps) {
   const [tooltipPosition, setTooltipPosition] = useState<{ left: number; top: number } | null>(null);
   const descriptionId = `estoque-metric-description-${useId().replace(/:/g, '')}`;
+  const metricMinWidth = `max(9rem, calc(${metric.value.length}ch + 3rem))`;
   const commonClassName = cn(
-    'relative flex h-full min-w-0 w-full items-center gap-1.5 border-r border-border/55 px-2 text-left',
+    'relative flex h-full w-full flex-1 items-center gap-1.5 border-r border-border/55 px-2 text-left',
     'transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring',
     toneClasses[metric.tone],
     active ? 'bg-primary/10' : 'bg-card/80 hover:bg-muted/35',
@@ -87,6 +88,7 @@ function MetricItem({ active, metric, onMetricClick }: MetricItemProps) {
           data-stock-summary
           data-tone={metric.tone}
           onClick={() => onMetricClick?.(metric.key)}
+          style={{ minWidth: metricMinWidth }}
           type="button"
         >
           {content}
@@ -102,6 +104,7 @@ function MetricItem({ active, metric, onMetricClick }: MetricItemProps) {
           className={commonClassName}
           data-tone={metric.tone}
           data-stock-summary
+          style={{ minWidth: metricMinWidth }}
           tabIndex={0}
         >
           {content}
@@ -143,7 +146,7 @@ export function EstoqueMetricStrip({
         className,
       )}
     >
-      <div className="grid min-w-[54rem] flex-1 grid-cols-6">
+      <div className="flex min-w-[54rem] flex-1">
         {metrics.map((metric) => (
           <MetricItem
             active={metric.interactive && (metric.key === activeKey || Boolean(activeKeys?.includes(metric.key)))}

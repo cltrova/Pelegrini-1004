@@ -51,3 +51,39 @@ Mensagem prevista: `feat: add stable operational workspace primitives`.
 
 - A suite completa ja possuia falhas e timeouts anteriores, conforme `progress.md`; esta task foi validada com a suite focada definida no brief.
 - O Git informou apenas que alguns arquivos LF serao convertidos para CRLF quando forem tocados futuramente; isso nao gerou erro de whitespace nem alteracao integral de fim de linha no diff.
+
+## Fix Round 1
+
+### Feedback tratado
+
+- A grade fixa `grid-cols-6` nao fazia a largura minima global de `54rem` proteger individualmente um valor longo contra invasao da celula seguinte.
+- A regra de transicao dos controles nao neutralizava `transition-transform` e `group-hover:translate` aplicados a descendentes.
+
+### RED
+
+Comando:
+
+```text
+npm test -- src/components/operacional/estoque/EstoqueWorkspace.test.tsx src/components/operacional/estoque/EstoqueMetricStrip.test.tsx src/styles/operacional-square.test.ts --run
+```
+
+Resultado: 2 arquivos falharam; 2 testes falharam e 10 passaram. O teste da faixa encontrou o agrupador `grid` sem minimo por metrica; o teste CSS nao encontrou neutralizacao para descendentes transformaveis.
+
+### Implementacao
+
+- O agrupador de metricas passou a `flex`, mantendo `min-w-[54rem]` e `overflow-x-auto` na faixa.
+- Cada metrica passou a reservar `max(9rem, calc(Nch + 3rem))`, onde `N` e o comprimento do valor renderizado; o espaco adicional cobre icone, gap e padding.
+- O teste compara valores curto e longo com expectativas literais, confirma fluxo flexivel, scroll na faixa e ausencia de classes de recorte no valor.
+- O CSS escopado substitui `transition-transform` pelas transicoes permitidas de cor/opacidade e neutraliza `group-hover:translate` com `transform: none !important`.
+- `.animate-spin` nao aparece nesses seletores e nenhuma propriedade `animation` foi neutralizada, preservando loading semantico.
+
+### Verificacao isolada
+
+- `EstoqueMetricStrip.test.tsx`: 3 testes passaram.
+- `operacional-square.test.ts`: 6 testes passaram.
+
+### Verificacao final
+
+- Suite focada da Task 3: 3 arquivos e 12 testes passaram, sem falhas.
+- `git diff --check`: exit code 0, sem whitespace invalido.
+- Auto-revisao: o minimo dinamico participa do fluxo flexivel, o overflow permanece confinado a faixa e os seletores de transformacao nao incluem loading semantico.
