@@ -2,6 +2,18 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import type { ComercialFilters } from '@/types/comercial';
 
+vi.mock('@/contexts/AuthContext', () => ({
+  useAuth: () => ({ isMaster: false }),
+}));
+
+vi.mock('@/contexts/FilialSelecionadaContext', () => ({
+  useFilialSelecionada: () => ({ filialAtiva: null, filialNome: null }),
+}));
+
+vi.mock('@/hooks/useEmpresaAtiva', () => ({
+  useEmpresaAtiva: () => ({ codEmpresaAtiva: null, empresa: null }),
+}));
+
 vi.mock('@/components/ui/select', async () => {
   const React = await import('react');
 
@@ -199,5 +211,27 @@ describe('EnterpriseComercialFilters', () => {
     expect(onPendingFiltersChange).toHaveBeenCalledWith(
       expect.objectContaining({ anos: ['2026'], meses: ['07', '02'] }),
     );
+  });
+
+  it('marks native popover and select portals as commercial overlays', () => {
+    render(
+      <EnterpriseComercialFilters
+        anos={['2026']}
+        appliedFilters={baseFilters}
+        hasChanges={false}
+        monthOnly
+        onApply={() => undefined}
+        onClear={() => undefined}
+        onPendingFiltersChange={() => undefined}
+        pendingFilters={baseFilters}
+        useNativeControls
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: '2026' }));
+    expect(screen.getByRole('dialog')).toHaveClass('commercial-overlay');
+
+    fireEvent.click(screen.getAllByRole('combobox')[0]);
+    expect(screen.getByRole('listbox')).toHaveClass('commercial-overlay');
   });
 });

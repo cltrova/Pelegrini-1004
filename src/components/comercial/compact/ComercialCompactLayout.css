@@ -190,7 +190,7 @@
 
 .comissao-results,
 .comissao-error {
-  border-radius: 6px;
+  border-radius: var(--commercial-panel-radius, 2px);
 }
 
 .comissao-page .comercial-metric-strip {

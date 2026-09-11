@@ -102,12 +102,14 @@ function MesPeriodoPicker({
   anosSelecionados,
   mesesSelecionados,
   updatePeriodo,
+  overlayClassName,
 }: {
   filters: ComercialFiltersType;
   onFiltersChange: (f: ComercialFiltersType) => void;
   anosSelecionados: string[];
   mesesSelecionados: string[];
   updatePeriodo: (anos: string[], meses: string[]) => void;
+  overlayClassName?: string;
 }) {
   const inicioISO = filters.periodo?.inicio;
   const fimISO = filters.periodo?.fim;
@@ -196,7 +198,7 @@ function MesPeriodoPicker({
           <ChevronDown className="h-4 w-4 opacity-50 shrink-0" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-auto p-2 bg-popover z-50" align="start">
+      <PopoverContent className={cn('w-auto p-2 bg-popover z-50', overlayClassName)} align="start">
         <Tabs value={tab} onValueChange={setTab} className="w-full">
           <TabsList className="grid w-full grid-cols-3 mb-2">
             <TabsTrigger value="mes">Mês</TabsTrigger>
@@ -294,6 +296,8 @@ interface ComercialFiltersProps {
   embedded?: boolean;
   /** Oculta a linha interna de ações quando a superfície externa já fornece Aplicar/Limpar. */
   hideActions?: boolean;
+  /** Classe adicional aplicada aos conteúdos portados de select e popover. */
+  overlayClassName?: string;
 }
 
 // Helper: obter mês atual no formato "01", "02", etc.
@@ -403,6 +407,7 @@ export function ComercialFilters({
   extraFields,
   embedded = false,
   hideActions = false,
+  overlayClassName,
 }: ComercialFiltersProps) {
   const { isMaster } = useAuth();
   const { codEmpresaAtiva, empresa } = useEmpresaAtiva();
@@ -598,7 +603,7 @@ export function ComercialFilters({
                         <ChevronDown className="h-4 w-4 opacity-50 shrink-0" />
                       </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-[180px] p-2 bg-popover z-50" align="start">
+                    <PopoverContent className={cn('w-[180px] p-2 bg-popover z-50', overlayClassName)} align="start">
                       <div className="max-h-64 overflow-y-auto space-y-0.5">
                         {anos.map((ano) => {
                           const checked = sel.includes(ano);
@@ -650,7 +655,7 @@ export function ComercialFilters({
                     <SelectTrigger className="h-10 bg-background">
                       <SelectValue placeholder="Selecione o mês" />
                     </SelectTrigger>
-                    <SelectContent className="bg-popover z-50">
+                    <SelectContent className={cn('bg-popover z-50', overlayClassName)}>
                       {MESES.map((m) => (
                         <SelectItem key={m.value} value={m.value}>
                           {m.label.replace(/^./, (c) => c.toUpperCase())}
@@ -666,6 +671,7 @@ export function ComercialFilters({
                   anosSelecionados={anosSelecionados}
                   mesesSelecionados={mesesSelecionados}
                   updatePeriodo={updatePeriodo}
+                  overlayClassName={overlayClassName}
                 />
               )}
             </div>
@@ -686,7 +692,7 @@ export function ComercialFilters({
                   <SelectTrigger className="h-10 bg-background">
                     <SelectValue placeholder="Todas" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className={cn(overlayClassName)}>
                     <SelectItem value="todos">Todas as empresas</SelectItem>
                     {empresas.filter((e) => e && e.trim() !== '').map((e) => (
                       <SelectItem key={e} value={e}>{e}</SelectItem>
@@ -742,7 +748,7 @@ export function ComercialFilters({
                         <ChevronDown className="h-4 w-4 opacity-50 shrink-0" />
                       </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-[260px] p-2 bg-popover z-50" align="start">
+                    <PopoverContent className={cn('w-[260px] p-2 bg-popover z-50', overlayClassName)} align="start">
                       <div className="flex items-center justify-between gap-2 px-1 pb-2 mb-2 border-b border-border">
                         <button type="button" onClick={selectAll} className="text-xs text-primary hover:underline">
                           Selecionar todos
@@ -828,7 +834,7 @@ export function ComercialFilters({
                         )}
                       </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-[320px] p-2 bg-popover z-50" align="start">
+                    <PopoverContent className={cn('w-[320px] p-2 bg-popover z-50', overlayClassName)} align="start">
                       <div className="mb-2 flex items-center gap-2">
                         <Search className="h-3.5 w-3.5 text-muted-foreground" />
                         <Input
@@ -929,7 +935,7 @@ export function ComercialFilters({
                           <ChevronDown className="h-4 w-4 opacity-50 shrink-0" />
                         </Button>
                       </PopoverTrigger>
-                      <PopoverContent className="w-[260px] p-2 bg-popover z-50" align="start">
+                      <PopoverContent className={cn('w-[260px] p-2 bg-popover z-50', overlayClassName)} align="start">
                         <div className="flex items-center justify-between gap-2 px-1 pb-2 mb-2 border-b border-border">
                           <button type="button" onClick={selectAll} className="text-xs text-primary hover:underline">
                             Selecionar todas
@@ -979,7 +985,7 @@ export function ComercialFilters({
                 <SelectTrigger className="h-10 bg-background">
                   <SelectValue placeholder="Ambos" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className={cn(overlayClassName)}>
                   <SelectItem value="todos">Pedidos e devoluções</SelectItem>
                   <SelectItem value="PEDIDO">Apenas pedidos</SelectItem>
                   <SelectItem value="DEVOLUCAO">Apenas devoluções</SelectItem>

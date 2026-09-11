@@ -139,6 +139,25 @@ describe('ComercialCompactLayout', () => {
     expect(metricRadiusRules.every(({ value }) => value === 'var(--commercial-panel-radius, 2px)')).toBe(true);
   });
 
+  it('keeps commission results and errors on the square panel radius', () => {
+    const css = readFileSync(join(process.cwd(), 'src/components/comercial/compact/ComercialCompactLayout.css'), 'utf8');
+    const commissionRadiusRules: Array<{ selector: string; value: string }> = [];
+
+    postcss.parse(css).walkRules((rule) => {
+      if (!rule.selector.includes('.comissao-results') && !rule.selector.includes('.comissao-error')) return;
+
+      rule.walkDecls('border-radius', (declaration) => {
+        commissionRadiusRules.push({ selector: rule.selector, value: declaration.value });
+      });
+    });
+
+    expect(commissionRadiusRules).toEqual(expect.arrayContaining([
+      expect.objectContaining({ selector: expect.stringContaining('.comissao-results') }),
+      expect.objectContaining({ selector: expect.stringContaining('.comissao-error') }),
+    ]));
+    expect(commissionRadiusRules.every(({ value }) => value === 'var(--commercial-panel-radius, 2px)')).toBe(true);
+  });
+
   it('lets consumers specialize commercial filter and metric semantics', () => {
     render(
       <>

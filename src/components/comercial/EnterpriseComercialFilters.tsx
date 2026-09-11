@@ -150,6 +150,7 @@ export function EnterpriseComercialFilters({
             marcas={marcas}
             monthOnly={monthOnly}
             onFiltersChange={onPendingFiltersChange}
+            overlayClassName="commercial-overlay"
             showClienteFilter={showClienteFilter}
             showMarcaFilter={showMarcaFilter}
             showVendedorFilter={showVendedorFilter}
