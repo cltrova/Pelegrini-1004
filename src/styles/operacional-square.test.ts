@@ -50,6 +50,8 @@ function assertPortableOverlayReducedMotion(source: string) {
 
 describe('operational square visual scope', () => {
   const css = readFileSync(join(process.cwd(), 'src/styles/operacional-square.css'), 'utf8');
+  const sharedCss = readFileSync(join(process.cwd(), 'src/index.css'), 'utf8');
+  const mainSource = readFileSync(join(process.cwd(), 'src/main.tsx'), 'utf8');
   const sidebarSource = readFileSync(
     join(process.cwd(), 'src/components/pelegrini/PelegriniModuleSidebar.tsx'),
     'utf8',
@@ -116,6 +118,28 @@ describe('operational square visual scope', () => {
     const ruleStart = css.lastIndexOf('}', shadowIndex) + 1;
     const ruleOpen = css.lastIndexOf('{', shadowIndex);
     expect(css.slice(ruleStart, ruleOpen).trim()).toBe('.operational-overlay');
+  });
+
+  it('neutralizes the shared active-item shadow without moving the visible marker', () => {
+    const operationalActiveItem = extractBlock(
+      css,
+      "[data-module-shell='operacional'] .sidebar-item-active",
+    );
+    const operationalMarker = extractBlock(
+      css,
+      "[data-module-shell='operacional'] .sidebar-item-active::before",
+    );
+
+    expect(sharedCss).toMatch(
+      /\.sidebar-item-active\s*{[^}]*box-shadow:\s*inset\s+3px\s+0\s+0[^}]*}/,
+    );
+    expect(operationalActiveItem).toMatch(/box-shadow:\s*none(?:\s*!important)?;/);
+    expect(mainSource.indexOf('"./index.css"')).toBeLessThan(
+      mainSource.indexOf('"./styles/operacional-square.css"'),
+    );
+    expect(operationalMarker).toMatch(/position:\s*absolute;/);
+    expect(operationalMarker).toMatch(/width:\s*3px;/);
+    expect(operationalMarker).toMatch(/content:\s*'';/);
   });
 
   it('neutralizes decorative descendant transforms without targeting loading animations', () => {

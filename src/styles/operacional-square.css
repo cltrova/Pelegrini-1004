@@ -40,6 +40,7 @@
 [data-module-shell='operacional'] .sidebar-item-active {
   position: relative;
   background: hsl(var(--sidebar-accent)) !important;
+  box-shadow: none;
 }
 
 [data-module-shell='operacional'] .sidebar-item-active::before {

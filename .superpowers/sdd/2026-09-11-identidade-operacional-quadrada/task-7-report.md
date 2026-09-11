@@ -127,4 +127,34 @@ Evidencia automatizada desta rodada:
 - Lint com 4 GB: timeout/interrompido, sem resultado conclusivo.
 - Falhas baseline de filial/lazy e Comercial permaneceram fora do escopo e nao foram alteradas.
 - `git diff --check`: codigo 0, sem whitespace invalido; somente avisos LF -> CRLF. Os arquivos protegidos permaneceram fora do stage.
-- Commit previsto: `fix: polish operational responsive visual identity`.
+- Commit realizado: `e1bbd9d fix: polish operational responsive visual identity`.
+
+## Fix Round 2
+
+Arquivos alterados nesta rodada:
+
+- `src/styles/operacional-square.css`
+- `src/styles/operacional-square.test.ts`
+- `.superpowers/sdd/2026-09-11-identidade-operacional-quadrada/task-7-report.md`
+
+Correcao da cascata:
+
+- A regra compartilhada de `src/index.css` para `.sidebar-item-active`, carregada antes da folha operacional, define `box-shadow: inset 3px 0 0`. O bloco `[data-module-shell='operacional'] .sidebar-item-active` agora declara explicitamente `box-shadow: none`, impedindo a contribuicao global no modulo Operacional.
+- O marcador visivel continua em `.sidebar-item-active::before`, com `position: absolute`, `width: 3px`, `inset-block: 0` e `inset-inline-start: 0`. Como o pseudo-elemento nao participa do fluxo, as dimensoes do item permanecem estaveis e nao ha layout shift.
+- O teste passou a ler `src/index.css`, `src/styles/operacional-square.css` e `src/main.tsx`: confirma a sombra inset compartilhada, a neutralizacao operacional posterior e a estrutura absoluta do marcador. Assim, nao pode mais passar olhando somente a folha operacional.
+
+Evidencia automatizada:
+
+- A primeira tentativa no sandbox, `npm test -- src/styles/operacional-square.test.ts --run --reporter=dot`, terminou com codigo 1 antes de carregar o Vitest por bloqueio de acesso do esbuild; nao foi considerada RED funcional.
+- RED funcional, antes da correcao CSS: o mesmo teste fora do sandbox terminou com codigo 1, 8/9 passando; a unica falha foi a ausencia de `box-shadow: none` no bloco operacional do item ativo.
+- GREEN focado: `npm test -- src/styles/operacional-square.test.ts src/components/pelegrini/PelegriniModuleSidebar.test.tsx src/components/layout/OperacionalSidebar.test.ts src/components/operacional/estoque/EstoqueOverview.test.tsx --run --reporter=dot` terminou com codigo 0, 4/4 arquivos e 27/27 testes passando em 3,98 s.
+- `git diff --check` terminou com codigo 0, sem whitespace invalido; os unicos avisos foram de conversao LF -> CRLF. Os cinco arquivos locais protegidos permaneceram fora das alteracoes desta rodada.
+
+Validacao real do tooltip no navegador:
+
+- Preview local existente em `http://127.0.0.1:4177`, com autenticacao mock de local preview no `localStorage`; Chrome headless `152.0.7977.83`, viewport `1440x900`, rota `/operacional/estoque`.
+- O documento mediu `scrollWidth=1440` e `clientWidth=1440`; o Vite overlay permaneceu ausente (`0`). O grafico `Distribuicao por marca` renderizou 8 setores, em um container `x=884.328125`, `y=194.5`, `width=332.671875`, `height=256`.
+- Antes do ponteiro entrar, havia 0 `.operational-overlay` visiveis no painel. O mouse real foi movido para `(1130.6640625, 322.5)`, ponto a 80 px do centro do donut e dentro dos raios `58-96 px`; o tooltip ficou visivel com `MWM` e `R$ 567.609`.
+- O mouse foi movido para `(864.328125, 174.5)`, 20 px acima e a esquerda do container. Apos 500 ms, havia 0 tooltips visiveis: o tooltip desapareceu ao sair do grafico.
+- Capturas headless temporarias `task-7-tooltip-visible.png` e `task-7-tooltip-left.png` foram inspecionadas: a primeira mostra o tooltip sobre o donut e a segunda mostra o mesmo grafico sem qualquer tooltip residual. Elas ficaram fora do repositorio.
+- Uma tentativa preliminar com `waitUntil=networkidle` expirou em 30 s porque a aplicacao mantem consultas continuas; a validacao concluida usou `domcontentloaded` mais a presenca visivel do titulo e do container do grafico. Outra tentativa preliminar revelou coordenada SVG transformada fora do container e foi descartada sem produzir evidencia funcional.
