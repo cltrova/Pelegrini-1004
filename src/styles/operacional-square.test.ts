@@ -20,6 +20,12 @@ describe('operational square visual scope', () => {
     expect(css).toContain('@media (prefers-reduced-motion: reduce)');
   });
 
+  it('neutralizes motion for operational overlays rendered outside the shell', () => {
+    expect(css).toMatch(
+      /@media \(prefers-reduced-motion: reduce\) \{[\s\S]*?\.operational-overlay,[\s\S]*?\.operational-overlay \*,[\s\S]*?\.operational-overlay \*::before,[\s\S]*?\.operational-overlay \*::after\s*\{[^}]*transition-duration:\s*0\.01ms !important;[^}]*animation-duration:\s*0\.01ms !important;[^}]*animation-iteration-count:\s*1 !important;/,
+    );
+  });
+
   it('removes the shared decorative grid from the operational sidebar', () => {
     expect(css).toMatch(
       /\[data-module-shell='operacional'\] \.pelegrini-sidebar::before\s*{[^}]*background-image:\s*none;/,

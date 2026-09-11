@@ -2,7 +2,7 @@
 
 ## Resultado
 
-Task 6 implementada exclusivamente nos sete arquivos autorizados pelo brief. Estoque Retroativo e Distribuidores agora expõem raizes semanticas para a identidade quadrada; a matriz mensal confina o overflow; o painel do grafico usa a geometria operacional; e os overlays reais de filtro e detalhes recebem o estilo portado.
+Task 6 implementada nos sete arquivos de codigo autorizados pelo brief, mais este relatorio contratual. Estoque Retroativo e Distribuidores agora expõem raizes semanticas para a identidade quadrada; a matriz mensal confina o overflow; o painel do grafico usa a geometria operacional; e os overlays reais de filtro e detalhes recebem o estilo portado.
 
 Nenhum subagente foi usado.
 
@@ -69,8 +69,35 @@ Uma verificacao combinada posterior foi abortada pelo usuario antes do resumo fi
 - `src/components/operacional/estoque/DistributorEvolutionTab.tsx`
 - `src/components/operacional/estoque/DistributorEvolutionTab.test.tsx`
 - `src/styles/operacional-square.css`
+- `.superpowers/sdd/2026-09-11-identidade-operacional-quadrada/task-6-report.md`
 
-Este relatorio foi criado em `.superpowers/sdd/2026-09-11-identidade-operacional-quadrada/task-6-report.md`, mas permanece fora do stage para cumprir a instrucao de adicionar somente os arquivos listados no brief.
+O commit original `a6bdc6a` contem os sete arquivos de codigo acima e este relatorio, totalizando oito arquivos.
+
+## Fix Round 1
+
+### Causa
+
+Os overlays Radix recebem `.operational-overlay` e sao portados para `body`. Por isso, nao eram alcancados pela regra de `prefers-reduced-motion` limitada aos descendentes de `[data-module-shell='operacional']`; as animacoes de zoom do popover e as transicoes do Sheet podiam continuar ativas para usuarios com movimento reduzido.
+
+### RED
+
+Foi adicionado um contrato em `src/styles/operacional-square.test.ts` exigindo que o bloco `@media (prefers-reduced-motion: reduce)` cubra explicitamente `.operational-overlay`, seus descendentes e pseudo-elementos. O teste focado encerrou com 1 falha esperada e 6 testes passando.
+
+### GREEN
+
+O bloco de movimento reduzido passou a incluir o overlay portado, seus pseudo-elementos e descendentes, aplicando as mesmas duracoes minimas e iteracao unica usadas no shell. O comportamento normal e os gradientes internos de dados nao foram alterados.
+
+```text
+Test Files  1 passed (1)
+Tests       7 passed (7)
+Duration    3.48s
+```
+
+Arquivos do Fix Round 1:
+
+- `src/styles/operacional-square.css`
+- `src/styles/operacional-square.test.ts`
+- `.superpowers/sdd/2026-09-11-identidade-operacional-quadrada/task-6-report.md`
 
 ## Auto-revisao
 

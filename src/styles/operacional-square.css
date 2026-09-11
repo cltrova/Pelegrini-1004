@@ -183,7 +183,13 @@
 @media (prefers-reduced-motion: reduce) {
   [data-module-shell='operacional'] *,
   [data-module-shell='operacional'] *::before,
-  [data-module-shell='operacional'] *::after {
+  [data-module-shell='operacional'] *::after,
+  .operational-overlay,
+  .operational-overlay::before,
+  .operational-overlay::after,
+  .operational-overlay *,
+  .operational-overlay *::before,
+  .operational-overlay *::after {
     scroll-behavior: auto !important;
     transition-duration: 0.01ms !important;
     animation-duration: 0.01ms !important;
