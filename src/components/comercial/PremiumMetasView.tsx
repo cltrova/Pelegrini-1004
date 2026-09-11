@@ -161,15 +161,15 @@ export function PremiumMetasView({
         icon: Target,
         title: `Faltam ${formatCurrency(totais.falta)} para a meta`,
         subtitle: diasUteisRestantes > 0
-          ? `Necessário ${formatCurrency(diariaNecessaria)}/dia em ${diasUteisRestantes} dia${diasUteisRestantes > 1 ? 's' : ''} úte${diasUteisRestantes > 1 ? 'is' : 'l'}.`
-          : 'Período encerrado — meta não atingida.',
+          ? `Necessário ${formatCurrency(diariaNecessaria)}/dia em ${diasUteisRestantes} dia${diasUteisRestantes > 1 ? 's' : ''} úte${diasUteisRestantes > 1 ? 'is' : 'l'}. Ação gerencial: distribuir a meta diária entre os vendedores e revisar o avanço no próximo fechamento.`
+          : 'Período encerrado — meta não atingida. Ação gerencial: registrar o desvio e definir um plano de recuperação para o próximo período.',
         color: 'text-amber-500',
       });
     } else {
       result.push({
         icon: Trophy,
         title: `Meta superada em ${formatCurrency(Math.abs(totais.falta))}`,
-        subtitle: `${formatPercent(totais.percentual)} atingidos no período.`,
+        subtitle: `${formatPercent(totais.percentual)} atingidos no período. Ação gerencial: proteger a carteira que sustentou o resultado e replicar as práticas na equipe.`,
         color: 'text-emerald-500',
       });
     }
@@ -182,8 +182,8 @@ export function PremiumMetasView({
         icon: AlertTriangle,
         title: `${acima === 1 ? 'Apenas 1 vendedor acima' : `${acima} vendedores acima`} da meta`,
         subtitle: abaixo > 0
-          ? `${abaixo} abaixo de 70%. Concentração de risco na equipe.`
-          : 'Equilíbrio saudável da equipe.',
+          ? `${abaixo} abaixo de 70%. Concentração de risco na equipe. Ação gerencial: priorizar o acompanhamento individual desses vendedores e definir compromissos para o próximo fechamento.`
+          : 'Equilíbrio saudável da equipe. Ação gerencial: manter o acompanhamento semanal e compartilhar as práticas dos vendedores acima da meta.',
         color: acima >= 3 ? 'text-emerald-500' : 'text-amber-500',
       });
     } else {
@@ -192,8 +192,8 @@ export function PremiumMetasView({
         icon: AlertTriangle,
         title: `Posição #${ranking} entre ${vendedoresLista.length}`,
         subtitle: focado.percentualMetaFaturado >= 100
-          ? 'Vendedor superando individualmente a meta.'
-          : `${formatPercent(focado.percentualMetaFaturado)} da meta individual atingida.`,
+          ? 'Vendedor superando individualmente a meta. Ação gerencial: manter a cadência e compartilhar as práticas que sustentam o resultado.'
+          : `${formatPercent(focado.percentualMetaFaturado)} da meta individual atingida. Ação gerencial: revisar a carteira e pactuar as próximas oportunidades necessárias para recuperar a meta.`,
         color: focado.percentualMetaFaturado >= 100 ? 'text-emerald-500' : 'text-amber-500',
       });
     }
@@ -207,8 +207,8 @@ export function PremiumMetasView({
       icon: TrendingDown,
       title: `Projeção${projPct < 100 ? ' em risco' : ''}: ${formatPercent(projPct)}`,
       subtitle: gap > 0
-        ? `Ritmo atual fecha em ${formatCurrency(projecaoFim)} — gap de ${formatCurrency(gap)}.`
-        : `Ritmo atual fecha em ${formatCurrency(projecaoFim)} — acima da meta.`,
+        ? `Ritmo atual fecha em ${formatCurrency(projecaoFim)} — gap de ${formatCurrency(gap)}. Ação gerencial: acelerar as oportunidades de maior probabilidade e acompanhar o gap a cada fechamento.`
+        : `Ritmo atual fecha em ${formatCurrency(projecaoFim)} — acima da meta. Ação gerencial: proteger as oportunidades em curso e antecipar riscos que possam reduzir a projeção.`,
       color: projPct >= 100 ? 'text-emerald-500' : projPct >= 90 ? 'text-amber-500' : 'text-red-500',
     });
 
@@ -632,7 +632,7 @@ export function PremiumMetasView({
 
         {/* Gauge % Meta - Premium SaaS Enterprise (Donut Gauge) */}
         <Card
-          className="commercial-dashboard-panel lg:col-span-3 relative overflow-hidden bg-card border-border"
+          className="commercial-dashboard-panel commercial-chart-frame lg:col-span-3 relative overflow-hidden bg-card border-border"
           style={{
             fontFamily: 'Inter, "SF Pro Display", -apple-system, BlinkMacSystemFont, sans-serif',
           }}

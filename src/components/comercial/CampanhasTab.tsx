@@ -35,6 +35,8 @@ import { cn } from '@/lib/utils';
 import { nomePertenceEquipe } from '@/utils/filialFilter';
 import { useEmpresaAtiva } from '@/hooks/useEmpresaAtiva';
 import { useFilialSelecionada } from '@/contexts/FilialSelecionadaContext';
+import { useAuth } from '@/contexts/AuthContext';
+import { resolveCodEmpresaBiParam } from '@/utils/filialEndpoint';
 import { valorFaturamentoCampanha, valorFaturamentoMwmFat1004 } from '@/utils/campanhasValores';
 import {
   VENDEDORES_CT_CAMPANHA_1004,
@@ -384,14 +386,16 @@ interface CampanhasTabProps {
 export function CampanhasTab({ periodoFiltro }: CampanhasTabProps = {}) {
   const { campanhas, isLoading, create, update, remove, isMutating } = useCampanhas();
   const campanhasFetchCount = useIsFetching({ queryKey: ['campanhas'] });
-  const [hasRenderedData, setHasRenderedData] = useState(false);
+  const [hasResolvedData, setHasResolvedData] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string>('todas');
   const [marcaFilter, setMarcaFilter] = useState<string[]>([]);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [vendedoresExtras1004, setVendedoresExtras1004] = useState<string[]>([]);
   const [vendedoresExtras1004Inicializados, setVendedoresExtras1004Inicializados] = useState(false);
-  const { codEmpresaAtiva } = useEmpresaAtiva();
+  const { empresa, codEmpresaAtiva } = useEmpresaAtiva();
   const { filialAtiva } = useFilialSelecionada();
+  const { user } = useAuth();
+  const codEmpresaCampanhas = resolveCodEmpresaBiParam(empresa, filialAtiva) || codEmpresaAtiva;
   const vendedoresExtrasSelecionados1004 = useMemo(
     () => new Set(vendedoresExtras1004),
     [vendedoresExtras1004],
@@ -616,13 +620,18 @@ export function CampanhasTab({ periodoFiltro }: CampanhasTabProps = {}) {
     },
   });
 
+  const hasRealCampaignData = campanhas.length > 0;
   useEffect(() => {
-    if (!isLoading) setHasRenderedData(true);
-  }, [isLoading]);
+    const isCampaignsQueryEnabled = Boolean(user && codEmpresaCampanhas);
+    if (isCampaignsQueryEnabled && !isLoading) {
+      setHasResolvedData(true);
+    }
+  }, [codEmpresaCampanhas, isLoading, user]);
 
-  const showInitialLoading = isLoading && !hasRenderedData;
+  const hasVisibleCampaignData = hasResolvedData || hasRealCampaignData;
+  const showInitialLoading = isLoading && !hasVisibleCampaignData;
   const isFetching = campanhasFetchCount > 0 || insightsQuery.isFetching;
-  const isRefreshing = isFetching && hasRenderedData;
+  const isRefreshing = isFetching && hasVisibleCampaignData;
 
   if (showInitialLoading) return <CampanhasSkeleton />;
 
@@ -2508,7 +2517,11 @@ function CampanhaDialog({ initial, onSubmit, isPending, trigger, marcasDisponive
 
 function CampanhasSkeleton() {
   return (
-    <div className="space-y-5">
+    <div
+      aria-label="Carregando campanhas comerciais"
+      className="commercial-dashboard-panel space-y-5 border border-border/70 bg-card p-3"
+      role="status"
+    >
       <div className="flex justify-between items-center"><Skeleton className="h-8 w-48" /><Skeleton className="h-9 w-36" /></div>
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">{[0, 1, 2, 3].map(i => <Skeleton key={i} className="h-28 rounded-lg" />)}</div>
       <Skeleton className="h-64 rounded-lg" />

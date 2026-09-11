@@ -3,21 +3,53 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useIsFetching } from '@tanstack/react-query';
 import { useComercialData } from '@/hooks/useComercialData';
+import { CampanhasTab } from '@/components/comercial/CampanhasTab';
 import { InsightsIATab } from '@/components/comercial/InsightsIATab';
+import { PremiumMetasView } from '@/components/comercial/PremiumMetasView';
 import MetasVendedoresPage from './MetasVendedoresPage';
 
-const { supabaseInvoke } = vi.hoisted(() => ({ supabaseInvoke: vi.fn() }));
+const {
+  campanhasState,
+  empresaState,
+  fetchingState,
+  insightsQueryState,
+  supabaseInvoke,
+} = vi.hoisted(() => ({
+  campanhasState: {
+    value: {
+      campanhas: [],
+      isLoading: false,
+      create: vi.fn(),
+      update: vi.fn(),
+      remove: vi.fn(),
+      isMutating: false,
+    },
+  },
+  empresaState: {
+    value: {
+      empresa: { nome: 'Casa da Transmissao', possui_meta_vendedor: true },
+      codEmpresaAtiva: '1004',
+      isLoading: false,
+    },
+  },
+  fetchingState: { value: 0 },
+  insightsQueryState: { value: { data: [], isFetching: false } },
+  supabaseInvoke: vi.fn(),
+}));
 
 vi.mock('@tanstack/react-query', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@tanstack/react-query')>();
   return {
     ...actual,
     useIsFetching: vi.fn(),
+    useQuery: vi.fn(() => insightsQueryState.value),
     useQueryClient: () => ({ invalidateQueries: vi.fn() }),
   };
 });
 
 vi.mock('@/hooks/useComercialData', () => ({ useComercialData: vi.fn() }));
+vi.mock('@/hooks/useCampanhas', () => ({ useCampanhas: () => campanhasState.value }));
+vi.mock('@/contexts/AuthContext', () => ({ useAuth: () => ({ user: { id: 'user-1' } }) }));
 vi.mock('@/hooks/useComercialProdutos', () => ({
   useComercialProdutos: () => ({
     produtos: [],
@@ -33,11 +65,7 @@ vi.mock('@/hooks/useComercialTotais', () => ({
   useComercialTotaisIdeal: () => ({ pedidos: null, produtos: null }),
 }));
 vi.mock('@/hooks/useEmpresaAtiva', () => ({
-  useEmpresaAtiva: () => ({
-    empresa: { nome: 'Casa da Transmissao', possui_meta_vendedor: true },
-    codEmpresaAtiva: '1004',
-    isLoading: false,
-  }),
+  useEmpresaAtiva: () => empresaState.value,
 }));
 vi.mock('@/contexts/FilialSelecionadaContext', () => ({
   useFilialSelecionada: () => ({ filialAtiva: 'transmissao', filialNome: 'Casa da Transmissao' }),
@@ -53,6 +81,13 @@ vi.mock('@/components/comercial/VendedorDetailsDialog', () => ({ VendedorDetails
 vi.mock('@/integrations/supabase/client', () => ({
   supabase: { functions: { invoke: supabaseInvoke } },
 }));
+vi.mock('recharts', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('recharts')>();
+  return {
+    ...actual,
+    ResponsiveContainer: () => null,
+  };
+});
 
 const comercialData = {
   vendedoresPerformance: [],
@@ -73,8 +108,14 @@ describe('MetasVendedoresPage commercial dashboard', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     sessionStorage.clear();
+    empresaState.value = {
+      empresa: { nome: 'Casa da Transmissao', possui_meta_vendedor: true },
+      codEmpresaAtiva: '1004',
+      isLoading: false,
+    };
+    fetchingState.value = 0;
     vi.mocked(useComercialData).mockReturnValue(comercialData as ReturnType<typeof useComercialData>);
-    vi.mocked(useIsFetching).mockReturnValue(0);
+    vi.mocked(useIsFetching).mockImplementation(() => fetchingState.value);
   });
 
   it('aplica as classes semanticas ao dashboard e a faixa de abas', async () => {
@@ -86,25 +127,137 @@ describe('MetasVendedoresPage commercial dashboard', () => {
     expect(screen.getByLabelText('Indicadores do dashboard comercial')).toHaveClass('commercial-metric-strip');
   });
 
-  it('preserva o conteudo renderizado e indica a atualizacao durante refetch', async () => {
+  it('percorre disabled, loading e dados sem perder o conteudo no refetch', async () => {
+    empresaState.value = {
+      empresa: undefined,
+      codEmpresaAtiva: undefined,
+      isLoading: true,
+    };
+    vi.mocked(useComercialData).mockReturnValue({
+      ...comercialData,
+      periodoDisponivel: null,
+      isLoading: false,
+    } as ReturnType<typeof useComercialData>);
+
     const { rerender } = render(<MetasVendedoresPage />);
-    expect(await screen.findByText('Conteudo preservado')).toBeInTheDocument();
+    await act(async () => undefined);
+
+    empresaState.value = {
+      empresa: { nome: 'Casa da Transmissao', possui_meta_vendedor: true },
+      codEmpresaAtiva: '1004',
+      isLoading: false,
+    };
 
     vi.mocked(useComercialData).mockReturnValue({
       ...comercialData,
+      periodoDisponivel: null,
       isLoading: true,
     } as ReturnType<typeof useComercialData>);
-    vi.mocked(useIsFetching).mockReturnValue(1);
 
+    await act(async () => rerender(<MetasVendedoresPage />));
+    expect(screen.getByText('Carregando visão comercial...')).toBeInTheDocument();
+
+    vi.mocked(useComercialData).mockReturnValue(comercialData as ReturnType<typeof useComercialData>);
+    await act(async () => rerender(<MetasVendedoresPage />));
+    expect(await screen.findByText('Conteudo preservado')).toBeInTheDocument();
+
+    fetchingState.value = 1;
     await act(async () => rerender(<MetasVendedoresPage />));
 
     expect(screen.getByText('Conteudo preservado')).toBeInTheDocument();
     expect(screen.getByRole('status', { name: 'Atualizando dados comerciais' })).toBeInTheDocument();
     expect(screen.queryByText('Carregando visão comercial...')).not.toBeInTheDocument();
   });
+
+  it('usa uma estrutura neutra para os cenarios dentro da secao premium', async () => {
+    sessionStorage.setItem('comercial:metas:tab', 'comparativos');
+    vi.mocked(useComercialData).mockReturnValue({
+      ...comercialData,
+      vendedoresPerformance: [{ codigo: 98, nome: 'DANIEL' }],
+      pedidos: [{
+        vendedor_codigo: 98,
+        vendedor_nome: 'DANIEL',
+        data_faturamento: '2026-06-05',
+        valor_liquido_final: 1000,
+        valor_bruto: 1000,
+        meta_vendedor: 2000,
+        tipo: 'PEDIDO',
+      }],
+    } as ReturnType<typeof useComercialData>);
+
+    const { container } = render(<MetasVendedoresPage />);
+
+    const title = await screen.findByText('Projeções por Cenário - Vai Bater a Meta?');
+    const section = title.closest('.commercial-dashboard-panel');
+    expect(section).not.toBeNull();
+    expect(section?.querySelector('.commercial-scenario-panel')).toBeInTheDocument();
+    expect(section?.querySelectorAll('.bg-card')).toHaveLength(0);
+  });
+});
+
+describe('CampanhasTab loading lifecycle', () => {
+  beforeEach(() => {
+    fetchingState.value = 0;
+    insightsQueryState.value = { data: [], isFetching: false };
+    campanhasState.value = {
+      campanhas: [],
+      isLoading: false,
+      create: vi.fn(),
+      update: vi.fn(),
+      remove: vi.fn(),
+      isMutating: false,
+    };
+    empresaState.value = {
+      empresa: undefined,
+      codEmpresaAtiva: undefined,
+      isLoading: true,
+    };
+    vi.mocked(useIsFetching).mockImplementation(() => fetchingState.value);
+  });
+
+  it('percorre disabled, loading e dados sem perder campanhas no refetch', async () => {
+    const { rerender } = render(<CampanhasTab />);
+    await act(async () => undefined);
+
+    empresaState.value = {
+      empresa: { nome: 'Casa da Transmissao', possui_meta_vendedor: true },
+      codEmpresaAtiva: '1004',
+      isLoading: false,
+    };
+    campanhasState.value = { ...campanhasState.value, isLoading: true };
+    await act(async () => rerender(<CampanhasTab />));
+
+    expect(screen.getByRole('status', { name: 'Carregando campanhas comerciais' }))
+      .toHaveClass('commercial-dashboard-panel');
+
+    campanhasState.value = { ...campanhasState.value, campanhas: [], isLoading: false };
+    await act(async () => rerender(<CampanhasTab />));
+    expect(await screen.findByText('Nenhuma campanha ainda')).toBeInTheDocument();
+
+    fetchingState.value = 1;
+    await act(async () => rerender(<CampanhasTab />));
+    expect(screen.getByText('Nenhuma campanha ainda')).toBeInTheDocument();
+    expect(screen.getByRole('status', { name: 'Atualizando campanhas comerciais' })).toBeInTheDocument();
+  });
 });
 
 describe('InsightsIATab management actions', () => {
+  beforeEach(() => {
+    supabaseInvoke.mockReset();
+  });
+
+  it('marca os estados inicial e de carregamento como paineis do dashboard', async () => {
+    supabaseInvoke.mockImplementationOnce(() => new Promise(() => undefined));
+    const { container } = render(<InsightsIATab vendedores={[]} kpis={{}} />);
+
+    expect(screen.getByText('Análises comerciais').closest('.commercial-dashboard-panel')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Gerar análises' }));
+
+    expect(await screen.findByRole('status', { name: 'Carregando análises comerciais' }))
+      .toHaveClass('commercial-dashboard-panel', 'commercial-insight-loading');
+    expect(container.querySelector('.commercial-chart-frame')).toBeNull();
+  });
+
   it('mantem a recomendacao completa montada enquanto atualiza', async () => {
     let finishRefresh: (value: unknown) => void = () => undefined;
     supabaseInvoke
@@ -134,5 +287,48 @@ describe('InsightsIATab management actions', () => {
     await act(async () => {
       finishRefresh({ data: { insights: [] }, error: null });
     });
+  });
+});
+
+describe('PremiumMetasView management signals', () => {
+  it('mantem os numeros e completa cada sinal com uma acao gerencial', () => {
+    const { container } = render(
+      <PremiumMetasView
+        vendedoresComMeta={[{
+          codigo: 98,
+          nome: 'DANIEL',
+          metaMensal: 2000,
+          faturamentoMesAtual: 1000,
+          valorTotal: 1000,
+          percentualMetaFaturado: 50,
+          metaDiaria: 90.91,
+          metaEsperada: 454.55,
+        }]}
+        pedidos={[]}
+        kpisGerais={{
+          totalMeta: 2000,
+          totalFaturado: 1000,
+          percentualFaturado: 50,
+          faltaFaturado: 1000,
+          acimaMeta: 0,
+          abaixoMeta: 1,
+          totalVendedores: 1,
+          totalDevolucoes: 0,
+          clientesAtendidos: 1,
+          qtdPedidos: 1,
+          ticketMedio: 1000,
+        }}
+        periodoFiltros={{ ano: 2026, mes: 6 }}
+        diasUteisNoMes={22}
+        diasUteisDecorridos={5}
+      />,
+    );
+
+    const signals = Array.from(container.querySelectorAll('.commercial-insight-action'));
+    expect(signals).toHaveLength(3);
+    expect(signals.every((signal) => signal.textContent?.includes('Ação gerencial:'))).toBe(true);
+    expect(screen.getByText(/Necessário R\$ 58,82\/dia em 17 dias úteis\./)).toBeInTheDocument();
+    expect(screen.getByText(/Ritmo atual fecha em R\$ 4\.400,00/)).toBeInTheDocument();
+    expect(container.querySelector('.commercial-chart-frame')).toBeInTheDocument();
   });
 });

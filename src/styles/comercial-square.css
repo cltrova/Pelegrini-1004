@@ -5,7 +5,7 @@
   --commercial-motion-sidebar: 220ms;
 }
 
-[data-module-shell='comercial'] :where(.commercial-workspace, .commercial-toolbar, .commercial-metric-strip, .commercial-data-viewport, .commercial-dashboard, .commercial-tab-strip, .commercial-dashboard-panel, .commercial-chart-frame) {
+[data-module-shell='comercial'] :where(.commercial-workspace, .commercial-toolbar, .commercial-metric-strip, .commercial-data-viewport, .commercial-dashboard, .commercial-tab-strip, .commercial-dashboard-panel, .commercial-chart-frame, .commercial-scenario-panel) {
   border-radius: var(--commercial-panel-radius);
   background-image: none;
   box-shadow: none;

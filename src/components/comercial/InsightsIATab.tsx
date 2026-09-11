@@ -12,8 +12,8 @@ interface Insight {
 }
 
 interface Props {
-  vendedores: any[];
-  kpis: any;
+  vendedores: unknown[];
+  kpis: Record<string, unknown>;
 }
 
 const tipoConfig = {
@@ -41,7 +41,7 @@ export function InsightsIATab({ vendedores, kpis }: Props) {
         toast.error(data.error);
       }
       setInsights(data?.insights || []);
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error(e);
       toast.error('Falha ao gerar análises');
       setInsights([]);
@@ -52,7 +52,7 @@ export function InsightsIATab({ vendedores, kpis }: Props) {
 
   if (!insights && !loading) {
     return (
-      <div className="flex min-h-48 flex-col items-center justify-center rounded-md border border-border/70 bg-card p-6 text-center">
+      <div className="commercial-dashboard-panel flex min-h-48 flex-col items-center justify-center rounded-md border border-border/70 bg-card p-6 text-center">
         <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-md bg-muted">
           <BarChart3 className="h-5 w-5 text-primary" />
         </div>
@@ -70,7 +70,11 @@ export function InsightsIATab({ vendedores, kpis }: Props) {
 
   if (showInitialLoading) {
     return (
-      <div className="flex min-h-48 flex-col items-center justify-center rounded-md border border-border/70 bg-card text-center">
+      <div
+        aria-label="Carregando análises comerciais"
+        className="commercial-dashboard-panel commercial-insight-loading flex min-h-48 flex-col items-center justify-center rounded-md border border-border/70 bg-card text-center"
+        role="status"
+      >
         <Loader2 className="mb-3 h-6 w-6 animate-spin text-primary motion-reduce:animate-none" />
         <p className="text-xs text-muted-foreground">Analisando dados comerciais...</p>
       </div>

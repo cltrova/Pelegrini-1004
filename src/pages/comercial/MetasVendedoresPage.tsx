@@ -14,7 +14,6 @@ import { VendedorDetailsDialog } from '@/components/comercial/VendedorDetailsDia
 import { getDiasUteisNoMes, getDiasUteisDecorridos, type ComercialFilters as ComercialFiltersType, type Pedido } from '@/types/comercial';
 import type { ProdutoItem } from '@/types/comercialProdutos';
 import { formatCurrency, formatPercent, formatCompactNumber, formatPeriodShort } from '@/utils/formatters';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
@@ -125,7 +124,7 @@ export default function MetasVendedoresPage() {
   const isPelegriniPage = isEmpresa1004Page || isEmpresa10041Page;
   const isLayoutPremium = isPelegriniPage;
   const [initialized, setInitialized] = useState(false);
-  const [hasRenderedData, setHasRenderedData] = useState(false);
+  const [hasResolvedData, setHasResolvedData] = useState(false);
   const [activeTab, setActiveTab] = useState<string>(() => {
     try { return sessionStorage.getItem('comercial:metas:tab') || 'visao-geral'; } catch { return 'visao-geral'; }
   });
@@ -182,9 +181,18 @@ export default function MetasVendedoresPage() {
   const { vendedoresPerformance, pedidos, devolucoes, evolucaoDiaria, evolucaoMensal, clientesPerformance, insights, kpis, periodoDisponivel, vendedoresDisponiveis, isLoading, error } = useComercialData(filtrosAplicadosParaDados, {
     keepPreviousData: true,
   });
+  const hasRealCommercialData = Boolean(
+    periodoDisponivel
+    || vendedoresPerformance.length
+    || pedidos.length
+    || devolucoes.length,
+  );
   useEffect(() => {
-    if (!isLoading) setHasRenderedData(true);
-  }, [isLoading]);
+    const isCommercialQueryEnabled = !isLoadingEmpresa;
+    if (isCommercialQueryEnabled && !isLoading) {
+      setHasResolvedData(true);
+    }
+  }, [isLoading, isLoadingEmpresa]);
   const [chartView, setChartView] = useState<'mensal' | 'diario'>('diario');
   const [vendedorDetalhe, setVendedorDetalhe] = useState<{ row: VendedorDetalheRow; ranking: number } | null>(null);
   const [receitaDetalheOpen, setReceitaDetalheOpen] = useState(false);
@@ -639,9 +647,10 @@ export default function MetasVendedoresPage() {
     return <LayoutAlternativoComercial />;
   }
 
-  const showInitialLoading = isLoading && !hasRenderedData;
+  const hasVisibleCommercialData = hasResolvedData || hasRealCommercialData;
+  const showInitialLoading = isLoading && !hasVisibleCommercialData;
   const isFetching = commercialFetchCount > 0;
-  const isRefreshing = isFetching && hasRenderedData;
+  const isRefreshing = isFetching && hasVisibleCommercialData;
 
   // Observação: NÃO substituímos a página inteira quando não há vendedores.
   // O aviso de "sem vendedores" é renderizado inline dentro da seção afetada
@@ -1068,8 +1077,8 @@ export default function MetasVendedoresPage() {
                   const cenariosPositivos = [vaiBaterMeta, vaiBaterMesAnterior, vaiBaterAnoAnterior].filter(Boolean).length;
 
                   return (
-                    <Card key={String(v.codigo)} className="bg-muted/30">
-                      <CardContent className="p-4">
+                    <div key={String(v.codigo)} className="commercial-scenario-panel border border-border/70 bg-muted/30">
+                      <div className="p-4">
                         <div className="flex items-center justify-between mb-4">
                           <div className="flex items-center gap-3">
                             <span className="font-bold uppercase">{v.nome}</span>
@@ -1169,8 +1178,8 @@ export default function MetasVendedoresPage() {
                             </div>
                           </div>
                         </div>
-                      </CardContent>
-                    </Card>
+                      </div>
+                    </div>
                   );
                 })}
               </div>
