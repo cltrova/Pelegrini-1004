@@ -2,6 +2,52 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
+function extractBlock(source: string, marker: string): string {
+  const markerIndex = source.indexOf(marker);
+  if (markerIndex === -1) throw new Error(`Missing CSS marker: ${marker}`);
+
+  const openIndex = source.indexOf('{', markerIndex + marker.length);
+  if (openIndex === -1) throw new Error(`Missing opening brace after: ${marker}`);
+
+  let depth = 0;
+  for (let index = openIndex; index < source.length; index += 1) {
+    if (source[index] === '{') depth += 1;
+    if (source[index] === '}') depth -= 1;
+    if (depth === 0) return source.slice(openIndex + 1, index);
+  }
+
+  throw new Error(`Unclosed CSS block after: ${marker}`);
+}
+
+function assertPortableOverlayReducedMotion(source: string) {
+  const reducedMotion = extractBlock(source, '@media (prefers-reduced-motion: reduce)');
+  const overlayRuleStart = reducedMotion.indexOf('.operational-overlay');
+  if (overlayRuleStart === -1) throw new Error('Missing portable overlay reduced-motion rule');
+
+  const selectorStart = reducedMotion.lastIndexOf('}', overlayRuleStart) + 1;
+  const ruleOpen = reducedMotion.indexOf('{', overlayRuleStart);
+  const selectorList = new Set(
+    reducedMotion
+      .slice(selectorStart, ruleOpen)
+      .split(',')
+      .map(selector => selector.trim()),
+  );
+  const ruleBody = extractBlock(reducedMotion, '.operational-overlay');
+
+  [
+    '.operational-overlay',
+    '.operational-overlay::before',
+    '.operational-overlay::after',
+    '.operational-overlay *',
+    '.operational-overlay *::before',
+    '.operational-overlay *::after',
+  ].forEach(selector => expect(selectorList).toContain(selector));
+
+  expect(ruleBody).toContain('transition-duration: 0.01ms !important');
+  expect(ruleBody).toContain('animation-duration: 0.01ms !important');
+  expect(ruleBody).toContain('animation-iteration-count: 1 !important');
+}
+
 describe('operational square visual scope', () => {
   const css = readFileSync(join(process.cwd(), 'src/styles/operacional-square.css'), 'utf8');
   const sidebarSource = readFileSync(
@@ -21,9 +67,24 @@ describe('operational square visual scope', () => {
   });
 
   it('neutralizes motion for operational overlays rendered outside the shell', () => {
-    expect(css).toMatch(
-      /@media \(prefers-reduced-motion: reduce\) \{[\s\S]*?\.operational-overlay,[\s\S]*?\.operational-overlay \*,[\s\S]*?\.operational-overlay \*::before,[\s\S]*?\.operational-overlay \*::after\s*\{[^}]*transition-duration:\s*0\.01ms !important;[^}]*animation-duration:\s*0\.01ms !important;[^}]*animation-iteration-count:\s*1 !important;/,
-    );
+    assertPortableOverlayReducedMotion(css);
+
+    const withoutPseudoElement = css.replace(/^[ \t]*\.operational-overlay::before,\r?\n/m, '');
+    expect(() => assertPortableOverlayReducedMotion(withoutPseudoElement)).toThrow();
+
+    const movedOutsideMedia = `${css.replace(/^[ \t]*\.operational-overlay[^\n]*\r?\n/gm, '')}\n${[
+      '.operational-overlay,',
+      '.operational-overlay::before,',
+      '.operational-overlay::after,',
+      '.operational-overlay *,',
+      '.operational-overlay *::before,',
+      '.operational-overlay *::after {',
+      '  transition-duration: 0.01ms !important;',
+      '  animation-duration: 0.01ms !important;',
+      '  animation-iteration-count: 1 !important;',
+      '}',
+    ].join('\n')}`;
+    expect(() => assertPortableOverlayReducedMotion(movedOutsideMedia)).toThrow();
   });
 
   it('removes the shared decorative grid from the operational sidebar', () => {

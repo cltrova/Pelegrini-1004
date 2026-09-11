@@ -99,6 +99,32 @@ Arquivos do Fix Round 1:
 - `src/styles/operacional-square.test.ts`
 - `.superpowers/sdd/2026-09-11-identidade-operacional-quadrada/task-6-report.md`
 
+## Fix Round 2
+
+O contrato de movimento reduzido foi fortalecido sem alterar o CSS. O teste agora extrai o bloco `@media (prefers-reduced-motion: reduce)` por contagem balanceada de chaves e inspeciona o ruleset do overlay somente dentro desse limite.
+
+O conjunto exigido inclui explicitamente:
+
+- `.operational-overlay`;
+- `.operational-overlay::before` e `.operational-overlay::after`;
+- `.operational-overlay *`;
+- `.operational-overlay *::before` e `.operational-overlay *::after`.
+
+O mesmo ruleset deve conter a neutralizacao de `transition-duration`, `animation-duration` e `animation-iteration-count`. Duas mutacoes negativas comprovam que o contrato falha quando um pseudo-elemento e removido ou quando a regra e movida para fora do media.
+
+```text
+Test Files  1 passed (1)
+Tests       7 passed (7)
+Duration    15.26s
+```
+
+Arquivos do Fix Round 2:
+
+- `src/styles/operacional-square.test.ts`
+- `.superpowers/sdd/2026-09-11-identidade-operacional-quadrada/task-6-report.md`
+
+O CSS permaneceu inalterado neste round.
+
 ## Auto-revisao
 
 - Nenhum dado, calculo, filtro, hook, API, rota, permissao, callback ou texto funcional foi alterado.
