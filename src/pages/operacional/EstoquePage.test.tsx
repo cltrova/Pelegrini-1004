@@ -300,9 +300,9 @@ describe('EstoquePage', () => {
 
     renderEstoquePage();
 
-    expect(screen.getByRole('status', { name: 'Carregando dados completos do estoque' })).toBeInTheDocument();
+    expect(screen.getByRole('status', { name: 'Recuperando dados completos do estoque' })).toBeInTheDocument();
     expect(screen.getByText('Carregando dados da filial')).toBeInTheDocument();
-    expect(screen.queryByText('Recuperando estoque completo')).not.toBeInTheDocument();
+    expect(screen.getByText('Recuperando estoque completo')).toBeInTheDocument();
     expect(screen.queryByText('Estoque indisponivel')).not.toBeInTheDocument();
     expect(screen.queryByRole('region', { name: 'Resumo do estoque' })).not.toBeInTheDocument();
   });

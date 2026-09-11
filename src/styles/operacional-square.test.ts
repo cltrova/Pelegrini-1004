@@ -106,6 +106,18 @@ describe('operational square visual scope', () => {
     );
   });
 
+  it('keeps the only non-none shadow on the operational overlay', () => {
+    const nonNoneShadows = [...css.matchAll(/box-shadow:\s*([^;]+);/g)]
+      .filter(([, value]) => !/^none(?:\s*!important)?$/.test(value.trim()));
+
+    expect(nonNoneShadows).toHaveLength(1);
+
+    const shadowIndex = nonNoneShadows[0].index ?? -1;
+    const ruleStart = css.lastIndexOf('}', shadowIndex) + 1;
+    const ruleOpen = css.lastIndexOf('{', shadowIndex);
+    expect(css.slice(ruleStart, ruleOpen).trim()).toBe('.operational-overlay');
+  });
+
   it('neutralizes decorative descendant transforms without targeting loading animations', () => {
     expect(css).toMatch(
       /\[data-module-shell='operacional'\] \.transition-transform\s*{[^}]*transition-property:\s*color, background-color, border-color, opacity;/,
