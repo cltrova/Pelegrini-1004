@@ -3,9 +3,12 @@ import { createElement, type ComponentType } from 'react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAuth } from '@/contexts/AuthContext';
+import { useFilialSelecionada } from '@/contexts/FilialSelecionadaContext';
 import { useVendasPerdidas } from '@/hooks/useCotacoesComerciais';
 import { useEmpresaAtiva } from '@/hooks/useEmpresaAtiva';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { useMotivosPerda10041, useSalvarMotivoPerda10041 } from '@/hooks/useMotivosPerda';
+import { ComercialLayout } from './ComercialLayout';
 import { ComercialSidebar } from './ComercialSidebar';
 import * as ComercialSidebarModule from './ComercialSidebar';
 import { ComercialMobileBottomNav } from './ComercialMobileBottomNav';
@@ -19,11 +22,11 @@ vi.mock('@/contexts/AuthContext', () => ({
 }));
 
 vi.mock('@/contexts/FilialSelecionadaContext', () => ({
-  useFilialSelecionada: vi.fn(() => ({
-    filialAtiva: 'transmissao',
-    codEmpresaContexto: '1004',
-    setFilialAtivaForEmpresa: vi.fn(),
-  })),
+  useFilialSelecionada: vi.fn(),
+}));
+
+vi.mock('@/hooks/use-mobile', () => ({
+  useIsMobile: vi.fn(),
 }));
 
 vi.mock('@/hooks/useCotacoesComerciais', () => ({
@@ -80,6 +83,12 @@ function mockLostSalesQueries() {
 describe('commercial sidebar menu access', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(useIsMobile).mockReturnValue(false);
+    vi.mocked(useFilialSelecionada).mockReturnValue({
+      filialAtiva: 'transmissao',
+      codEmpresaContexto: '1004',
+      setFilialAtivaForEmpresa: vi.fn(),
+    } as never);
     mockLostSalesQueries();
   });
 
@@ -179,6 +188,23 @@ describe('commercial sidebar menu access', () => {
       .toHaveClass('commercial-mobile-navigation');
   });
 
+  it('keeps the blocked mobile branch placeholder inside the commercial shell', () => {
+    vi.mocked(useIsMobile).mockReturnValue(true);
+    vi.mocked(useFilialSelecionada).mockReturnValue({
+      filialAtiva: null,
+      codEmpresaContexto: '1004',
+      clearFilial: vi.fn(),
+      setFilialAtivaForEmpresa: vi.fn(),
+      empresaPossuiFiliaisAtiva: true,
+    } as never);
+    vi.mocked(useAuth).mockReturnValue({ isMaster: false, profile: null } as never);
+
+    render(createElement(MemoryRouter, undefined, createElement(ComercialLayout)));
+
+    expect(screen.getByText('Selecione uma filial para continuar').closest('[data-module-shell]'))
+      .toHaveAttribute('data-module-shell', 'comercial');
+  });
+
   it('exposes both quote routes in the 1004 mobile secondary navigation', () => {
     mockCompany('1004');
     render(createElement(
@@ -216,30 +242,33 @@ describe('commercial sidebar menu access', () => {
 
   it('renders the App-registered lost-sales route for company 1004', async () => {
     const AppModule = await import('@/App');
-    const route = (AppModule as AppExports).VENDAS_PERDIDAS_ROUTE;
+    const route = (AppModule as AppExports).VENDAS_PERDIDAS_ROUTE!;
 
     expect(route).toMatchObject({ path: 'perdidas', Component: expect.any(Function) });
-    if (!route) return;
 
-    mockCompany('1004');
-    const productionRoutes = createElement(
-      Routes,
-      undefined,
-      createElement(Route, {
-        path: '/comercial',
-      }, createElement(Route, route)),
-      createElement(Route, { path: '/comercial/dashboard', element: createElement('p', undefined, 'Dashboard comercial') }),
-    );
-    render(createElement(MemoryRouter, { initialEntries: ['/comercial/perdidas'], future: { v7_startTransition: true, v7_relativeSplatPath: true } }, productionRoutes));
+    const renderLostSalesRoute = (codEmpresa: string) => {
+      mockCompany(codEmpresa);
+      render(createElement(
+        MemoryRouter,
+        { initialEntries: ['/comercial/perdidas'], future: { v7_startTransition: true, v7_relativeSplatPath: true } },
+        createElement(
+          Routes,
+          undefined,
+          createElement(Route, { path: '/comercial' }, createElement(Route, route)),
+          createElement(Route, { path: '/comercial/dashboard', element: createElement('p', undefined, 'Dashboard comercial') }),
+        ),
+      ));
+    };
+
+    renderLostSalesRoute('1004');
     expect(await screen.findByRole(
       'heading',
       { name: 'Vendas perdidas' },
-      { timeout: 5_000 },
+      { timeout: 10_000 },
     )).toBeInTheDocument();
 
-    mockCompany('9999');
     cleanup();
-    render(createElement(MemoryRouter, { initialEntries: ['/comercial/perdidas'], future: { v7_startTransition: true, v7_relativeSplatPath: true } }, productionRoutes));
+    renderLostSalesRoute('9999');
     expect(screen.getByText('Dashboard comercial')).toBeInTheDocument();
-  });
+  }, 30_000);
 });

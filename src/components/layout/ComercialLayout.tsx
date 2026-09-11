@@ -82,7 +82,7 @@ export function ComercialLayout() {
     return (
       <>
         {bloquearConteudo ? (
-          <div className="min-h-screen bg-background">{placeholder}</div>
+          <div data-module-shell="comercial" className="min-h-screen bg-background">{placeholder}</div>
         ) : (
           <ComercialMobileLayout />
         )}
