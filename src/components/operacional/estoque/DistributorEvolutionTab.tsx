@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   CalendarRange, ChevronDown, ChevronRight, Download, Filter, RefreshCw,
 } from 'lucide-react';
@@ -91,6 +91,15 @@ function formatCompactMetric(value: number | null, metric: MetricKey): string {
   return metric === 'margem_venda' ? `${decimal.format(value)}%` : compactMoney.format(value);
 }
 
+function formatMoney(value: number | null): string {
+  return value === null ? 'Indisponível' : money.format(value);
+}
+
+function sumAvailable(values: Array<number | null | undefined>): number | null {
+  const available = values.filter((value): value is number => typeof value === 'number' && Number.isFinite(value));
+  return available.length ? available.reduce((sum, value) => sum + value, 0) : null;
+}
+
 function Delta({ value, semantic = false }: { value: number | null; semantic?: boolean }) {
   if (value === null) return <span className="text-[10px] text-muted-foreground">sem base</span>;
   return <span className={cn(
@@ -103,10 +112,10 @@ function Delta({ value, semantic = false }: { value: number | null; semantic?: b
 
 function MetricStrip({ summary, preview }: { summary: DistributorMonthSummary; preview: boolean }) {
   const items = [
-    ['Estoque', preview ? 'Indisponível' : money.format(summary.valor_estoque)],
-    ['Vendas', money.format(summary.valor_vendas)],
-    ['Compras', preview ? 'Indisponível' : money.format(summary.valor_compras)],
-    ['Devoluções', money.format(summary.valor_devolucoes)],
+    ['Estoque', preview ? 'Indisponível' : formatMoney(summary.valor_estoque)],
+    ['Vendas', formatMoney(summary.valor_vendas)],
+    ['Compras', preview ? 'Indisponível' : formatMoney(summary.valor_compras)],
+    ['Devoluções', formatMoney(summary.valor_devolucoes)],
   ];
   return <div aria-label="Resumo dos distribuidores" className="grid shrink-0 grid-cols-2 border-b border-border/60 bg-card/35 lg:grid-cols-5">
     {items.map(([label, value]) => <div className="min-w-0 border-r border-border/50 px-3 py-2 last:border-r-0" key={label}>
@@ -180,13 +189,29 @@ export function DistributorEvolutionTab({ active }: { active: boolean }) {
   const rows = useMemo(() => isPreview ? previewRows : query.data ?? [], [isPreview, previewRows, query.data]);
   const activeMetric = isPreview && !previewSupports(metric) ? 'valor_vendas' : metric;
   const evolution = useMemo(() => buildDistributorEvolution(rows), [rows]);
+  const effectiveMobileBrand = evolution.brands.some((brand) => brand.marca === mobileBrand)
+    ? mobileBrand
+    : evolution.brands[0]?.marca;
   const salesPurchasesData = useMemo(() => evolution.months.map((mes) => ({
     mes: monthLabel(mes),
-    vendas: evolution.brands.reduce((sum, brand) => sum + (brand.months.find((item) => item.mes === mes)?.valor_vendas ?? 0), 0),
+    vendas: sumAvailable(evolution.brands.map((brand) => brand.months.find((item) => item.mes === mes)?.valor_vendas)),
     compras: isPreview
       ? null
-      : evolution.brands.reduce((sum, brand) => sum + (brand.months.find((item) => item.mes === mes)?.valor_compras ?? 0), 0),
+      : sumAvailable(evolution.brands.map((brand) => brand.months.find((item) => item.mes === mes)?.valor_compras)),
   })), [evolution, isPreview]);
+  const isRefreshing = query.isFetching || (isPreview && productsQuery.isFetching);
+
+  useEffect(() => {
+    if (effectiveMobileBrand && effectiveMobileBrand !== mobileBrand) {
+      setMobileBrand(effectiveMobileBrand);
+    }
+  }, [effectiveMobileBrand, mobileBrand]);
+
+  const refreshReport = async () => {
+    const requests: Array<Promise<unknown>> = [query.refetch()];
+    if (isPreview) requests.push(productsQuery.refetch());
+    await Promise.allSettled(requests);
+  };
 
   const toggleBrand = (brand: DistributorBrand) => {
     setPending((current) => ({
@@ -233,7 +258,7 @@ export function DistributorEvolutionTab({ active }: { active: boolean }) {
       <CalendarRange aria-hidden="true" className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
       <span className="min-w-0 truncate text-[11px] text-muted-foreground">{filters.dataInicio.split('-').reverse().join('/')} a {filters.dataFim.split('-').reverse().join('/')} · {filters.marcas.length} marcas</span>
       <div className="ml-auto flex items-center gap-1">
-        <Button aria-label="Atualizar relatório" className="h-7 w-7" disabled={query.isFetching} onClick={() => void query.refetch()} size="icon" variant="ghost"><RefreshCw className={cn('h-3.5 w-3.5', query.isFetching && 'animate-spin')} /></Button>
+        <Button aria-label="Atualizar relatório" className="h-7 w-7" disabled={isRefreshing} onClick={() => void refreshReport()} size="icon" variant="ghost"><RefreshCw className={cn('h-3.5 w-3.5', isRefreshing && 'animate-spin')} /></Button>
         <Button aria-label="Exportar distribuidores para Excel" className="h-7 w-7" disabled={!rows.length || isPreview} onClick={() => void exportWorkbook(rows, filters)} size="icon" title={isPreview ? 'Disponível após a publicação do relatório oficial' : 'Exportar Excel'} variant="ghost"><Download className="h-3.5 w-3.5" /></Button>
       </div>
     </div>
@@ -264,8 +289,8 @@ export function DistributorEvolutionTab({ active }: { active: boolean }) {
 
         <section className="shrink-0 border-b border-border/60 p-3 md:hidden">
             <div className="mb-2 flex gap-1 overflow-x-auto">{METRICS.map((item) => <Button aria-pressed={activeMetric === item.key} className="h-7 px-2 text-[11px]" disabled={isPreview && !previewSupports(item.key)} key={item.key} onClick={() => setMetric(item.key)} size="sm" variant={activeMetric === item.key ? 'secondary' : 'ghost'}>{item.label}</Button>)}</div>
-            <div className="mb-2 flex gap-1 overflow-x-auto">{evolution.brands.map((brand) => <Button aria-pressed={mobileBrand === brand.marca} className="h-7 px-2 text-xs" key={brand.marca} onClick={() => setMobileBrand(brand.marca)} size="sm" variant={mobileBrand === brand.marca ? 'secondary' : 'ghost'}>{brand.marca}</Button>)}</div>
-            <div className="divide-y divide-border/50">{evolution.brands.find((brand) => brand.marca === mobileBrand)?.months.map((item, index, months) => <button aria-label={`${mobileBrand} em ${monthLabel(item.mes, true)}`} className="flex w-full items-center justify-between gap-3 py-2 text-left" key={item.mes} onClick={() => setSelected(item)} type="button"><span className="text-xs font-medium capitalize">{monthLabel(item.mes, true)}</span><span className="text-right"><strong className="block text-sm tabular-nums">{formatMetric(valueFor(item, activeMetric), activeMetric)}</strong><Delta semantic={activeMetric === 'valor_vendas' || activeMetric === 'margem_venda'} value={calculateVariation(valueFor(item, activeMetric), valueFor(months[index - 1], activeMetric))} /></span></button>)}</div>
+            <div className="mb-2 flex gap-1 overflow-x-auto">{evolution.brands.map((brand) => <Button aria-pressed={effectiveMobileBrand === brand.marca} className="h-7 px-2 text-xs" key={brand.marca} onClick={() => setMobileBrand(brand.marca)} size="sm" variant={effectiveMobileBrand === brand.marca ? 'secondary' : 'ghost'}>{brand.marca}</Button>)}</div>
+            <div className="divide-y divide-border/50">{evolution.brands.find((brand) => brand.marca === effectiveMobileBrand)?.months.map((item, index, months) => <button aria-label={`${effectiveMobileBrand} em ${monthLabel(item.mes, true)}`} className="flex w-full items-center justify-between gap-3 py-2 text-left" key={item.mes} onClick={() => setSelected(item)} type="button"><span className="text-xs font-medium capitalize">{monthLabel(item.mes, true)}</span><span className="text-right"><strong className="block text-sm tabular-nums">{formatMetric(valueFor(item, activeMetric), activeMetric)}</strong><Delta semantic={activeMetric === 'valor_vendas' || activeMetric === 'margem_venda'} value={calculateVariation(valueFor(item, activeMetric), valueFor(months[index - 1], activeMetric))} /></span></button>)}</div>
         </section>
 
         <section aria-label="Comparativo de vendas e compras" className="operational-chart-panel operational-panel flex min-h-[15rem] flex-1 flex-col p-3">
@@ -302,7 +327,7 @@ export function DistributorEvolutionTab({ active }: { active: boolean }) {
     <Sheet onOpenChange={(open) => { if (!open) setSelected(null); }} open={Boolean(selected)}>
       <SheetContent aria-label={selected ? `${selected.marca} - ${monthLabel(selected.mes, true)}` : 'Detalhes do distribuidor'} className="operational-overlay w-[min(96vw,32rem)] overflow-y-auto p-0 sm:max-w-lg" side="right">
         {selected && <><SheetHeader className="border-b border-border/60 p-5"><SheetTitle>{selected.marca} · <span className="capitalize">{monthLabel(selected.mes, true)}</span></SheetTitle><SheetDescription>{selected.grupo} {selected.classe ? `· classe ${selected.classe}` : ''}</SheetDescription></SheetHeader><dl className="grid grid-cols-2 gap-px bg-border/50">{[
-          ['Posição do estoque', isPreview ? 'Indisponível' : money.format(selected.valor_estoque)], ['% do estoque', selected.percentual_estoque === null ? 'Indisponível' : `${decimal.format(selected.percentual_estoque)}%`], ['Duração do estoque', selected.duracao_estoque === null ? 'Indisponível' : `${decimal.format(selected.duracao_estoque)} dias`], ['Vendas', money.format(selected.valor_vendas)], ['% das vendas', selected.percentual_vendas === null ? 'Indisponível' : `${decimal.format(selected.percentual_vendas)}%`], ['% acumulado', selected.percentual_acumulado_vendas === null ? 'Indisponível' : `${decimal.format(selected.percentual_acumulado_vendas)}%`], ['Margem de venda', selected.margem_venda === null ? 'Indisponível' : `${decimal.format(selected.margem_venda)}%`], ['Prazo médio de venda', selected.prazo_medio_venda === null ? 'Indisponível' : `${decimal.format(selected.prazo_medio_venda)} dias`], ['Devoluções', money.format(selected.valor_devolucoes)], ['Compras', isPreview ? 'Indisponível' : money.format(selected.valor_compras)], ['% das compras', selected.percentual_compras === null ? 'Indisponível' : `${decimal.format(selected.percentual_compras)}%`], ['Prazo médio de compra', selected.prazo_medio_compra === null ? 'Indisponível' : `${decimal.format(selected.prazo_medio_compra)} dias`], ['Diferença compra/CMV', selected.percentual_diferenca_compra_cmv === null ? 'Indisponível' : `${decimal.format(selected.percentual_diferenca_compra_cmv)}%`],
+          ['Posição do estoque', isPreview ? 'Indisponível' : formatMoney(selected.valor_estoque)], ['% do estoque', selected.percentual_estoque === null ? 'Indisponível' : `${decimal.format(selected.percentual_estoque)}%`], ['Duração do estoque', selected.duracao_estoque === null ? 'Indisponível' : `${decimal.format(selected.duracao_estoque)} dias`], ['Vendas', formatMoney(selected.valor_vendas)], ['% das vendas', selected.percentual_vendas === null ? 'Indisponível' : `${decimal.format(selected.percentual_vendas)}%`], ['% acumulado', selected.percentual_acumulado_vendas === null ? 'Indisponível' : `${decimal.format(selected.percentual_acumulado_vendas)}%`], ['Margem de venda', selected.margem_venda === null ? 'Indisponível' : `${decimal.format(selected.margem_venda)}%`], ['Prazo médio de venda', selected.prazo_medio_venda === null ? 'Indisponível' : `${decimal.format(selected.prazo_medio_venda)} dias`], ['Devoluções', formatMoney(selected.valor_devolucoes)], ['Compras', isPreview ? 'Indisponível' : formatMoney(selected.valor_compras)], ['% das compras', selected.percentual_compras === null ? 'Indisponível' : `${decimal.format(selected.percentual_compras)}%`], ['Prazo médio de compra', selected.prazo_medio_compra === null ? 'Indisponível' : `${decimal.format(selected.prazo_medio_compra)} dias`], ['Diferença compra/CMV', selected.percentual_diferenca_compra_cmv === null ? 'Indisponível' : `${decimal.format(selected.percentual_diferenca_compra_cmv)}%`],
         ].map(([label, value]) => <div className="min-w-0 bg-background p-3" key={label}><dt className="text-[11px] text-muted-foreground">{label}</dt><dd className="mt-1 break-words text-sm font-semibold tabular-nums">{value}</dd></div>)}</dl></>}
       </SheetContent>
     </Sheet>

@@ -103,32 +103,44 @@ export default function EstoquePage({ initialTab = 'overview' }: EstoquePageProp
     ? consolidadoData
     : activeSource === 'detalhado' ? detalhadoData : giroData;
   const hasCurrentViewData = activeSourceData.length > 0;
+  const isOverview = activeTab === 'overview';
   const branchKey = `${codEmpresaContexto ?? empresa?.cod_empresa_bi ?? 'empresa'}:${filialAtiva ?? 'sem-filial'}`;
   const activeSourceError = sourceErrors?.[activeSource];
-  const activeSourceState = sourceStatus?.[activeSource];
+  const activeSourceState = isOverview
+    ? sourceStatus?.consolidado === 'fetching' || sourceStatus?.giro === 'fetching'
+      ? 'fetching'
+      : sourceStatus?.consolidado === 'ready' && sourceStatus?.giro === 'ready'
+        ? 'ready'
+        : sourceStatus?.consolidado
+    : sourceStatus?.[activeSource];
   const stockSource = activeSource === 'giro' ? null : activeSource;
   const stockData = stockSource === 'consolidado' ? consolidadoData : stockSource === 'detalhado' ? detalhadoData : [];
   const stockError = stockSource ? sourceErrors?.[stockSource] : null;
   const movementError = sourceErrors?.giro;
   const stockUnavailable = Boolean(stockError && stockData.length === 0);
   const movementUnavailable = Boolean(movementError);
+  const overviewMovementIssue = isOverview && movementUnavailable;
   const movementAvailable = !movementUnavailable && (
     sourceStatus?.giro === undefined || sourceStatus.giro === 'ready' || (sourceStatus.giro === 'fetching' && giroData.length > 0)
   );
   const detailedStockLoading = activeTab === 'central' && viewMode === 'detalhado'
     && sourceStatus?.detalhado === 'loading' && detalhadoData.length === 0;
   const movementLoading = (activeTab === 'giro' || activeTab === 'assistente') && sourceStatus?.giro === 'loading' && giroData.length === 0;
-  const activeSourceLoading = !hasCurrentViewData && !activeSourceError && (
+  const overviewDependencyLoading = isOverview && !stockUnavailable && (
+    (!stockError && sourceStatus?.consolidado === 'loading' && consolidadoData.length === 0)
+    || (!movementError && sourceStatus?.giro === 'loading' && giroData.length === 0)
+  );
+  const activeSourceLoading = overviewDependencyLoading || (!isOverview && !hasCurrentViewData && !activeSourceError && (
     activeSourceState === 'loading'
     || ((activeSourceState === 'idle' || activeSourceState === undefined) && (isLoading || isInitialLoading))
-  );
+  ));
   const partialStock = Boolean(stockSource && partialSources?.[stockSource]);
   const recoveredStock = Boolean(stockSource && recoveredSources?.[stockSource]);
   const recoveringStock = recoveryStatus === 'loading' && (partialStock || stockUnavailable);
   const activeSourceUnavailable = Boolean(activeSourceError && !hasCurrentViewData);
   const activeError = activeSourceUnavailable && !(stockSource && recoveringStock) ? activeSourceError : null;
   const sourceHasActiveIssue = Boolean(
-    (activeSourceError && !recoveredStock) || partialStock || recoveringStock,
+    (activeSourceError && !recoveredStock) || partialStock || recoveringStock || overviewMovementIssue,
   );
   const activeSourceUpdate = sourceLastUpdated?.[activeSource];
   const displayedUpdate = sourceLastUpdated === undefined ? lastSuccessfulUpdate : activeSourceUpdate;
@@ -139,6 +151,8 @@ export default function EstoquePage({ initialTab = 'overview' }: EstoquePageProp
     ? 'Recuperando estoque completo'
     : activeSourceUnavailable
       ? 'Estoque indisponivel'
+      : overviewMovementIssue
+        ? 'Movimentacoes indisponiveis'
       : recoveredStock
         ? 'Estoque recuperado'
       : partialStock
@@ -184,7 +198,7 @@ export default function EstoquePage({ initialTab = 'overview' }: EstoquePageProp
   };
 
   const sourceNoticeFingerprint = sourceHasActiveIssue
-    ? [branchKey, activeSource, partialStock, recoveringStock, activeSourceError?.message].join('|')
+    ? [branchKey, activeSource, partialStock, recoveringStock, activeSourceError?.message, overviewMovementIssue ? movementError?.message : ''].join('|')
     : `healthy:${branchKey}:${activeSource}`;
 
   useEffect(() => {
@@ -201,13 +215,15 @@ export default function EstoquePage({ initialTab = 'overview' }: EstoquePageProp
     <Alert className="shrink-0 rounded-none border-x-0 border-t-0 py-1.5" role="status">
       <AlertTriangle className="h-4 w-4" />
       <AlertTitle className="pr-10 text-xs">
-        {recoveringStock ? 'Recuperando estoque completo' : partialStock ? 'Estoque parcial' : 'Dados com atualizacao pendente'}
+        {recoveringStock ? 'Recuperando estoque completo' : partialStock ? 'Estoque parcial' : overviewMovementIssue ? 'Movimentacoes indisponiveis' : 'Dados com atualizacao pendente'}
       </AlertTitle>
       <AlertDescription className="pr-10 text-xs">
         {recoveringStock
           ? 'Reconstruindo o estoque pelo historico completo de movimentacoes.'
           : partialStock
           ? 'Exibindo produtos presentes no giro do periodo enquanto a fonte principal e recuperada.'
+          : overviewMovementIssue
+            ? 'Movimentacoes indisponiveis; indicadores da Visao geral podem estar incompletos.'
           : activeSource === 'giro'
             ? 'Movimentacoes indisponiveis; indicadores de giro podem estar incompletos.'
             : 'Os ultimos dados carregados foram preservados e podem estar desatualizados.'}
@@ -248,7 +264,7 @@ export default function EstoquePage({ initialTab = 'overview' }: EstoquePageProp
     return (
       <EstoqueWorkspace>
         <EstoqueDataViewport
-          aria-label="Carregando dados completos do estoque"
+          aria-label={isOverview ? 'Carregando dados para Visao geral' : 'Carregando dados completos do estoque'}
           className="p-4"
           role="status"
         >
@@ -344,6 +360,7 @@ export default function EstoquePage({ initialTab = 'overview' }: EstoquePageProp
         </TabsContent>
 
         <TabsContent className="m-0 min-h-0 flex-1 overflow-hidden data-[state=active]:flex data-[state=active]:flex-col" aria-labelledby="pelegrini-tab-overview" id="pelegrini-tabpanel-overview" value="overview">
+          {sourceNotice}
           <Suspense fallback={<EstoqueTabFallback />}>
             <LazyEstoqueOverview
               activeCompanyCode={activeCompanyCode}

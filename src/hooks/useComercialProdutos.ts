@@ -1731,6 +1731,7 @@ export function useComercialProdutos(filters?: ComercialFilters, options?: { ena
     isLoading: query.isLoading || (isPelegriniComercial && hasEndpoint && comissao1004Query.isLoading),
     isFetching: query.isFetching || (isPelegriniComercial && hasEndpoint && comissao1004Query.isFetching),
     error: query.error || comissao1004Query.error,
+    refetch: query.refetch,
   };
 }
 

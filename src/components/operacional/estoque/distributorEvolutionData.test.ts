@@ -39,9 +39,41 @@ describe('distributorEvolutionData', () => {
     ])).toEqual([
       expect.objectContaining({
         mes: '2026-08', marca: 'MWM', grupo: 'Motores', valor_estoque: 1000.5,
-        margem_venda: null,
+        margem_venda: null, valor_vendas: null, valor_devolucoes: null, valor_compras: null,
       }),
     ]);
+  });
+
+  it('mantem indicadores monetarios indisponiveis como null na consolidacao', () => {
+    const result = buildDistributorEvolution(normalizeDistributorRows([{
+      mes: '2026-08', marca: 'ZF', cod_grupo: '1', grupo: 'ZF Pesado',
+      valor_estoque: null, valor_vendas: null, valor_devolucoes: null, valor_compras: null,
+    }]));
+
+    expect(result.summary).toEqual(expect.objectContaining({
+      valor_estoque: null,
+      valor_vendas: null,
+      valor_devolucoes: null,
+      valor_compras: null,
+      variacao_valor_estoque: null,
+    }));
+  });
+
+  it('preserva o percentual acumulado valido em vez de somar acumulados', () => {
+    const result = buildDistributorEvolution(normalizeDistributorRows([
+      {
+        mes: '2026-08', marca: 'ZF', cod_grupo: '1', grupo: 'ZF Pesado',
+        valor_vendas: 60, percentual_vendas: 60, percentual_acumulado_vendas: 60,
+      },
+      {
+        mes: '2026-08', marca: 'ZF', cod_grupo: '2', grupo: 'ZF Medio',
+        valor_vendas: 40, percentual_vendas: 40, percentual_acumulado_vendas: 100,
+      },
+    ]));
+
+    expect(result.summary.percentual_vendas).toBe(100);
+    expect(result.summary.percentual_acumulado_vendas).toBe(100);
+    expect(result.brands[0].months[0].percentual_acumulado_vendas).toBe(100);
   });
 
   it('inclui MIC entre as marcas de distribuidores', () => {
@@ -90,8 +122,10 @@ describe('distributorEvolutionData', () => {
 
     expect(rows).toHaveLength(2);
     expect(buildDistributorEvolution(rows).summary).toEqual(expect.objectContaining({
+      valor_estoque: null,
       valor_vendas: 120,
       valor_devolucoes: 20,
+      valor_compras: null,
     }));
   });
 });

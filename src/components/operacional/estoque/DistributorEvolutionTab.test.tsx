@@ -17,6 +17,7 @@ const productsState = vi.hoisted(() => ({
   produtos: [] as Record<string, unknown>[],
   isLoading: false,
   isFetching: false,
+  refetch: vi.fn(),
 }));
 
 vi.mock('@/hooks/useDistributorEvolution', () => ({
@@ -48,8 +49,12 @@ describe('DistributorEvolutionTab', () => {
       { mes: '2026-08', marca: 'ZF', cod_marca: '11', cod_grupo: '1', grupo: 'ZF Pesado', classe: '1', valor_estoque: 120, percentual_estoque: 60, duracao_estoque: 28, valor_vendas: 50, percentual_vendas: 60, percentual_acumulado_vendas: 60, margem_venda: 22, prazo_medio_venda: 9, valor_devolucoes: 1, valor_compras: 30, percentual_compras: 100, prazo_medio_compra: 7, percentual_diferenca_compra_cmv: 4 },
     ];
     queryState.error = null;
+    queryState.isFetching = false;
+    queryState.refetch.mockReset();
     productsState.produtos = [];
     productsState.isLoading = false;
+    productsState.isFetching = false;
+    productsState.refetch.mockReset();
   });
 
   it('mostra resumo, comparativo mensal e detalhamento do grupo', () => {
@@ -113,5 +118,43 @@ describe('DistributorEvolutionTab', () => {
     expect(screen.getAllByText('Indisponível').length).toBeGreaterThan(0);
     expect(screen.getByText(/Compras aguardando fonte oficial/i)).toBeInTheDocument();
     expect(screen.queryByText('Endpoint indisponível')).not.toBeInTheDocument();
+  });
+
+  it('seleciona automaticamente a primeira marca disponivel no mobile', () => {
+    render(<DistributorEvolutionTab active />);
+
+    expect(screen.getByRole('button', { name: 'ZF' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: 'ZF em julho de 2026' })).toBeInTheDocument();
+  });
+
+  it('apresenta indicadores nulos da fonte oficial como indisponiveis', () => {
+    queryState.data = [{
+      mes: '2026-08', marca: 'ZF', cod_marca: '11', cod_grupo: '1', grupo: 'ZF Pesado', classe: null,
+      valor_estoque: null, percentual_estoque: null, duracao_estoque: null,
+      valor_vendas: null, percentual_vendas: null, percentual_acumulado_vendas: null,
+      margem_venda: null, prazo_medio_venda: null, valor_devolucoes: null,
+      valor_compras: null, percentual_compras: null, prazo_medio_compra: null,
+      percentual_diferenca_compra_cmv: null,
+    }];
+
+    render(<DistributorEvolutionTab active />);
+
+    const summary = screen.getByLabelText('Resumo dos distribuidores');
+    expect(within(summary).getAllByText('Indisponível')).toHaveLength(4);
+    expect(summary).not.toHaveTextContent(/R\$\s*0/);
+  });
+
+  it('atualiza a fonte oficial e Produtos quando exibe a visualizacao provisoria', () => {
+    queryState.data = [];
+    queryState.error = new Error('Endpoint indisponível');
+    productsState.produtos = [
+      { tipo: 'PEDIDO', data_faturamento: '2026-08-05', marca: 'ZF', grupo: 'ZF Pesado', valor_total: 120 },
+    ];
+
+    render(<DistributorEvolutionTab active />);
+    fireEvent.click(screen.getByRole('button', { name: 'Atualizar relatório' }));
+
+    expect(queryState.refetch).toHaveBeenCalledOnce();
+    expect(productsState.refetch).toHaveBeenCalledOnce();
   });
 });

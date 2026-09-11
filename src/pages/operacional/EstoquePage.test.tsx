@@ -226,18 +226,45 @@ describe('EstoquePage', () => {
     expect(screen.queryByText('Carregando dados da filial')).not.toBeInTheDocument();
   });
 
-  it('mantem estado saudavel da Visao geral enquanto fontes nao ativas falham ou atualizam', async () => {
+  it('sinaliza falha do giro na Visao geral sem esconder o estoque consolidado', async () => {
     testState.hookResult = createHookResult({
       isFetching: true,
       sourceErrors: { consolidado: null, detalhado: new Error('Detalhado indisponivel'), giro: new Error('Giro indisponivel') },
-      sourceStatus: { consolidado: 'ready', detalhado: 'error', giro: 'fetching' },
+      sourceStatus: { consolidado: 'ready', detalhado: 'error', giro: 'error' },
     });
 
     renderEstoquePage({ initialTab: 'overview' });
 
     expect(await screen.findByRole('region', { name: 'Visão geral do estoque' })).toBeInTheDocument();
-    expect(screen.getByLabelText('Estado da fonte de estoque: Dados atualizados')).not.toHaveAttribute('data-issue');
+    expect(screen.getByLabelText('Estado da fonte de estoque: Movimentacoes indisponiveis')).toHaveAttribute('data-issue', 'true');
+    expect(screen.getByText(/Movimentacoes indisponiveis; indicadores da Visao geral podem estar incompletos/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Atualizando dados do estoque' })).toBeDisabled();
+  });
+
+  it('aguarda consolidado e giro antes da primeira montagem da Visao geral', () => {
+    testState.hookResult = createHookResult({
+      giroData: [],
+      isInitialLoading: true,
+      sourceStatus: { consolidado: 'ready', detalhado: 'ready', giro: 'loading' },
+    });
+
+    renderEstoquePage({ initialTab: 'overview' });
+
+    expect(screen.getByRole('status', { name: 'Carregando dados para Visao geral' })).toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: 'Visão geral do estoque' })).not.toBeInTheDocument();
+  });
+
+  it('preserva a Visao geral montada durante refetch das duas fontes', async () => {
+    testState.hookResult = createHookResult({
+      isFetching: true,
+      sourceStatus: { consolidado: 'fetching', detalhado: 'ready', giro: 'fetching' },
+    });
+
+    renderEstoquePage({ initialTab: 'overview' });
+
+    expect(await screen.findByRole('region', { name: 'Visão geral do estoque' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Atualizando dados do estoque' })).toBeDisabled();
+    expect(screen.queryByRole('status', { name: 'Carregando dados para Visao geral' })).not.toBeInTheDocument();
   });
 
   it.each([

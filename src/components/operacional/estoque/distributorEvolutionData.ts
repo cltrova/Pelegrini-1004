@@ -13,16 +13,16 @@ export interface DistributorEvolutionRow {
   cod_grupo: string;
   grupo: string;
   classe: string | null;
-  valor_estoque: number;
+  valor_estoque: number | null;
   percentual_estoque: number | null;
   duracao_estoque: number | null;
-  valor_vendas: number;
+  valor_vendas: number | null;
   percentual_vendas: number | null;
   percentual_acumulado_vendas: number | null;
   margem_venda: number | null;
   prazo_medio_venda: number | null;
-  valor_devolucoes: number;
-  valor_compras: number;
+  valor_devolucoes: number | null;
+  valor_compras: number | null;
   percentual_compras: number | null;
   prazo_medio_compra: number | null;
   percentual_diferenca_compra_cmv: number | null;
@@ -114,12 +114,13 @@ export function buildDistributorRowsFromProducts(
         : directBrand;
     if (!brand || !filters.marcas.includes(brand)) return [];
 
-    const total = toNumber(product.valor_total) ?? 0;
-    const returnValue = Math.abs(
+    const total = toNumber(product.valor_total);
+    const rawReturnValue = (
       toNumber(product.valor_liquido_final_item)
       ?? toNumber(product.valor_devolucao_item)
-      ?? total,
+      ?? total
     );
+    const returnValue = rawReturnValue === null ? null : Math.abs(rawReturnValue);
 
     return [{
       mes: date.slice(0, 7),
@@ -128,16 +129,16 @@ export function buildDistributorRowsFromProducts(
       cod_grupo: String(product.cod_grupo ?? ''),
       grupo: group,
       classe: null,
-      valor_estoque: 0,
+      valor_estoque: null,
       percentual_estoque: null,
       duracao_estoque: null,
-      valor_vendas: type === 'PEDIDO' ? Math.max(0, total) : 0,
+      valor_vendas: type === 'PEDIDO' ? (total === null ? null : Math.max(0, total)) : 0,
       percentual_vendas: null,
       percentual_acumulado_vendas: null,
       margem_venda: null,
       prazo_medio_venda: null,
       valor_devolucoes: type === 'DEVOLUCAO' ? returnValue : 0,
-      valor_compras: 0,
+      valor_compras: null,
       percentual_compras: null,
       prazo_medio_compra: null,
       percentual_diferenca_compra_cmv: null,
@@ -179,16 +180,13 @@ export function normalizeDistributorRows(payload: unknown): DistributorEvolution
       grupo: String(read(raw, 'grupo') ?? 'Sem grupo').trim() || 'Sem grupo',
       classe: read(raw, 'classe') == null ? null : String(read(raw, 'classe')),
       ...numbers,
-      valor_estoque: numbers.valor_estoque ?? 0,
-      valor_vendas: numbers.valor_vendas ?? 0,
-      valor_devolucoes: numbers.valor_devolucoes ?? 0,
-      valor_compras: numbers.valor_compras ?? 0,
     } as DistributorEvolutionRow];
   }).sort((a, b) => a.mes.localeCompare(b.mes) || a.marca.localeCompare(b.marca) || a.grupo.localeCompare(b.grupo));
 }
 
 function aggregateRows(rows: DistributorEvolutionRow[], mes: string, marca: DistributorBrand = 'MWM'): DistributorMonthSummary {
   const additive: NumericField[] = ['valor_estoque', 'valor_vendas', 'valor_devolucoes', 'valor_compras'];
+  const additivePercentages: NumericField[] = ['percentual_estoque', 'percentual_vendas', 'percentual_compras'];
   const result = { ...rows[0], mes, marca } as DistributorMonthSummary;
   result.cod_marca = rows[0]?.cod_marca ?? '';
   result.cod_grupo = rows.length === 1 ? rows[0].cod_grupo : '';
@@ -196,17 +194,21 @@ function aggregateRows(rows: DistributorEvolutionRow[], mes: string, marca: Dist
   result.classe = rows.length === 1 ? rows[0].classe : null;
   numericFields.forEach((field) => {
     const values = rows.map((row) => row[field]).filter((value): value is number => value !== null);
-    if (additive.includes(field) || field.startsWith('percentual_')) {
+    if (additive.includes(field) || additivePercentages.includes(field)) {
       result[field] = values.length ? values.reduce((sum, value) => sum + value, 0) : null;
+      return;
+    }
+    if (field === 'percentual_acumulado_vendas') {
+      result[field] = values.length ? Math.max(...values) : null;
       return;
     }
     const weightField = field === 'duracao_estoque' ? 'valor_estoque'
       : field === 'margem_venda' || field === 'prazo_medio_venda' ? 'valor_vendas'
         : 'valor_compras';
-    const weighted = rows.filter((row) => row[field] !== null && row[weightField] > 0);
-    const totalWeight = weighted.reduce((sum, row) => sum + row[weightField], 0);
+    const weighted = rows.filter((row) => row[field] !== null && (row[weightField] ?? 0) > 0);
+    const totalWeight = weighted.reduce((sum, row) => sum + (row[weightField] ?? 0), 0);
     result[field] = totalWeight > 0
-      ? weighted.reduce((sum, row) => sum + Number(row[field]) * row[weightField], 0) / totalWeight
+      ? weighted.reduce((sum, row) => sum + Number(row[field]) * (row[weightField] ?? 0), 0) / totalWeight
       : values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : null;
   });
   result.variacao_valor_estoque = null;
@@ -258,7 +260,12 @@ export function buildDistributorEvolution(rows: DistributorEvolutionRow[]): Dist
   const summary = aggregateRows(latestRows, latestMonth, latestRows[0]?.marca ?? 'MWM');
   const previousMonth = months.at(-2);
   const previousRows = rows.filter((row) => row.mes === previousMonth);
-  const previousValue = previousRows.reduce((sum, row) => sum + row.valor_estoque, 0);
+  const previousValues = previousRows
+    .map((row) => row.valor_estoque)
+    .filter((value): value is number => value !== null);
+  const previousValue = previousValues.length
+    ? previousValues.reduce((sum, value) => sum + value, 0)
+    : null;
   summary.variacao_valor_estoque = calculateVariation(summary.valor_estoque, previousValue);
   return { months, brands, summary };
 }
