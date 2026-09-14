@@ -111,6 +111,7 @@
   background: hsl(var(--sidebar-background));
   box-shadow: none;
   border-right: 1px solid hsl(var(--sidebar-border));
+  transition-property: color, background-color, border-color, opacity;
   transition-duration: var(--commercial-motion-sidebar);
 }
 

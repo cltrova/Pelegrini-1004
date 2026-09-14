@@ -19,6 +19,18 @@ function selectorsApplying(source: string, declaration: string): string[] {
   return selectors;
 }
 
+function selectorsWithNonNoneShadows(source: string): string[] {
+  const shadowRules = source.match(/[^{}]+\{[^{}]*box-shadow:(?!\s*none\b)\s*[^;]+;[^{}]*\}/g) ?? [];
+
+  return shadowRules.flatMap((rule) =>
+    rule
+      .slice(0, rule.indexOf('{'))
+      .split(',')
+      .map((selector) => selector.trim())
+      .filter(Boolean),
+  );
+}
+
 describe('commercial square visual scope', () => {
   const cssPath = join(process.cwd(), 'src/styles/comercial-square.css');
   const css = existsSync(cssPath) ? readFileSync(cssPath, 'utf8') : '';
@@ -78,13 +90,23 @@ describe('commercial square visual scope', () => {
   });
 
   it('keeps shadows only on temporary overlays', () => {
-    const shadowRules = css.match(/[^{}]+\{[^{}]*box-shadow:(?!\s*none\b)\s*[^;]+;[^{}]*\}/g) ?? [];
+    const mixedSelectorShadow = '.commercial-overlay, .other { box-shadow: 0 1px 2px black; }';
+    const shadowSelectors = selectorsWithNonNoneShadows(css);
+    const mixedShadowSelectors = selectorsWithNonNoneShadows(mixedSelectorShadow);
 
-    expect(shadowRules.every((rule) => rule.includes('.commercial-overlay'))).toBe(true);
+    expect(shadowSelectors.every((selector) => selector.startsWith('.commercial-overlay'))).toBe(true);
+    expect(mixedShadowSelectors).toEqual(['.commercial-overlay', '.other']);
+    expect(mixedShadowSelectors.every((selector) => selector.startsWith('.commercial-overlay'))).toBe(false);
   });
 
   it('does not animate layout dimensions', () => {
     expect(css).not.toMatch(/transition(?:-property)?:[^;]*(?:all|width|height|padding|margin)/);
+  });
+
+  it('limits sidebar motion to color and opacity', () => {
+    expect(css).toMatch(
+      /\.pelegrini-sidebar\s*\{[^}]*transition-property:\s*color, background-color, border-color, opacity;[^}]*transition-duration:/s,
+    );
   });
 
   it('neutralizes active tab shadows only inside the commercial shell', () => {
