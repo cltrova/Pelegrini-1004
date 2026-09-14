@@ -96,6 +96,7 @@ function mockClientesData(overrides: Partial<ReturnType<typeof useComercialData>
     ufsUnicas: ['SP', 'MG', 'PR'],
     periodoDisponivel: null,
     isLoading: false,
+    isFetching: false,
     error: null,
     ...overrides,
   } as ReturnType<typeof useComercialData>);
@@ -274,10 +275,11 @@ describe('ClientesPage compacta', () => {
   });
 
   it('preserva a carteira durante refetch e distingue o estado vazio', () => {
-    mockClientesData({ isLoading: true });
+    mockClientesData({ isLoading: false, isFetching: true });
     const refetch = renderClientesPage();
 
     expect(screen.getByRole('status', { name: 'Atualizando clientes' })).toBeInTheDocument();
+    expect(screen.queryByText('Carregando clientes...')).not.toBeInTheDocument();
     expect(screen.getByLabelText('Indicadores da carteira')).toBeInTheDocument();
     expect(screen.getByRole('table', { name: 'Ranking completo de clientes' })).toBeInTheDocument();
 

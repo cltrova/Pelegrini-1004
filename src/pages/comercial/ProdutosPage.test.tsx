@@ -5,6 +5,10 @@ import { useComercialData } from '@/hooks/useComercialData';
 import { useComercialProdutos } from '@/hooks/useComercialProdutos';
 import ProdutosPage from './ProdutosPage';
 
+const empresaAtivaMock = vi.hoisted(() => ({
+  current: { codEmpresaAtiva: '1004' as string | null, isLoading: false },
+}));
+
 vi.stubGlobal('requestAnimationFrame', () => 1);
 vi.stubGlobal('cancelAnimationFrame', () => undefined);
 vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('Network disabled in focused UI tests')));
@@ -18,7 +22,7 @@ vi.mock('@/hooks/useComercialProdutos', () => ({
 }));
 
 vi.mock('@/hooks/useEmpresaAtiva', () => ({
-  useEmpresaAtiva: () => ({ codEmpresaAtiva: '1004' }),
+  useEmpresaAtiva: () => empresaAtivaMock.current,
 }));
 
 vi.mock('@/contexts/AuthContext', () => ({
@@ -128,6 +132,7 @@ function renderPage() {
 describe('ProdutosPage compacta', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    empresaAtivaMock.current = { codEmpresaAtiva: '1004', isLoading: false };
     mockData();
   });
 
@@ -237,6 +242,17 @@ describe('ProdutosPage compacta', () => {
     expect(screen.getByText('Carregando produtos...')).toBeInTheDocument();
   });
 
+  it('prioriza a hidratacao da empresa antes do estado sem fonte', () => {
+    empresaAtivaMock.current = { codEmpresaAtiva: null, isLoading: true };
+    mockData(false);
+
+    renderPage();
+
+    expect(screen.getByRole('region', { name: 'Carregando produtos' })).toBeInTheDocument();
+    expect(screen.getByText('Carregando produtos...')).toBeInTheDocument();
+    expect(screen.queryByText('Fonte de produtos não configurada')).not.toBeInTheDocument();
+  });
+
   it('preserva os dados durante refetch e distingue erro de vazio', () => {
     mockData(true, { isFetching: true });
     const refetch = renderPage();
@@ -253,6 +269,8 @@ describe('ProdutosPage compacta', () => {
     const failed = renderPage();
 
     expect(screen.getByText('Erro ao carregar produtos')).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Falha ao carregar produtos' })).toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: 'Carregando produtos' })).not.toBeInTheDocument();
     expect(screen.queryByText('Nenhum produto encontrado no período.')).not.toBeInTheDocument();
 
     failed.unmount();
@@ -285,6 +303,7 @@ describe('ProdutosPage compacta', () => {
         showInsights={false}
       />,
     );
+    expect(productView.container.querySelector('.commercial-table-frame')).not.toBeInTheDocument();
     fireEvent.click(screen.getAllByRole('button', { name: /Cambio completo/ })[0]);
     expect(screen.getByRole('dialog')).toHaveClass('commercial-overlay', 'commercial-detail-panel');
     productView.unmount();
@@ -303,9 +322,28 @@ describe('ProdutosPage compacta', () => {
         showInsights={false}
       />,
     );
+    expect(categoryView.container.querySelector('.commercial-table-frame')).not.toBeInTheDocument();
     fireEvent.click(screen.getByText('Ver'));
     expect(screen.getByRole('dialog')).toHaveClass('commercial-overlay', 'commercial-detail-panel');
     categoryView.unmount();
+
+    const { PremiumMarcasView } = await vi.importActual<typeof import('@/components/comercial/PremiumMarcasView')>(
+      '@/components/comercial/PremiumMarcasView',
+    );
+    const brandView = render(
+      <PremiumMarcasView
+        porMarca={[{
+          marca: 'EATON', faturamento: 80_000, custo: 60_000, lucro: 20_000,
+          margem: 25, quantidade: 8, produtos: 1, participacao: 80,
+        }]}
+        selectedMarca={null}
+        onSelectMarca={vi.fn()}
+        showInsights={false}
+        embedded
+      />,
+    );
+    expect(brandView.container.querySelector('.commercial-table-frame')).not.toBeInTheDocument();
+    brandView.unmount();
 
     const { ClienteDetalheDrilldown } = await import('@/components/comercial/ClienteDetalheDrilldown');
     mockData(true, { produtos: [] });

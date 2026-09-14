@@ -97,6 +97,7 @@ export default function ClientesPage() {
     kpis,
     vendedoresDisponiveis,
     isLoading,
+    isFetching,
     error,
   } = useComercialData(appliedFilters);
 
@@ -256,7 +257,7 @@ export default function ClientesPage() {
 
   const hasClientData = clientesPerformance.length > 0;
   const isInitialLoading = isLoading && !hasClientData;
-  const isRefreshing = isLoading && hasClientData;
+  const isRefreshing = isFetching && hasClientData;
   const blockingError = error && !hasClientData;
   const pageClassName = 'clientes-page commercial-clients h-[calc(100dvh-9.5rem)] max-h-[calc(100dvh-9.5rem)] overflow-hidden overflow-x-hidden px-3 pb-3 pt-2 sm:px-4 md:h-full md:max-h-full';
 

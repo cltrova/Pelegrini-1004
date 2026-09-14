@@ -29,7 +29,7 @@ import {
 const ANOS = ['2023', '2024', '2025', '2026'];
 
 export default function ProdutosPage() {
-  const { codEmpresaAtiva } = useEmpresaAtiva();
+  const { codEmpresaAtiva, isLoading: isLoadingEmpresa } = useEmpresaAtiva();
   const isLayoutPremium = String(codEmpresaAtiva ?? '') === '1004';
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState('marcas');
@@ -61,6 +61,7 @@ export default function ProdutosPage() {
   const isInitialLoading = (isLoading || loadingBase) && !hasProductData;
   const isRefreshing = (isFetching || isLoading || loadingBase) && hasProductData;
   const blockingError = (productsError || baseError) && !hasProductData;
+  const showBlockingLoading = isLoadingEmpresa || isInitialLoading;
   const pageClassName = 'commercial-products h-[calc(100dvh-9.5rem)] max-h-[calc(100dvh-9.5rem)] overflow-hidden overflow-x-hidden px-3 pb-3 pt-2 sm:px-4 md:h-full md:max-h-full';
 
   useEffect(() => {
@@ -129,6 +130,25 @@ export default function ProdutosPage() {
 
   const isFiltered = !!selectedMarca;
 
+  if (showBlockingLoading || blockingError) {
+    return (
+      <ComercialCompactPage
+        as="div"
+        className={pageClassName}
+      >
+        <ComercialCommandBar title="Produtos" context={showBlockingLoading ? 'Carregando dados' : 'Falha na consulta'} />
+        <section
+          className="commercial-detail-panel flex min-h-0 flex-1 items-center justify-center"
+          aria-label={showBlockingLoading ? 'Carregando produtos' : 'Falha ao carregar produtos'}
+        >
+          {showBlockingLoading
+            ? <LoadingState message="Carregando produtos..." />
+            : <ErrorState message="Erro ao carregar produtos" />}
+        </section>
+      </ComercialCompactPage>
+    );
+  }
+
   if (!hasSource) {
     return (
       <ComercialCompactPage
@@ -144,22 +164,6 @@ export default function ProdutosPage() {
               Configure a fonte de itens dos pedidos no cadastro da empresa para habilitar esta análise.
             </p>
           </div>
-        </section>
-      </ComercialCompactPage>
-    );
-  }
-
-  if (isInitialLoading || blockingError) {
-    return (
-      <ComercialCompactPage
-        as="div"
-        className={pageClassName}
-      >
-        <ComercialCommandBar title="Produtos" context={isInitialLoading ? 'Carregando dados' : 'Falha na consulta'} />
-        <section className="commercial-detail-panel flex min-h-0 flex-1 items-center justify-center" aria-label="Carregando produtos">
-          {isInitialLoading
-            ? <LoadingState message="Carregando produtos..." />
-            : <ErrorState message="Erro ao carregar produtos" />}
         </section>
       </ComercialCompactPage>
     );

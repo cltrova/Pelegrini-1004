@@ -297,7 +297,7 @@ export function PremiumTopProdutos({
 
 
       {/* Card principal premium */}
-      <Card className="commercial-table-frame border-border/60 overflow-hidden bg-card">
+      <Card className="border-border/60 overflow-hidden bg-card">
         <div className="relative p-5 border-b border-border/50 bg-card">
           <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:justify-between">
             <div className="flex items-center gap-3">

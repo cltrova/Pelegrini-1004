@@ -339,7 +339,7 @@ export function PremiumCategoriasView({
       )}
 
       {/* RANKING PREMIUM */}
-      <Card className={cn('commercial-table-frame overflow-hidden shadow-none', !embedded && 'premium-card')}>
+      <Card className={cn('overflow-hidden shadow-none', !embedded && 'premium-card')}>
         <CardContent className="p-0">
           {!embedded && <div className="px-4 py-2.5 border-b border-border/60 flex items-center justify-between bg-muted/20">
             <div className="flex items-center gap-2">

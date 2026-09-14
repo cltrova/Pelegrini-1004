@@ -1310,7 +1310,7 @@ export function useComercialData(filters?: ComercialFilters, options?: { enabled
   const { codEmpresaAtiva, empresa } = useEmpresaAtiva();
   const { filialAtiva, filialNome } = useFilialSelecionada();
   // Usar o novo hook que busca do Storage/endpoint com filtros de período
-  const { data: rawData, isLoading, error } = useComercialRawData(filters?.periodo, options);
+  const { data: rawData, isLoading, isFetching, error } = useComercialRawData(filters?.periodo, options);
 
   const allPedidos = rawData?.pedidos || [];
   const allDevolucoes = rawData?.devolucoes || [];
@@ -2225,6 +2225,7 @@ export function useComercialData(filters?: ComercialFilters, options?: { enabled
     ufsUnicas,
     periodoDisponivel,
     isLoading,
+    isFetching,
     error,
   };
 }
