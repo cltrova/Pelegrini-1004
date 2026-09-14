@@ -77,6 +77,16 @@ describe('commercial square visual scope', () => {
     );
   });
 
+  it('keeps shadows only on temporary overlays', () => {
+    const shadowRules = css.match(/[^{}]+\{[^{}]*box-shadow:(?!\s*none\b)\s*[^;]+;[^{}]*\}/g) ?? [];
+
+    expect(shadowRules.every((rule) => rule.includes('.commercial-overlay'))).toBe(true);
+  });
+
+  it('does not animate layout dimensions', () => {
+    expect(css).not.toMatch(/transition(?:-property)?:[^;]*(?:all|width|height|padding|margin)/);
+  });
+
   it('neutralizes active tab shadows only inside the commercial shell', () => {
     const shadowlessSelectors = selectorsApplying(css, 'box-shadow: none !important').join('\n');
 
