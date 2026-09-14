@@ -8,6 +8,12 @@ const empresaAtivaMock = vi.hoisted(() => ({
   current: { codEmpresaAtiva: '1004' as string | null, isLoading: false },
 }));
 
+const refetchQueries = vi.hoisted(() => vi.fn().mockResolvedValue(undefined));
+vi.mock('@tanstack/react-query', async (importOriginal) => ({
+  ...await importOriginal<typeof import('@tanstack/react-query')>(),
+  useQueryClient: () => ({ refetchQueries }),
+}));
+
 class ResizeObserverMock {
   observe() {}
   unobserve() {}
@@ -318,6 +324,41 @@ describe('ClientesPage compacta', () => {
 
     expect(screen.getByText('Nenhum cliente encontrado no período.')).toBeInTheDocument();
     expect(screen.queryByText('Erro ao carregar clientes')).not.toBeInTheDocument();
+  });
+
+  it('exibe falha de atualizacao com carteira preservada e permite tentar novamente', () => {
+    const { rerender } = render(<ClientesPage />);
+    const table = screen.getByRole('table');
+    const indicators = screen.getByLabelText('Indicadores da carteira');
+    const values = indicators.textContent;
+
+    mockClientesData({ error: new Error('Falha no refresh') });
+    rerender(<ClientesPage />);
+    expect(screen.getByRole('status', { name: 'Falha ao atualizar clientes' })).toBeVisible();
+    expect(screen.getByRole('table')).toBe(table);
+    expect(indicators.textContent).toBe(values);
+    expect(within(table).getByText('Oficina Central')).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: 'Tentar atualizar clientes novamente' }));
+    expect(refetchQueries).toHaveBeenCalledWith({ queryKey: ['comercial', 'raw', '1004'], type: 'active' });
+
+    mockClientesData({ error: new Error('Falha no refresh'), isFetching: true });
+    rerender(<ClientesPage />);
+    expect(screen.getByRole('button', { name: 'Tentar atualizar clientes novamente' })).toBeDisabled();
+    expect(screen.getByRole('table')).toBe(table);
+
+    mockClientesData();
+    rerender(<ClientesPage />);
+    expect(screen.queryByRole('status', { name: 'Falha ao atualizar clientes' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Tentar atualizar clientes novamente' })).not.toBeInTheDocument();
+    expect(screen.getByRole('table')).toBe(table);
+  });
+
+  it('mantem carteira e distribuicao geografica sem animacoes de entrada', () => {
+    renderClientesPage();
+    fireEvent.mouseDown(screen.getByRole('tab', { name: 'Carteira' }), { button: 0, ctrlKey: false });
+    expect(screen.getByRole('tabpanel').querySelectorAll('[style*="animation"]')).toHaveLength(0);
+    fireEvent.mouseDown(screen.getByRole('tab', { name: 'Geográfico' }), { button: 0, ctrlKey: false });
+    expect(screen.getByRole('tabpanel').querySelectorAll('[style*="animation"]')).toHaveLength(0);
   });
 
   it('atribui moldura somente aos paineis internos sem aninhar paineis semanticos', () => {

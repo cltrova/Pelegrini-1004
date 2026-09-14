@@ -10,6 +10,12 @@ const empresaAtivaMock = vi.hoisted(() => ({
   current: { codEmpresaAtiva: '1004' as string | null, isLoading: false },
 }));
 
+const refetchQueries = vi.hoisted(() => vi.fn().mockResolvedValue(undefined));
+vi.mock('@tanstack/react-query', async (importOriginal) => ({
+  ...await importOriginal<typeof import('@tanstack/react-query')>(),
+  useQueryClient: () => ({ refetchQueries }),
+}));
+
 vi.stubGlobal('requestAnimationFrame', () => 1);
 vi.stubGlobal('cancelAnimationFrame', () => undefined);
 vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('Network disabled in focused UI tests')));
@@ -294,6 +300,49 @@ describe('ProdutosPage compacta', () => {
 
     expect(screen.getByText('Nenhum produto encontrado no período.')).toBeInTheDocument();
     expect(screen.queryByText('Erro ao carregar produtos')).not.toBeInTheDocument();
+  });
+
+  it.each(['produtos', 'base'] as const)('exibe falha de %s com linhas e KPIs preservados ate a recuperacao', (source) => {
+    const { rerender } = render(<ProdutosPage />);
+    fireEvent.mouseDown(screen.getByRole('tab', { name: 'Resumo NF' }), { button: 0, ctrlKey: false });
+    const table = screen.getByRole('table');
+    const indicators = screen.getByLabelText('Indicadores de produtos');
+    const values = indicators.textContent;
+    const error = new Error('Falha no refresh');
+    const fail = (isFetching = false) => {
+      mockData(true, { error: source === 'produtos' ? error : null, isFetching: source === 'produtos' && isFetching });
+      if (source === 'base') {
+        vi.mocked(useComercialData).mockReturnValue({
+          periodoDisponivel: null, vendedoresDisponiveis: [], isLoading: false, isFetching, error,
+        } as ReturnType<typeof useComercialData>);
+      }
+    };
+
+    fail();
+    rerender(<ProdutosPage />);
+    expect(screen.getByRole('status', { name: 'Falha ao atualizar produtos' })).toBeVisible();
+    expect(screen.getByRole('table')).toBe(table);
+    expect(within(table).getByText('Oficina Central')).toBeVisible();
+    expect(indicators.textContent).toBe(values);
+    fireEvent.click(screen.getByRole('button', { name: 'Tentar atualizar produtos novamente' }));
+    expect(refetchQueries).toHaveBeenCalledTimes(3);
+    for (const queryKey of [
+      ['comercial-produtos', '1004'],
+      ['comercial-receita-comissao-1004', '1004'],
+      ['comercial', 'raw', '1004'],
+    ]) {
+      expect(refetchQueries).toHaveBeenCalledWith({ queryKey, type: 'active' });
+    }
+
+    fail(true);
+    rerender(<ProdutosPage />);
+    expect(screen.getByRole('button', { name: 'Tentar atualizar produtos novamente' })).toBeDisabled();
+    expect(screen.getByRole('table')).toBe(table);
+    mockData();
+    rerender(<ProdutosPage />);
+    expect(screen.queryByRole('status', { name: 'Falha ao atualizar produtos' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Tentar atualizar produtos novamente' })).not.toBeInTheDocument();
+    expect(screen.getByRole('table')).toBe(table);
   });
 
   it('mantem um unico dono da moldura nas views premium e nos overlays', async () => {

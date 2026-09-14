@@ -690,26 +690,27 @@ export default function MetasVendedoresPage() {
   };
 
   return (
-    <ComercialCompactPage className={cn(
+    <ComercialCompactPage as="div" className={cn(
       'commercial-dashboard dashboard-commercial-page enterprise-page',
       isPelegriniPage && 'bg-background text-foreground',
     )}>
       <ComercialCommandBar
         title="Visão comercial"
         context={`${filialNome || 'Comercial'} · ${mesFormatado}`}
+        actions={
+          <span
+            role="status"
+            aria-label={isRefreshing ? 'Atualizando dados comerciais' : undefined}
+            title={isRefreshing ? 'Atualizando dados comerciais...' : undefined}
+            className="commercial-refresh-indicator flex h-6 w-6 shrink-0 items-center justify-center text-muted-foreground"
+          >
+            {isRefreshing && <>
+              <Loader2 aria-hidden="true" className="h-3.5 w-3.5 animate-spin motion-reduce:animate-none" />
+              <span className="sr-only">Atualizando dados comerciais...</span>
+            </>}
+          </span>
+        }
       />
-
-      {isRefreshing && (
-        <div
-          aria-label="Atualizando dados comerciais"
-          aria-live="polite"
-          className="commercial-refresh-indicator flex shrink-0 items-center gap-2 border border-border/70 bg-card px-3 py-1.5 text-xs text-muted-foreground"
-          role="status"
-        >
-          <Loader2 className="h-3.5 w-3.5 animate-spin motion-reduce:animate-none" />
-          Atualizando dados comerciais...
-        </div>
-      )}
 
       {!isCampanhas1004Ativa && (
         <EnterpriseComercialFilters

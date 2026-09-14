@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useComercialData } from '@/hooks/useComercialData';
 import { useEmpresaAtiva } from '@/hooks/useEmpresaAtiva';
 import { formatCurrency, formatPercent } from '@/utils/formatters';
@@ -16,6 +17,7 @@ import {
   ArrowDownRight,
   ChevronLeft,
   ChevronRight,
+  RefreshCw,
 } from 'lucide-react';
 import {
   AreaChart,
@@ -84,7 +86,8 @@ const filtrosIniciais: ComercialFiltersType = {
 /* Página                                                              */
 /* ------------------------------------------------------------------ */
 export default function ClientesPage() {
-  const { isLoading: isLoadingEmpresa } = useEmpresaAtiva();
+  const queryClient = useQueryClient();
+  const { codEmpresaAtiva, isLoading: isLoadingEmpresa } = useEmpresaAtiva();
   const [searchTerm, setSearchTerm] = useState('');
   const [rankingPage, setRankingPage] = useState(1);
   const [activeTab, setActiveTab] = useState('ranking');
@@ -296,8 +299,22 @@ export default function ClientesPage() {
         title="Clientes"
         context={(
           <span className="flex min-w-0 items-center gap-2">
-            {clientesPerformance.length} clientes no período
-            {isRefreshing && (
+            {error ? (
+              <span role="status" aria-label="Falha ao atualizar clientes" className="flex min-w-0 items-center gap-1 text-warning">
+                <span className="truncate" title="Falha ao atualizar clientes. Dados anteriores mantidos.">Falha ao atualizar</span>
+                <button
+                  type="button"
+                  aria-label="Tentar atualizar clientes novamente"
+                  title="Tentar atualizar clientes novamente"
+                  className="flex h-6 w-6 shrink-0 items-center justify-center rounded-sm hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
+                  disabled={isRefreshing}
+                  onClick={() => { void queryClient.refetchQueries({ queryKey: ['comercial', 'raw', codEmpresaAtiva], type: 'active' }); }}
+                >
+                  <RefreshCw aria-hidden="true" className={cn('h-3.5 w-3.5', isRefreshing && 'animate-spin motion-reduce:animate-none')} />
+                </button>
+              </span>
+            ) : `${clientesPerformance.length} clientes no período`}
+            {isRefreshing && !error && (
               <span role="status" aria-label="Atualizando clientes" className="commercial-refresh-indicator border border-border px-1.5 py-0.5 text-[10px]">
                 Atualizando
               </span>
@@ -542,7 +559,6 @@ export default function ClientesPage() {
                   <div
                     key={i}
                     className="min-w-0 rounded-lg border border-border bg-muted/20 p-3.5 transition-colors hover:border-border"
-                    style={{ animation: `cliRise 0.4s ${0.08 + i * 0.06}s ease-out backwards` }}
                   >
                     <div className="flex items-start gap-3">
                       <div className={cn('h-8 w-8 rounded-md flex items-center justify-center shrink-0 ring-1', toneBg(ins.tone))}>
@@ -572,11 +588,10 @@ export default function ClientesPage() {
                 </p>
               ) : (
                 <div className="space-y-1.5">
-                  {clientesEmRisco.map((c, i) => (
+                  {clientesEmRisco.map((c) => (
                     <div
                       key={c.codigo}
                       className="flex min-w-0 items-center justify-between rounded-md border border-border/60 p-2.5 transition-colors hover:bg-muted/30"
-                      style={{ animation: `cliRise 0.35s ${i * 0.03}s ease-out backwards` }}
                     >
                       <div className="min-w-0 flex-1">
                         <p className="font-medium text-sm truncate">{c.fantasia || c.razao}</p>
@@ -606,11 +621,10 @@ export default function ClientesPage() {
                 </p>
               ) : (
                 <div className="space-y-1.5">
-                  {novosClientes.slice(0, 10).map((c, i) => (
+                  {novosClientes.slice(0, 10).map((c) => (
                     <div
                       key={c.codigo}
                       className="flex min-w-0 items-center justify-between rounded-md border border-border/60 p-2.5 transition-colors hover:bg-muted/30"
-                      style={{ animation: `cliRise 0.35s ${i * 0.03}s ease-out backwards` }}
                     >
                       <div className="min-w-0 flex-1">
                         <p className="font-medium text-sm truncate">{c.fantasia || c.razao}</p>
@@ -642,7 +656,6 @@ export default function ClientesPage() {
                 return (
                   <div
                     key={item.uf}
-                    style={{ animation: `cliRise 0.35s ${i * 0.04}s ease-out backwards` }}
                   >
                     <div className="flex items-center justify-between gap-3 mb-1.5">
                       <div className="flex min-w-0 items-center gap-3">
@@ -661,8 +674,6 @@ export default function ClientesPage() {
                         className="h-full rounded-full bg-primary/80"
                         style={{
                           width: `${Math.max(fillPct, 2)}%`,
-                          animation: `cliBar 0.7s ${0.15 + i * 0.05}s cubic-bezier(.22,.9,.32,1) backwards`,
-                          transformOrigin: 'left center',
                         }}
                       />
                     </div>
@@ -675,16 +686,6 @@ export default function ClientesPage() {
         </TabsContent>
       </Tabs>}
 
-      <style>{`
-        @keyframes cliRise {
-          from { opacity: 0; transform: translateY(8px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes cliBar {
-          from { transform: scaleX(0); }
-          to { transform: scaleX(1); }
-        }
-      `}</style>
     </ComercialCompactPage>
   );
 }

@@ -78,7 +78,7 @@
                  <span className={cn('text-[10px] font-medium', isQuoteRoute && 'font-semibold')}>Mais</span>
                </button>
              </PopoverTrigger>
-             <PopoverContent side="top" align="end" className="w-56 p-1">
+             <PopoverContent side="top" align="end" className="commercial-overlay w-56 p-1">
                <NavLink to="/comercial/cotacoes" className="flex h-11 items-center gap-2 rounded-sm px-2 text-sm hover:bg-accent">
                  <Clock aria-hidden="true" className="h-4 w-4" />
                  Cotações Abertas

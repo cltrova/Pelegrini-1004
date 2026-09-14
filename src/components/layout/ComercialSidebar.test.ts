@@ -219,6 +219,8 @@ describe('commercial sidebar menu access', () => {
       expect(button).toHaveClass('h-14', 'min-w-0', 'flex-1');
     });
     fireEvent.click(mobileButtons[4]);
+    expect(screen.getByRole('dialog')).toHaveClass('commercial-overlay');
+    expect(screen.getByRole('navigation')).not.toContainElement(screen.getByRole('dialog'));
     const openQuotesLink = screen.getByRole('link', { name: 'Cotações Abertas' });
     const lostSalesLink = screen.getByRole('link', { name: 'Vendas Perdidas' });
 

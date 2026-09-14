@@ -134,10 +134,11 @@ describe('MetasVendedoresPage commercial dashboard', () => {
   });
 
   it('aplica as classes semanticas ao dashboard e a faixa de abas', async () => {
-    render(<MetasVendedoresPage />);
+    render(<main aria-label="Modulo comercial"><MetasVendedoresPage /></main>);
 
     expect(await screen.findByText('Conteudo preservado')).toBeInTheDocument();
-    expect(screen.getByRole('main')).toHaveClass('commercial-dashboard');
+    expect(screen.getAllByRole('main')).toHaveLength(1);
+    expect(screen.getByRole('main').querySelector('.commercial-dashboard')).toHaveProperty('tagName', 'DIV');
     expect(screen.getByRole('tablist')).toHaveClass('commercial-tab-strip');
     expect(screen.getByLabelText('Indicadores do dashboard comercial')).toHaveClass('commercial-metric-strip');
   });
@@ -185,12 +186,26 @@ describe('MetasVendedoresPage commercial dashboard', () => {
     await act(async () => rerender(<MetasVendedoresPage />));
     expect(await screen.findByText('Conteudo preservado')).toBeInTheDocument();
 
+    const toolbar = screen.getByRole('heading', { name: 'Visão comercial' }).closest('header')!;
+    const status = toolbar.querySelector('[role="status"]');
+    expect(status).toHaveClass('h-6', 'w-6', 'shrink-0');
+    const page = toolbar.parentElement!;
+    const pageChildren = Array.from(page.children);
+
     fetchingState.value = 1;
     await act(async () => rerender(<MetasVendedoresPage />));
 
     expect(screen.getByText('Conteudo preservado')).toBeInTheDocument();
     expect(screen.getByRole('status', { name: 'Atualizando dados comerciais' })).toBeInTheDocument();
+    expect(screen.getByRole('status', { name: 'Atualizando dados comerciais' })).toBe(status);
+    expect(Array.from(page.children)).toEqual(pageChildren);
     expect(screen.queryByText('Carregando visão comercial...')).not.toBeInTheDocument();
+
+    fetchingState.value = 0;
+    await act(async () => rerender(<MetasVendedoresPage />));
+    expect(toolbar.querySelector('[role="status"]')).toBe(status);
+    expect(status).toBeEmptyDOMElement();
+    expect(Array.from(page.children)).toEqual(pageChildren);
   });
 
   it('usa uma estrutura neutra para os cenarios dentro da secao premium', async () => {
@@ -281,10 +296,24 @@ describe('CampanhasTab loading lifecycle', () => {
     await act(async () => rerender(<CampanhasTab />));
     expect(await screen.findByText('Nenhuma campanha ainda')).toBeInTheDocument();
 
+    const toolbar = screen.getByRole('region', { name: 'Filtros de campanhas' });
+    const status = toolbar.querySelector('[role="status"]');
+    expect(status).toHaveClass('h-5', 'w-5', 'shrink-0');
+    const page = toolbar.parentElement!;
+    const pageChildren = Array.from(page.children);
+
     fetchingState.value = 1;
     await act(async () => rerender(<CampanhasTab />));
     expect(screen.getByText('Nenhuma campanha ainda')).toBeInTheDocument();
     expect(screen.getByRole('status', { name: 'Atualizando campanhas comerciais' })).toBeInTheDocument();
+    expect(screen.getByRole('status', { name: 'Atualizando campanhas comerciais' })).toBe(status);
+    expect(Array.from(page.children)).toEqual(pageChildren);
+
+    fetchingState.value = 0;
+    await act(async () => rerender(<CampanhasTab />));
+    expect(toolbar.querySelector('[role="status"]')).toBe(status);
+    expect(status).toBeEmptyDOMElement();
+    expect(Array.from(page.children)).toEqual(pageChildren);
   });
 
   it('mantem os dados de produtos visiveis e sinaliza o refetch de campanhas', async () => {
@@ -398,6 +427,10 @@ describe('InsightsIATab management actions', () => {
 });
 
 describe('PremiumMetasView management signals', () => {
+  it('does not transition progress width or other layout dimensions', () => {
+    const source = readFileSync(join(process.cwd(), 'src/components/comercial/PremiumMetasView.tsx'), 'utf8');
+    expect(source).not.toMatch(/transition-(?:all|\[[^\]]*(?:width|height|padding|margin)[^\]]*\])/);
+  });
   it('mantem os numeros e completa cada sinal com uma acao gerencial', () => {
     const { container } = render(
       <PremiumMetasView

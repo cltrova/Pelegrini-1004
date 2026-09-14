@@ -1,11 +1,12 @@
 import { useMemo, useState, useCallback, useEffect } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useComercialProdutos } from '@/hooks/useComercialProdutos';
 import { formatCurrency, formatCurrencyCompact, formatNumber } from '@/utils/formatters';
 import { LoadingState } from '@/components/common/LoadingState';
 import { ErrorState } from '@/components/common/ErrorState';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getDefaultFiltersForEmpresa } from '@/components/comercial/ComercialFilters';
 import { useComercialData } from '@/hooks/useComercialData';
@@ -29,6 +30,7 @@ import {
 const ANOS = ['2023', '2024', '2025', '2026'];
 
 export default function ProdutosPage() {
+  const queryClient = useQueryClient();
   const { codEmpresaAtiva, isLoading: isLoadingEmpresa } = useEmpresaAtiva();
   const isLayoutPremium = String(codEmpresaAtiva ?? '') === '1004';
   const [searchTerm, setSearchTerm] = useState('');
@@ -45,6 +47,7 @@ export default function ProdutosPage() {
   const {
     periodoDisponivel,
     isLoading: loadingBase,
+    isFetching: fetchingBase,
     vendedoresDisponiveis,
     error: baseError,
   } = useComercialData(appliedFilters);
@@ -59,7 +62,7 @@ export default function ProdutosPage() {
     || produtosSemGiro.length > 0
     || resumoVendas.length > 0;
   const isInitialLoading = (isLoading || loadingBase) && !hasProductData;
-  const isRefreshing = (isFetching || isLoading || loadingBase) && hasProductData;
+  const isRefreshing = (isFetching || fetchingBase || isLoading || loadingBase) && hasProductData;
   const blockingError = (productsError || baseError) && !hasProductData;
   const showBlockingLoading = isLoadingEmpresa || isInitialLoading;
   const pageClassName = 'commercial-products h-[calc(100dvh-9.5rem)] max-h-[calc(100dvh-9.5rem)] overflow-hidden overflow-x-hidden px-3 pb-3 pt-2 sm:px-4 md:h-full md:max-h-full';
@@ -178,12 +181,32 @@ export default function ProdutosPage() {
         title="Produtos"
         context={(
           <span className="flex min-w-0 items-center gap-2">
-            {selectedMarca ? (
+            {(productsError || baseError) ? (
+              <span role="status" aria-label="Falha ao atualizar produtos" className="flex min-w-0 items-center gap-1 text-warning">
+                <span className="truncate" title="Falha ao atualizar produtos. Dados anteriores mantidos.">Falha ao atualizar</span>
+                <button
+                  type="button"
+                  aria-label="Tentar atualizar produtos novamente"
+                  title="Tentar atualizar produtos novamente"
+                  className="flex h-6 w-6 shrink-0 items-center justify-center rounded-sm hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
+                  disabled={isRefreshing}
+                  onClick={() => {
+                    void Promise.all([
+                      queryClient.refetchQueries({ queryKey: ['comercial-produtos', codEmpresaAtiva], type: 'active' }),
+                      queryClient.refetchQueries({ queryKey: ['comercial-receita-comissao-1004', codEmpresaAtiva], type: 'active' }),
+                      queryClient.refetchQueries({ queryKey: ['comercial', 'raw', codEmpresaAtiva], type: 'active' }),
+                    ]);
+                  }}
+                >
+                  <RefreshCw aria-hidden="true" className={cn('h-3.5 w-3.5', isRefreshing && 'animate-spin motion-reduce:animate-none')} />
+                </button>
+              </span>
+            ) : selectedMarca ? (
               <button type="button" className="font-semibold text-primary hover:underline" onClick={() => setSelectedMarca(null)}>
                 {selectedMarca} - limpar filtro
               </button>
             ) : `${formatNumber(totalSkusGeral, 0)} SKUs no período`}
-            {isRefreshing && (
+            {isRefreshing && !productsError && !baseError && (
               <span role="status" aria-label="Atualizando produtos" className="commercial-refresh-indicator border border-border px-1.5 py-0.5 text-[10px]">
                 Atualizando
               </span>

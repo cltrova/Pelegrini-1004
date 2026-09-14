@@ -596,7 +596,7 @@ export function PremiumMetasView({
                 </p>
                 <div className="mt-1 h-1 rounded-full bg-muted overflow-hidden">
                   <div
-                    className="h-full bg-emerald-500 transition-[width] duration-700"
+                    className="h-full bg-emerald-500"
                     style={{ width: `${Math.min(totais.percentual, 100)}%` }}
                   />
                 </div>
