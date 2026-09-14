@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useComercialData } from '@/hooks/useComercialData';
 import { useComercialProdutos } from '@/hooks/useComercialProdutos';
+import { ComercialDataViewport } from '@/components/comercial/compact';
 import ProdutosPage from './ProdutosPage';
 
 const empresaAtivaMock = vi.hoisted(() => ({
@@ -127,6 +128,18 @@ function renderPage() {
       <ProdutosPage />
     </main>,
   );
+}
+
+const COMMERCIAL_PANEL_SELECTOR = [
+  '.commercial-table-frame',
+  '.commercial-chart-frame',
+  '.commercial-detail-panel',
+].join(', ');
+
+function expectNoNestedCommercialPanels(container: ParentNode) {
+  container.querySelectorAll(COMMERCIAL_PANEL_SELECTOR).forEach((panel) => {
+    expect(panel.querySelector(COMMERCIAL_PANEL_SELECTOR)).toBeNull();
+  });
 }
 
 describe('ProdutosPage compacta', () => {
@@ -283,27 +296,31 @@ describe('ProdutosPage compacta', () => {
     expect(screen.queryByText('Erro ao carregar produtos')).not.toBeInTheDocument();
   });
 
-  it('marca o ranking e os drawers portados com os contratos comerciais', async () => {
+  it('mantem um unico dono da moldura nas views premium e nos overlays', async () => {
     renderPage();
     fireEvent.mouseDown(screen.getByRole('tab', { name: 'Top Produtos' }), { button: 0, ctrlKey: false });
-    expect(screen.getByRole('region', { name: 'Ranking de produtos' })).toHaveClass(
-      'commercial-data-viewport',
-      'commercial-table-frame',
-    );
+    const rankingViewport = screen.getByRole('region', { name: 'Ranking de produtos' });
+    expect(rankingViewport).toHaveClass('commercial-data-viewport', 'overflow-auto');
+    expect(rankingViewport).not.toHaveClass('commercial-table-frame');
 
     const { PremiumTopProdutos } = await vi.importActual<typeof import('@/components/comercial/PremiumTopProdutos')>(
       '@/components/comercial/PremiumTopProdutos',
     );
     const productView = render(
-      <PremiumTopProdutos
-        produtos={[{ ...topProdutos[0], custo: 60_000, lucro: 20_000, margem: 25 }]}
-        resumoVendas={resumoVendas}
-        selectedMarca={null}
-        onSelectMarca={vi.fn()}
-        showInsights={false}
-      />,
+      <ComercialDataViewport ariaLabel="Composição real do ranking de produtos">
+        <PremiumTopProdutos
+          produtos={[{ ...topProdutos[0], custo: 60_000, lucro: 20_000, margem: 25 }]}
+          resumoVendas={resumoVendas}
+          selectedMarca={null}
+          onSelectMarca={vi.fn()}
+          showInsights={false}
+        />
+      </ComercialDataViewport>,
     );
-    expect(productView.container.querySelector('.commercial-table-frame')).not.toBeInTheDocument();
+    expect(within(productView.container).getByRole('region')).not.toHaveClass('commercial-table-frame');
+    expect(productView.container.querySelectorAll('.commercial-table-frame')).toHaveLength(1);
+    expect(productView.container.querySelector('.commercial-table-frame')).toHaveProperty('tagName', 'DIV');
+    expectNoNestedCommercialPanels(productView.container);
     fireEvent.click(screen.getAllByRole('button', { name: /Cambio completo/ })[0]);
     expect(screen.getByRole('dialog')).toHaveClass('commercial-overlay', 'commercial-detail-panel');
     productView.unmount();
@@ -312,17 +329,21 @@ describe('ProdutosPage compacta', () => {
       '@/components/comercial/PremiumCategoriasView',
     );
     const categoryView = render(
-      <PremiumCategoriasView
-        porCategoria={[{
-          chave: 'Transmissao', categoria: 'Transmissao', faturamento: 100_000,
-          quantidade: 10, produtos: 2, participacao: 100,
-        }]}
-        selectedCategoria={null}
-        onSelectCategoria={vi.fn()}
-        showInsights={false}
-      />,
+      <ComercialDataViewport ariaLabel="Composição real das categorias">
+        <PremiumCategoriasView
+          porCategoria={[{
+            chave: 'Transmissao', categoria: 'Transmissao', faturamento: 100_000,
+            quantidade: 10, produtos: 2, participacao: 100,
+          }]}
+          selectedCategoria={null}
+          onSelectCategoria={vi.fn()}
+          showInsights={false}
+        />
+      </ComercialDataViewport>,
     );
-    expect(categoryView.container.querySelector('.commercial-table-frame')).not.toBeInTheDocument();
+    expect(within(categoryView.container).getByRole('region')).not.toHaveClass('commercial-table-frame');
+    expect(categoryView.container.querySelectorAll('.commercial-table-frame')).toHaveLength(1);
+    expectNoNestedCommercialPanels(categoryView.container);
     fireEvent.click(screen.getByText('Ver'));
     expect(screen.getByRole('dialog')).toHaveClass('commercial-overlay', 'commercial-detail-panel');
     categoryView.unmount();
@@ -331,18 +352,22 @@ describe('ProdutosPage compacta', () => {
       '@/components/comercial/PremiumMarcasView',
     );
     const brandView = render(
-      <PremiumMarcasView
-        porMarca={[{
-          marca: 'EATON', faturamento: 80_000, custo: 60_000, lucro: 20_000,
-          margem: 25, quantidade: 8, produtos: 1, participacao: 80,
-        }]}
-        selectedMarca={null}
-        onSelectMarca={vi.fn()}
-        showInsights={false}
-        embedded
-      />,
+      <ComercialDataViewport ariaLabel="Composição real das marcas">
+        <PremiumMarcasView
+          porMarca={[{
+            marca: 'EATON', faturamento: 80_000, custo: 60_000, lucro: 20_000,
+            margem: 25, quantidade: 8, produtos: 1, participacao: 80,
+          }]}
+          selectedMarca={null}
+          onSelectMarca={vi.fn()}
+          showInsights={false}
+          embedded
+        />
+      </ComercialDataViewport>,
     );
-    expect(brandView.container.querySelector('.commercial-table-frame')).not.toBeInTheDocument();
+    expect(within(brandView.container).getByRole('region')).not.toHaveClass('commercial-table-frame');
+    expect(brandView.container.querySelectorAll('.commercial-table-frame')).toHaveLength(1);
+    expectNoNestedCommercialPanels(brandView.container);
     brandView.unmount();
 
     const { ClienteDetalheDrilldown } = await import('@/components/comercial/ClienteDetalheDrilldown');
@@ -355,7 +380,10 @@ describe('ProdutosPage compacta', () => {
         periodo={{ inicio: '2026-09-01', fim: '2026-09-11' }}
       />,
     );
-    expect(screen.getByRole('dialog')).toHaveClass('commercial-overlay', 'commercial-detail-panel');
+    const dialog = screen.getByRole('dialog');
+    expect(dialog).toHaveClass('commercial-overlay', 'commercial-detail-panel');
+    expect(dialog.querySelectorAll('.commercial-kpi-cell')).toHaveLength(4);
+    expectNoNestedCommercialPanels(document.body);
   });
 
   it('mostra estados vazios nas tabelas de Sem Giro e Resumo NF', () => {

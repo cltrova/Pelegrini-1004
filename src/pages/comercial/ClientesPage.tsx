@@ -445,7 +445,7 @@ export default function ClientesPage() {
 
         {/* =================================================== EVOLUÇÃO */}
         <TabsContent value="evolucao" className="mt-0 flex h-full max-h-full min-h-0 flex-1 flex-col overflow-hidden data-[state=inactive]:hidden">
-          <ComercialDataViewport ariaLabel="Evolução dos clientes" className="commercial-chart-frame h-full max-h-full space-y-3">
+          <ComercialDataViewport ariaLabel="Evolução dos clientes" className="h-full max-h-full space-y-3">
           {evolucaoStats && (
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
               <EnterpriseMetricCard label="Último mês" value={formatCurrency(evolucaoStats.ultimo, true)} />
@@ -468,6 +468,7 @@ export default function ClientesPage() {
           <EnterpriseDataPanel
             title="Evolução de Vendas · Top 5 Clientes"
             density="compact"
+            className="commercial-chart-frame"
           >
             <div className="h-[360px] min-w-0">
               <ResponsiveContainer width="100%" height="100%">
@@ -525,11 +526,12 @@ export default function ClientesPage() {
 
         {/* =================================================== CARTEIRA */}
         <TabsContent value="insights" className="mt-0 flex h-full max-h-full min-h-0 flex-1 flex-col overflow-hidden data-[state=inactive]:hidden">
-          <ComercialDataViewport ariaLabel="Alertas e oportunidades da carteira" className="commercial-detail-panel h-full max-h-full space-y-3">
+          <ComercialDataViewport ariaLabel="Alertas e oportunidades da carteira" className="h-full max-h-full space-y-3">
           {insightsIA.length > 0 && (
             <EnterpriseDataPanel
               title="Alertas e oportunidades"
               density="compact"
+              className="commercial-detail-panel"
               actions={<EnterpriseBadge tone="info">{insightsIA.length} alertas</EnterpriseBadge>}
             >
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -555,7 +557,12 @@ export default function ClientesPage() {
           )}
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-            <EnterpriseDataPanel title="Clientes em Risco" description="Sem compras há 3+ meses" density="compact">
+            <EnterpriseDataPanel
+              title="Clientes em Risco"
+              description="Sem compras há 3+ meses"
+              density="compact"
+              className="commercial-detail-panel"
+            >
               {clientesEmRisco.length === 0 ? (
                 <p className="text-muted-foreground text-sm py-4 text-center">
                   Nenhum cliente em risco identificado
@@ -584,7 +591,12 @@ export default function ClientesPage() {
               )}
             </EnterpriseDataPanel>
 
-            <EnterpriseDataPanel title="Novos Clientes" description="Último mês" density="compact">
+            <EnterpriseDataPanel
+              title="Novos Clientes"
+              description="Último mês"
+              density="compact"
+              className="commercial-detail-panel"
+            >
               {novosClientes.length === 0 ? (
                 <p className="text-muted-foreground text-sm py-4 text-center">
                   Nenhum novo cliente no período
@@ -618,8 +630,8 @@ export default function ClientesPage() {
 
         {/* =================================================== GEOGRÁFICO */}
         <TabsContent value="geografico" className="mt-0 flex h-full max-h-full min-h-0 flex-1 flex-col overflow-hidden data-[state=inactive]:hidden">
-          <ComercialDataViewport ariaLabel="Distribuição geográfica dos clientes" className="commercial-chart-frame h-full max-h-full">
-          <EnterpriseDataPanel title="Top 10 Estados" density="compact">
+          <ComercialDataViewport ariaLabel="Distribuição geográfica dos clientes" className="h-full max-h-full">
+          <EnterpriseDataPanel title="Top 10 Estados" density="compact" className="commercial-chart-frame">
             <div className="space-y-3">
               {distribuicaoPorUF.map((item, i) => {
                 const maxPct = distribuicaoPorUF[0]?.percentual || 1;

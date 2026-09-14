@@ -65,8 +65,7 @@ interface KpiProps {
 function Kpi({ label, value, sub, icon: Icon, color }: KpiProps) {
   return (
     <div
-      className="commercial-detail-panel min-w-[140px] flex-1 p-3"
-      style={{ background: C.card2, border: `1px solid ${C.border}` }}
+      className="commercial-kpi-cell min-w-[140px] flex-1 p-3"
     >
       <div className="flex items-center gap-2 mb-1">
         <Icon className="w-3.5 h-3.5" style={{ color }} />

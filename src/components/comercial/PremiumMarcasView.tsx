@@ -338,7 +338,7 @@ export function PremiumMarcasView({
       </div>}
 
       {/* TABELA UNIFICADA — Ranking + Receita + Share + Margem */}
-      <Card className={cn('border-border/60 shadow-none', !embedded && 'premium-card')}>
+      <Card className={cn('commercial-table-frame border-border/60 shadow-none', !embedded && 'premium-card')}>
         {!embedded && <CardHeader className="pb-2">
           <div className="flex items-center justify-between gap-2 flex-wrap">
             <CardTitle className="text-base flex items-center gap-2">

@@ -65,6 +65,12 @@ describe('commercial square visual scope', () => {
     expect(controlGeometrySelectors).toContain('.commercial-overlay');
   });
 
+  it('styles drilldown KPI cells as neutral descendants instead of nested panels', () => {
+    expect(css).toMatch(
+      /\.commercial-overlay \.commercial-kpi-cell\s*\{[^}]*border-radius:\s*0;[^}]*background:\s*transparent;[^}]*box-shadow:\s*none;/s,
+    );
+  });
+
   it('limits compact primitive motion to color and opacity', () => {
     expect(css).toMatch(
       /\.commercial-(?:toolbar|filter-control)[^{}]*\{[^}]*transition-property:\s*color, background-color, border-color, opacity;/s,

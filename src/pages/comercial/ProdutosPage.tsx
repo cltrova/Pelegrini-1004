@@ -259,7 +259,10 @@ export default function ProdutosPage() {
         </TabsList>
 
         <TabsContent value="marcas" className="mt-0 flex h-full max-h-full min-h-0 flex-1 flex-col overflow-hidden data-[state=inactive]:hidden">
-          <ComercialDataViewport ariaLabel="Desempenho por marca" className="commercial-table-frame h-full max-h-full">
+          <ComercialDataViewport
+            ariaLabel="Desempenho por marca"
+            className={cn('h-full max-h-full', !isLayoutPremium && 'commercial-table-frame')}
+          >
           {isLayoutPremium ? (
             <PremiumMarcasView
               porMarca={porMarca}
@@ -280,7 +283,10 @@ export default function ProdutosPage() {
         </TabsContent>
 
         <TabsContent value="top" className="mt-0 flex h-full max-h-full min-h-0 flex-1 flex-col overflow-hidden data-[state=inactive]:hidden">
-          <ComercialDataViewport ariaLabel="Ranking de produtos" className="commercial-table-frame h-full max-h-full">
+          <ComercialDataViewport
+            ariaLabel="Ranking de produtos"
+            className={cn('h-full max-h-full', !isLayoutPremium && 'commercial-table-frame')}
+          >
           {isLayoutPremium ? (
             <PremiumTopProdutos
               produtos={topFiltrado}
@@ -301,7 +307,10 @@ export default function ProdutosPage() {
         </TabsContent>
 
         <TabsContent value="categoria" className="mt-0 flex h-full max-h-full min-h-0 flex-1 flex-col overflow-hidden data-[state=inactive]:hidden">
-          <ComercialDataViewport ariaLabel="Desempenho por categoria" className="commercial-table-frame h-full max-h-full">
+          <ComercialDataViewport
+            ariaLabel="Desempenho por categoria"
+            className={cn('h-full max-h-full', !isLayoutPremium && 'commercial-table-frame')}
+          >
           {isLayoutPremium ? (
             <PremiumCategoriasView
               porCategoria={porCategoria}

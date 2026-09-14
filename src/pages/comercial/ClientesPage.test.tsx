@@ -110,6 +110,18 @@ function renderClientesPage() {
   );
 }
 
+const COMMERCIAL_PANEL_SELECTOR = [
+  '.commercial-table-frame',
+  '.commercial-chart-frame',
+  '.commercial-detail-panel',
+].join(', ');
+
+function expectNoNestedCommercialPanels(container: ParentNode) {
+  container.querySelectorAll(COMMERCIAL_PANEL_SELECTOR).forEach((panel) => {
+    expect(panel.querySelector(COMMERCIAL_PANEL_SELECTOR)).toBeNull();
+  });
+}
+
 describe('ClientesPage compacta', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -291,14 +303,29 @@ describe('ClientesPage compacta', () => {
     expect(screen.queryByText('Erro ao carregar clientes')).not.toBeInTheDocument();
   });
 
-  it('marca paineis de detalhe e grafico sem criar wrappers adicionais', () => {
+  it('atribui moldura somente aos paineis internos sem aninhar paineis semanticos', () => {
     renderClientesPage();
 
     fireEvent.mouseDown(screen.getByRole('tab', { name: 'Evolução' }), { button: 0, ctrlKey: false });
-    expect(screen.getByRole('region', { name: 'Evolução dos clientes' })).toHaveClass('commercial-chart-frame');
+    const evolutionViewport = screen.getByRole('region', { name: 'Evolução dos clientes' });
+    const evolutionPanel = within(evolutionViewport).getByTestId('enterprise-data-panel');
+    expect(evolutionViewport).not.toHaveClass('commercial-chart-frame', 'commercial-detail-panel');
+    expect(evolutionPanel).toHaveClass('commercial-chart-frame');
+    expectNoNestedCommercialPanels(evolutionViewport);
 
     fireEvent.mouseDown(screen.getByRole('tab', { name: 'Carteira' }), { button: 0, ctrlKey: false });
-    expect(screen.getByRole('region', { name: 'Alertas e oportunidades da carteira' })).toHaveClass('commercial-detail-panel');
+    const portfolioViewport = screen.getByRole('region', { name: 'Alertas e oportunidades da carteira' });
+    const portfolioPanels = within(portfolioViewport).getAllByTestId('enterprise-data-panel');
+    expect(portfolioViewport).not.toHaveClass('commercial-chart-frame', 'commercial-detail-panel');
+    portfolioPanels.forEach((panel) => expect(panel).toHaveClass('commercial-detail-panel'));
+    expectNoNestedCommercialPanels(portfolioViewport);
+
+    fireEvent.mouseDown(screen.getByRole('tab', { name: 'Geográfico' }), { button: 0, ctrlKey: false });
+    const geographicViewport = screen.getByRole('region', { name: 'Distribuição geográfica dos clientes' });
+    const geographicPanel = within(geographicViewport).getByTestId('enterprise-data-panel');
+    expect(geographicViewport).not.toHaveClass('commercial-chart-frame', 'commercial-detail-panel');
+    expect(geographicPanel).toHaveClass('commercial-chart-frame');
+    expectNoNestedCommercialPanels(geographicViewport);
   });
 
   it('aplica filtros pendentes somente ao buscar e restaura o periodo inicial ao limpar', () => {
