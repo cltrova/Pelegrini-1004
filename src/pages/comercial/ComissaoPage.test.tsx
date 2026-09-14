@@ -11,6 +11,7 @@ const queryState = vi.hoisted(() => ({
   error: null as Error | null,
   refetch: vi.fn(),
 }));
+const resolveQueryState = vi.hoisted(() => vi.fn());
 
 vi.mock('@/contexts/FilialSelecionadaContext', () => ({
   useFilialSelecionada: () => ({ filialAtiva: 'chevrolet' }),
@@ -20,9 +21,7 @@ vi.mock('@/hooks/useComissaoVendedores', async (importOriginal) => {
   const original = await importOriginal<typeof import('@/hooks/useComissaoVendedores')>();
   return {
     ...original,
-    useComissaoVendedores: () => ({
-      ...queryState,
-    }),
+    useComissaoVendedores: (filters: unknown) => resolveQueryState(filters),
   };
 });
 
@@ -34,6 +33,8 @@ describe('ComissaoPage', () => {
     queryState.isFetching = false;
     queryState.error = null;
     queryState.refetch.mockReset();
+    resolveQueryState.mockReset();
+    resolveQueryState.mockImplementation(() => ({ ...queryState }));
   });
 
   it('abre o filtro de operacao fiscal com a faixa padrao', () => {
@@ -155,6 +156,28 @@ describe('ComissaoPage', () => {
     expect(screen.getByLabelText('Indicadores comerciais')).toHaveTextContent('Pedidos em aberto');
     expect(screen.getByRole('button', { name: 'Buscando' })).toBeDisabled();
     expect(screen.queryByTestId('comissao-empty-state')).not.toBeInTheDocument();
+  });
+
+  it('preserva a consulta resolvida quando Buscar troca os criterios e inicia outra query', () => {
+    linhas.push(mapComissaoLinha({ Vendedor: 10, NomeVendedor: 'XEXEU', PedidosEmAberto: 50 }));
+    resolveQueryState.mockImplementation((filters: { cod_meta?: string } | null) => filters?.cod_meta === '77'
+      ? { ...queryState, data: undefined, isLoading: true, isFetching: true }
+      : { ...queryState });
+
+    render(<ComissaoPage />);
+    fireEvent.click(screen.getByRole('button', { name: 'Buscar' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Buscar' }));
+    expect(queryState.refetch).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Mais filtros' }));
+    fireEvent.change(screen.getByLabelText('Código da meta'), { target: { value: '77' } });
+    fireEvent.keyDown(screen.getByLabelText('Filtros avançados de comissão'), { key: 'Escape' });
+    fireEvent.click(screen.getByRole('button', { name: 'Buscar' }));
+
+    expect(resolveQueryState).toHaveBeenLastCalledWith(expect.objectContaining({ cod_meta: '77' }));
+    expect(screen.getByRole('table')).toHaveTextContent('XEXEU');
+    expect(screen.getByLabelText('Indicadores comerciais')).toHaveTextContent('Pedidos em aberto');
+    expect(screen.getByRole('button', { name: 'Buscando' })).toBeDisabled();
   });
 
   it('explica os indicadores sem adicionar textos auxiliares permanentes', () => {

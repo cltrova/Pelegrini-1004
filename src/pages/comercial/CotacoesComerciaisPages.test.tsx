@@ -646,6 +646,65 @@ describe('open quotes page', () => {
     expect(screen.queryByLabelText('Carregando cotacoes abertas')).not.toBeInTheDocument();
   });
 
+  it('keeps the resolved quote view while changed criteria fetch a new query key', async () => {
+    const refetch = vi.fn();
+    vi.mocked(useCotacoesAbertas).mockImplementation((consulta) => consulta?.dataIni === '2026-08-10'
+      ? {
+        data: [],
+        isLoading: true,
+        isFetching: true,
+        isError: false,
+        error: null,
+        refetch,
+      } as never
+      : {
+        data: openRows,
+        isLoading: false,
+        isFetching: false,
+        isError: false,
+        error: null,
+        refetch,
+      } as never);
+
+    await renderCotacoesAbertasPage();
+    fireEvent.click(screen.getByRole('button', { name: 'Aplicar' }));
+    expect(refetch).not.toHaveBeenCalled();
+
+    fireEvent.change(screen.getByLabelText('Data inicial'), { target: { value: '2026-08-10' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Aplicar' }));
+
+    expect(vi.mocked(useCotacoesAbertas)).toHaveBeenLastCalledWith(expect.objectContaining({ dataIni: '2026-08-10' }));
+    expect(screen.getByRole('table')).toHaveTextContent('9101');
+    expect(screen.getByLabelText('Indicadores comerciais')).toHaveTextContent('Valor em aberto');
+    expect(screen.getByRole('button', { name: 'Aplicar' })).toBeDisabled();
+    expect(screen.queryByLabelText('Carregando cotacoes abertas')).not.toBeInTheDocument();
+  });
+
+  it('keeps resolved quotes and reports a refresh error locally', async () => {
+    const refetch = vi.fn();
+    let queryState = {
+      data: openRows as CotacaoComercial[] | undefined,
+      isLoading: false,
+      isFetching: false,
+      isError: false,
+      error: null as Error | null,
+      refetch,
+    };
+    vi.mocked(useCotacoesAbertas).mockImplementation(() => queryState as never);
+
+    const view = await renderCotacoesAbertasPage();
+    queryState = { ...queryState, data: undefined, isError: true, error: new Error('ERP indisponivel') };
+    const { default: Page } = await import('./CotacoesAbertasPage');
+    view.rerender(<Page />);
+
+    expect(screen.getByRole('table')).toHaveTextContent('9101');
+    expect(screen.getByLabelText('Indicadores comerciais')).toHaveTextContent('Valor em aberto');
+    expect(screen.getByRole('alert')).toHaveTextContent('ERP indisponivel');
+    expect(screen.queryByRole('heading', { name: 'Erro ao carregar cotacoes abertas' })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Tentar novamente' }));
+    expect(refetch).toHaveBeenCalledTimes(1);
+  });
+
   it('surfaces endpoint failures with a retry instead of rendering the empty success state', async () => {
     const refetch = vi.fn();
     mockOpenQuotesQuery({ data: [], isError: true, error: new Error('ERP indisponivel'), refetch });
@@ -819,6 +878,78 @@ describe('lost sales page', () => {
     expect(screen.getByRole('button', { name: 'Aplicar' })).toBeDisabled();
     expect(screen.getByRole('button', { name: /exportar/i })).toBeEnabled();
     expect(screen.queryByLabelText('Carregando vendas perdidas')).not.toBeInTheDocument();
+  });
+
+  it('keeps the resolved lost-sales view while changed criteria fetch a new query key', async () => {
+    const refetch = vi.fn();
+    vi.mocked(useVendasPerdidas).mockImplementation((consulta) => consulta?.dataIni === '2026-08-10'
+      ? {
+        data: [],
+        isLoading: true,
+        isFetching: true,
+        isError: false,
+        error: null,
+        refetch,
+      } as never
+      : {
+        data: lostRows,
+        isLoading: false,
+        isFetching: false,
+        isError: false,
+        error: null,
+        refetch,
+      } as never);
+
+    await renderVendasPerdidasPage();
+    fireEvent.click(screen.getByRole('button', { name: 'Aplicar' }));
+    expect(refetch).not.toHaveBeenCalled();
+
+    fireEvent.change(screen.getByLabelText('Data inicial'), { target: { value: '2026-08-10' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Aplicar' }));
+
+    expect(vi.mocked(useVendasPerdidas)).toHaveBeenLastCalledWith(expect.objectContaining({ dataIni: '2026-08-10' }));
+    expect(screen.getByRole('table')).toHaveTextContent('9201');
+    expect(screen.getByLabelText('Indicadores comerciais')).toHaveTextContent('Preço');
+    expect(screen.getByRole('button', { name: 'Aplicar' })).toBeDisabled();
+    expect(screen.queryByLabelText('Carregando vendas perdidas')).not.toBeInTheDocument();
+  });
+
+  it('keeps resolved lost sales and reasons when refreshes fail', async () => {
+    const refetchErp = vi.fn();
+    const refetchReasons = vi.fn();
+    let erpState = {
+      data: lostRows as CotacaoComercial[] | undefined,
+      isLoading: false,
+      isFetching: false,
+      isError: false,
+      error: null as Error | null,
+      refetch: refetchErp,
+    };
+    let reasonsState = {
+      data: lostReasons as MotivoPerdaRegistro[] | undefined,
+      isLoading: false,
+      isFetching: false,
+      isError: false,
+      error: null as Error | null,
+      refetch: refetchReasons,
+    };
+    vi.mocked(useVendasPerdidas).mockImplementation(() => erpState as never);
+    vi.mocked(useMotivosPerda10041).mockImplementation(() => reasonsState as never);
+
+    const view = await renderVendasPerdidasPage();
+    erpState = { ...erpState, data: undefined, isError: true, error: new Error('ERP indisponivel') };
+    reasonsState = { ...reasonsState, isError: true, error: new Error('Supabase indisponível.') };
+    const { default: Page } = await import('./VendasPerdidasPage');
+    view.rerender(<Page />);
+
+    expect(screen.getByRole('table')).toHaveTextContent('9201');
+    expect(within(screen.getByRole('table')).getByText('Preço')).toBeInTheDocument();
+    expect(screen.getByLabelText('Indicadores comerciais')).toHaveTextContent('Preço');
+    expect(screen.getByRole('alert')).toHaveTextContent('ERP indisponivel');
+    expect(screen.queryByRole('heading', { name: 'Erro ao carregar vendas perdidas' })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Tentar novamente' }));
+    expect(refetchErp).toHaveBeenCalledTimes(1);
+    expect(refetchReasons).toHaveBeenCalledTimes(1);
   });
 
   it('shows current-month defaults without querying until Apply and Clear restores pre-search', async () => {

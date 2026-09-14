@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react';
-import { Download } from 'lucide-react';
+import { useMemo, useRef, useState } from 'react';
+import { CircleAlert, Download, RefreshCw } from 'lucide-react';
 import { EmptyState } from '@/components/common/EmptyState';
 import { ErrorState } from '@/components/common/ErrorState';
 import { CotacaoDetailDrawer } from '@/components/comercial/cotacoes/CotacaoDetailDrawer';
@@ -93,6 +93,7 @@ export default function CotacoesAbertasPage() {
   const [pendingFilters, setPendingFilters] = useState<CotacoesFiltros>(createEmptyFilters);
   const [appliedFilters, setAppliedFilters] = useState<CotacoesFiltros>(createEmptyFilters);
   const [selectedQuote, setSelectedQuote] = useState<CotacaoComercial | null>(null);
+  const resolvedRowsRef = useRef<readonly CotacaoComercial[] | null>(null);
 
   const consulta = useMemo(() => appliedPeriod ? ({
     dataIni: appliedPeriod.dataIni,
@@ -101,9 +102,14 @@ export default function CotacoesAbertasPage() {
     codCliente: queryFilterValue(appliedFilters.clientes),
   }) : null, [appliedFilters.clientes, appliedFilters.vendedores, appliedPeriod]);
   const { data, isLoading, isFetching, isError, error, refetch } = useCotacoesAbertas(consulta);
-  const showInitialLoading = isLoading && data === undefined;
-  const isRefreshing = isFetching && data !== undefined;
-  const rows = consulta ? data ?? emptyRows : emptyRows;
+  const resolvedData = !isLoading && !isError ? data : undefined;
+  if (consulta && resolvedData !== undefined) resolvedRowsRef.current = resolvedData;
+  const hasResolvedRows = resolvedRowsRef.current !== null;
+  const showInitialLoading = consulta !== null && isLoading && !hasResolvedRows;
+  const isRefreshing = consulta !== null && (isLoading || isFetching) && hasResolvedRows;
+  const showBlockingError = consulta !== null && isError && !hasResolvedRows;
+  const showRefreshError = consulta !== null && isError && hasResolvedRows;
+  const rows = consulta ? resolvedData ?? resolvedRowsRef.current ?? emptyRows : emptyRows;
 
   const vendedores = useMemo(() => getFilterOptions(rows, 'vendedor'), [rows]);
   const clientes = useMemo(() => getFilterOptions(rows, 'cliente'), [rows]);
@@ -137,6 +143,7 @@ export default function CotacoesAbertasPage() {
     setAppliedPeriod(null);
     setPendingFilters(filters);
     setAppliedFilters(filters);
+    resolvedRowsRef.current = null;
   };
 
   const exportCurrentRows = () => {
@@ -154,7 +161,7 @@ export default function CotacoesAbertasPage() {
       <ComercialCommandBar
         title="Cotacoes abertas"
         actions={(
-          <Button type="button" variant="outline" size="sm" onClick={exportCurrentRows} disabled={!consulta || showInitialLoading || isError || filteredRows.length === 0}>
+          <Button type="button" variant="outline" size="sm" onClick={exportCurrentRows} disabled={!consulta || showInitialLoading || showBlockingError || filteredRows.length === 0}>
           <Download aria-hidden="true" className="h-4 w-4" />
           Exportar Excel
           </Button>
@@ -196,7 +203,18 @@ export default function CotacoesAbertasPage() {
         isApplying={showInitialLoading || isRefreshing}
       />
 
-      {consulta && !showInitialLoading && !isError && (
+      {showRefreshError && (
+        <div role="alert" className="flex items-center gap-3 border border-destructive/35 bg-destructive/5 px-3 py-2 text-sm text-destructive">
+          <CircleAlert aria-hidden="true" className="h-4 w-4 shrink-0" />
+          <span className="min-w-0 flex-1">Não foi possível atualizar as cotações. {error instanceof Error ? error.message : 'Tente novamente.'}</span>
+          <Button type="button" variant="ghost" size="sm" className="h-8 shrink-0 gap-2 text-destructive hover:text-destructive" onClick={() => void refetch()}>
+            <RefreshCw aria-hidden="true" className="h-3.5 w-3.5" />
+            Tentar novamente
+          </Button>
+        </div>
+      )}
+
+      {consulta && !showInitialLoading && !showBlockingError && (
         <>
           <CotacoesKpis mode="abertas" kpis={kpis} />
           <CotacoesGestorPanel mode="abertas" rows={filteredRows} motivos={emptyMotivos} onSelectCotacao={setSelectedQuote} />
@@ -210,7 +228,7 @@ export default function CotacoesAbertasPage() {
             message="Aplique os filtros para consultar as cotacoes abertas."
             className="min-h-72 border border-border px-4"
           />
-        ) : isError ? (
+        ) : showBlockingError ? (
           <ErrorState
             title={(error as { kind?: string } | null)?.kind === 'configuration'
               ? 'Configuracao da integracao necessaria'

@@ -80,7 +80,7 @@ export function ComissaoVendedorFilter({ vendedores, selecionados, onChange }: P
             <ChevronDown className="h-4 w-4 opacity-50 shrink-0" />
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-[300px] p-2 bg-popover z-50" align="start">
+        <PopoverContent className="commercial-overlay w-[300px] p-2 bg-popover z-50" align="start">
           <div className="grid grid-cols-3 gap-1 p-0.5 mb-2 rounded-md bg-muted/50">
             {([
               ['todos', 'Todos', undefined],

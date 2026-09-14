@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { AlertCircle, LoaderCircle, RefreshCw, Search, SlidersHorizontal, X } from 'lucide-react';
 import { formatCurrency } from '@/utils/formatters';
-import { useComissaoVendedores, type ComissaoFiltros } from '@/hooks/useComissaoVendedores';
+import { useComissaoVendedores, type ComissaoFiltros, type ComissaoLinha } from '@/hooks/useComissaoVendedores';
 import { useFilialSelecionada } from '@/contexts/FilialSelecionadaContext';
 import { ComissaoVendedorFilter } from '@/components/comercial/ComissaoVendedorFilter';
 import {
@@ -44,6 +44,7 @@ export default function ComissaoPage() {
   const [operacaoFiscalFinal, setOperacaoFiscalFinal] = useState('62');
 
   const [aplicado, setAplicado] = useState<ComissaoFiltros | null>(null);
+  const resolvedLinesRef = useRef<ComissaoLinha[] | undefined>(undefined);
 
   const anos = useMemo(() => {
     const atual = hoje.getFullYear();
@@ -65,9 +66,12 @@ export default function ComissaoPage() {
   };
 
   const { data, isLoading, isFetching, error, refetch } = useComissaoVendedores(aplicado);
-  const showInitialLoading = isLoading && data === undefined;
-  const isRefreshing = isFetching && data !== undefined;
-  const todasLinhas = useMemo(() => data ?? [], [data]);
+  if (aplicado && !isLoading && !error && data !== undefined) resolvedLinesRef.current = data;
+  const hasResolvedLines = resolvedLinesRef.current !== undefined;
+  const showInitialLoading = aplicado !== null && isLoading && !hasResolvedLines;
+  const isRefreshing = aplicado !== null && (isLoading || isFetching) && hasResolvedLines;
+  const visibleData = data ?? resolvedLinesRef.current;
+  const todasLinhas = useMemo(() => visibleData ?? [], [visibleData]);
 
   const opcoesVendedores = useMemo(() => {
     const map = new Map<string, string>();
@@ -178,7 +182,7 @@ export default function ComissaoPage() {
               <Label className="sr-only" htmlFor="comissao-ano">Ano</Label>
               <Select value={String(ano)} onValueChange={(v) => setAno(Number(v))}>
                 <SelectTrigger id="comissao-ano" aria-label="Ano" className="bg-background"><SelectValue /></SelectTrigger>
-                <SelectContent className="z-50 bg-popover">
+                <SelectContent className="commercial-overlay z-50 bg-popover">
                   {anos.map((a) => <SelectItem key={a} value={String(a)}>{a}</SelectItem>)}
                 </SelectContent>
               </Select>
@@ -187,7 +191,7 @@ export default function ComissaoPage() {
               <Label className="sr-only" htmlFor="comissao-mes">Mês</Label>
               <Select value={String(mes)} onValueChange={(v) => setMes(Number(v))}>
                 <SelectTrigger id="comissao-mes" aria-label="Mês" className="bg-background"><SelectValue /></SelectTrigger>
-                <SelectContent className="z-50 bg-popover">
+                <SelectContent className="commercial-overlay z-50 bg-popover">
                   {MESES.map((m, i) => <SelectItem key={m} value={String(i + 1)}>{m}</SelectItem>)}
                 </SelectContent>
               </Select>
@@ -267,7 +271,7 @@ export default function ComissaoPage() {
         </div>
       )}
 
-      {aplicado && !showInitialLoading && !error && <ComercialMetricStrip metrics={metricas} />}
+      {aplicado && !showInitialLoading && hasResolvedLines && <ComercialMetricStrip metrics={metricas} />}
 
       {error && (
         <div role="alert" className="comissao-error flex items-center gap-3 border border-destructive/35 bg-destructive/5 px-3 py-2 text-sm text-destructive">

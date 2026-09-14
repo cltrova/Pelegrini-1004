@@ -63,7 +63,7 @@ function MotivoAction({
             <Icon aria-hidden="true" className="h-4 w-4" />
           </Button>
         </TooltipTrigger>
-        <TooltipContent>{label}</TooltipContent>
+        <TooltipContent className="commercial-overlay">{label}</TooltipContent>
       </Tooltip>
     </TooltipProvider>
   );
@@ -86,7 +86,7 @@ function DetailAction({
             <Eye aria-hidden="true" className="h-4 w-4" />
           </Button>
         </TooltipTrigger>
-        <TooltipContent>Ver detalhes da cotação</TooltipContent>
+        <TooltipContent className="commercial-overlay">Ver detalhes da cotação</TooltipContent>
       </Tooltip>
     </TooltipProvider>
   );

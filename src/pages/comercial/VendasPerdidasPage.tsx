@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react';
-import { Download } from 'lucide-react';
+import { useMemo, useRef, useState } from 'react';
+import { CircleAlert, Download, RefreshCw } from 'lucide-react';
 import { EmptyState } from '@/components/common/EmptyState';
 import { ErrorState } from '@/components/common/ErrorState';
 import { CotacaoDetailDrawer } from '@/components/comercial/cotacoes/CotacaoDetailDrawer';
@@ -37,7 +37,6 @@ interface PeriodoCotacoes {
 
 const emptyRows: readonly CotacaoComercial[] = [];
 const emptyReasons: readonly MotivoPerdaRegistro[] = [];
-const emptyReasonsMap = new Map<string, MotivoPerdaRegistro>();
 
 const motivoOptions: readonly CotacoesFilterOption<MotivoPerda>[] = ([
   'preco',
@@ -114,6 +113,8 @@ export default function VendasPerdidasPage() {
   const [appliedFilters, setAppliedFilters] = useState<CotacoesFiltros>(createEmptyFilters);
   const [selectedQuote, setSelectedQuote] = useState<CotacaoComercial | null>(null);
   const [detailQuote, setDetailQuote] = useState<CotacaoComercial | null>(null);
+  const resolvedRowsRef = useRef<readonly CotacaoComercial[] | null>(null);
+  const resolvedReasonsRef = useRef<readonly MotivoPerdaRegistro[] | null>(null);
 
   const consulta = useMemo(() => appliedPeriod ? ({
     dataIni: appliedPeriod.dataIni,
@@ -123,21 +124,34 @@ export default function VendasPerdidasPage() {
   }) : null, [appliedFilters.clientes, appliedFilters.vendedores, appliedPeriod]);
 
   const erpQuery = useVendasPerdidas(consulta);
-  const rows = consulta ? erpQuery.data ?? emptyRows : emptyRows;
-  const quoteIds = useMemo(() => rows.map((row) => canonicalQuoteId(row.idCotacao)), [rows]);
-  const reasonsQuery = useMotivosPerda10041(quoteIds);
-  const reasonRows = reasonsQuery.data ?? emptyReasons;
+  const candidateRows = consulta && !erpQuery.isLoading && !erpQuery.isError
+    ? erpQuery.data ?? emptyRows
+    : null;
+  const rowsForReasons = candidateRows ?? resolvedRowsRef.current ?? emptyRows;
+  const queryQuoteIds = useMemo(() => rowsForReasons.map((row) => canonicalQuoteId(row.idCotacao)), [rowsForReasons]);
+  const reasonsQuery = useMotivosPerda10041(queryQuoteIds);
+  const candidateReasons = candidateRows?.length === 0
+    ? emptyReasons
+    : !reasonsQuery.isLoading && !reasonsQuery.isError && reasonsQuery.data !== undefined
+      ? reasonsQuery.data
+      : null;
+  if (candidateRows !== null && candidateReasons !== null) {
+    resolvedRowsRef.current = candidateRows;
+    resolvedReasonsRef.current = candidateReasons;
+  }
+  const hasResolvedView = resolvedRowsRef.current !== null && resolvedReasonsRef.current !== null;
+  const rows = consulta ? resolvedRowsRef.current ?? emptyRows : emptyRows;
+  const reasonRows = consulta ? resolvedReasonsRef.current ?? emptyReasons : emptyReasons;
 
   const reasons = useMemo(() => {
-    if (reasonsQuery.isError) return emptyReasonsMap;
-    const currentQuoteIds = new Set(quoteIds);
+    const currentQuoteIds = new Set(rows.map((row) => canonicalQuoteId(row.idCotacao)));
     const joinedReasons = new Map<string, MotivoPerdaRegistro>();
     reasonRows.forEach((reason) => {
       const id = canonicalQuoteId(reason.id_cotacao);
       if (currentQuoteIds.has(id)) joinedReasons.set(id, reason);
     });
     return joinedReasons;
-  }, [quoteIds, reasonRows, reasonsQuery.isError]);
+  }, [reasonRows, rows]);
 
   const vendedores = useMemo(() => getFilterOptions(rows, 'vendedor'), [rows]);
   const clientes = useMemo(() => getFilterOptions(rows, 'cliente'), [rows]);
@@ -166,6 +180,8 @@ export default function VendasPerdidasPage() {
     setAppliedPeriod(null);
     setPendingFilters(filters);
     setAppliedFilters(filters);
+    resolvedRowsRef.current = null;
+    resolvedReasonsRef.current = null;
   };
 
   const retryQueries = () => {
@@ -185,10 +201,15 @@ export default function VendasPerdidasPage() {
   };
 
   const hasError = erpQuery.isError || reasonsQuery.isError;
-  const showInitialLoading = (erpQuery.isLoading && erpQuery.data === undefined)
-    || (rows.length > 0 && reasonsQuery.isLoading && reasonsQuery.data === undefined);
-  const isRefreshing = (erpQuery.isFetching && erpQuery.data !== undefined)
-    || (reasonsQuery.isFetching && reasonsQuery.data !== undefined);
+  const showBlockingError = consulta !== null && hasError && !hasResolvedView;
+  const showRefreshError = consulta !== null && hasError && hasResolvedView;
+  const showInitialLoading = consulta !== null && !hasResolvedView && (erpQuery.isLoading || reasonsQuery.isLoading);
+  const isRefreshing = consulta !== null && hasResolvedView && (
+    erpQuery.isLoading
+    || erpQuery.isFetching
+    || reasonsQuery.isLoading
+    || reasonsQuery.isFetching
+  );
   const error = erpQuery.isError ? erpQuery.error : reasonsQuery.error;
   const errorTitle = erpQuery.isError
     ? (erpQuery.error as { kind?: string } | null)?.kind === 'configuration'
@@ -201,7 +222,7 @@ export default function VendasPerdidasPage() {
       <ComercialCommandBar
         title="Vendas perdidas"
         actions={(
-          <Button type="button" variant="outline" size="sm" onClick={exportCurrentRows} disabled={!consulta || showInitialLoading || hasError || filteredRows.length === 0}>
+          <Button type="button" variant="outline" size="sm" onClick={exportCurrentRows} disabled={!consulta || showInitialLoading || showBlockingError || filteredRows.length === 0}>
             <Download aria-hidden="true" className="h-4 w-4" />
             Exportar Excel
           </Button>
@@ -243,7 +264,18 @@ export default function VendasPerdidasPage() {
         isApplying={showInitialLoading || isRefreshing}
       />
 
-      {consulta && !showInitialLoading && !hasError && (
+      {showRefreshError && (
+        <div role="alert" className="flex items-center gap-3 border border-destructive/35 bg-destructive/5 px-3 py-2 text-sm text-destructive">
+          <CircleAlert aria-hidden="true" className="h-4 w-4 shrink-0" />
+          <span className="min-w-0 flex-1">Não foi possível atualizar as vendas perdidas. {error instanceof Error ? error.message : 'Tente novamente.'}</span>
+          <Button type="button" variant="ghost" size="sm" className="h-8 shrink-0 gap-2 text-destructive hover:text-destructive" onClick={retryQueries}>
+            <RefreshCw aria-hidden="true" className="h-3.5 w-3.5" />
+            Tentar novamente
+          </Button>
+        </div>
+      )}
+
+      {consulta && !showInitialLoading && !showBlockingError && (
         <>
           <CotacoesKpis mode="perdidas" kpis={kpis} />
           <CotacoesGestorPanel mode="perdidas" rows={filteredRows} motivos={filteredReasons} onSelectCotacao={setDetailQuote} />
@@ -257,7 +289,7 @@ export default function VendasPerdidasPage() {
             message="Aplique os filtros para consultar as vendas perdidas."
             className="min-h-72 border border-border px-4"
           />
-        ) : hasError ? (
+        ) : showBlockingError ? (
           <ErrorState
             title={errorTitle}
             message={error instanceof Error ? error.message : 'Não foi possível carregar as vendas perdidas.'}
