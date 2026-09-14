@@ -7,6 +7,7 @@ import ProdutosPage from './ProdutosPage';
 
 vi.stubGlobal('requestAnimationFrame', () => 1);
 vi.stubGlobal('cancelAnimationFrame', () => undefined);
+vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('Network disabled in focused UI tests')));
 
 vi.mock('@/hooks/useComercialData', () => ({
   useComercialData: vi.fn(),
@@ -92,7 +93,10 @@ const resumoVendas = [
   },
 ];
 
-function mockData(hasSource = true) {
+function mockData(
+  hasSource = true,
+  overrides: Partial<ReturnType<typeof useComercialProdutos>> = {},
+) {
   vi.mocked(useComercialData).mockReturnValue({
     periodoDisponivel: null,
     vendedoresDisponiveis: [],
@@ -107,6 +111,9 @@ function mockData(hasSource = true) {
     resumoVendas,
     hasSource,
     isLoading: false,
+    isFetching: false,
+    error: null,
+    ...overrides,
   } as ReturnType<typeof useComercialProdutos>);
 }
 
@@ -128,7 +135,9 @@ describe('ProdutosPage compacta', () => {
     renderPage();
 
     expect(screen.getAllByRole('main')).toHaveLength(1);
-    expect(screen.getByRole('main', { name: 'Modulo comercial' }).querySelector('.comercial-compact-page')).toHaveProperty('tagName', 'DIV');
+    const page = screen.getByRole('main', { name: 'Modulo comercial' }).querySelector('.comercial-compact-page');
+    expect(page).toHaveProperty('tagName', 'DIV');
+    expect(page).toHaveClass('commercial-products');
     expect(screen.getByRole('heading', { name: 'Produtos' })).toBeInTheDocument();
     expect(screen.getByRole('searchbox', { name: 'Buscar produtos' })).toBeVisible();
     expect(screen.getByLabelText('Indicadores de produtos')).toHaveAttribute('data-density', 'compact');
@@ -228,9 +237,92 @@ describe('ProdutosPage compacta', () => {
     expect(screen.getByText('Carregando produtos...')).toBeInTheDocument();
   });
 
+  it('preserva os dados durante refetch e distingue erro de vazio', () => {
+    mockData(true, { isFetching: true });
+    const refetch = renderPage();
+
+    expect(screen.getByRole('status', { name: 'Atualizando produtos' })).toBeInTheDocument();
+    expect(screen.getByLabelText('Indicadores de produtos')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Selecionar EATON' })).toBeInTheDocument();
+
+    refetch.unmount();
+    mockData(true, {
+      topProdutos: [], porMarca: [], porCategoria: [], produtosSemGiro: [], resumoVendas: [],
+      error: new Error('Falha na consulta'),
+    });
+    const failed = renderPage();
+
+    expect(screen.getByText('Erro ao carregar produtos')).toBeInTheDocument();
+    expect(screen.queryByText('Nenhum produto encontrado no período.')).not.toBeInTheDocument();
+
+    failed.unmount();
+    mockData(true, {
+      topProdutos: [], porMarca: [], porCategoria: [], produtosSemGiro: [], resumoVendas: [],
+    });
+    renderPage();
+
+    expect(screen.getByText('Nenhum produto encontrado no período.')).toBeInTheDocument();
+    expect(screen.queryByText('Erro ao carregar produtos')).not.toBeInTheDocument();
+  });
+
+  it('marca o ranking e os drawers portados com os contratos comerciais', async () => {
+    renderPage();
+    fireEvent.mouseDown(screen.getByRole('tab', { name: 'Top Produtos' }), { button: 0, ctrlKey: false });
+    expect(screen.getByRole('region', { name: 'Ranking de produtos' })).toHaveClass(
+      'commercial-data-viewport',
+      'commercial-table-frame',
+    );
+
+    const { PremiumTopProdutos } = await vi.importActual<typeof import('@/components/comercial/PremiumTopProdutos')>(
+      '@/components/comercial/PremiumTopProdutos',
+    );
+    const productView = render(
+      <PremiumTopProdutos
+        produtos={[{ ...topProdutos[0], custo: 60_000, lucro: 20_000, margem: 25 }]}
+        resumoVendas={resumoVendas}
+        selectedMarca={null}
+        onSelectMarca={vi.fn()}
+        showInsights={false}
+      />,
+    );
+    fireEvent.click(screen.getAllByRole('button', { name: /Cambio completo/ })[0]);
+    expect(screen.getByRole('dialog')).toHaveClass('commercial-overlay', 'commercial-detail-panel');
+    productView.unmount();
+
+    const { PremiumCategoriasView } = await vi.importActual<typeof import('@/components/comercial/PremiumCategoriasView')>(
+      '@/components/comercial/PremiumCategoriasView',
+    );
+    const categoryView = render(
+      <PremiumCategoriasView
+        porCategoria={[{
+          chave: 'Transmissao', categoria: 'Transmissao', faturamento: 100_000,
+          quantidade: 10, produtos: 2, participacao: 100,
+        }]}
+        selectedCategoria={null}
+        onSelectCategoria={vi.fn()}
+        showInsights={false}
+      />,
+    );
+    fireEvent.click(screen.getByText('Ver'));
+    expect(screen.getByRole('dialog')).toHaveClass('commercial-overlay', 'commercial-detail-panel');
+    categoryView.unmount();
+
+    const { ClienteDetalheDrilldown } = await import('@/components/comercial/ClienteDetalheDrilldown');
+    mockData(true, { produtos: [] });
+    render(
+      <ClienteDetalheDrilldown
+        open
+        onOpenChange={vi.fn()}
+        cliente={{ codigo: '101', nome: 'Oficina Central' }}
+        periodo={{ inicio: '2026-09-01', fim: '2026-09-11' }}
+      />,
+    );
+    expect(screen.getByRole('dialog')).toHaveClass('commercial-overlay', 'commercial-detail-panel');
+  });
+
   it('mostra estados vazios nas tabelas de Sem Giro e Resumo NF', () => {
     vi.mocked(useComercialProdutos).mockReturnValue({
-      topProdutos: [], porMarca: [], porCategoria: [], produtosSemGiro: [], resumoVendas: [],
+      topProdutos: [], porMarca, porCategoria: [], produtosSemGiro: [], resumoVendas: [],
       hasSource: true, isLoading: false,
     } as ReturnType<typeof useComercialProdutos>);
 

@@ -219,7 +219,7 @@ export function PremiumCategoriasView({
   const totalCategoriasGeral = porCategoria.length;
 
   return (
-    <div className={embedded ? 'h-full min-h-0 space-y-2' : 'space-y-4'}>
+    <div className={embedded ? 'h-full min-h-0 min-w-0 max-w-full space-y-2' : 'min-w-0 max-w-full space-y-4'}>
       {/* HEADER + AÇÕES */}
       {!embedded && (
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
@@ -339,7 +339,7 @@ export function PremiumCategoriasView({
       )}
 
       {/* RANKING PREMIUM */}
-      <Card className={cn('overflow-hidden shadow-none', !embedded && 'premium-card')}>
+      <Card className={cn('commercial-table-frame overflow-hidden shadow-none', !embedded && 'premium-card')}>
         <CardContent className="p-0">
           {!embedded && <div className="px-4 py-2.5 border-b border-border/60 flex items-center justify-between bg-muted/20">
             <div className="flex items-center gap-2">
@@ -441,7 +441,7 @@ export function PremiumCategoriasView({
 
       {/* DRAWER DETALHE */}
       <Sheet open={!!drawerCat} onOpenChange={(o) => !o && setDrawerCat(null)}>
-        <SheetContent className="w-full sm:max-w-md overflow-y-auto">
+        <SheetContent className="commercial-overlay commercial-detail-panel w-full overflow-y-auto sm:max-w-md">
           {drawerCat && (
             <>
               <SheetHeader className="space-y-1">

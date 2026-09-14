@@ -2,6 +2,7 @@ import { useMemo, useState, useCallback, useEffect } from 'react';
 import { useComercialProdutos } from '@/hooks/useComercialProdutos';
 import { formatCurrency, formatCurrencyCompact, formatNumber } from '@/utils/formatters';
 import { LoadingState } from '@/components/common/LoadingState';
+import { ErrorState } from '@/components/common/ErrorState';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AlertTriangle } from 'lucide-react';
@@ -41,11 +42,26 @@ export default function ProdutosPage() {
   // Filtro cruzado por categoria
   const [selectedCategoria, setSelectedCategoria] = useState<string | null>(null);
 
-  const { periodoDisponivel, isLoading: loadingBase, vendedoresDisponiveis } = useComercialData(appliedFilters);
+  const {
+    periodoDisponivel,
+    isLoading: loadingBase,
+    vendedoresDisponiveis,
+    error: baseError,
+  } = useComercialData(appliedFilters);
   const {
     topProdutos, porMarca, porCategoria, produtosSemGiro, resumoVendas,
-    hasSource, isLoading,
+    hasSource, isLoading, isFetching, error: productsError,
   } = useComercialProdutos(appliedFilters);
+
+  const hasProductData = topProdutos.length > 0
+    || porMarca.length > 0
+    || porCategoria.length > 0
+    || produtosSemGiro.length > 0
+    || resumoVendas.length > 0;
+  const isInitialLoading = (isLoading || loadingBase) && !hasProductData;
+  const isRefreshing = (isFetching || isLoading || loadingBase) && hasProductData;
+  const blockingError = (productsError || baseError) && !hasProductData;
+  const pageClassName = 'commercial-products h-[calc(100dvh-9.5rem)] max-h-[calc(100dvh-9.5rem)] overflow-hidden overflow-x-hidden px-3 pb-3 pt-2 sm:px-4 md:h-full md:max-h-full';
 
   useEffect(() => {
     if (!initialized && !loadingBase) {
@@ -117,7 +133,7 @@ export default function ProdutosPage() {
     return (
       <ComercialCompactPage
         as="div"
-        className="h-[calc(100dvh-9.5rem)] max-h-[calc(100dvh-9.5rem)] px-3 pb-3 pt-2 sm:px-4 md:h-full md:max-h-full"
+        className={pageClassName}
       >
         <ComercialCommandBar title="Produtos" context="Fonte indisponível" />
         <section className="flex min-h-0 flex-1 items-center justify-center border border-warning/30 bg-warning/5 p-6 text-center">
@@ -133,15 +149,17 @@ export default function ProdutosPage() {
     );
   }
 
-  if (isLoading || loadingBase) {
+  if (isInitialLoading || blockingError) {
     return (
       <ComercialCompactPage
         as="div"
-        className="h-[calc(100dvh-9.5rem)] max-h-[calc(100dvh-9.5rem)] px-3 pb-3 pt-2 sm:px-4 md:h-full md:max-h-full"
+        className={pageClassName}
       >
-        <ComercialCommandBar title="Produtos" context="Atualizando dados" />
-        <section className="flex min-h-0 flex-1 items-center justify-center" aria-label="Carregando produtos">
-          <LoadingState message="Carregando produtos..." />
+        <ComercialCommandBar title="Produtos" context={isInitialLoading ? 'Carregando dados' : 'Falha na consulta'} />
+        <section className="commercial-detail-panel flex min-h-0 flex-1 items-center justify-center" aria-label="Carregando produtos">
+          {isInitialLoading
+            ? <LoadingState message="Carregando produtos..." />
+            : <ErrorState message="Erro ao carregar produtos" />}
         </section>
       </ComercialCompactPage>
     );
@@ -150,15 +168,24 @@ export default function ProdutosPage() {
   return (
     <ComercialCompactPage
       as="div"
-      className="h-[calc(100dvh-9.5rem)] max-h-[calc(100dvh-9.5rem)] px-3 pb-3 pt-2 sm:px-4 md:h-full md:max-h-full"
+      className={pageClassName}
     >
       <ComercialCommandBar
         title="Produtos"
-        context={selectedMarca ? (
-          <button type="button" className="font-semibold text-primary hover:underline" onClick={() => setSelectedMarca(null)}>
-            {selectedMarca} - limpar filtro
-          </button>
-        ) : `${formatNumber(totalSkusGeral, 0)} SKUs no período`}
+        context={(
+          <span className="flex min-w-0 items-center gap-2">
+            {selectedMarca ? (
+              <button type="button" className="font-semibold text-primary hover:underline" onClick={() => setSelectedMarca(null)}>
+                {selectedMarca} - limpar filtro
+              </button>
+            ) : `${formatNumber(totalSkusGeral, 0)} SKUs no período`}
+            {isRefreshing && (
+              <span role="status" aria-label="Atualizando produtos" className="commercial-refresh-indicator border border-border px-1.5 py-0.5 text-[10px]">
+                Atualizando
+              </span>
+            )}
+          </span>
+        )}
         actions={
           <EnterpriseSearchFilter
             label="Buscar produtos"
@@ -212,7 +239,11 @@ export default function ProdutosPage() {
         ]}
       />
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="flex min-h-0 flex-1 flex-col gap-2 overflow-hidden">
+      {!hasProductData ? (
+        <ComercialDataViewport ariaLabel="Estado dos produtos" className="commercial-detail-panel flex flex-1 items-center justify-center">
+          <p className="p-8 text-center text-sm text-muted-foreground">Nenhum produto encontrado no período.</p>
+        </ComercialDataViewport>
+      ) : <Tabs value={activeTab} onValueChange={setActiveTab} className="flex min-h-0 flex-1 flex-col gap-2 overflow-hidden">
         <TabsList className="h-9 w-fit max-w-full shrink-0 justify-start overflow-x-auto">
           <TabsTrigger value="marcas">Marcas</TabsTrigger>
           <TabsTrigger value="top">Top Produtos</TabsTrigger>
@@ -224,7 +255,7 @@ export default function ProdutosPage() {
         </TabsList>
 
         <TabsContent value="marcas" className="mt-0 flex h-full max-h-full min-h-0 flex-1 flex-col overflow-hidden data-[state=inactive]:hidden">
-          <ComercialDataViewport ariaLabel="Desempenho por marca" className="h-full max-h-full">
+          <ComercialDataViewport ariaLabel="Desempenho por marca" className="commercial-table-frame h-full max-h-full">
           {isLayoutPremium ? (
             <PremiumMarcasView
               porMarca={porMarca}
@@ -245,7 +276,7 @@ export default function ProdutosPage() {
         </TabsContent>
 
         <TabsContent value="top" className="mt-0 flex h-full max-h-full min-h-0 flex-1 flex-col overflow-hidden data-[state=inactive]:hidden">
-          <ComercialDataViewport ariaLabel="Ranking de produtos" className="h-full max-h-full">
+          <ComercialDataViewport ariaLabel="Ranking de produtos" className="commercial-table-frame h-full max-h-full">
           {isLayoutPremium ? (
             <PremiumTopProdutos
               produtos={topFiltrado}
@@ -266,7 +297,7 @@ export default function ProdutosPage() {
         </TabsContent>
 
         <TabsContent value="categoria" className="mt-0 flex h-full max-h-full min-h-0 flex-1 flex-col overflow-hidden data-[state=inactive]:hidden">
-          <ComercialDataViewport ariaLabel="Desempenho por categoria" className="h-full max-h-full">
+          <ComercialDataViewport ariaLabel="Desempenho por categoria" className="commercial-table-frame h-full max-h-full">
           {isLayoutPremium ? (
             <PremiumCategoriasView
               porCategoria={porCategoria}
@@ -287,7 +318,7 @@ export default function ProdutosPage() {
         </TabsContent>
 
         <TabsContent value="sem-giro" className="mt-0 flex h-full max-h-full min-h-0 flex-1 flex-col overflow-hidden data-[state=inactive]:hidden">
-          <ComercialDataViewport ariaLabel="Produtos sem giro" className="h-full max-h-full overflow-auto">
+          <ComercialDataViewport ariaLabel="Produtos sem giro" className="commercial-table-frame h-full max-h-full overflow-auto">
             <table aria-label="Produtos sem giro" className="w-full min-w-max border-collapse text-xs">
               <caption className="sr-only">Produtos sem giro no período</caption>
                     <thead className="sticky top-0 z-10 bg-muted">
@@ -332,7 +363,7 @@ export default function ProdutosPage() {
         </TabsContent>
 
         <TabsContent value="resumo" className="mt-0 flex h-full max-h-full min-h-0 flex-1 flex-col overflow-hidden data-[state=inactive]:hidden">
-          <ComercialDataViewport ariaLabel="Resumo de vendas por nota fiscal" className="h-full max-h-full overflow-auto">
+          <ComercialDataViewport ariaLabel="Resumo de vendas por nota fiscal" className="commercial-table-frame h-full max-h-full overflow-auto">
                 <table aria-label="Resumo de vendas por nota fiscal" className="w-full min-w-max border-collapse text-xs">
                   <caption className="sr-only">Resumo de vendas por nota fiscal</caption>
                   <thead className="sticky top-0 z-10 bg-muted">
@@ -376,7 +407,7 @@ export default function ProdutosPage() {
                 )}
           </ComercialDataViewport>
         </TabsContent>
-      </Tabs>
+      </Tabs>}
     </ComercialCompactPage>
   );
 }

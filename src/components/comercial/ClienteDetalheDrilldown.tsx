@@ -1,9 +1,10 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Search, Download, ArrowUpRight, ArrowDownRight, Minus, Package, ShoppingCart, TrendingUp, Calendar } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { formatCurrency } from '@/utils/formatters';
 import { useComercialProdutos } from '@/hooks/useComercialProdutos';
 import type { ComercialFilters } from '@/types/comercial';
@@ -53,10 +54,18 @@ function Trend({ value }: { value: number }) {
   );
 }
 
-function Kpi({ label, value, sub, icon: Icon, color }: any) {
+interface KpiProps {
+  label: string;
+  value: ReactNode;
+  sub?: ReactNode;
+  icon: LucideIcon;
+  color: string;
+}
+
+function Kpi({ label, value, sub, icon: Icon, color }: KpiProps) {
   return (
     <div
-      className="rounded-xl p-3 flex-1 min-w-[140px]"
+      className="commercial-detail-panel min-w-[140px] flex-1 p-3"
       style={{ background: C.card2, border: `1px solid ${C.border}` }}
     >
       <div className="flex items-center gap-2 mb-1">
@@ -183,12 +192,12 @@ export function ClienteDetalheDrilldown({ open, onOpenChange, cliente, periodo }
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="right"
-        className="w-full sm:max-w-[900px] p-0 border-0 overflow-hidden flex flex-col"
+        className="commercial-overlay commercial-detail-panel flex w-full flex-col overflow-hidden border-0 p-0 sm:max-w-[900px]"
         style={{ background: '#0B1220' }}
       >
         <SheetHeader
           className="px-6 py-4 border-b"
-          style={{ borderColor: C.border, background: `linear-gradient(140deg, ${C.card} 0%, ${C.card2} 100%)` }}
+          style={{ borderColor: C.border, background: C.card }}
         >
           <SheetTitle className="text-white">
             <div className="flex items-center gap-2 flex-wrap">

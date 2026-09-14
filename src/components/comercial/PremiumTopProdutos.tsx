@@ -244,7 +244,7 @@ export function PremiumTopProdutos({
   }, [produtoDetalhe, resumoVendas]);
 
   return (
-    <div className="space-y-4 animate-fade-in">
+    <div className="min-w-0 max-w-full space-y-4 animate-fade-in">
       {/* Insights estratégicos da IA — substitui totalizadores repetidos */}
       {showInsights && <>
       <div className="flex items-center justify-between gap-3">
@@ -297,7 +297,7 @@ export function PremiumTopProdutos({
 
 
       {/* Card principal premium */}
-      <Card className="border-border/60 overflow-hidden bg-card">
+      <Card className="commercial-table-frame border-border/60 overflow-hidden bg-card">
         <div className="relative p-5 border-b border-border/50 bg-card">
           <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:justify-between">
             <div className="flex items-center gap-3">
@@ -531,7 +531,7 @@ export function PremiumTopProdutos({
 
       {/* DRAWER LATERAL - detalhes do produto */}
       <Sheet open={!!produtoDetalhe} onOpenChange={(open) => !open && setProdutoDetalhe(null)}>
-        <SheetContent className="w-full sm:max-w-2xl overflow-y-auto">
+        <SheetContent className="commercial-overlay commercial-detail-panel w-full overflow-y-auto sm:max-w-2xl">
           {produtoDetalhe && (
             <>
               <SheetHeader className="pb-4 border-b border-border/50">

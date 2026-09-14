@@ -254,15 +254,21 @@ export default function ClientesPage() {
     return `${months[parseInt(month) - 1]}/${year.slice(2)}`;
   };
 
-  if (isLoading || error) {
+  const hasClientData = clientesPerformance.length > 0;
+  const isInitialLoading = isLoading && !hasClientData;
+  const isRefreshing = isLoading && hasClientData;
+  const blockingError = error && !hasClientData;
+  const pageClassName = 'clientes-page commercial-clients h-[calc(100dvh-9.5rem)] max-h-[calc(100dvh-9.5rem)] overflow-hidden overflow-x-hidden px-3 pb-3 pt-2 sm:px-4 md:h-full md:max-h-full';
+
+  if (isInitialLoading || blockingError) {
     return (
       <ComercialCompactPage
         as="div"
-        className="clientes-page h-[calc(100dvh-9.5rem)] max-h-[calc(100dvh-9.5rem)] px-3 pb-3 pt-2 sm:px-4 md:h-full md:max-h-full"
+        className={pageClassName}
       >
         <ComercialCommandBar title="Clientes" context="Carteira comercial" />
         <ComercialDataViewport ariaLabel="Estado da carteira de clientes" className="flex items-center justify-center">
-          {isLoading
+          {isInitialLoading
             ? <LoadingState message="Carregando clientes..." className="w-full max-w-md rounded-md shadow-none" size="sm" />
             : <ErrorState message="Erro ao carregar clientes" />}
         </ComercialDataViewport>
@@ -280,11 +286,20 @@ export default function ClientesPage() {
   return (
     <ComercialCompactPage
       as="div"
-      className="clientes-page h-[calc(100dvh-9.5rem)] max-h-[calc(100dvh-9.5rem)] px-3 pb-3 pt-2 sm:px-4 md:h-full md:max-h-full"
+      className={pageClassName}
     >
       <ComercialCommandBar
         title="Clientes"
-        context={`${clientesPerformance.length} clientes no período`}
+        context={(
+          <span className="flex min-w-0 items-center gap-2">
+            {clientesPerformance.length} clientes no período
+            {isRefreshing && (
+              <span role="status" aria-label="Atualizando clientes" className="commercial-refresh-indicator border border-border px-1.5 py-0.5 text-[10px]">
+                Atualizando
+              </span>
+            )}
+          </span>
+        )}
         actions={
           <EnterpriseSearchFilter
             label="Buscar clientes"
@@ -318,7 +333,11 @@ export default function ClientesPage() {
         ]}
       />
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="flex min-h-0 flex-1 flex-col gap-2 overflow-hidden">
+      {!hasClientData ? (
+        <ComercialDataViewport ariaLabel="Estado da carteira de clientes" className="commercial-detail-panel flex flex-1 items-center justify-center">
+          <p className="p-8 text-center text-sm text-muted-foreground">Nenhum cliente encontrado no período.</p>
+        </ComercialDataViewport>
+      ) : <Tabs value={activeTab} onValueChange={setActiveTab} className="flex min-h-0 flex-1 flex-col gap-2 overflow-hidden">
         <TabsList className="h-9 w-fit max-w-full shrink-0 justify-start overflow-x-auto">
           <TabsTrigger value="ranking">Ranking</TabsTrigger>
           <TabsTrigger value="evolucao">Evolução</TabsTrigger>
@@ -331,7 +350,7 @@ export default function ClientesPage() {
           <ComercialDataViewport
             key={rankingViewportKey}
             ariaLabel="Ranking completo de clientes"
-            className="h-full max-h-full"
+            className="commercial-table-frame h-full max-h-full"
           >
             <table aria-label="Ranking completo de clientes" className="w-full min-w-max border-collapse text-xs">
               <caption className="sr-only">Ranking completo de clientes</caption>
@@ -425,7 +444,7 @@ export default function ClientesPage() {
 
         {/* =================================================== EVOLUÇÃO */}
         <TabsContent value="evolucao" className="mt-0 flex h-full max-h-full min-h-0 flex-1 flex-col overflow-hidden data-[state=inactive]:hidden">
-          <ComercialDataViewport ariaLabel="Evolução dos clientes" className="h-full max-h-full space-y-3">
+          <ComercialDataViewport ariaLabel="Evolução dos clientes" className="commercial-chart-frame h-full max-h-full space-y-3">
           {evolucaoStats && (
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
               <EnterpriseMetricCard label="Último mês" value={formatCurrency(evolucaoStats.ultimo, true)} />
@@ -505,7 +524,7 @@ export default function ClientesPage() {
 
         {/* =================================================== CARTEIRA */}
         <TabsContent value="insights" className="mt-0 flex h-full max-h-full min-h-0 flex-1 flex-col overflow-hidden data-[state=inactive]:hidden">
-          <ComercialDataViewport ariaLabel="Alertas e oportunidades da carteira" className="h-full max-h-full space-y-3">
+          <ComercialDataViewport ariaLabel="Alertas e oportunidades da carteira" className="commercial-detail-panel h-full max-h-full space-y-3">
           {insightsIA.length > 0 && (
             <EnterpriseDataPanel
               title="Alertas e oportunidades"
@@ -598,7 +617,7 @@ export default function ClientesPage() {
 
         {/* =================================================== GEOGRÁFICO */}
         <TabsContent value="geografico" className="mt-0 flex h-full max-h-full min-h-0 flex-1 flex-col overflow-hidden data-[state=inactive]:hidden">
-          <ComercialDataViewport ariaLabel="Distribuição geográfica dos clientes" className="h-full max-h-full">
+          <ComercialDataViewport ariaLabel="Distribuição geográfica dos clientes" className="commercial-chart-frame h-full max-h-full">
           <EnterpriseDataPanel title="Top 10 Estados" density="compact">
             <div className="space-y-3">
               {distribuicaoPorUF.map((item, i) => {
@@ -638,7 +657,7 @@ export default function ClientesPage() {
           </EnterpriseDataPanel>
           </ComercialDataViewport>
         </TabsContent>
-      </Tabs>
+      </Tabs>}
 
       <style>{`
         @keyframes cliRise {

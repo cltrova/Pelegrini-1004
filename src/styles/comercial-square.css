@@ -5,11 +5,21 @@
   --commercial-motion-sidebar: 220ms;
 }
 
-[data-module-shell='comercial'] :where(.commercial-workspace, .commercial-toolbar, .commercial-metric-strip, .commercial-data-viewport, .commercial-dashboard, .commercial-tab-strip, .commercial-dashboard-panel, .commercial-chart-frame, .commercial-scenario-panel) {
+[data-module-shell='comercial'] :where(.commercial-workspace, .commercial-toolbar, .commercial-metric-strip, .commercial-data-viewport, .commercial-dashboard, .commercial-tab-strip, .commercial-dashboard-panel, .commercial-table-frame, .commercial-detail-panel, .commercial-chart-frame, .commercial-scenario-panel) {
   border-radius: var(--commercial-panel-radius);
   background-image: none;
   box-shadow: none;
   backdrop-filter: none;
+}
+
+[data-module-shell='comercial'] :where(.commercial-products, .commercial-clients) {
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+}
+
+[data-module-shell='comercial'] .commercial-data-viewport {
+  overscroll-behavior: contain;
 }
 
 [data-module-shell='comercial'] .commercial-insight-action {

@@ -119,7 +119,9 @@ describe('ClientesPage compacta', () => {
     renderClientesPage();
 
     expect(screen.getAllByRole('main')).toHaveLength(1);
-    expect(screen.getByRole('main', { name: 'Modulo comercial' }).querySelector('.comercial-compact-page')).toHaveProperty('tagName', 'DIV');
+    const page = screen.getByRole('main', { name: 'Modulo comercial' }).querySelector('.comercial-compact-page');
+    expect(page).toHaveProperty('tagName', 'DIV');
+    expect(page).toHaveClass('commercial-clients');
     expect(screen.getByRole('searchbox', { name: 'Buscar clientes' })).toBeVisible();
     expect(screen.getByLabelText('Indicadores da carteira')).toHaveAttribute('data-density', 'compact');
     expect(screen.getByText('Total de clientes')).toBeInTheDocument();
@@ -201,6 +203,7 @@ describe('ClientesPage compacta', () => {
     expect(tabpanel).toHaveClass('flex', 'h-full', 'max-h-full', 'min-h-0', 'flex-col', 'overflow-hidden');
     expect(tabpanel).toContainElement(viewport);
     expect(viewport).toHaveClass('h-full', 'max-h-full', 'min-h-0', 'overflow-auto');
+    expect(viewport).toHaveClass('commercial-table-frame');
     expect(viewport.firstElementChild).toBe(table);
     expect(header).toHaveClass('sticky', 'top-0');
   });
@@ -250,7 +253,7 @@ describe('ClientesPage compacta', () => {
   });
 
   it('nao apresenta totais nem ranking durante loading ou erro', () => {
-    mockClientesData({ isLoading: true });
+    mockClientesData({ clientesPerformance: [], kpis: { qtdClientes: 0 }, isLoading: true });
     const loading = renderClientesPage();
 
     expect(screen.getByText('Carregando clientes...')).toBeInTheDocument();
@@ -261,13 +264,39 @@ describe('ClientesPage compacta', () => {
     expect(screen.queryByRole('table')).not.toBeInTheDocument();
 
     loading.unmount();
-    mockClientesData({ isLoading: false, error: new Error('Falha na consulta') });
+    mockClientesData({ clientesPerformance: [], kpis: { qtdClientes: 0 }, isLoading: false, error: new Error('Falha na consulta') });
     renderClientesPage();
 
     expect(screen.getByText('Erro ao carregar clientes')).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Clientes' })).toBeInTheDocument();
     expect(screen.queryByLabelText('Indicadores da carteira')).not.toBeInTheDocument();
     expect(screen.queryByRole('table')).not.toBeInTheDocument();
+  });
+
+  it('preserva a carteira durante refetch e distingue o estado vazio', () => {
+    mockClientesData({ isLoading: true });
+    const refetch = renderClientesPage();
+
+    expect(screen.getByRole('status', { name: 'Atualizando clientes' })).toBeInTheDocument();
+    expect(screen.getByLabelText('Indicadores da carteira')).toBeInTheDocument();
+    expect(screen.getByRole('table', { name: 'Ranking completo de clientes' })).toBeInTheDocument();
+
+    refetch.unmount();
+    mockClientesData({ clientesPerformance: [], kpis: { qtdClientes: 0 }, isLoading: false, error: null });
+    renderClientesPage();
+
+    expect(screen.getByText('Nenhum cliente encontrado no período.')).toBeInTheDocument();
+    expect(screen.queryByText('Erro ao carregar clientes')).not.toBeInTheDocument();
+  });
+
+  it('marca paineis de detalhe e grafico sem criar wrappers adicionais', () => {
+    renderClientesPage();
+
+    fireEvent.mouseDown(screen.getByRole('tab', { name: 'Evolução' }), { button: 0, ctrlKey: false });
+    expect(screen.getByRole('region', { name: 'Evolução dos clientes' })).toHaveClass('commercial-chart-frame');
+
+    fireEvent.mouseDown(screen.getByRole('tab', { name: 'Carteira' }), { button: 0, ctrlKey: false });
+    expect(screen.getByRole('region', { name: 'Alertas e oportunidades da carteira' })).toHaveClass('commercial-detail-panel');
   });
 
   it('aplica filtros pendentes somente ao buscar e restaura o periodo inicial ao limpar', () => {
