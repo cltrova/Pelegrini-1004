@@ -185,7 +185,10 @@ export default function VendasPerdidasPage() {
   };
 
   const hasError = erpQuery.isError || reasonsQuery.isError;
-  const isLoading = erpQuery.isLoading || (rows.length > 0 && reasonsQuery.isLoading);
+  const showInitialLoading = (erpQuery.isLoading && erpQuery.data === undefined)
+    || (rows.length > 0 && reasonsQuery.isLoading && reasonsQuery.data === undefined);
+  const isRefreshing = (erpQuery.isFetching && erpQuery.data !== undefined)
+    || (reasonsQuery.isFetching && reasonsQuery.data !== undefined);
   const error = erpQuery.isError ? erpQuery.error : reasonsQuery.error;
   const errorTitle = erpQuery.isError
     ? (erpQuery.error as { kind?: string } | null)?.kind === 'configuration'
@@ -194,11 +197,11 @@ export default function VendasPerdidasPage() {
     : 'Erro ao carregar motivos das perdas';
 
   return (
-    <ComercialCompactPage>
+    <ComercialCompactPage className="commercial-lost-sales">
       <ComercialCommandBar
         title="Vendas perdidas"
         actions={(
-          <Button type="button" variant="outline" size="sm" onClick={exportCurrentRows} disabled={!consulta || isLoading || hasError || filteredRows.length === 0}>
+          <Button type="button" variant="outline" size="sm" onClick={exportCurrentRows} disabled={!consulta || showInitialLoading || hasError || filteredRows.length === 0}>
             <Download aria-hidden="true" className="h-4 w-4" />
             Exportar Excel
           </Button>
@@ -237,16 +240,17 @@ export default function VendasPerdidasPage() {
         motivos={motivoOptions}
         onApply={applyFilters}
         onClear={clearFilters}
+        isApplying={showInitialLoading || isRefreshing}
       />
 
-      {consulta && !isLoading && !hasError && (
+      {consulta && !showInitialLoading && !hasError && (
         <>
           <CotacoesKpis mode="perdidas" kpis={kpis} />
           <CotacoesGestorPanel mode="perdidas" rows={filteredRows} motivos={filteredReasons} onSelectCotacao={setDetailQuote} />
         </>
       )}
 
-      <ComercialDataViewport>
+      <ComercialDataViewport className="commercial-table-frame">
         {!consulta ? (
           <EmptyState
             title="Consulta ainda não realizada"
@@ -259,7 +263,7 @@ export default function VendasPerdidasPage() {
             message={error instanceof Error ? error.message : 'Não foi possível carregar as vendas perdidas.'}
             onRetry={retryQueries}
           />
-        ) : isLoading ? (
+        ) : showInitialLoading ? (
           <CotacoesLoading />
         ) : (
           <CotacoesTable mode="perdidas" rows={filteredRows} motivos={filteredReasons} onEditMotivo={setSelectedQuote} onSelectCotacao={setDetailQuote} />

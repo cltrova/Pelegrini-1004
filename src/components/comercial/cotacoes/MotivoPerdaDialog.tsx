@@ -94,7 +94,7 @@ export function MotivoPerdaDialog({ open, onOpenChange, cotacao, registro }: Mot
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="commercial-overlay sm:max-w-md">
         <DialogHeader>
           <DialogTitle>{registro ? 'Editar motivo da perda' : 'Registrar motivo da perda'}</DialogTitle>
           <DialogDescription>
@@ -112,7 +112,7 @@ export function MotivoPerdaDialog({ open, onOpenChange, cotacao, registro }: Mot
               <SelectTrigger id="motivo-perda" aria-label="Motivo da perda">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="commercial-overlay">
                 {motivoOptions.map((option) => (
                   <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
                 ))}

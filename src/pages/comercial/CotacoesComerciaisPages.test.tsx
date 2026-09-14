@@ -114,7 +114,9 @@ describe('lost quote reason dialog', () => {
 
     const { rerender } = render(<MotivoPerdaDialog open onOpenChange={onOpenChange} cotacao={rows[1]} registro={null} />);
 
+    expect(screen.getByRole('dialog')).toHaveClass('commercial-overlay');
     fireEvent.click(screen.getByRole('combobox', { name: 'Motivo da perda' }));
+    expect(screen.getByRole('listbox')).toHaveClass('commercial-overlay');
     expect(screen.getByText(/Cotação 9013/)).toBeInTheDocument();
     expect(screen.getByRole('option', { name: 'Preço' })).toBeInTheDocument();
     expect(screen.getByRole('option', { name: 'Prazo de entrega' })).toBeInTheDocument();
@@ -250,6 +252,7 @@ describe('shared commercial quote components', () => {
 
     fireEvent.change(screen.getByLabelText('Buscar cotacoes'), { target: { value: 'oficina' } });
     fireEvent.click(screen.getByRole('button', { name: 'Mais filtros' }));
+    expect(screen.getByLabelText('Filtros avancados de cotacoes')).toHaveClass('commercial-overlay');
     fireEvent.change(screen.getByLabelText('Dias minimos em aberto'), { target: { value: '-4' } });
 
     expect(onApply).not.toHaveBeenCalled();
@@ -373,6 +376,7 @@ describe('shared commercial quote components', () => {
     );
 
     expect(screen.getByRole('dialog')).toBeInTheDocument();
+    expect(screen.getByRole('dialog')).toHaveClass('commercial-overlay');
     expect(screen.getByRole('heading', { name: 'Cotação 9201' })).toBeInTheDocument();
     expect(screen.getByText('Score gestor')).toBeInTheDocument();
     expect(screen.getByText('Motivo consolidado')).toBeInTheDocument();
@@ -464,9 +468,11 @@ describe('open quotes page', () => {
   it('uses the compact operational desk after the operator applies the search', async () => {
     await renderCotacoesAbertasPage();
 
-    expect(screen.getByRole('main')).toHaveClass('comercial-compact-page');
+    expect(screen.getByRole('main')).toHaveClass('comercial-compact-page', 'commercial-quotes');
     expect(screen.getByLabelText('Prioridades de cotacoes abertas')).toBeInTheDocument();
     expect(screen.getByTestId('comercial-data-viewport')).toContainElement(screen.getByRole('table'));
+    expect(screen.getByTestId('comercial-data-viewport')).toHaveClass('commercial-table-frame');
+    expect(screen.getByRole('main').querySelectorAll('.commercial-table-frame')).toHaveLength(1);
     expect(screen.queryByText('Acompanhe as cotacoes pendentes no periodo selecionado.')).not.toBeInTheDocument();
   });
 
@@ -619,13 +625,25 @@ describe('open quotes page', () => {
   });
 
   it('shows a loading skeleton while the initial query is pending', async () => {
-    mockOpenQuotesQuery({ data: [], isLoading: true });
+    mockOpenQuotesQuery({ data: undefined, isLoading: true, isFetching: true });
 
     await renderCotacoesAbertasPage();
 
     expect(screen.getByLabelText('Carregando cotacoes abertas')).toBeInTheDocument();
     expect(screen.queryByLabelText('Indicadores comerciais')).not.toBeInTheDocument();
     expect(screen.queryByLabelText('Prioridades de cotacoes abertas')).not.toBeInTheDocument();
+  });
+
+  it('preserves the resolved quote view during refetch and disables only Apply', async () => {
+    mockOpenQuotesQuery({ isFetching: true });
+
+    await renderCotacoesAbertasPage();
+
+    expect(screen.getByRole('table')).toHaveTextContent('9101');
+    expect(screen.getByLabelText('Indicadores comerciais')).toHaveTextContent('Valor em aberto');
+    expect(screen.getByRole('button', { name: 'Aplicar' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /exportar/i })).toBeEnabled();
+    expect(screen.queryByLabelText('Carregando cotacoes abertas')).not.toBeInTheDocument();
   });
 
   it('surfaces endpoint failures with a retry instead of rendering the empty success state', async () => {
@@ -782,11 +800,26 @@ describe('lost sales page', () => {
   it('composes the dedicated compact lost-sales analysis after the query', async () => {
     await renderVendasPerdidasPage();
 
-    expect(screen.getByRole('main')).toHaveClass('comercial-compact-page');
+    expect(screen.getByRole('main')).toHaveClass('comercial-compact-page', 'commercial-lost-sales');
+    expect(screen.getByTestId('comercial-data-viewport')).toHaveClass('commercial-table-frame');
+    expect(screen.getByRole('main').querySelectorAll('.commercial-table-frame')).toHaveLength(1);
     expect(screen.getByLabelText('Concentracao de vendas perdidas')).toBeInTheDocument();
     expect(screen.queryByText('Análise das perdas e registro dos motivos no período selecionado.')).not.toBeInTheDocument();
     expect(within(screen.getByRole('table')).getByText('Motivo da perda')).toBeInTheDocument();
   }, 30_000);
+
+  it('preserves rows, totals, and reasons during a real refetch', async () => {
+    mockLostQuotesQuery({ isFetching: true });
+    mockLostReasonsQuery({ isFetching: true });
+
+    await renderVendasPerdidasPage();
+
+    expect(screen.getByRole('table')).toHaveTextContent('9201');
+    expect(screen.getByLabelText('Indicadores comerciais')).toHaveTextContent('Preço');
+    expect(screen.getByRole('button', { name: 'Aplicar' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /exportar/i })).toBeEnabled();
+    expect(screen.queryByLabelText('Carregando vendas perdidas')).not.toBeInTheDocument();
+  });
 
   it('shows current-month defaults without querying until Apply and Clear restores pre-search', async () => {
     await renderVendasPerdidasPage(false);

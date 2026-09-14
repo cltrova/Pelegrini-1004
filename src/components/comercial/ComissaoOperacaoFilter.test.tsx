@@ -41,6 +41,7 @@ describe('ComissaoOperacaoFilter', () => {
   it('busca por codigo e descricao sem exigir acentos', () => {
     render(<Seletor />);
     abrir();
+    expect(screen.getByLabelText('Filtro de operações fiscais')).toHaveClass('commercial-overlay');
     const busca = screen.getByRole('textbox', { name: 'Buscar operação por código ou descrição' });
     fireEvent.change(busca, { target: { value: 'TRANSFERENCIA' } });
     expect(screen.getAllByRole('checkbox')).toHaveLength(1);

@@ -18,6 +18,34 @@
   overflow: hidden;
 }
 
+[data-module-shell='comercial'] :where(.commercial-commission, .commercial-quotes, .commercial-lost-sales) {
+  min-height: 0;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+[data-module-shell='comercial'] :where(.commercial-commission, .commercial-quotes, .commercial-lost-sales) .commercial-table-frame {
+  min-height: 0;
+  min-width: 0;
+  max-width: 100%;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+
+[data-module-shell='comercial'] :where(.commercial-commission, .commercial-quotes, .commercial-lost-sales) .commercial-table-frame table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+[data-module-shell='comercial'] :where(.commercial-commission, .commercial-quotes, .commercial-lost-sales) .commercial-table-frame tr {
+  height: 32px;
+}
+
+[data-module-shell='comercial'] :where(.commercial-commission, .commercial-quotes, .commercial-lost-sales) .commercial-table-frame :where(th, td) {
+  padding: 4px 8px !important;
+}
+
 [data-module-shell='comercial'] .commercial-data-viewport {
   overscroll-behavior: contain;
 }
@@ -48,6 +76,17 @@
   background-image: none !important;
   box-shadow: none !important;
   backdrop-filter: none !important;
+}
+
+.commercial-overlay :where(.rounded-md, .rounded-lg, .rounded-xl, .rounded-2xl) {
+  border-radius: var(--commercial-panel-radius, 2px) !important;
+  background-image: none !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+}
+
+.commercial-overlay :where(button, input, select, textarea, [role='button'], [role='combobox'], [role='menu'], [role='tab']) {
+  border-radius: var(--commercial-control-radius, 4px) !important;
 }
 
 [data-module-shell='comercial'] :where(.commercial-toolbar, .commercial-filter-control),

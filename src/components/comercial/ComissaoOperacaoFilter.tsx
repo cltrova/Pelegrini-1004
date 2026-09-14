@@ -64,7 +64,11 @@ export function ComissaoOperacaoFilter({ operacoes, selecionados, onChange, isLo
             <ChevronDown className="h-4 w-4 shrink-0" aria-hidden="true" />
           </Button>
         </PopoverTrigger>
-        <PopoverContent align="start" className="w-80 max-w-[calc(100vw-2rem)] p-3">
+        <PopoverContent
+          align="start"
+          aria-label="Filtro de operações fiscais"
+          className="commercial-overlay w-80 max-w-[calc(100vw-2rem)] p-3"
+        >
           <div className="relative">
             <Search className="pointer-events-none absolute left-2 top-2 h-4 w-4 text-muted-foreground" aria-hidden="true" />
             <Input

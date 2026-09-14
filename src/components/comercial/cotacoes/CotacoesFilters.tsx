@@ -22,6 +22,7 @@ interface CotacoesFiltersProps {
   motivos: readonly CotacoesFilterOption<MotivoPerda>[];
   onApply: (filters: CotacoesFiltros) => void;
   onClear: () => void;
+  isApplying?: boolean;
 }
 
 const statusOptions: readonly CotacoesFilterOption<CotacaoStatus>[] = [
@@ -94,6 +95,7 @@ export function CotacoesFilters({
   motivos,
   onApply,
   onClear,
+  isApplying = false,
 }: CotacoesFiltersProps) {
   const isOpenQuotes = mode === 'abertas';
   const searchPlaceholder = isOpenQuotes
@@ -207,14 +209,14 @@ export function CotacoesFilters({
               Mais filtros
             </Button>
           </PopoverTrigger>
-          <PopoverContent align="end" className="w-80 max-h-[calc(100dvh-2rem)] max-w-[calc(100vw-2rem)] overflow-y-auto p-3" aria-label="Filtros avancados de cotacoes">
+          <PopoverContent align="end" className="commercial-overlay w-80 max-h-[calc(100dvh-2rem)] max-w-[calc(100vw-2rem)] overflow-y-auto p-3" aria-label="Filtros avancados de cotacoes">
             <div className="space-y-4">{secondaryControls}</div>
           </PopoverContent>
         </Popover>
       )}
       actions={(
         <>
-          <Button type="button" size="sm" className="h-9" onClick={() => onApply(copyFilters(pendingFilters))}>
+          <Button type="button" size="sm" className="h-9" onClick={() => onApply(copyFilters(pendingFilters))} disabled={isApplying}>
             Aplicar
           </Button>
           <TooltipProvider>
@@ -224,7 +226,7 @@ export function CotacoesFilters({
                   <RotateCcw aria-hidden="true" className="h-4 w-4" />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent>Limpar filtros</TooltipContent>
+              <TooltipContent className="commercial-overlay">Limpar filtros</TooltipContent>
             </Tooltip>
           </TooltipProvider>
         </>

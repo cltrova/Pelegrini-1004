@@ -5,6 +5,7 @@ import ComissaoPage from './ComissaoPage';
 
 const linhas = vi.hoisted(() => [] as ComissaoLinha[]);
 const queryState = vi.hoisted(() => ({
+  data: undefined as ComissaoLinha[] | undefined,
   isLoading: false,
   isFetching: false,
   error: null as Error | null,
@@ -20,7 +21,6 @@ vi.mock('@/hooks/useComissaoVendedores', async (importOriginal) => {
   return {
     ...original,
     useComissaoVendedores: () => ({
-      data: linhas,
       ...queryState,
     }),
   };
@@ -29,6 +29,7 @@ vi.mock('@/hooks/useComissaoVendedores', async (importOriginal) => {
 describe('ComissaoPage', () => {
   beforeEach(() => {
     linhas.length = 0;
+    queryState.data = linhas;
     queryState.isLoading = false;
     queryState.isFetching = false;
     queryState.error = null;
@@ -49,7 +50,7 @@ describe('ComissaoPage', () => {
       expect(final).toHaveValue('62');
       expect(screen.getByLabelText('Código da meta')).toBeInTheDocument();
       expect(screen.getByRole('switch', { name: 'Deduzir devolução' })).toBeInTheDocument();
-      expect(screen.getByLabelText('Filtros avançados de comissão')).toHaveClass('max-h-[calc(100dvh-2rem)]', 'overflow-y-auto');
+      expect(screen.getByLabelText('Filtros avançados de comissão')).toHaveClass('commercial-overlay', 'max-h-[calc(100dvh-2rem)]', 'overflow-y-auto');
     } finally {
       fireEvent.keyDown(screen.getByLabelText('Filtros avançados de comissão'), { key: 'Escape' });
     }
@@ -60,7 +61,7 @@ describe('ComissaoPage', () => {
   it('compoe a mesa compacta com os filtros principais visiveis', () => {
     render(<ComissaoPage />);
 
-    expect(screen.getByRole('main')).toHaveClass('comercial-compact-page', 'comissao-page');
+    expect(screen.getByRole('main')).toHaveClass('comercial-compact-page', 'comissao-page', 'commercial-commission');
     expect(screen.getByLabelText('Filtros de comissão')).toHaveAttribute('data-density', 'compact');
     expect(screen.queryByText(/Metas e comissão de vendedores/)).not.toBeInTheDocument();
     expect(screen.queryByLabelText('Operação fiscal inicial')).not.toBeInTheDocument();
@@ -125,6 +126,8 @@ describe('ComissaoPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Buscar' }));
 
     const viewport = screen.getByRole('region', { name: 'Tabela de comissões por vendedor' });
+    expect(viewport).toHaveClass('commercial-table-frame');
+    expect(screen.getByRole('main').querySelectorAll('.commercial-table-frame')).toHaveLength(1);
     expect(viewport).toContainElement(screen.getByRole('table'));
     expect(screen.getByTestId('comissao-results')).toHaveClass('flex-1');
     const table = within(screen.getByRole('table'));
@@ -138,6 +141,20 @@ describe('ComissaoPage', () => {
     expect(table.queryByText('Nome')).not.toBeInTheDocument();
     expect(table.queryByText('PMV')).not.toBeInTheDocument();
     expect(screen.getByText('XEXEU').closest('td')).toHaveAttribute('title', 'XEXEU');
+  });
+
+  it('mantem tabela e indicadores montados durante refetch com dados resolvidos', () => {
+    linhas.push(mapComissaoLinha({ Vendedor: 10, NomeVendedor: 'XEXEU', PedidosEmAberto: 50 }));
+    const view = render(<ComissaoPage />);
+    fireEvent.click(screen.getByRole('button', { name: 'Buscar' }));
+
+    queryState.isFetching = true;
+    view.rerender(<ComissaoPage />);
+
+    expect(screen.getByRole('table')).toHaveTextContent('XEXEU');
+    expect(screen.getByLabelText('Indicadores comerciais')).toHaveTextContent('Pedidos em aberto');
+    expect(screen.getByRole('button', { name: 'Buscando' })).toBeDisabled();
+    expect(screen.queryByTestId('comissao-empty-state')).not.toBeInTheDocument();
   });
 
   it('explica os indicadores sem adicionar textos auxiliares permanentes', () => {

@@ -100,7 +100,9 @@ export default function CotacoesAbertasPage() {
     codVendedor: queryFilterValue(appliedFilters.vendedores),
     codCliente: queryFilterValue(appliedFilters.clientes),
   }) : null, [appliedFilters.clientes, appliedFilters.vendedores, appliedPeriod]);
-  const { data, isLoading, isError, error, refetch } = useCotacoesAbertas(consulta);
+  const { data, isLoading, isFetching, isError, error, refetch } = useCotacoesAbertas(consulta);
+  const showInitialLoading = isLoading && data === undefined;
+  const isRefreshing = isFetching && data !== undefined;
   const rows = consulta ? data ?? emptyRows : emptyRows;
 
   const vendedores = useMemo(() => getFilterOptions(rows, 'vendedor'), [rows]);
@@ -148,11 +150,11 @@ export default function CotacoesAbertasPage() {
   };
 
   return (
-    <ComercialCompactPage>
+    <ComercialCompactPage className="commercial-quotes">
       <ComercialCommandBar
         title="Cotacoes abertas"
         actions={(
-          <Button type="button" variant="outline" size="sm" onClick={exportCurrentRows} disabled={!consulta || isLoading || isError || filteredRows.length === 0}>
+          <Button type="button" variant="outline" size="sm" onClick={exportCurrentRows} disabled={!consulta || showInitialLoading || isError || filteredRows.length === 0}>
           <Download aria-hidden="true" className="h-4 w-4" />
           Exportar Excel
           </Button>
@@ -191,16 +193,17 @@ export default function CotacoesAbertasPage() {
         motivos={[]}
         onApply={applyFilters}
         onClear={clearPendingFilters}
+        isApplying={showInitialLoading || isRefreshing}
       />
 
-      {consulta && !isLoading && !isError && (
+      {consulta && !showInitialLoading && !isError && (
         <>
           <CotacoesKpis mode="abertas" kpis={kpis} />
           <CotacoesGestorPanel mode="abertas" rows={filteredRows} motivos={emptyMotivos} onSelectCotacao={setSelectedQuote} />
         </>
       )}
 
-      <ComercialDataViewport>
+      <ComercialDataViewport className="commercial-table-frame">
         {!consulta ? (
           <EmptyState
             title="Consulta ainda não realizada"
@@ -215,7 +218,7 @@ export default function CotacoesAbertasPage() {
             message={error instanceof Error ? error.message : 'Nao foi possivel carregar as cotacoes abertas.'}
             onRetry={() => refetch()}
           />
-        ) : isLoading ? (
+        ) : showInitialLoading ? (
           <CotacoesLoading />
         ) : (
           <CotacoesTable mode="abertas" rows={filteredRows} motivos={emptyMotivos} onSelectCotacao={setSelectedQuote} />

@@ -65,6 +65,8 @@ export default function ComissaoPage() {
   };
 
   const { data, isLoading, isFetching, error, refetch } = useComissaoVendedores(aplicado);
+  const showInitialLoading = isLoading && data === undefined;
+  const isRefreshing = isFetching && data !== undefined;
   const todasLinhas = useMemo(() => data ?? [], [data]);
 
   const opcoesVendedores = useMemo(() => {
@@ -162,7 +164,7 @@ export default function ComissaoPage() {
   const td = 'py-2.5 px-3 text-right tabular-nums whitespace-nowrap border-l border-border/40';
 
   return (
-    <ComercialCompactPage className="comissao-page">
+    <ComercialCompactPage className="comissao-page commercial-commission">
       <ComercialCommandBar
         title="Comissão"
         context={filialAtiva === 'chevrolet' ? 'Base CH' : 'Base CT'}
@@ -201,7 +203,7 @@ export default function ComissaoPage() {
           </>
         )}
         actions={(
-          <Button className="min-w-28 gap-2" onClick={buscar} disabled={isFetching}>
+          <Button className="min-w-28 gap-2" onClick={buscar} disabled={showInitialLoading || isRefreshing}>
             {isFetching ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
             {isFetching ? 'Buscando' : 'Buscar'}
           </Button>
@@ -214,7 +216,7 @@ export default function ComissaoPage() {
               Mais filtros
             </Button>
           </PopoverTrigger>
-          <PopoverContent align="start" className="w-80 max-h-[calc(100dvh-2rem)] space-y-4 overflow-y-auto" aria-label="Filtros avançados de comissão">
+          <PopoverContent align="start" className="commercial-overlay w-80 max-h-[calc(100dvh-2rem)] space-y-4 overflow-y-auto" aria-label="Filtros avançados de comissão">
             <div className="space-y-1.5">
               <Label className="text-xs" htmlFor="codigo-meta">Código da meta</Label>
               <Input id="codigo-meta" value={codMeta} onChange={(e) => setCodMeta(e.target.value)} placeholder="Opcional" />
@@ -265,7 +267,7 @@ export default function ComissaoPage() {
         </div>
       )}
 
-      {aplicado && !isLoading && !error && <ComercialMetricStrip metrics={metricas} />}
+      {aplicado && !showInitialLoading && !error && <ComercialMetricStrip metrics={metricas} />}
 
       {error && (
         <div role="alert" className="comissao-error flex items-center gap-3 border border-destructive/35 bg-destructive/5 px-3 py-2 text-sm text-destructive">
@@ -301,9 +303,9 @@ export default function ComissaoPage() {
         </div>
         <ComercialDataViewport
           ariaLabel="Tabela de comissões por vendedor"
-          className={cn(linhas.length > 0 && 'comissao-data-populated')}
+          className={cn('commercial-table-frame', linhas.length > 0 && 'comissao-data-populated')}
         >
-          {isLoading ? (
+          {showInitialLoading ? (
             <div className="space-y-2 p-3">
               {Array.from({ length: 8 }).map((_, i) => <Skeleton key={i} className="h-9 w-full" />)}
             </div>

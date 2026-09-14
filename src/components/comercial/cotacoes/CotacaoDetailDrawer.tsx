@@ -37,7 +37,7 @@ export function CotacaoDetailDrawer({ open, onOpenChange, mode, cotacao, motivos
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="w-full overflow-y-auto sm:max-w-md">
+      <SheetContent side="right" className="commercial-overlay w-full overflow-y-auto sm:max-w-md">
         {cotacao && prioridade && (
           <>
             <SheetHeader>
