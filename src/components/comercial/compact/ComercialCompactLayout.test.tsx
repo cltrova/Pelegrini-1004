@@ -1,8 +1,8 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import postcss from 'postcss';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import {
   ComercialCommandBar,
@@ -108,6 +108,28 @@ describe('ComercialCompactLayout', () => {
     expect(longMetric).toHaveStyle({ minWidth: 'max(9rem, calc(19ch + 3rem))' });
     expect(shortMetric).toHaveStyle({ minWidth: 'max(9rem, calc(2ch + 3rem))' });
     expect(strip).not.toHaveAttribute('style');
+  });
+
+  it('marks the rendered metric tooltip portal as a commercial overlay', async () => {
+    vi.useFakeTimers();
+    try {
+      render(
+        <ComercialMetricStrip
+          metrics={[{ label: 'Valor em aberto', value: 'R$ 1.000,00', tooltip: 'Total confirmado' }]}
+        />,
+      );
+
+      const trigger = screen.getByText('R$ 1.000,00').closest('article');
+      expect(trigger).not.toBeNull();
+      fireEvent.focus(trigger!);
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(500);
+      });
+
+      expect(screen.getByRole('tooltip')).toHaveClass('commercial-overlay');
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('keeps metric tracks intrinsic in one horizontally scrollable row', () => {

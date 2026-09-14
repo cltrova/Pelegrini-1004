@@ -35,6 +35,13 @@ interface PeriodoCotacoes {
   dataFim: string;
 }
 
+interface ResolvedLostSalesView {
+  rows: readonly CotacaoComercial[];
+  reasons: readonly MotivoPerdaRegistro[];
+  filters: CotacoesFiltros;
+  period: PeriodoCotacoes;
+}
+
 const emptyRows: readonly CotacaoComercial[] = [];
 const emptyReasons: readonly MotivoPerdaRegistro[] = [];
 
@@ -113,8 +120,7 @@ export default function VendasPerdidasPage() {
   const [appliedFilters, setAppliedFilters] = useState<CotacoesFiltros>(createEmptyFilters);
   const [selectedQuote, setSelectedQuote] = useState<CotacaoComercial | null>(null);
   const [detailQuote, setDetailQuote] = useState<CotacaoComercial | null>(null);
-  const resolvedRowsRef = useRef<readonly CotacaoComercial[] | null>(null);
-  const resolvedReasonsRef = useRef<readonly MotivoPerdaRegistro[] | null>(null);
+  const resolvedViewRef = useRef<ResolvedLostSalesView | null>(null);
 
   const consulta = useMemo(() => appliedPeriod ? ({
     dataIni: appliedPeriod.dataIni,
@@ -124,24 +130,37 @@ export default function VendasPerdidasPage() {
   }) : null, [appliedFilters.clientes, appliedFilters.vendedores, appliedPeriod]);
 
   const erpQuery = useVendasPerdidas(consulta);
-  const candidateRows = consulta && !erpQuery.isLoading && !erpQuery.isError
-    ? erpQuery.data ?? emptyRows
+  const candidateRows = consulta
+    && erpQuery.data !== undefined
+    && !erpQuery.isLoading
+    && !erpQuery.isPlaceholderData
+    && !erpQuery.isError
+    ? erpQuery.data
     : null;
-  const rowsForReasons = candidateRows ?? resolvedRowsRef.current ?? emptyRows;
+  const rowsForReasons = candidateRows ?? resolvedViewRef.current?.rows ?? emptyRows;
   const queryQuoteIds = useMemo(() => rowsForReasons.map((row) => canonicalQuoteId(row.idCotacao)), [rowsForReasons]);
   const reasonsQuery = useMotivosPerda10041(queryQuoteIds);
   const candidateReasons = candidateRows?.length === 0
     ? emptyReasons
-    : !reasonsQuery.isLoading && !reasonsQuery.isError && reasonsQuery.data !== undefined
+    : !reasonsQuery.isLoading
+      && !reasonsQuery.isPlaceholderData
+      && !reasonsQuery.isError
+      && reasonsQuery.data !== undefined
       ? reasonsQuery.data
       : null;
-  if (candidateRows !== null && candidateReasons !== null) {
-    resolvedRowsRef.current = candidateRows;
-    resolvedReasonsRef.current = candidateReasons;
+  if (candidateRows !== null && candidateReasons !== null && appliedPeriod !== null) {
+    resolvedViewRef.current = {
+      rows: candidateRows,
+      reasons: candidateReasons,
+      filters: appliedFilters,
+      period: appliedPeriod,
+    };
   }
-  const hasResolvedView = resolvedRowsRef.current !== null && resolvedReasonsRef.current !== null;
-  const rows = consulta ? resolvedRowsRef.current ?? emptyRows : emptyRows;
-  const reasonRows = consulta ? resolvedReasonsRef.current ?? emptyReasons : emptyReasons;
+  const resolvedView = consulta ? resolvedViewRef.current : null;
+  const hasResolvedView = resolvedView !== null;
+  const rows = resolvedView?.rows ?? emptyRows;
+  const reasonRows = resolvedView?.reasons ?? emptyReasons;
+  const visibleFilters = resolvedView?.filters ?? appliedFilters;
 
   const reasons = useMemo(() => {
     const currentQuoteIds = new Set(rows.map((row) => canonicalQuoteId(row.idCotacao)));
@@ -156,8 +175,8 @@ export default function VendasPerdidasPage() {
   const vendedores = useMemo(() => getFilterOptions(rows, 'vendedor'), [rows]);
   const clientes = useMemo(() => getFilterOptions(rows, 'cliente'), [rows]);
   const filteredRows = useMemo(
-    () => filtrarCotacoes(rows, appliedFilters, reasons),
-    [appliedFilters, reasons, rows],
+    () => filtrarCotacoes(rows, visibleFilters, reasons),
+    [reasons, rows, visibleFilters],
   );
   const filteredReasons = useMemo(() => {
     const filteredIds = new Set(filteredRows.map((row) => canonicalQuoteId(row.idCotacao)));
@@ -180,8 +199,7 @@ export default function VendasPerdidasPage() {
     setAppliedPeriod(null);
     setPendingFilters(filters);
     setAppliedFilters(filters);
-    resolvedRowsRef.current = null;
-    resolvedReasonsRef.current = null;
+    resolvedViewRef.current = null;
   };
 
   const retryQueries = () => {
@@ -190,13 +208,13 @@ export default function VendasPerdidasPage() {
   };
 
   const exportCurrentRows = () => {
-    if (!appliedPeriod) return;
+    if (!resolvedView) return;
     exportCotacoesExcel({
       mode: 'perdidas',
       rows: filteredRows,
       motivos: filteredReasons,
-      dataIni: appliedPeriod.dataIni,
-      dataFim: appliedPeriod.dataFim,
+      dataIni: resolvedView.period.dataIni,
+      dataFim: resolvedView.period.dataFim,
     });
   };
 
@@ -207,8 +225,10 @@ export default function VendasPerdidasPage() {
   const isRefreshing = consulta !== null && hasResolvedView && (
     erpQuery.isLoading
     || erpQuery.isFetching
+    || erpQuery.isPlaceholderData
     || reasonsQuery.isLoading
     || reasonsQuery.isFetching
+    || reasonsQuery.isPlaceholderData
   );
   const error = erpQuery.isError ? erpQuery.error : reasonsQuery.error;
   const errorTitle = erpQuery.isError

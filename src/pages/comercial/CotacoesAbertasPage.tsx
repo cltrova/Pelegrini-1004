@@ -24,6 +24,12 @@ interface PeriodoCotacoes {
   dataFim: string;
 }
 
+interface ResolvedOpenQuotesView {
+  rows: readonly CotacaoComercial[];
+  filters: CotacoesFiltros;
+  period: PeriodoCotacoes;
+}
+
 const emptyMotivos = new Map();
 const emptyRows: readonly CotacaoComercial[] = [];
 
@@ -93,7 +99,7 @@ export default function CotacoesAbertasPage() {
   const [pendingFilters, setPendingFilters] = useState<CotacoesFiltros>(createEmptyFilters);
   const [appliedFilters, setAppliedFilters] = useState<CotacoesFiltros>(createEmptyFilters);
   const [selectedQuote, setSelectedQuote] = useState<CotacaoComercial | null>(null);
-  const resolvedRowsRef = useRef<readonly CotacaoComercial[] | null>(null);
+  const resolvedViewRef = useRef<ResolvedOpenQuotesView | null>(null);
 
   const consulta = useMemo(() => appliedPeriod ? ({
     dataIni: appliedPeriod.dataIni,
@@ -101,21 +107,34 @@ export default function CotacoesAbertasPage() {
     codVendedor: queryFilterValue(appliedFilters.vendedores),
     codCliente: queryFilterValue(appliedFilters.clientes),
   }) : null, [appliedFilters.clientes, appliedFilters.vendedores, appliedPeriod]);
-  const { data, isLoading, isFetching, isError, error, refetch } = useCotacoesAbertas(consulta);
-  const resolvedData = !isLoading && !isError ? data : undefined;
-  if (consulta && resolvedData !== undefined) resolvedRowsRef.current = resolvedData;
-  const hasResolvedRows = resolvedRowsRef.current !== null;
-  const showInitialLoading = consulta !== null && isLoading && !hasResolvedRows;
-  const isRefreshing = consulta !== null && (isLoading || isFetching) && hasResolvedRows;
+  const { data, isLoading, isFetching, isPlaceholderData, isError, error, refetch } = useCotacoesAbertas(consulta);
+  const hasSuccessfulResponse = consulta !== null
+    && appliedPeriod !== null
+    && data !== undefined
+    && !isLoading
+    && !isPlaceholderData
+    && !isError;
+  if (hasSuccessfulResponse) {
+    resolvedViewRef.current = {
+      rows: data,
+      filters: appliedFilters,
+      period: appliedPeriod,
+    };
+  }
+  const resolvedView = consulta ? resolvedViewRef.current : null;
+  const hasResolvedRows = resolvedView !== null;
+  const showInitialLoading = consulta !== null && !hasResolvedRows && (isLoading || isFetching || isPlaceholderData);
+  const isRefreshing = consulta !== null && hasResolvedRows && (isLoading || isFetching || isPlaceholderData);
   const showBlockingError = consulta !== null && isError && !hasResolvedRows;
   const showRefreshError = consulta !== null && isError && hasResolvedRows;
-  const rows = consulta ? resolvedData ?? resolvedRowsRef.current ?? emptyRows : emptyRows;
+  const rows = resolvedView?.rows ?? emptyRows;
+  const visibleFilters = resolvedView?.filters ?? appliedFilters;
 
   const vendedores = useMemo(() => getFilterOptions(rows, 'vendedor'), [rows]);
   const clientes = useMemo(() => getFilterOptions(rows, 'cliente'), [rows]);
   const filteredRows = useMemo(
-    () => sortOpenQuotes(filtrarCotacoes(rows, appliedFilters)),
-    [appliedFilters, rows],
+    () => sortOpenQuotes(filtrarCotacoes(rows, visibleFilters)),
+    [rows, visibleFilters],
   );
   const kpis = useMemo(() => {
     const today = formatDateInput(new Date());
@@ -143,16 +162,16 @@ export default function CotacoesAbertasPage() {
     setAppliedPeriod(null);
     setPendingFilters(filters);
     setAppliedFilters(filters);
-    resolvedRowsRef.current = null;
+    resolvedViewRef.current = null;
   };
 
   const exportCurrentRows = () => {
-    if (!appliedPeriod) return;
+    if (!resolvedView) return;
     exportCotacoesExcel({
       mode: 'abertas',
       rows: filteredRows,
-      dataIni: appliedPeriod.dataIni,
-      dataFim: appliedPeriod.dataFim,
+      dataIni: resolvedView.period.dataIni,
+      dataFim: resolvedView.period.dataFim,
     });
   };
 

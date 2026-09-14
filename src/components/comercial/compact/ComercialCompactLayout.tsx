@@ -116,7 +116,7 @@ function ComercialMetricCell({ label, value, context, tone = 'neutral', tooltip,
   return (
     <Tooltip>
       <TooltipTrigger asChild>{cell}</TooltipTrigger>
-      <TooltipContent>{tooltip}</TooltipContent>
+      <TooltipContent className="commercial-overlay">{tooltip}</TooltipContent>
     </Tooltip>
   );
 }

@@ -37,6 +37,10 @@ const contracts: readonly PortalContract[] = [
     file: 'src/components/comercial/cotacoes/MotivoPerdaDialog.tsx',
     callsites: { DialogContent: 1, SelectContent: 1 },
   },
+  {
+    file: 'src/components/comercial/compact/ComercialCompactLayout.tsx',
+    callsites: { TooltipContent: 1 },
+  },
 ];
 
 function portalClasses(file: string): Map<string, string[]> {
