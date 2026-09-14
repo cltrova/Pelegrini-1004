@@ -1,8 +1,8 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import postcss from 'postcss';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import {
   ComercialCommandBar,
@@ -110,26 +110,18 @@ describe('ComercialCompactLayout', () => {
     expect(strip).not.toHaveAttribute('style');
   });
 
-  it('marks the rendered metric tooltip portal as a commercial overlay', async () => {
-    vi.useFakeTimers();
-    try {
-      render(
-        <ComercialMetricStrip
-          metrics={[{ label: 'Valor em aberto', value: 'R$ 1.000,00', tooltip: 'Total confirmado' }]}
-        />,
-      );
+  it('marks the rendered metric tooltip portal as a commercial overlay', () => {
+    render(
+      <ComercialMetricStrip
+        metrics={[{ label: 'Valor em aberto', value: 'R$ 1.000,00', tooltip: 'Total confirmado' }]}
+      />,
+    );
 
-      const trigger = screen.getByText('R$ 1.000,00').closest('article');
-      expect(trigger).not.toBeNull();
-      fireEvent.focus(trigger!);
-      await act(async () => {
-        await vi.advanceTimersByTimeAsync(500);
-      });
+    const trigger = screen.getByText('R$ 1.000,00').closest('article');
+    expect(trigger).not.toBeNull();
+    fireEvent.focus(trigger!);
 
-      expect(screen.getByRole('tooltip')).toHaveClass('commercial-overlay');
-    } finally {
-      vi.useRealTimers();
-    }
+    expect(screen.getByRole('tooltip')).toHaveClass('commercial-overlay');
   });
 
   it('keeps metric tracks intrinsic in one horizontally scrollable row', () => {
