@@ -1,5 +1,6 @@
 import { useState, useMemo, useCallback } from 'react';
 import { useComercialData } from '@/hooks/useComercialData';
+import { useEmpresaAtiva } from '@/hooks/useEmpresaAtiva';
 import { formatCurrency, formatPercent } from '@/utils/formatters';
 import { LoadingState } from '@/components/common/LoadingState';
 import { ErrorState } from '@/components/common/ErrorState';
@@ -83,6 +84,7 @@ const filtrosIniciais: ComercialFiltersType = {
 /* Página                                                              */
 /* ------------------------------------------------------------------ */
 export default function ClientesPage() {
+  const { isLoading: isLoadingEmpresa } = useEmpresaAtiva();
   const [searchTerm, setSearchTerm] = useState('');
   const [rankingPage, setRankingPage] = useState(1);
   const [activeTab, setActiveTab] = useState('ranking');
@@ -259,9 +261,10 @@ export default function ClientesPage() {
   const isInitialLoading = isLoading && !hasClientData;
   const isRefreshing = isFetching && hasClientData;
   const blockingError = error && !hasClientData;
+  const showBlockingLoading = isLoadingEmpresa || isInitialLoading;
   const pageClassName = 'clientes-page commercial-clients h-[calc(100dvh-9.5rem)] max-h-[calc(100dvh-9.5rem)] overflow-hidden overflow-x-hidden px-3 pb-3 pt-2 sm:px-4 md:h-full md:max-h-full';
 
-  if (isInitialLoading || blockingError) {
+  if (showBlockingLoading || blockingError) {
     return (
       <ComercialCompactPage
         as="div"
@@ -269,7 +272,7 @@ export default function ClientesPage() {
       >
         <ComercialCommandBar title="Clientes" context="Carteira comercial" />
         <ComercialDataViewport ariaLabel="Estado da carteira de clientes" className="flex items-center justify-center">
-          {isInitialLoading
+          {showBlockingLoading
             ? <LoadingState message="Carregando clientes..." className="w-full max-w-md rounded-md shadow-none" size="sm" />
             : <ErrorState message="Erro ao carregar clientes" />}
         </ComercialDataViewport>

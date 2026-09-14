@@ -4,6 +4,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useComercialData } from '@/hooks/useComercialData';
 import ClientesPage from './ClientesPage';
 
+const empresaAtivaMock = vi.hoisted(() => ({
+  current: { codEmpresaAtiva: '1004' as string | null, isLoading: false },
+}));
+
 class ResizeObserverMock {
   observe() {}
   unobserve() {}
@@ -25,7 +29,7 @@ vi.mock('@/contexts/FilialSelecionadaContext', () => ({
 }));
 
 vi.mock('@/hooks/useEmpresaAtiva', () => ({
-  useEmpresaAtiva: () => ({ codEmpresaAtiva: '1004', empresa: { nome: 'Casa da Transmissao' } }),
+  useEmpresaAtiva: () => empresaAtivaMock.current,
 }));
 
 const clientesBase = [
@@ -125,6 +129,7 @@ function expectNoNestedCommercialPanels(container: ParentNode) {
 describe('ClientesPage compacta', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    empresaAtivaMock.current = { codEmpresaAtiva: '1004', isLoading: false };
     mockClientesData();
   });
 
@@ -282,6 +287,18 @@ describe('ClientesPage compacta', () => {
 
     expect(screen.getByText('Erro ao carregar clientes')).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Clientes' })).toBeInTheDocument();
+    expect(screen.queryByLabelText('Indicadores da carteira')).not.toBeInTheDocument();
+    expect(screen.queryByRole('table')).not.toBeInTheDocument();
+  });
+
+  it('prioriza a hidratacao da empresa quando a consulta de clientes esta desabilitada', () => {
+    empresaAtivaMock.current = { codEmpresaAtiva: null, isLoading: true };
+    mockClientesData({ clientesPerformance: [], kpis: { qtdClientes: 0 }, isLoading: false });
+
+    renderClientesPage();
+
+    expect(screen.getByText('Carregando clientes...')).toBeInTheDocument();
+    expect(screen.queryByText('Nenhum cliente encontrado no período.')).not.toBeInTheDocument();
     expect(screen.queryByLabelText('Indicadores da carteira')).not.toBeInTheDocument();
     expect(screen.queryByRole('table')).not.toBeInTheDocument();
   });
