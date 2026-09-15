@@ -91,7 +91,7 @@ describe('consultas de cotacoes comerciais', () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
-    const requestUrl = new URL(String(fetchMock.mock.calls[0]?.[0]));
+    const requestUrl = new URL(String(fetchMock.mock.calls[0]?.[0]), 'http://localhost');
     expect(requestUrl.searchParams.get('path')).toContain('cod_empresa_bi=10041');
 
     unmount();
