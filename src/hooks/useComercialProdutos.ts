@@ -1,4 +1,4 @@
-import { useQuery, keepPreviousData } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { buildApiProxyUrl } from '@/utils/apiEndpointResolver';
@@ -967,6 +967,25 @@ async function fetchReceitaComissao1004(
 // Hook
 // ----------------------------------------------------------------
 
+export function resolveProdutosPlaceholderData<T>(
+  previousData: T | undefined,
+  previousQueryKey: readonly unknown[] | undefined,
+  codEmpresaAtiva: string | null | undefined,
+  filialAtiva: string | null | undefined,
+  enabled = true,
+): T | undefined {
+  if (!enabled || !previousQueryKey) return undefined;
+
+  const previousEmpresa = String(previousQueryKey[1] ?? '').trim();
+  const previousFilial = String(previousQueryKey[2] ?? '').trim();
+  const currentEmpresa = String(codEmpresaAtiva ?? '').trim();
+  const currentFilial = String(filialAtiva ?? '').trim();
+
+  return previousEmpresa === currentEmpresa && previousFilial === currentFilial
+    ? previousData
+    : undefined;
+}
+
 export function useComercialProdutos(filters?: ComercialFilters, options?: { enabled?: boolean; keepPreviousData?: boolean }) {
   const { empresa, codEmpresaAtiva, isLoading: loadingEmpresa } = useEmpresaAtiva();
   const { filialAtiva } = useFilialSelecionada();
@@ -1012,7 +1031,13 @@ export function useComercialProdutos(filters?: ComercialFilters, options?: { ena
     gcTime: 0,
     refetchOnWindowFocus: false,
     retry: false,
-    placeholderData: options?.keepPreviousData === false ? undefined : keepPreviousData,
+    placeholderData: (previousData, previousQuery) => resolveProdutosPlaceholderData(
+      previousData,
+      previousQuery?.queryKey,
+      codEmpresaAtiva,
+      filialAtiva,
+      options?.keepPreviousData !== false,
+    ),
   });
 
   const all = useMemo(
