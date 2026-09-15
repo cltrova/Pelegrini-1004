@@ -1,7 +1,10 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { resolveProdutosPlaceholderData } from './useComercialProdutos';
+import {
+  resolveComissaoPlaceholderData,
+  resolveProdutosPlaceholderData,
+} from './useComercialProdutos';
 
 describe('cache de produtos por filial', () => {
   const produtosCt = [{ cod_produto: 99, descricao: 'ROLAMENTO CT' }];
@@ -41,5 +44,27 @@ describe('cache de produtos por filial', () => {
     expect(source).toMatch(
       /import\s*{[^}]*keepPreviousData[^}]*}\s*from\s*['"]@tanstack\/react-query['"]/,
     );
+  });
+
+  it('nao reaproveita a comissao da outra filial enquanto a nova consulta carrega', () => {
+    const comissaoCt = [{ codigo: '63', nome: 'FABIO R', faturadoAteHoje: 100 }];
+
+    expect(resolveComissaoPlaceholderData(
+      comissaoCt,
+      ['comercial-receita-comissao-1004', '1004', '', true, 'transmissao'],
+      '1004',
+      'chevrolet',
+    )).toBeUndefined();
+  });
+
+  it('pode preservar a comissao ao alterar filtros dentro da mesma filial', () => {
+    const comissaoChevrolet = [{ codigo: '47', nome: 'RAFAEL', faturadoAteHoje: 200 }];
+
+    expect(resolveComissaoPlaceholderData(
+      comissaoChevrolet,
+      ['comercial-receita-comissao-1004', '1004', '', true, 'chevrolet'],
+      '1004',
+      'chevrolet',
+    )).toBe(comissaoChevrolet);
   });
 });

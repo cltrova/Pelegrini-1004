@@ -967,6 +967,27 @@ async function fetchReceitaComissao1004(
 // Hook
 // ----------------------------------------------------------------
 
+function resolveFilialScopedPlaceholderData<T>(
+  previousData: T | undefined,
+  previousQueryKey: readonly unknown[] | undefined,
+  codEmpresaAtiva: string | null | undefined,
+  filialAtiva: string | null | undefined,
+  enabled: boolean,
+  empresaKeyIndex: number,
+  filialKeyIndex: number,
+): T | undefined {
+  if (!enabled || !previousQueryKey) return undefined;
+
+  const previousEmpresa = String(previousQueryKey[empresaKeyIndex] ?? '').trim();
+  const previousFilial = String(previousQueryKey[filialKeyIndex] ?? '').trim();
+  const currentEmpresa = String(codEmpresaAtiva ?? '').trim();
+  const currentFilial = String(filialAtiva ?? '').trim();
+
+  return previousEmpresa === currentEmpresa && previousFilial === currentFilial
+    ? previousData
+    : undefined;
+}
+
 export function resolveProdutosPlaceholderData<T>(
   previousData: T | undefined,
   previousQueryKey: readonly unknown[] | undefined,
@@ -974,16 +995,33 @@ export function resolveProdutosPlaceholderData<T>(
   filialAtiva: string | null | undefined,
   enabled = true,
 ): T | undefined {
-  if (!enabled || !previousQueryKey) return undefined;
+  return resolveFilialScopedPlaceholderData(
+    previousData,
+    previousQueryKey,
+    codEmpresaAtiva,
+    filialAtiva,
+    enabled,
+    1,
+    2,
+  );
+}
 
-  const previousEmpresa = String(previousQueryKey[1] ?? '').trim();
-  const previousFilial = String(previousQueryKey[2] ?? '').trim();
-  const currentEmpresa = String(codEmpresaAtiva ?? '').trim();
-  const currentFilial = String(filialAtiva ?? '').trim();
-
-  return previousEmpresa === currentEmpresa && previousFilial === currentFilial
-    ? previousData
-    : undefined;
+export function resolveComissaoPlaceholderData<T>(
+  previousData: T | undefined,
+  previousQueryKey: readonly unknown[] | undefined,
+  codEmpresaAtiva: string | null | undefined,
+  filialAtiva: string | null | undefined,
+  enabled = true,
+): T | undefined {
+  return resolveFilialScopedPlaceholderData(
+    previousData,
+    previousQueryKey,
+    codEmpresaAtiva,
+    filialAtiva,
+    enabled,
+    1,
+    4,
+  );
 }
 
 export function useComercialProdutos(filters?: ComercialFilters, options?: { enabled?: boolean; keepPreviousData?: boolean }) {
@@ -1077,7 +1115,13 @@ export function useComercialProdutos(filters?: ComercialFilters, options?: { ena
     gcTime: 0,
     refetchOnWindowFocus: false,
     retry: false,
-    placeholderData: options?.keepPreviousData === false ? undefined : keepPreviousData,
+    placeholderData: (previousData, previousQuery) => resolveComissaoPlaceholderData(
+      previousData,
+      previousQuery?.queryKey,
+      codEmpresaAtiva,
+      filialAtiva,
+      options?.keepPreviousData !== false,
+    ),
   });
 
   const produtosFiltrados = useMemo(() => {
