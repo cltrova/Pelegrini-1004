@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { resolveProdutosPlaceholderData } from './useComercialProdutos';
 
@@ -31,5 +33,13 @@ describe('cache de produtos por filial', () => {
       '1004',
       'transmissao',
     )).toBe(produtosCt);
+  });
+
+  it('mantem importado o helper usado pelas consultas com dados anteriores', () => {
+    const source = readFileSync(resolve(process.cwd(), 'src/hooks/useComercialProdutos.ts'), 'utf8');
+
+    expect(source).toMatch(
+      /import\s*{[^}]*keepPreviousData[^}]*}\s*from\s*['"]@tanstack\/react-query['"]/,
+    );
   });
 });
