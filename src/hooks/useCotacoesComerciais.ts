@@ -1,6 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
 import { useEmpresaAtiva } from '@/hooks/useEmpresaAtiva';
+import { useFilialSelecionada } from '@/contexts/FilialSelecionadaContext';
 import { buildApiProxyUrl } from '@/utils/apiEndpointResolver';
+import { resolveCodEmpresaBiParam } from '@/utils/filialEndpoint';
+import { vendedorForcaP1004 } from '@/utils/vendedores1004';
 import { CotacaoInvalidaError, normalizarCotacao } from '@/utils/cotacoesComerciais';
 import type { Empresa } from '@/hooks/useEmpresaConfig';
 import type { CotacaoComercial, CotacaoOrigem } from '@/types/cotacoesComerciais';
@@ -24,9 +27,16 @@ type CotacoesEmpresa = Pick<
 >;
 
 const DEFAULT_PATHS: Record<CotacaoOrigem, string> = {
-  abertas: '/comercial/cotacoes_abertas_ch',
-  perdidas: '/comercial/vendas_perdidas_ch',
+  abertas: '/comercial/cotacoes-abertas',
+  perdidas: '/comercial/vendas-perdidas',
 };
+
+function normalizeCotacoesPath(origem: CotacaoOrigem, configuredPath?: string | null): string {
+  const path = String(configuredPath ?? '').trim() || DEFAULT_PATHS[origem];
+  return path
+    .replace(/\/comercial\/cotacoes_abertas_ch(?=[?#]|$)/, '/comercial/cotacoes-abertas')
+    .replace(/\/comercial\/vendas_perdidas_ch(?=[?#]|$)/, '/comercial/vendas-perdidas');
+}
 
 function isCotacoesPelegrini(codEmpresaBi: string | null | undefined) {
   const cod = String(codEmpresaBi ?? '').trim();
@@ -78,7 +88,7 @@ export function buildCotacoesPath(
     throw new Error('Cotacoes comerciais disponiveis somente para Pelegrini');
   }
 
-  const basePath = String(configuredPath ?? '').trim() || DEFAULT_PATHS[origem];
+  const basePath = normalizeCotacoesPath(origem, configuredPath);
   const [pathAndQuery, hash = ''] = basePath.split('#', 2);
   const queryIndex = pathAndQuery.indexOf('?');
   const pathOnly = queryIndex === -1 ? pathAndQuery : pathAndQuery.slice(0, queryIndex);
@@ -147,7 +157,17 @@ export async function fetchCotacoes(
       throw new CotacoesEndpointError('upstream', 'Cotacoes: falha no upstream');
     }
     if (!response.ok) {
-      throw new CotacoesEndpointError('http', `Cotacoes: HTTP ${response.status}`);
+      let detail = '';
+      try {
+        const body = await response.clone().json() as { detail?: unknown };
+        detail = typeof body.detail === 'string' ? body.detail.trim() : '';
+      } catch {
+        // Keep the HTTP status when the upstream does not return JSON.
+      }
+      throw new CotacoesEndpointError(
+        'http',
+        detail ? `Cotacoes: HTTP ${response.status} — ${detail}` : `Cotacoes: HTTP ${response.status}`,
+      );
     }
 
     let payload: unknown;
@@ -157,7 +177,12 @@ export async function fetchCotacoes(
       throw new CotacoesEndpointError('payload', 'Formato inesperado no endpoint de cotacoes');
     }
     try {
-      return extractRows(payload).map((row) => normalizarCotacao(row, origem, new Date()));
+      const cotacoes = extractRows(payload).map((row) => normalizarCotacao(row, origem, new Date()));
+      if (String(empresa?.cod_empresa_bi ?? '').trim() !== '10041') return cotacoes;
+      return cotacoes.filter((cotacao) => !vendedorForcaP1004({
+        codigo: cotacao.codVendedor,
+        nome: cotacao.nomeVendedor,
+      }));
     } catch (error) {
       if (error instanceof CotacoesEndpointError) throw error;
       if (error instanceof CotacaoInvalidaError) {
@@ -172,12 +197,15 @@ export async function fetchCotacoes(
 
 function useCotacoes(origem: CotacaoOrigem, filtros: CotacoesConsultaFiltros | null) {
   const { empresa, codEmpresaAtiva, isLoading: isLoadingEmpresa } = useEmpresaAtiva();
-  const codEmpresaBi = String(codEmpresaAtiva ?? empresa?.cod_empresa_bi ?? '').trim();
+  const { filialAtiva } = useFilialSelecionada();
+  const codEmpresaBi = String(
+    resolveCodEmpresaBiParam(empresa, filialAtiva) ?? codEmpresaAtiva ?? empresa?.cod_empresa_bi ?? '',
+  ).trim();
   const hasCotacoes = isCotacoesPelegrini(codEmpresaBi);
   const configuredPath = origem === 'abertas'
     ? empresa?.endpoint_path_comercial_cotacoes_abertas_ch
     : empresa?.endpoint_path_comercial_vendas_perdidas_ch;
-  const basePath = String(configuredPath ?? '').trim() || DEFAULT_PATHS[origem];
+  const basePath = normalizeCotacoesPath(origem, configuredPath);
   const hasEndpoint = hasCotacoes && (empresa?.usar_vps_intermediaria
     ? !!valorOpcional(empresa.vps_cliente_identificador)
     : !!valorOpcional(empresa?.endpoint_url));
@@ -191,7 +219,12 @@ function useCotacoes(origem: CotacaoOrigem, filtros: CotacoesConsultaFiltros | n
           'Cotacoes: configure um endpoint direto ou uma rota VPS para a empresa Pelegrini',
         );
       }
-      return fetchCotacoes(empresa, origem, filtros!, configuredPath);
+      return fetchCotacoes(
+        empresa ? { ...empresa, cod_empresa_bi: codEmpresaBi } : empresa,
+        origem,
+        filtros!,
+        configuredPath,
+      );
     },
     enabled: !isLoadingEmpresa && hasCotacoes && !!filtros,
     staleTime: 5 * 60 * 1000,

@@ -29,7 +29,6 @@ export interface FilialConfig {
 
 export const EQUIPE_CHEVROLET_PELEGRINI = [
   'DARI',
-  'DAYVID',
   'EDER',
   'ELIANE',
   'ELIELTON',

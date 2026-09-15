@@ -3,6 +3,7 @@ import { act, renderHook, waitFor } from '@testing-library/react';
 import { createElement, type PropsWithChildren } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useEmpresaAtiva } from '@/hooks/useEmpresaAtiva';
+import { useFilialSelecionada } from '@/contexts/FilialSelecionadaContext';
 import {
   buildCotacoesPath,
   buildCotacoesQueryKey,
@@ -13,6 +14,10 @@ import {
 
 vi.mock('@/hooks/useEmpresaAtiva', () => ({
   useEmpresaAtiva: vi.fn(),
+}));
+
+vi.mock('@/contexts/FilialSelecionadaContext', () => ({
+  useFilialSelecionada: vi.fn(),
 }));
 
 const filtros = {
@@ -46,7 +51,7 @@ function queryWrapper(queryClient: QueryClient) {
 describe('buildCotacoesPath', () => {
   it('monta o endpoint de cotacoes abertas para o 1004', () => {
     expect(buildCotacoesPath('abertas', filtros, '1004')).toBe(
-      '/comercial/cotacoes_abertas_ch?data_ini=2026-08-01&data_fim=2026-08-31&cod_empresa_bi=1004',
+      '/comercial/cotacoes-abertas?data_ini=2026-08-01&data_fim=2026-08-31&cod_empresa_bi=1004',
     );
   });
 
@@ -71,6 +76,58 @@ describe('consultas de cotacoes comerciais', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
     mockEmpresaAtiva();
+    vi.mocked(useFilialSelecionada).mockReturnValue({ filialAtiva: 'transmissao' } as never);
+  });
+
+  it('consulta a empresa 10041 quando a filial Chevrolet esta ativa dentro da 1004', async () => {
+    vi.mocked(useFilialSelecionada).mockReturnValue({ filialAtiva: 'chevrolet' } as never);
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify({ dados: [] }), { status: 200 }),
+    );
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const { result, unmount } = renderHook(() => useCotacoesAbertas(filtros), {
+      wrapper: queryWrapper(queryClient),
+    });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    const requestUrl = new URL(String(fetchMock.mock.calls[0]?.[0]));
+    expect(requestUrl.searchParams.get('path')).toContain('cod_empresa_bi=10041');
+
+    unmount();
+    queryClient.clear();
+    fetchMock.mockRestore();
+  });
+
+  it('remove cotacoes da Forca P do retorno da Casa da Chevrolet', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify({
+      dados: [
+        {
+          CodCotacao: 'CCH-1',
+          DataCotacao: '2026-08-01',
+          CodVendedor: '59',
+          NomeVendedor: 'ERLAN C.CH',
+          ValorTotal: 1000,
+          Status: 'ABERTA',
+        },
+        {
+          CodCotacao: 'FP-1',
+          DataCotacao: '2026-08-01',
+          CodVendedor: '250',
+          NomeVendedor: 'DAYVID',
+          ValorTotal: 2000,
+          Status: 'ABERTA',
+        },
+      ],
+    }), { status: 200 }));
+
+    await expect(fetchCotacoes(
+      { ...empresa, cod_empresa_bi: '10041' },
+      'abertas',
+      filtros,
+    )).resolves.toMatchObject([{ idCotacao: 'CCH-1' }]);
+
+    fetchMock.mockRestore();
   });
 
   it('exposes a retryable integration configuration error when 1004 has no direct endpoint or VPS route', async () => {
@@ -251,14 +308,14 @@ describe('consultas de cotacoes comerciais', () => {
       ...filtros,
       codVendedor: '59',
       codCliente: '88',
-    }, '/comercial/vendas_perdidas_ch', '1004')).toEqual([
+    }, '/comercial/vendas-perdidas', '1004')).toEqual([
       'cotacoes-comerciais',
       'perdidas',
       'https://erp.example.test',
       false,
       '',
       '',
-      '/comercial/vendas_perdidas_ch',
+      '/comercial/vendas-perdidas',
       '2026-08-01',
       '2026-08-31',
       '59',
@@ -271,8 +328,8 @@ describe('consultas de cotacoes comerciais', () => {
       usar_vps_intermediaria: true,
       vps_base_url: 'https://vps.example.test',
       vps_cliente_identificador: 'cliente-teste',
-    }, filtros, '/comercial/vendas_perdidas_ch')).not.toEqual(
-      buildCotacoesQueryKey('perdidas', empresa, filtros, '/comercial/vendas_perdidas_ch'),
+      }, filtros, '/comercial/vendas-perdidas')).not.toEqual(
+      buildCotacoesQueryKey('perdidas', empresa, filtros, '/comercial/vendas-perdidas'),
     );
   });
 });

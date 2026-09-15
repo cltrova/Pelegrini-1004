@@ -875,6 +875,7 @@ export function produtoPertenceEscopoPelegrini1004(
   if (isEmpresa10041) {
     if (codBi && codBi !== '10041') return false;
     if (!codBi && filialNomeNorm && !filialNomeNorm.includes('CHEVROLET') && filialNomeNorm !== 'CH' && filialNomeNorm !== 'CCH') return false;
+    if (isServicoForaRelatorioChevrolet10041(item)) return false;
     if (produtoPertenceForcaP1004(item)) return false;
     return true;
   }

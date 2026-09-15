@@ -134,5 +134,27 @@ describe('fonte oficial de receita 1004/10041', () => {
       codEmpresa: '10041',
       isContextoChevrolet10041Ativo: true,
     })).toBe(false);
+
+    expect(produtoPertenceEscopoPelegrini1004({
+      cod_empresa_bi: '10041',
+      filial_nome: 'Casa da Chevrolet',
+      cod_produto: '8888888',
+      descricao: 'SERVICOS',
+      marca: 'AMS',
+    }, {
+      codEmpresa: '10041',
+      isContextoChevrolet10041Ativo: true,
+    })).toBe(false);
+
+    expect(produtoPertenceEscopoPelegrini1004({
+      cod_empresa_bi: '10041',
+      filial_nome: 'Casa da Chevrolet',
+      cod_produto: '12345',
+      descricao: 'MAO DE OBRA',
+      cfop: '5.933',
+    }, {
+      codEmpresa: '10041',
+      isContextoChevrolet10041Ativo: true,
+    })).toBe(false);
   });
 });
