@@ -51,7 +51,7 @@ import {
 } from '@/utils/vendedores1004';
 import { invalidarConsultasComerciais } from '@/utils/comercialQueryInvalidation';
 import { resolverContagemTotalizadorPelegrini } from '@/utils/comercialKpiFallback';
-import { ComercialCommandBar, ComercialCompactPage } from '@/components/comercial/compact';
+import { ComercialCompactPage } from '@/components/comercial/compact';
 
 type VendedorDetalheRow = {
   codigo: string | number;
@@ -126,7 +126,10 @@ export default function MetasVendedoresPage() {
   const [initialized, setInitialized] = useState(false);
   const [hasResolvedData, setHasResolvedData] = useState(false);
   const [activeTab, setActiveTab] = useState<string>(() => {
-    try { return sessionStorage.getItem('comercial:metas:tab') || 'visao-geral'; } catch { return 'visao-geral'; }
+    try {
+      const saved = sessionStorage.getItem('comercial:metas:tab');
+      return saved === 'insights' ? 'visao-geral' : saved || 'visao-geral';
+    } catch { return 'visao-geral'; }
   });
   
    // Filtros - inicializar como undefined para NÃO filtrar até periodoDisponivel estar disponível
@@ -639,9 +642,6 @@ export default function MetasVendedoresPage() {
     }));
   }, [evolucaoDiaria]);
 
-  // Mês formatado
-  const mesFormatado = new Date(periodoFiltros.ano, periodoFiltros.mes - 1).toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' });
-
   // Se empresa não possui metas de vendedor, renderiza layout alternativo
   if (!isLoadingEmpresa && empresa && empresa.possui_meta_vendedor === false) {
     return <LayoutAlternativoComercial />;
@@ -664,7 +664,7 @@ export default function MetasVendedoresPage() {
       : vendedoresComMetaFonteFinal;
   const pedidosDetalheVisual: Array<Pedido | ProdutoItem> = isPelegriniPage ? pedidosFonteFinal : pedidos;
   const semVendedores = !vendedoresBaseVisual.length;
-  const isCampanhas1004Ativa = isPelegriniPage && activeTab === 'campanhas';
+  const tabUsaFiltroProprio = activeTab === 'metas-diarias' || (isPelegriniPage && activeTab === 'campanhas');
   const tabTriggerClass = cn(
     'h-8 flex-none whitespace-nowrap px-3 text-xs',
     isPelegriniPage
@@ -691,28 +691,22 @@ export default function MetasVendedoresPage() {
 
   return (
     <ComercialCompactPage as="div" className={cn(
-      'commercial-dashboard dashboard-commercial-page enterprise-page',
+      'commercial-dashboard dashboard-commercial-page enterprise-page relative',
       isPelegriniPage && 'bg-background text-foreground',
     )}>
-      <ComercialCommandBar
-        title="Visão comercial"
-        context={`${filialNome || 'Comercial'} · ${mesFormatado}`}
-        actions={
-          <span
-            role="status"
-            aria-label={isRefreshing ? 'Atualizando dados comerciais' : undefined}
-            title={isRefreshing ? 'Atualizando dados comerciais...' : undefined}
-            className="commercial-refresh-indicator flex h-6 w-6 shrink-0 items-center justify-center text-muted-foreground"
-          >
-            {isRefreshing && <>
-              <Loader2 aria-hidden="true" className="h-3.5 w-3.5 animate-spin motion-reduce:animate-none" />
-              <span className="sr-only">Atualizando dados comerciais...</span>
-            </>}
-          </span>
-        }
-      />
+      <span
+        role="status"
+        aria-label={isRefreshing ? 'Atualizando dados comerciais' : undefined}
+        title={isRefreshing ? 'Atualizando dados comerciais...' : undefined}
+        className="commercial-refresh-indicator pointer-events-none absolute right-3 top-3 z-10 flex h-6 w-6 shrink-0 items-center justify-center text-muted-foreground"
+      >
+        {isRefreshing && <>
+          <Loader2 aria-hidden="true" className="h-3.5 w-3.5 animate-spin motion-reduce:animate-none" />
+          <span className="sr-only">Atualizando dados comerciais...</span>
+        </>}
+      </span>
 
-      {!isCampanhas1004Ativa && (
+      {!tabUsaFiltroProprio && (
         <EnterpriseComercialFilters
           pendingFilters={pendingFilters || getDefaultFiltersForEmpresa(codEmpresaAtiva)}
           appliedFilters={appliedFilters || getDefaultFiltersForEmpresa(codEmpresaAtiva)}
@@ -732,7 +726,6 @@ export default function MetasVendedoresPage() {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v); try { sessionStorage.setItem('comercial:metas:tab', v); } catch { /* storage pode estar bloqueado pelo navegador */ } }} className="flex min-h-0 flex-1 flex-col gap-2 overflow-hidden">
-      <Suspense fallback={<ComercialTabFallback />}>
         <div className="w-full shrink-0 overflow-x-auto overscroll-x-contain rounded-md [scrollbar-width:thin]">
         <TabsList className={cn(
           'commercial-tab-strip h-9 w-max min-w-full justify-start',
@@ -745,13 +738,13 @@ export default function MetasVendedoresPage() {
           <TabsTrigger value="metas-diarias" className={tabTriggerClass}>Metas</TabsTrigger>
           <TabsTrigger value="ranking" className={tabTriggerClass}>Ranking</TabsTrigger>
           <TabsTrigger value="comparativos" className={tabTriggerClass}>Comparativos</TabsTrigger>
-          <TabsTrigger value="insights" className={tabTriggerClass}>Análises</TabsTrigger>
           {isPelegriniPage && (
             <TabsTrigger value="campanhas" className={tabTriggerClass}>Campanhas</TabsTrigger>
           )}
         </TabsList>
         </div>
 
+      <Suspense fallback={<ComercialTabFallback />}>
 
         {/* ==================== ABA: VISÃO GERAL ==================== */}
         <TabsContent value="visao-geral" className="mt-0 min-h-0 flex-1 space-y-3 overflow-auto">
@@ -785,6 +778,7 @@ export default function MetasVendedoresPage() {
               pedidos={pedidosDetalheVisual}
               kpisGerais={kpisGerais}
               periodoFiltros={periodoFiltros}
+              periodoAplicado={appliedFilters?.periodo}
               diasUteisNoMes={diasUteisNoMes}
               diasUteisDecorridos={diasUteisDecorridos}
             />
@@ -816,12 +810,9 @@ export default function MetasVendedoresPage() {
         {/* ==================== ABA: RANKING ==================== */}
         <TabsContent value="ranking" className="mt-0 min-h-0 flex-1 space-y-3 overflow-auto">
           <PremiumSectionCard
-            title="Ranking de Vendedores"
-            subtitle="Performance por vendedor ordenada por valor líquido"
-            icon={Trophy}
             tone="amarelo"
             className="commercial-dashboard-panel"
-            contentClassName="pt-0"
+            contentClassName="pt-4"
           >
             <div className="overflow-x-auto">
               <Table>
@@ -1038,11 +1029,9 @@ export default function MetasVendedoresPage() {
 
           {/* Projeções por Cenário */}
           <PremiumSectionCard
-            title="Projeções por Cenário - Vai Bater a Meta?"
-            subtitle="Análise de cada vendedor com base em diferentes cenários de performance"
-            icon={Target}
             tone="verde"
             className="commercial-dashboard-panel"
+            contentClassName="pt-4"
           >
               <div className="flex flex-wrap gap-4 mb-6 text-xs text-muted-foreground">
                 <div className="flex items-center gap-1.5">
@@ -1187,12 +1176,6 @@ export default function MetasVendedoresPage() {
           </PremiumSectionCard>
           </>
         </TabsContent>
-
-        {/* ==================== ABA: ANÁLISES ==================== */}
-        <TabsContent value="insights" className="mt-0 min-h-0 flex-1 space-y-3 overflow-auto">
-          <LazyInsightsIATab vendedores={vendedoresBaseVisual} kpis={kpisGerais} />
-        </TabsContent>
-
 
         {/* ==================== ABA: CAMPANHAS ==================== */}
         {isPelegriniPage && (

@@ -46,7 +46,7 @@ interface VendedorComMeta {
   metaEsperada: number;
 }
 
-interface PedidoMin {
+export interface PedidoMin {
   vendedor_codigo: string | number;
   vendedor_nome?: string;
   valor_liquido?: number;
@@ -86,8 +86,19 @@ interface Props {
     ticketMedio?: number;
   };
   periodoFiltros: { ano: number; mes: number };
+  periodoAplicado?: { inicio: string; fim: string };
   diasUteisNoMes: number;
   diasUteisDecorridos: number;
+}
+
+export function filtrarPedidosPorPeriodo(
+  pedidos: PedidoMin[],
+  periodo: { inicio: string; fim: string },
+): PedidoMin[] {
+  return pedidos.filter((pedido) => {
+    const data = String(pedido.data_faturamento || pedido.data_pedido || '').slice(0, 10);
+    return data.length === 10 && data >= periodo.inicio && data <= periodo.fim;
+  });
 }
 
 type ChartView = 'anual' | 'mensal' | 'diario';
@@ -102,11 +113,18 @@ export function PremiumMetasView({
   pedidos,
   kpisGerais,
   periodoFiltros,
+  periodoAplicado,
   diasUteisNoMes,
   diasUteisDecorridos,
 }: Props) {
   const [vendedorFoco, setVendedorFoco] = useState<string | null>(null);
   const [chartView, setChartView] = useState<ChartView>('diario');
+
+  const pedidosNoPeriodo = useMemo(() => {
+    const inicioMes = `${periodoFiltros.ano}-${String(periodoFiltros.mes).padStart(2, '0')}-01`;
+    const fimMes = `${periodoFiltros.ano}-${String(periodoFiltros.mes).padStart(2, '0')}-${String(new Date(periodoFiltros.ano, periodoFiltros.mes, 0).getDate()).padStart(2, '0')}`;
+    return filtrarPedidosPorPeriodo(pedidos, periodoAplicado || { inicio: inicioMes, fim: fimMes });
+  }, [pedidos, periodoAplicado, periodoFiltros]);
 
   // Lista de vendedores (somente os com meta ou venda)
   const vendedoresLista = useMemo(() => {
@@ -136,14 +154,16 @@ export function PremiumMetasView({
         diariaNecessaria: 0, // calculado adiante
       };
     }
+    const valorTotal = vendedoresLista.reduce((total, vendedor) => total + vendedor.faturamentoMesAtual, 0);
+    const metaTotal = vendedoresLista.reduce((total, vendedor) => total + vendedor.metaMensal, 0);
     return {
-      valorTotal: kpisGerais.totalFaturado,
-      metaTotal: kpisGerais.totalMeta,
-      percentual: kpisGerais.percentualFaturado,
-      falta: kpisGerais.faltaFaturado,
+      valorTotal,
+      metaTotal,
+      percentual: metaTotal > 0 ? (valorTotal / metaTotal) * 100 : 0,
+      falta: metaTotal - valorTotal,
       diariaNecessaria: 0,
     };
-  }, [focado, kpisGerais]);
+  }, [focado, vendedoresLista]);
 
   // Dias úteis restantes
   const diasUteisRestantes = Math.max(0, diasUteisNoMes - diasUteisDecorridos);
@@ -220,7 +240,7 @@ export function PremiumMetasView({
   const mediaMensalPorVendedor = useMemo(() => {
     // Map<codigo, Map<YYYY-MM, {valor, meta}>>
     const acc = new Map<string, { nome: string; meses: Map<string, { valor: number; meta: number }> }>();
-    for (const p of pedidos) {
+    for (const p of pedidosNoPeriodo) {
       const cod = String(p.vendedor_codigo);
       if (!cod) continue;
       const dataRef = (p.data_faturamento || p.data_pedido || '').toString();
@@ -259,23 +279,23 @@ export function PremiumMetasView({
     .sort((a, b) => b.pctMeta - a.pctMeta);
 
     return rows;
-  }, [pedidos, vendedoresComMeta]);
+  }, [pedidosNoPeriodo, vendedoresComMeta]);
 
   const qtdMesesPeriodo = useMemo(() => {
     const set = new Set<string>();
-    for (const p of pedidos) {
+    for (const p of pedidosNoPeriodo) {
       const dataRef = (p.data_faturamento || p.data_pedido || '').toString().substring(0, 7);
       if (dataRef) set.add(dataRef);
     }
     return set.size || 1;
-  }, [pedidos]);
+  }, [pedidosNoPeriodo]);
 
   // ===== Realizado vs Meta - dataset por view =====
   const dadosGrafico = useMemo(() => {
     // Filtra pedidos pelo vendedor focado se houver
     const pedidosBase = focado
-      ? pedidos.filter(p => String(p.vendedor_codigo) === String(focado.codigo))
-      : pedidos;
+      ? pedidosNoPeriodo.filter(p => String(p.vendedor_codigo) === String(focado.codigo))
+      : pedidosNoPeriodo;
 
     if (chartView === 'diario') {
       // Agrupa por dia no mês do periodoFiltros
@@ -363,7 +383,7 @@ export function PremiumMetasView({
           metaDiaria: toNum(metaDiariaCalc),
         };
       });
-  }, [chartView, pedidos, focado, periodoFiltros, kpisGerais, diasUteisNoMes]);
+  }, [chartView, pedidosNoPeriodo, focado, periodoFiltros, kpisGerais, diasUteisNoMes]);
 
   const melhorPonto = useMemo(() => {
     if (!dadosGrafico.length) return null;
@@ -374,7 +394,7 @@ export function PremiumMetasView({
   const mediaMensalGeral = useMemo(() => {
     // Mês a mês: total faturado, meta, % meta, evolução vs mesmo mês ano anterior
     const map = new Map<string, { valor: number; metaMes: Map<string, number> }>();
-    for (const p of pedidos) {
+    for (const p of pedidosNoPeriodo) {
       const dataRef = (p.data_faturamento || p.data_pedido || '').toString().substring(0, 7);
       if (!dataRef) continue;
       const valor = getReceitaPedido(p);
@@ -417,7 +437,7 @@ export function PremiumMetasView({
       }
       return { ...l, evolucao };
     });
-  }, [pedidos]);
+  }, [pedidosNoPeriodo]);
 
   // Totais finais para os cards do gráfico
   // IMPORTANTE: usamos a Meta do mês corrente (focado ou geral) como referência única,
@@ -443,8 +463,8 @@ export function PremiumMetasView({
     return { ok, total };
   }, [chartView, dadosGrafico]);
 
-  const receitaResumo = kpisGerais.totalFaturado || 0;
-  const vendasResumo = kpisGerais.qtdPedidos || pedidos.length || 0;
+  const receitaResumo = totais.valorTotal;
+  const vendasResumo = pedidosNoPeriodo.length;
   const clientesResumo = kpisGerais.clientesAtendidos || 0;
   const ticketResumo = kpisGerais.ticketMedio ?? (vendasResumo > 0 ? receitaResumo / vendasResumo : 0);
 

@@ -164,7 +164,7 @@ export function VendedorMetaDiariaCard({ vendedor, className, compact1004 = fals
             {metricasPrincipais.map((metrica) => (
               <div key={metrica.label} className="rounded-lg border border-border/45 bg-background/35 px-3 py-2.5">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-muted-foreground">{metrica.label}</p>
-                <p className={cn('mono-value mt-1 truncate text-sm font-bold tabular-nums', metrica.tone)}>
+                <p className={cn('mono-value mt-1 whitespace-nowrap text-xs font-bold tabular-nums 2xl:text-sm', metrica.tone)}>
                   {metrica.value}
                 </p>
               </div>
@@ -187,8 +187,8 @@ export function VendedorMetaDiariaCard({ vendedor, className, compact1004 = fals
             <div className="grid grid-cols-3 gap-2">
               {metricasSecundarias.map((metrica) => (
                 <div key={metrica.label} className="min-w-0">
-                  <p className="truncate text-[10px] uppercase tracking-[0.12em] text-muted-foreground">{metrica.label}</p>
-                  <p className="mono-value truncate text-xs font-semibold tabular-nums text-foreground">{metrica.value}</p>
+                  <p className="whitespace-nowrap text-[9px] uppercase text-muted-foreground">{metrica.label}</p>
+                  <p className="mono-value whitespace-nowrap text-[10px] font-semibold tabular-nums text-foreground 2xl:text-xs">{metrica.value}</p>
                 </div>
               ))}
             </div>

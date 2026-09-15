@@ -152,12 +152,12 @@ describe('commercial sidebar menu access', () => {
     expect(screen.getByRole('complementary')).toHaveAttribute('data-desktop-state', 'collapsed');
   });
 
-  it('uses indexed navigation for the commercial desktop sidebar', () => {
+  it('uses icon navigation without numeric indexes', () => {
     mockCompany('1004');
     render(createElement(MemoryRouter, { initialEntries: ['/comercial/dashboard'], future: { v7_startTransition: true, v7_relativeSplatPath: true } }, createElement(ComercialSidebar)));
 
-    expect(screen.getByRole('complementary')).toHaveAttribute('data-navigation-style', 'indexed');
-    expect(screen.getByText('01')).toHaveClass('sidebar-item-index');
+    expect(screen.getByRole('complementary')).toHaveAttribute('data-navigation-style', 'default');
+    expect(screen.queryByText('01')).not.toBeInTheDocument();
   });
 
   it('respects reduced motion for the mobile sidebar transition', () => {

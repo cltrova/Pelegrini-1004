@@ -762,6 +762,8 @@ export function CampanhasTab({ periodoFiltro }: CampanhasTabProps = {}) {
           ]}
         />
 
+        <CampaignProgressOverview campanhas={campanhasFiltradas} />
+
         <ComercialDataViewport ariaLabel="Campanhas comerciais" className="space-y-2 pr-1">
           {(insightsQuery.data && insightsQuery.data.length > 0) && (
           <section aria-label="Alertas e oportunidades" className="commercial-dashboard-panel rounded-md border border-border/70 bg-card">
@@ -812,6 +814,80 @@ export function CampanhasTab({ periodoFiltro }: CampanhasTabProps = {}) {
         </ComercialDataViewport>
       </div>
     </TooltipProvider>
+  );
+}
+
+function CampaignProgressOverview({ campanhas }: { campanhas: CampanhaCalculada[] }) {
+  const emAndamento = campanhas.filter((campanha) => !campanha.encerrada && !campanhaEstaEncerrada(campanha));
+  const ativas = emAndamento.length > 0 ? emAndamento : campanhas;
+  if (ativas.length === 0) return null;
+
+  const metaTotal = ativas.reduce((total, campanha) => total + campanha.metaCampanhaTotal, 0);
+  const realizadoTotal = ativas.reduce((total, campanha) => total + campanha.realizadoTotal, 0);
+  const premioTotal = ativas.reduce((total, campanha) => total + campanha.premioTotal, 0);
+  const faltante = Math.max(0, metaTotal - realizadoTotal);
+  const progresso = metaTotal > 0 ? (realizadoTotal / metaTotal) * 100 : 0;
+  const diasRestantes = Math.max(1, ...ativas.map((campanha) => campanha.diasRestantes));
+  const campanhaDestaque = [...ativas].sort((a, b) => b.progressoGeral - a.progressoGeral)[0];
+
+  return (
+    <section aria-label="Progresso das campanhas" className="grid grid-cols-1 border border-border/70 bg-card lg:grid-cols-2">
+      <CampaignProgressCell
+        label="Meta total da CT"
+        context={emAndamento.length > 0 ? `${emAndamento.length} campanha(s) em andamento` : `${ativas.length} campanha(s) no filtro`}
+        realizado={realizadoTotal}
+        meta={metaTotal}
+        progresso={progresso}
+        footer={`Falta ${formatCurrency(faltante)} · ritmo ${formatCurrency(faltante / diasRestantes)}/dia`}
+      />
+      <CampaignProgressCell
+        label="Campanha ativa"
+        context={campanhaDestaque.nome}
+        realizado={campanhaDestaque.realizadoTotal}
+        meta={campanhaDestaque.metaCampanhaTotal}
+        progresso={campanhaDestaque.progressoGeral}
+        footer={`Premiação potencial ${formatCurrency(premioTotal)}`}
+      />
+    </section>
+  );
+}
+
+function CampaignProgressCell({
+  label,
+  context,
+  realizado,
+  meta,
+  progresso,
+  footer,
+}: {
+  label: string;
+  context: string;
+  realizado: number;
+  meta: number;
+  progresso: number;
+  footer: string;
+}) {
+  const percentual = Math.min(100, Math.max(0, progresso));
+  const tone = progresso >= 100 ? 'bg-emerald-500' : progresso >= 70 ? 'bg-amber-500' : 'bg-primary';
+
+  return (
+    <article className="min-w-0 border-b border-border/70 p-4 last:border-b-0 lg:border-b-0 lg:border-r lg:last:border-r-0">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-[10px] font-semibold uppercase text-muted-foreground">{label}</p>
+          <p className="truncate text-xs text-muted-foreground" title={context}>{context}</p>
+        </div>
+        <strong className="font-mono text-lg tabular-nums">{progresso.toFixed(1)}%</strong>
+      </div>
+      <div className="mt-3 flex flex-wrap items-baseline justify-between gap-2 text-xs">
+        <strong className="font-mono text-base tabular-nums">{formatCurrency(realizado)}</strong>
+        <span className="text-muted-foreground">Meta {formatCurrency(meta)}</span>
+      </div>
+      <div className="mt-2 h-1.5 overflow-hidden bg-muted" aria-label={`${percentual.toFixed(1)}% concluído`} role="progressbar" aria-valuenow={percentual} aria-valuemin={0} aria-valuemax={100}>
+        <div className={cn('h-full', tone)} style={{ width: `${percentual}%` }} />
+      </div>
+      <p className="mt-2 text-[11px] text-muted-foreground">{footer}</p>
+    </article>
   );
 }
 
@@ -1132,9 +1208,18 @@ function CampanhaFullCard({
       expanded && 'ring-1 ring-primary/25',
       c.statusVisual === 'expired' && 'opacity-80',
     )}>
-      <button
-        type="button"
+      <div
+        role="button"
+        tabIndex={0}
+        aria-expanded={expanded}
         onClick={onToggle}
+        onKeyDown={(event) => {
+          if (event.target !== event.currentTarget) return;
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            onToggle();
+          }
+        }}
         className="w-full px-5 py-4 relative overflow-hidden text-left transition-all"
       >
         <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 relative">
@@ -1208,7 +1293,7 @@ function CampanhaFullCard({
             style={{ width: `${progressoCompacto}%` }}
           />
         </div>
-      </button>
+      </div>
 
       {expanded && (
       <>

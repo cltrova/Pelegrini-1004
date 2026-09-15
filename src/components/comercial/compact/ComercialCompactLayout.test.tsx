@@ -25,11 +25,11 @@ describe('ComercialCompactLayout', () => {
     const workspace = screen.getByRole('main');
     const viewport = screen.getByTestId('comercial-data-viewport');
 
-    expect(screen.getByRole('heading', { name: 'Cotacoes abertas' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Cotacoes abertas' })).toHaveClass('sr-only');
     expect(screen.getByRole('button', { name: 'Exportar' })).toBeInTheDocument();
     expect(screen.getByLabelText('Indicadores comerciais')).toHaveClass('commercial-metric-strip');
     expect(workspace).toHaveClass('commercial-workspace', 'min-h-0', 'min-w-0', 'max-w-full', 'overflow-x-hidden');
-    expect(screen.getByRole('banner')).toHaveClass('commercial-toolbar');
+    expect(screen.getByRole('banner')).toHaveClass('commercial-toolbar', 'justify-end');
     expect(viewport).toHaveClass('commercial-data-viewport', 'min-h-0', 'min-w-0', 'max-w-full', 'overflow-auto');
   });
 
@@ -44,6 +44,7 @@ describe('ComercialCompactLayout', () => {
 
     expect(screen.getAllByRole('main')).toHaveLength(1);
     expect(screen.getByRole('main')).toContainElement(screen.getByRole('heading', { name: 'Clientes' }));
+    expect(screen.getByRole('heading', { name: 'Clientes' })).toHaveClass('sr-only');
     expect(screen.getByRole('heading', { name: 'Clientes' }).closest('.comercial-compact-page')).toHaveProperty('tagName', 'DIV');
   });
 

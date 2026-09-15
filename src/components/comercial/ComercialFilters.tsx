@@ -556,29 +556,30 @@ export function ComercialFilters({
             : 'rounded-lg border border-border/60 bg-card p-4',
         )}
       >
-        {/* Header com toggle */}
-        <CollapsibleTrigger asChild>
-          <div className={cn(
-            "mb-3 flex items-center justify-between gap-3",
-            collapsible && "cursor-pointer"
-          )}>
-            <div className="flex items-center gap-2">
-              <span className="inline-flex items-center gap-1.5 text-sm font-medium text-foreground">
-                <Filter className="h-4 w-4 text-primary" />
-                Filtros
-              </span>
-              {collapsible && (
-                <span className="text-xs text-muted-foreground">
-                  {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+        {!embedded && (
+          <CollapsibleTrigger asChild>
+            <div className={cn(
+              "mb-3 flex items-center justify-between gap-3",
+              collapsible && "cursor-pointer"
+            )}>
+              <div className="flex items-center gap-2">
+                <span className="inline-flex items-center gap-1.5 text-sm font-medium text-foreground">
+                  <Filter className="h-4 w-4 text-primary" />
+                  Filtros
                 </span>
-              )}
+                {collapsible && (
+                  <span className="text-xs text-muted-foreground">
+                    {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                  </span>
+                )}
+              </div>
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-muted/40 px-3 py-1 text-xs font-medium text-muted-foreground">
+                <Calendar className="h-3.5 w-3.5" />
+                {periodoResumo}
+              </span>
             </div>
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-muted/40 px-3 py-1 text-xs font-medium text-muted-foreground">
-              <Calendar className="h-3.5 w-3.5" />
-              {periodoResumo}
-            </span>
-          </div>
-        </CollapsibleTrigger>
+          </CollapsibleTrigger>
+        )}
 
         <CollapsibleContent className="space-y-4">
           {/* Grid de filtros */}

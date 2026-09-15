@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -141,6 +141,8 @@ describe('MetasVendedoresPage commercial dashboard', () => {
     expect(screen.getByRole('main').querySelector('.commercial-dashboard')).toHaveProperty('tagName', 'DIV');
     expect(screen.getByRole('tablist')).toHaveClass('commercial-tab-strip');
     expect(screen.getByLabelText('Indicadores do dashboard comercial')).toHaveClass('commercial-metric-strip');
+    expect(screen.queryByText('Visão comercial')).not.toBeInTheDocument();
+    expect(screen.queryByRole('tab', { name: 'Análises' })).not.toBeInTheDocument();
   });
 
   it('deixa a neutralizacao da sombra do trigger ativo a cargo do shell comercial', async () => {
@@ -186,10 +188,9 @@ describe('MetasVendedoresPage commercial dashboard', () => {
     await act(async () => rerender(<MetasVendedoresPage />));
     expect(await screen.findByText('Conteudo preservado')).toBeInTheDocument();
 
-    const toolbar = screen.getByRole('heading', { name: 'Visão comercial' }).closest('header')!;
-    const status = toolbar.querySelector('[role="status"]');
+    const page = screen.getByRole('tablist').closest('.commercial-dashboard')!;
+    const status = page.querySelector('[role="status"]')!;
     expect(status).toHaveClass('h-6', 'w-6', 'shrink-0');
-    const page = toolbar.parentElement!;
     const pageChildren = Array.from(page.children);
 
     fetchingState.value = 1;
@@ -203,7 +204,7 @@ describe('MetasVendedoresPage commercial dashboard', () => {
 
     fetchingState.value = 0;
     await act(async () => rerender(<MetasVendedoresPage />));
-    expect(toolbar.querySelector('[role="status"]')).toBe(status);
+    expect(page.querySelector('[role="status"]')).toBe(status);
     expect(status).toBeEmptyDOMElement();
     expect(Array.from(page.children)).toEqual(pageChildren);
   });
@@ -226,11 +227,37 @@ describe('MetasVendedoresPage commercial dashboard', () => {
 
     const { container } = render(<MetasVendedoresPage />);
 
-    const title = await screen.findByText('Projeções por Cenário - Vai Bater a Meta?');
-    const section = title.closest('.commercial-dashboard-panel');
+    const section = (await screen.findByText(/Se mantiver ritmo atual/)).closest('.commercial-dashboard-panel');
     expect(section).not.toBeNull();
+    expect(screen.queryByText('Projeções por Cenário - Vai Bater a Meta?')).not.toBeInTheDocument();
+    expect(screen.queryByText('Análise de cada vendedor com base em diferentes cenários de performance')).not.toBeInTheDocument();
     expect(section?.querySelector('.commercial-scenario-panel')).toBeInTheDocument();
     expect(section?.querySelectorAll('.bg-card')).toHaveLength(0);
+  });
+
+  it('keeps only the metas filter when the metas tab is active', async () => {
+    sessionStorage.setItem('comercial:metas:tab', 'metas-diarias');
+    render(<MetasVendedoresPage />);
+
+    await waitFor(() => expect(screen.queryByText('Filtros comerciais')).not.toBeInTheDocument());
+    expect(await screen.findByRole('tab', { name: 'Metas' })).toHaveAttribute('data-state', 'active');
+  });
+
+  it('falls back to the overview when the removed analyses tab was persisted', async () => {
+    sessionStorage.setItem('comercial:metas:tab', 'insights');
+    render(<MetasVendedoresPage />);
+
+    expect(await screen.findByRole('tab', { name: 'Visão geral' })).toHaveAttribute('data-state', 'active');
+    expect(screen.queryByRole('tab', { name: 'Análises' })).not.toBeInTheDocument();
+  });
+
+  it('removes redundant ranking headings', async () => {
+    render(<MetasVendedoresPage />);
+
+    fireEvent.click(await screen.findByRole('tab', { name: 'Ranking' }));
+
+    expect(screen.queryByText('Ranking de Vendedores')).not.toBeInTheDocument();
+    expect(screen.queryByText('Performance por vendedor ordenada por valor líquido')).not.toBeInTheDocument();
   });
 });
 
@@ -365,13 +392,15 @@ describe('CampanhasTab loading lifecycle', () => {
 
     const { rerender } = render(<CampanhasTab />);
 
-    expect(await screen.findByText('Campanha EATON')).toBeInTheDocument();
+    expect((await screen.findAllByText('Campanha EATON')).length).toBeGreaterThan(0);
+    expect(screen.getByText('Meta total da CT')).toBeInTheDocument();
+    expect(screen.getByText('Campanha ativa')).toBeInTheDocument();
     expect(screen.getAllByText(/1\.250,00/).length).toBeGreaterThan(0);
 
     produtosState.value = { ...produtosState.value, isFetching: true };
     await act(async () => rerender(<CampanhasTab />));
 
-    expect(screen.getByText('Campanha EATON')).toBeInTheDocument();
+    expect(screen.getAllByText('Campanha EATON').length).toBeGreaterThan(0);
     expect(screen.getAllByText(/1\.250,00/).length).toBeGreaterThan(0);
     expect(screen.getByRole('status', { name: 'Atualizando campanhas comerciais' })).toBeInTheDocument();
   });
@@ -470,6 +499,48 @@ describe('PremiumMetasView management signals', () => {
     expect(screen.getByText(/Necessário R\$ 58,82\/dia em 17 dias úteis\./)).toBeInTheDocument();
     expect(screen.getByText(/Ritmo atual fecha em R\$ 4\.400,00/)).toBeInTheDocument();
     expect(container.querySelector('.commercial-chart-frame')).toBeInTheDocument();
+  });
+
+  it('limits both monthly panels and totals to the applied period', () => {
+    render(
+      <PremiumMetasView
+        vendedoresComMeta={[{
+          codigo: 98,
+          nome: 'DANIEL',
+          metaMensal: 2000,
+          faturamentoMesAtual: 1000,
+          valorTotal: 1000,
+          percentualMetaFaturado: 50,
+          metaDiaria: 90.91,
+          metaEsperada: 454.55,
+        }]}
+        pedidos={[
+          { vendedor_codigo: 98, data_faturamento: '2026-06-05', valor_liquido_final: 1000 },
+          { vendedor_codigo: 98, data_faturamento: '2026-05-05', valor_liquido_final: 8000 },
+        ]}
+        kpisGerais={{
+          totalMeta: 9999,
+          totalFaturado: 9999,
+          percentualFaturado: 100,
+          faltaFaturado: 0,
+          acimaMeta: 0,
+          abaixoMeta: 1,
+          totalVendedores: 1,
+          totalDevolucoes: 0,
+          clientesAtendidos: 1,
+        }}
+        periodoFiltros={{ ano: 2026, mes: 6 }}
+        periodoAplicado={{ inicio: '2026-06-01', fim: '2026-06-30' }}
+        diasUteisNoMes={22}
+        diasUteisDecorridos={5}
+      />,
+    );
+
+    const totalRealizado = screen.getByText('Total Realizado').parentElement!;
+    expect(totalRealizado).toHaveTextContent('R$ 1.000,00');
+    expect(screen.getByText('Junho')).toBeInTheDocument();
+    expect(screen.queryByText('Maio')).not.toBeInTheDocument();
+    expect(screen.queryByText('R$ 8.000,00')).not.toBeInTheDocument();
   });
 });
 

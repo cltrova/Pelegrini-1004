@@ -194,7 +194,7 @@ export function RankingVendedoresChart({ data, periodo, onClick, variant = 'defa
                     stroke="hsl(var(--foreground))"
                     strokeDasharray="4 4"
                     strokeOpacity={0.5}
-                    label={{ value: 'Meta 100%', position: 'right', fill: 'hsl(var(--muted-foreground))', fontSize: 14 }}
+                    label={{ value: 'Meta 100%', position: 'insideTopRight', fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
                   />
                 )}
                 {modo === 'faturamento' && media > 0 && (
@@ -203,7 +203,7 @@ export function RankingVendedoresChart({ data, periodo, onClick, variant = 'defa
                     stroke={isBlue ? '#2563eb' : 'hsl(var(--primary))'}
                     strokeDasharray="4 4"
                     strokeOpacity={0.55}
-                    label={{ value: isBlue ? 'Média' : `Média ${compactCurrency(media)}`, position: 'right', fill: 'hsl(var(--primary))', fontSize: isBlue ? 12 : 14 }}
+                    label={{ value: isBlue ? 'Média' : `Média ${compactCurrency(media)}`, position: 'insideTopRight', fill: 'hsl(var(--primary))', fontSize: 12 }}
                   />
                 )}
 

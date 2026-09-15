@@ -56,11 +56,9 @@ export function ComercialCompactPage({ children, className, as: Component = 'mai
 
 export function ComercialCommandBar({ title, context, actions, className }: ComercialCommandBarProps) {
   return (
-    <header className={cn('comercial-command-bar commercial-toolbar', className)}>
-      <div className="min-w-0">
-        <h1>{title}</h1>
-        {context && <span className="comercial-command-context">{context}</span>}
-      </div>
+    <header className={cn('comercial-command-bar commercial-toolbar justify-end', !actions && 'sr-only', className)}>
+      <h1 className="sr-only">{title}</h1>
+      {context && <span className="sr-only">{context}</span>}
       {actions && <div className="comercial-command-actions">{actions}</div>}
     </header>
   );

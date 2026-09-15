@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { getRankingVendedoresChartLayout } from './rankingVendedoresChartLayout';
 
@@ -18,5 +20,13 @@ describe('RankingVendedoresChart label hierarchy', () => {
       sellerFontSize: 10,
       valueFontSize: 11,
     });
+  });
+});
+
+describe('RankingVendedoresChart reference labels', () => {
+  it('keeps reference labels inside the chart area', () => {
+    const source = readFileSync(join(process.cwd(), 'src/components/comercial/RankingVendedoresChart.tsx'), 'utf8');
+    expect(source).not.toContain("position: 'right'");
+    expect(source).toContain("position: 'insideTopRight'");
   });
 });

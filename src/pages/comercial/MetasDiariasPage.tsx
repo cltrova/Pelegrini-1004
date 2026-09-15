@@ -330,19 +330,7 @@ export default function MetasDiariasPage() {
         />
       </CollapsibleFilterBar>
 
-      {/* Header */}
-      <div className="page-header shrink-0">
-        <div>
-          <h1 className="page-title flex items-center gap-2">
-            <BarChart3 className="h-7 w-7 text-primary" />
-            Metas Diárias
-          </h1>
-          <p className="page-subtitle">
-            {isEmpresa1004
-              ? 'Acompanhamento do ritmo diário da equipe no período filtrado'
-              : 'Ranking detalhado de vendedores com análise de metas diárias'}
-          </p>
-        </div>
+      <div className="flex shrink-0 justify-end">
         <Badge variant="outline" className="text-sm px-4 py-2">
           <Calendar className="h-4 w-4 mr-2" />
           <span className="font-bold">{diasUteisDecorridos}</span>
@@ -404,8 +392,8 @@ export default function MetasDiariasPage() {
                   <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">{item.label}</span>
                   <item.icon className={`h-4 w-4 ${item.tone}`} />
                 </div>
-                <p className="mono-value truncate text-xl font-bold tabular-nums text-foreground">{item.value}</p>
-                <p className="mt-1 truncate text-[11px] text-muted-foreground">{item.helper}</p>
+                <p className="mono-value whitespace-nowrap text-base font-bold tabular-nums text-foreground 2xl:text-lg">{item.value}</p>
+                <p className="mt-1 min-h-8 text-[11px] leading-4 text-muted-foreground">{item.helper}</p>
               </div>
             ))}
           </div>
