@@ -1,6 +1,7 @@
 import type { PropsWithChildren, ReactNode } from 'react';
+import { Info } from 'lucide-react';
 
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 
 import './ComercialCompactLayout.css';
@@ -87,7 +88,7 @@ function ComercialMetricCell({ label, value, context, tone = 'neutral', tooltip,
   const valueLength = typeof value === 'string' || typeof value === 'number'
     ? String(value).length
     : undefined;
-  const cell = (
+  return (
     <article
       aria-label={onClick ? actionLabel || `Abrir detalhes de ${label}` : undefined}
       className={cn('comercial-metric-cell', onClick && 'cursor-pointer')}
@@ -101,21 +102,32 @@ function ComercialMetricCell({ label, value, context, tone = 'neutral', tooltip,
       } : undefined}
       role={onClick ? 'button' : undefined}
       style={valueLength === undefined ? undefined : { minWidth: `max(9rem, calc(${valueLength}ch + 3rem))` }}
-      tabIndex={tooltip || onClick ? 0 : undefined}
+      tabIndex={onClick ? 0 : undefined}
     >
-      <span className="comercial-metric-label">{label}</span>
+      <span className="comercial-metric-heading">
+        <span className="comercial-metric-label">{label}</span>
+        {tooltip && (
+          <Popover>
+            <PopoverTrigger asChild>
+              <button
+                aria-label={`Informacoes sobre ${label}`}
+                className="comercial-metric-info"
+                onClick={(event) => event.stopPropagation()}
+                onKeyDown={(event) => event.stopPropagation()}
+                type="button"
+              >
+                <Info aria-hidden="true" />
+              </button>
+            </PopoverTrigger>
+            <PopoverContent align="start" className="commercial-overlay max-w-72 rounded-sm p-3 text-xs leading-5">
+              {tooltip}
+            </PopoverContent>
+          </Popover>
+        )}
+      </span>
       <span className="comercial-metric-value tabular-nums" title={typeof value === 'string' ? value : undefined}>{value}</span>
       {context && <span className="comercial-metric-context">{context}</span>}
     </article>
-  );
-
-  if (!tooltip) return cell;
-
-  return (
-    <Tooltip>
-      <TooltipTrigger asChild>{cell}</TooltipTrigger>
-      <TooltipContent className="commercial-overlay">{tooltip}</TooltipContent>
-    </Tooltip>
   );
 }
 
@@ -126,16 +138,14 @@ export function ComercialMetricStrip({
   className,
 }: ComercialMetricStripProps) {
   return (
-    <TooltipProvider delayDuration={300}>
-      <section
-        aria-label={ariaLabel}
-        className={cn('comercial-metric-strip commercial-metric-strip', className)}
-        data-density="compact"
-        data-mode={mode}
-      >
-        {metrics.map((metric) => <ComercialMetricCell key={metric.label} {...metric} />)}
-      </section>
-    </TooltipProvider>
+    <section
+      aria-label={ariaLabel}
+      className={cn('comercial-metric-strip commercial-metric-strip', className)}
+      data-density="compact"
+      data-mode={mode}
+    >
+      {metrics.map((metric) => <ComercialMetricCell key={metric.label} {...metric} />)}
+    </section>
   );
 }
 

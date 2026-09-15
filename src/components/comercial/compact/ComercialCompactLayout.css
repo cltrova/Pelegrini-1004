@@ -130,6 +130,43 @@
   -webkit-line-clamp: 2;
 }
 
+.comercial-metric-heading {
+  display: flex;
+  min-inline-size: 0;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.comercial-metric-info {
+  display: inline-flex;
+  inline-size: 1.125rem;
+  block-size: 1.125rem;
+  flex: 0 0 1.125rem;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 2px;
+  color: hsl(var(--muted-foreground));
+  background: transparent;
+  cursor: pointer;
+}
+
+.comercial-metric-info:hover,
+.comercial-metric-info:focus-visible {
+  color: hsl(var(--primary));
+  background: hsl(var(--primary) / 0.1);
+}
+
+.comercial-metric-info:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 1px;
+}
+
+.comercial-metric-info svg {
+  inline-size: 0.875rem;
+  block-size: 0.875rem;
+}
+
 .comercial-metric-value {
   min-inline-size: 0;
   margin-top: 0.125rem;

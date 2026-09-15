@@ -111,18 +111,22 @@ describe('ComercialCompactLayout', () => {
     expect(strip).not.toHaveAttribute('style');
   });
 
-  it('marks the rendered metric tooltip portal as a commercial overlay', () => {
+  it('shows metric information only after clicking its information button', () => {
     render(
       <ComercialMetricStrip
         metrics={[{ label: 'Valor em aberto', value: 'R$ 1.000,00', tooltip: 'Total confirmado' }]}
       />,
     );
 
-    const trigger = screen.getByText('R$ 1.000,00').closest('article');
-    expect(trigger).not.toBeNull();
-    fireEvent.focus(trigger!);
+    expect(screen.queryByText('Total confirmado')).not.toBeInTheDocument();
 
-    expect(screen.getByRole('tooltip')).toHaveClass('commercial-overlay');
+    const informationButton = screen.getByRole('button', { name: 'Informacoes sobre Valor em aberto' });
+    fireEvent.mouseEnter(screen.getByText('R$ 1.000,00').closest('article')!);
+    expect(screen.queryByText('Total confirmado')).not.toBeInTheDocument();
+
+    fireEvent.click(informationButton);
+
+    expect(screen.getByText('Total confirmado')).toHaveClass('commercial-overlay');
   });
 
   it('keeps metric tracks intrinsic in one horizontally scrollable row', () => {
