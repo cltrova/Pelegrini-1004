@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Download, Info, ArrowRight, FileBarChart2, Sparkles, BookOpen, ChevronDown } from 'lucide-react';
+import { Download, Info, ArrowRight, FileBarChart2, BookOpen, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { DFCLinha } from '@/types/variacao';
 import { formatCurrency } from '@/utils/formatters';
@@ -66,11 +66,11 @@ export function DFCTable({ linhas, anoPeriodo1, mesPeriodo1, anoPeriodo2, mesPer
 
     if (linha.tipo === 'titulo') {
       return (
-        <tr key={linha.id} className="border-y border-primary/25 bg-gradient-to-r from-primary/[0.10] via-primary/[0.04] to-transparent">
+        <tr key={linha.id} className="border-y border-primary/25 bg-primary/[0.06]">
           <td colSpan={5} className="relative px-5 py-3">
             <span
               aria-hidden
-              className="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-r-full bg-primary shadow-[0_0_12px_0_hsl(var(--primary))]"
+              className="absolute bottom-1.5 left-0 top-1.5 w-[3px] bg-primary"
             />
             <span className="flex items-center gap-2.5">
               <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-primary/80">Seção</span>
@@ -111,9 +111,9 @@ export function DFCTable({ linhas, anoPeriodo1, mesPeriodo1, anoPeriodo2, mesPer
             'border-y transition-colors',
             isDestaque
               ? isNegative
-                ? 'border-red-500/30 bg-gradient-to-r from-red-500/[0.14] via-red-500/[0.06] to-red-500/[0.03]'
-                : 'border-amber-500/30 bg-gradient-to-r from-amber-500/[0.14] via-amber-500/[0.06] to-amber-500/[0.03]'
-              : 'border-primary/25 bg-gradient-to-r from-primary/[0.10] via-primary/[0.04] to-transparent'
+                ? 'border-red-500/30 bg-red-500/[0.08]'
+                : 'border-amber-500/30 bg-amber-500/[0.08]'
+              : 'border-primary/25 bg-primary/[0.06]'
           )}
         >
           <td className="relative px-5 py-3">
@@ -123,9 +123,9 @@ export function DFCTable({ linhas, anoPeriodo1, mesPeriodo1, anoPeriodo2, mesPer
                 'absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-r-full',
                 isDestaque
                   ? isNegative
-                    ? 'bg-red-400 shadow-[0_0_12px_0_hsl(0_72%_55%)]'
-                    : 'bg-amber-400 shadow-[0_0_12px_0_hsl(43_96%_56%)]'
-                  : 'bg-primary shadow-[0_0_12px_0_hsl(var(--primary))]'
+                    ? 'bg-red-400'
+                    : 'bg-amber-400'
+                  : 'bg-primary'
               )}
             />
             <span className="flex items-center gap-2 pl-1">
@@ -147,7 +147,7 @@ export function DFCTable({ linhas, anoPeriodo1, mesPeriodo1, anoPeriodo2, mesPer
                       <TooltipTrigger asChild>
                         <Info className="h-3.5 w-3.5 text-muted-foreground/60 hover:text-muted-foreground cursor-help shrink-0 transition-colors" />
                       </TooltipTrigger>
-                      <TooltipContent side="top" className="max-w-xs text-xs">
+                      <TooltipContent side="top" className="financial-overlay max-w-xs text-xs">
                         {TOTALIZADOR_INFO[linha.id]}
                       </TooltipContent>
                     </Tooltip>
@@ -200,14 +200,10 @@ export function DFCTable({ linhas, anoPeriodo1, mesPeriodo1, anoPeriodo2, mesPer
   const headerP2 = `Até ${MESES_LABEL[mesPeriodo2]}/${anoPeriodo2}`;
 
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-border/60 bg-gradient-to-b from-card via-card to-card/70 shadow-[0_1px_0_0_hsl(var(--border)/0.4)_inset,0_18px_50px_-24px_rgba(0,0,0,0.55)]">
-      {/* Glow sutil superior */}
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-primary/[0.06] to-transparent" />
-
-      {/* Header premium */}
-      <div className="relative flex flex-col lg:flex-row items-start lg:items-center justify-between px-5 py-4 border-b border-border/60 gap-4">
+    <div className="financial-data-viewport relative min-w-0 max-w-full overflow-hidden border border-border/60 bg-card">
+      <div className="financial-toolbar relative flex flex-col items-start justify-between gap-3 border-b border-border/60 px-4 py-3 lg:flex-row lg:items-center">
         <div className="flex items-center gap-3">
-          <div className="flex items-center justify-center h-10 w-10 rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/25 shadow-[0_0_20px_-6px_hsl(var(--primary)/0.5)]">
+          <div className="flex h-9 w-9 items-center justify-center border border-primary/25 bg-primary/10">
             <FileBarChart2 className="h-5 w-5 text-primary" />
           </div>
           <div>
@@ -215,19 +211,18 @@ export function DFCTable({ linhas, anoPeriodo1, mesPeriodo1, anoPeriodo2, mesPer
               <h3 className="font-semibold text-[15px] tracking-tight text-foreground">
                 Demonstração dos Fluxos de Caixa
               </h3>
-              <span className="hidden sm:inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-primary/10 border border-primary/20 text-[10px] font-semibold uppercase tracking-wider text-primary">
-                <Sparkles className="h-2.5 w-2.5" />
+              <span className="hidden border border-primary/20 bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-primary sm:inline-flex">
                 Método Indireto
               </span>
             </div>
             <div className="flex items-center gap-2 mt-1">
               <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-sky-500/10 border border-sky-500/25 text-[10.5px] font-medium text-sky-300 tabular-nums">
-                <span className="h-1.5 w-1.5 rounded-full bg-sky-400 shadow-[0_0_6px_0_hsl(199_89%_55%)]" />
+                <span className="h-1.5 w-1.5 bg-sky-400" />
                 P1 · {headerP1}
               </span>
               <ArrowRight className="h-3 w-3 text-muted-foreground/60" />
               <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-[10.5px] font-medium text-emerald-300 tabular-nums">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_0_hsl(158_64%_52%)]" />
+                <span className="h-1.5 w-1.5 bg-emerald-400" />
                 P2 · {headerP2}
               </span>
             </div>
@@ -238,7 +233,7 @@ export function DFCTable({ linhas, anoPeriodo1, mesPeriodo1, anoPeriodo2, mesPer
             variant="outline"
             size="sm"
             onClick={() => setShowMetodologia((v) => !v)}
-            className="h-9 gap-2 rounded-xl border-border/60 bg-background/40 hover:bg-primary/10 hover:border-primary/40 hover:text-primary transition-colors"
+            className="financial-filter-control h-8 gap-2 border-border/60 bg-background hover:border-primary/40 hover:text-primary transition-colors"
           >
             <BookOpen className="h-3.5 w-3.5" />
             Como calculamos
@@ -248,7 +243,7 @@ export function DFCTable({ linhas, anoPeriodo1, mesPeriodo1, anoPeriodo2, mesPer
             variant="outline"
             size="sm"
             onClick={handleExport}
-            className="h-9 gap-2 rounded-xl border-border/60 bg-background/40 hover:bg-primary/10 hover:border-primary/40 hover:text-primary transition-colors"
+            className="financial-filter-control h-8 gap-2 border-border/60 bg-background hover:border-primary/40 hover:text-primary transition-colors"
           >
             <Download className="h-3.5 w-3.5" />
             Exportar Excel
@@ -327,10 +322,10 @@ export function DFCTable({ linhas, anoPeriodo1, mesPeriodo1, anoPeriodo2, mesPer
 
 
       {/* Tabela */}
-      <div className="overflow-x-auto premium-scrollbar">
+      <div className="financial-data-viewport max-w-full overflow-x-auto premium-scrollbar">
         <table className="w-full">
           <thead className="sticky top-0 z-10">
-            <tr className="border-b border-border/70 bg-background/80 backdrop-blur-md">
+            <tr className="border-b border-border/70 bg-background">
               <th className="text-left px-5 py-3 text-[10.5px] font-semibold text-muted-foreground uppercase tracking-[0.14em] min-w-[400px]">
                 Descrição
               </th>

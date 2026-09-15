@@ -687,8 +687,8 @@ export function SaldoAVencerTab({ filtros }: { filtros?: SaldoAVencerFiltros }) 
     );
 
     return (
-      <div className="space-y-4 animate-fade-in">
-        <div className="flex flex-wrap items-center gap-2 rounded-xl border border-border/60 bg-card/60 p-2">
+      <div className="financial-data-viewport min-w-0 space-y-3 animate-fade-in">
+        <div className="financial-toolbar flex flex-wrap items-center gap-2 rounded-xl border border-border/60 bg-card/60 p-2">
           <Button variant="ghost" size="sm" onClick={() => setClienteSel(null)}>
             <ArrowLeft className="mr-2 h-4 w-4" /> Voltar ao ranking
           </Button>
@@ -857,7 +857,7 @@ export function SaldoAVencerTab({ filtros }: { filtros?: SaldoAVencerFiltros }) 
 
   // ================= Dashboard 1 =================
   return (
-    <div className="space-y-4 animate-fade-in">
+    <div className="financial-data-viewport min-w-0 space-y-3 animate-fade-in">
       {semCamposSaldo && (
         <div className="flex items-start gap-2 rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 text-sm">
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
@@ -897,7 +897,7 @@ export function SaldoAVencerTab({ filtros }: { filtros?: SaldoAVencerFiltros }) 
 
       <Card className="overflow-hidden border-border/60 bg-card/70">
         <CardHeader className="border-b border-border/60 pb-4">
-          <div className="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
+          <div className="financial-toolbar flex min-w-0 flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
           <div>
             <CardTitle className="flex items-center gap-2 text-base">
               <span className="rounded-lg bg-primary/15 p-2 text-primary">
@@ -919,7 +919,7 @@ export function SaldoAVencerTab({ filtros }: { filtros?: SaldoAVencerFiltros }) 
                   if (e.key === 'Enter') aplicarBuscaLocal();
                 }}
                 placeholder="Buscar por nome ou código"
-                className="w-[240px] pl-8"
+                className="financial-filter-control w-full min-w-0 pl-8 sm:w-[240px]"
               />
             </div>
             <Button size="sm" onClick={aplicarBuscaLocal}>
@@ -974,7 +974,7 @@ export function SaldoAVencerTab({ filtros }: { filtros?: SaldoAVencerFiltros }) 
               Participacao <ArrowUpDown className="ml-1 h-3 w-3" />
             </Button>
           </div>
-          <div className="overflow-x-auto rounded-xl border border-border/60 bg-background/35">
+          <div className="financial-data-viewport overflow-x-auto rounded-xl border border-border/60 bg-background/35">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b text-xs uppercase text-muted-foreground">

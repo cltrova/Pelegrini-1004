@@ -311,7 +311,7 @@ export function DreMobileView({ data, indicators, groupSummary }: DreMobileViewP
                     <TooltipTrigger>
                       <Info className="h-4 w-4 text-muted-foreground" />
                     </TooltipTrigger>
-                    <TooltipContent side="left" className="max-w-[200px]">
+                    <TooltipContent side="left" className="financial-overlay max-w-[200px]">
                       <p className="text-xs">Agrupa lançamentos em categorias: Lucro Bruto, Resultado Financeiro, Despesas.</p>
                     </TooltipContent>
                   </Tooltip>
@@ -352,7 +352,7 @@ export function DreMobileView({ data, indicators, groupSummary }: DreMobileViewP
                     <TooltipTrigger>
                       <Info className="h-4 w-4 text-muted-foreground" />
                     </TooltipTrigger>
-                    <TooltipContent side="left" className="max-w-[200px]">
+                    <TooltipContent side="left" className="financial-overlay max-w-[200px]">
                       <p className="text-xs">Totalização por categoria contábil do DRE.</p>
                     </TooltipContent>
                   </Tooltip>

@@ -74,7 +74,7 @@ export function DFCFilters({
             <SelectTrigger className="w-[100px] bg-blue-500/10 border-blue-500/30 text-blue-600 dark:text-blue-400">
               <SelectValue placeholder="Ano" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="financial-overlay">
               {anos.map((a) => (
                 <SelectItem key={a} value={a}>{a}</SelectItem>
               ))}
@@ -84,7 +84,7 @@ export function DFCFilters({
             <SelectTrigger className="w-[130px] bg-blue-500/10 border-blue-500/30 text-blue-600 dark:text-blue-400">
               <SelectValue placeholder="Mês" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="financial-overlay">
               {MESES.map((m) => (
                 <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
               ))}
@@ -102,7 +102,7 @@ export function DFCFilters({
             <SelectTrigger className="w-[100px] bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400">
               <SelectValue placeholder="Ano" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="financial-overlay">
               {anos.map((a) => (
                 <SelectItem key={a} value={a}>{a}</SelectItem>
               ))}
@@ -112,7 +112,7 @@ export function DFCFilters({
             <SelectTrigger className="w-[130px] bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400">
               <SelectValue placeholder="Mês" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="financial-overlay">
               {MESES.map((m) => (
                 <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
               ))}
@@ -134,7 +134,7 @@ export function DFCFilters({
                 <SelectTrigger className="w-[180px]">
                   <SelectValue placeholder="Todas" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="financial-overlay">
                   <SelectItem value="all">Todas</SelectItem>
                   {empresas.map((e) => (
                     <SelectItem key={e} value={e}>{e}</SelectItem>

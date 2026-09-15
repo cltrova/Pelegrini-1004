@@ -114,7 +114,7 @@ function CardHeader({ title, description, icon: Icon, right }: { title: string; 
                 <Info className="h-3.5 w-3.5" />
               </button>
             </TooltipTrigger>
-            <TooltipContent side="left" className="max-w-xs">
+            <TooltipContent side="left" className="financial-overlay max-w-xs">
               <p className="text-xs">{description}</p>
             </TooltipContent>
           </UITooltip>
@@ -467,7 +467,7 @@ export function DreComparativo({ data, groupSummary }: DreComparativoProps) {
   }
 
   return (
-    <div className="space-y-5">
+    <div className="financial-data-viewport min-w-0 max-w-full space-y-3 overflow-x-hidden">
       {/* Barra premium de comparação */}
       <div className="rounded-lg border border-border bg-card">
         <div className="p-4 flex flex-wrap items-center gap-4 md:gap-6">
@@ -483,7 +483,7 @@ export function DreComparativo({ data, groupSummary }: DreComparativoProps) {
                   <SelectTrigger className="w-[92px] h-8 text-sm font-semibold bg-background/60 border-border/70 hover:border-primary/40 transition-colors">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="financial-overlay">
                     {anos.map((ano) => (
                       <SelectItem key={ano} value={ano}>{ano}</SelectItem>
                     ))}
@@ -494,7 +494,7 @@ export function DreComparativo({ data, groupSummary }: DreComparativoProps) {
                   <SelectTrigger className="w-[92px] h-8 text-sm font-semibold bg-background/60 border-border/70 hover:border-primary/40 transition-colors">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="financial-overlay">
                     {anos.map((ano) => (
                       <SelectItem key={ano} value={ano}>{ano}</SelectItem>
                     ))}
@@ -756,7 +756,7 @@ export function DreComparativo({ data, groupSummary }: DreComparativoProps) {
                 <SelectTrigger className="mb-4 h-9 bg-background/60 border-border/70 hover:border-primary/40 transition-colors text-sm font-medium">
                   <SelectValue placeholder="Selecione um grupo" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="financial-overlay">
                   {grupos.map((grupo) => (
                     <SelectItem key={grupo} value={grupo}>{grupo}</SelectItem>
                   ))}
@@ -1216,7 +1216,7 @@ export function DreComparativo({ data, groupSummary }: DreComparativoProps) {
           {/* Tabela de sazonalidade */}
           <div className={cardCls}>
             <CardHeader title="Detalhamento Mensal por Ano" description="Valores de cada mês para todos os anos disponíveis." icon={Calendar} />
-            <div className="overflow-x-auto">
+            <div className="financial-data-viewport max-w-full overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow className="border-border/50">

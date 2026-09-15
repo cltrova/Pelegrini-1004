@@ -33,7 +33,7 @@ export function ResumoVitalsKPIs({ kpis, pdd }: Props) {
 
   return (
     <TooltipProvider delayDuration={200}>
-      <div className="space-y-3">
+      <div className="financial-metric-strip min-w-0 space-y-3">
         <EnterpriseDataPanel title="Total Geral da Carteira" density="compact">
           <div className="grid min-w-0 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(15rem,0.55fr)] lg:items-center">
             <div className="min-w-0">
@@ -146,7 +146,7 @@ function InfoHint({ text, tone = 'muted' }: { text: string; tone?: 'muted' | 'ro
           <Info className="h-3.5 w-3.5" />
         </button>
       </TooltipTrigger>
-      <TooltipContent side="top" className="max-w-xs text-xs leading-relaxed">
+      <TooltipContent side="top" className="financial-overlay max-w-xs text-xs leading-relaxed">
         {text}
       </TooltipContent>
     </Tooltip>

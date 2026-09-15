@@ -182,27 +182,27 @@ export default function DrePage() {
   // Versão Mobile
   if (isMobile) {
     return (
-      <div className="flex h-screen flex-col overflow-hidden bg-background pb-20">
+      <div className="financial-workspace flex h-screen min-w-0 max-w-full flex-col overflow-hidden bg-background pb-20">
         {/* Header Mobile */}
         <MobileHeader
           title="DRE"
           subtitle="Demonstrativo de Resultado"
           actions={
-            <div className="flex items-center gap-2">
+            <div className="financial-toolbar flex items-center gap-2">
               <Sheet open={showMobileFilters} onOpenChange={setShowMobileFilters}>
                 <SheetTrigger asChild>
-                  <Button variant="ghost" size="icon" className="relative h-9 w-9">
+                  <Button variant="ghost" size="icon" className="financial-filter-control relative h-9 w-9">
                     <Filter className="h-4 w-4" />
                     {hasActiveFilters && (
                       <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-primary" />
                     )}
                   </Button>
                 </SheetTrigger>
-                <SheetContent side="bottom" className="h-[70vh] rounded-t-3xl">
+                <SheetContent side="bottom" className="financial-overlay flex h-[70dvh] max-w-full flex-col overflow-hidden">
                   <SheetHeader>
                     <SheetTitle>Filtros</SheetTitle>
                   </SheetHeader>
-                  <div className="mt-4 space-y-4 overflow-y-auto">
+                  <div className="financial-filter-control mt-4 min-h-0 min-w-0 flex-1 space-y-3 overflow-y-auto">
                     <EnterpriseDreFilters
                       activeFiltersCount={activeFiltersCount}
                       anos={filterOptions.anos}
@@ -228,7 +228,7 @@ export default function DrePage() {
                   </div>
                 </SheetContent>
               </Sheet>
-              <Button variant="ghost" size="icon" onClick={() => refetch()} className="h-9 w-9">
+              <Button variant="ghost" size="icon" onClick={() => refetch()} className="financial-filter-control h-9 w-9">
                 <RefreshCw className="h-4 w-4" />
               </Button>
             </div>
@@ -236,7 +236,7 @@ export default function DrePage() {
         />
 
         {/* Conteúdo */}
-        <div className="flex-1 overflow-hidden">
+        <div className="financial-data-viewport min-w-0 flex-1 overflow-y-auto overflow-x-hidden">
           {!hasSearched ? (
             <div className="p-4">
               <FinanceiroSearchPrompt />
@@ -268,13 +268,15 @@ export default function DrePage() {
               />
             </div>
           ) : (
-            <Suspense fallback={<DreTabFallback />}>
-            <LazyDreMobileView
-              data={filteredData} 
-              indicators={indicators}
-              groupSummary={groupSummary}
-            />
-            </Suspense>
+            <div className="financial-metric-strip min-w-0 max-w-full">
+              <Suspense fallback={<DreTabFallback />}>
+                <LazyDreMobileView
+                  data={filteredData}
+                  indicators={indicators}
+                  groupSummary={groupSummary}
+                />
+              </Suspense>
+            </div>
           )}
         </div>
 
@@ -285,20 +287,22 @@ export default function DrePage() {
 
   // Versão Desktop
   return (
-    <div className="flex h-full min-h-0 flex-1 overflow-hidden bg-background">
-      <div className="enterprise-page-shell max-w-[1600px]">
+    <div className="financial-workspace flex h-full min-h-0 min-w-0 max-w-full flex-1 overflow-hidden bg-background">
+      <div className="enterprise-page-shell min-w-0 max-w-[1600px] overflow-hidden">
         <EnterprisePageHeader
           title="DRE"
           subtitle="Demonstrativo de Resultado"
           icon={FileBarChart2}
           actions={
-            <Button variant="outline" size="sm" onClick={() => refetch()}>
+            <Button variant="outline" size="sm" onClick={() => refetch()} className="financial-toolbar financial-filter-control">
               <RefreshCw className="h-4 w-4 mr-2" />
               Atualizar
             </Button>
           }
         />
-        {filtersBar}
+        <div className="financial-toolbar financial-filter-control min-w-0 max-w-full">
+          {filtersBar}
+        </div>
 
         {!hasSearched ? (
           <FinanceiroSearchPrompt />
@@ -325,11 +329,13 @@ export default function DrePage() {
               />
             ) : (
               <>
-                <DreIndicators indicators={indicators} />
+                <div className="financial-metric-strip min-w-0 max-w-full overflow-x-auto">
+                  <DreIndicators indicators={indicators} />
+                </div>
 
                 {/* Tabs de visualização */}
-                <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'dashboard' | 'comparativo' | 'detalhe' | 'assistente')} className="flex min-h-0 flex-1 flex-col overflow-hidden">
-                  <TabsList className="mb-3 h-10 shrink-0 gap-1 rounded-lg border border-border/60 bg-muted/40 p-1">
+                <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'dashboard' | 'comparativo' | 'detalhe' | 'assistente')} className="flex min-h-0 min-w-0 max-w-full flex-1 flex-col overflow-hidden">
+                  <TabsList className="financial-toolbar mb-3 h-9 max-w-full shrink-0 justify-start gap-1 overflow-x-auto border border-border/60 bg-muted/30 p-0.5">
                     <TabsTrigger
                       value="dashboard"
                       className="gap-2 h-8 px-3 data-[state=active]:bg-background data-[state=active]:text-foreground text-muted-foreground"
@@ -361,7 +367,7 @@ export default function DrePage() {
                   </TabsList>
 
 
-                  <TabsContent value="dashboard" className="mt-0 min-h-0 flex-1 overflow-auto">
+                  <TabsContent value="dashboard" className="financial-data-viewport mt-0 min-h-0 min-w-0 flex-1 overflow-y-auto overflow-x-hidden">
                     <Suspense fallback={<DreTabFallback />}>
                     <LazyDreDashboard
                       data={filteredData}
@@ -380,19 +386,19 @@ export default function DrePage() {
 
 
 
-                  <TabsContent value="comparativo" className="mt-0 min-h-0 flex-1 overflow-auto">
+                  <TabsContent value="comparativo" className="financial-data-viewport mt-0 min-h-0 min-w-0 flex-1 overflow-y-auto overflow-x-hidden">
                     <Suspense fallback={<DreTabFallback />}>
                       <LazyDreComparativo data={filteredData} groupSummary={groupSummary} />
                     </Suspense>
                   </TabsContent>
 
-                  <TabsContent value="detalhe" className="mt-0 min-h-0 flex-1 overflow-auto">
+                  <TabsContent value="detalhe" className="financial-data-viewport mt-0 min-h-0 min-w-0 flex-1 overflow-auto">
                     <Suspense fallback={<DreTabFallback />}>
                       <LazyDreGroupedTable data={filteredData} />
                     </Suspense>
                   </TabsContent>
 
-                  <TabsContent value="assistente" className="mt-0 min-h-0 flex-1 overflow-auto">
+                  <TabsContent value="assistente" className="financial-data-viewport mt-0 min-h-0 min-w-0 flex-1 overflow-y-auto overflow-x-hidden">
                     <Suspense fallback={<DreTabFallback />}>
                       <LazyDreAssistant dreData={filteredData} indicators={indicators} contasDespVar={contasDespVar} contasDespFixas={contasDespFixas} onUpdateDespVar={setContasDespVar} onUpdateDespFixas={setContasDespFixas} />
                     </Suspense>

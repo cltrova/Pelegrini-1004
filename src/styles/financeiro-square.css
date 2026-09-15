@@ -1,0 +1,201 @@
+[data-module-shell='financeiro'] {
+  --financial-panel-radius: 2px;
+  --financial-control-radius: 4px;
+  --financial-motion-fast: 150ms;
+  --financial-motion-sidebar: 220ms;
+}
+
+[data-module-shell='financeiro'] :where(.financial-workspace, .financial-toolbar, .financial-metric-strip, .financial-data-viewport) {
+  min-width: 0;
+  max-width: 100%;
+  border-radius: var(--financial-panel-radius);
+  background-image: none;
+  box-shadow: none;
+  backdrop-filter: none;
+}
+
+[data-module-shell='financeiro'] :where(.financial-workspace, .financial-data-viewport) {
+  overflow: hidden;
+}
+
+[data-module-shell='financeiro'] .financial-data-viewport {
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+
+[data-module-shell='financeiro'] .financial-filter-control,
+.financial-overlay {
+  --financial-panel-radius: 2px;
+  --financial-control-radius: 4px;
+  border-radius: var(--financial-control-radius) !important;
+  background-image: none !important;
+  backdrop-filter: none !important;
+}
+
+[data-module-shell='financeiro'] .financial-filter-control {
+  box-shadow: none !important;
+}
+
+.financial-overlay {
+  max-width: calc(100vw - 1rem);
+  box-shadow: 0 8px 24px hsl(var(--foreground) / 0.14);
+}
+
+.financial-overlay :where(.rounded-md, .rounded-lg, .rounded-xl, .rounded-2xl, .rounded-3xl) {
+  border-radius: var(--financial-panel-radius) !important;
+  background-image: none !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+}
+
+.financial-overlay :where(button, input, select, textarea, [role='button'], [role='combobox'], [role='menu'], [role='tab']) {
+  border-radius: var(--financial-control-radius) !important;
+}
+
+[data-module-shell='financeiro'] :where(.financial-toolbar, .financial-filter-control),
+.financial-overlay {
+  transition-property: color, background-color, border-color, opacity;
+  transition-duration: var(--financial-motion-fast, 150ms);
+}
+
+[data-module-shell='financeiro'] .pelegrini-page-surface {
+  background: hsl(var(--background));
+}
+
+[data-module-shell='financeiro'] .pelegrini-surface-pattern {
+  display: none;
+}
+
+[data-module-shell='financeiro'] * {
+  letter-spacing: 0;
+}
+
+[data-module-shell='financeiro'] .pelegrini-sidebar {
+  border-right: 1px solid hsl(var(--sidebar-border));
+  background: hsl(var(--sidebar-background));
+  box-shadow: none;
+  transition-property: color, background-color, border-color, opacity;
+  transition-duration: var(--financial-motion-sidebar);
+}
+
+[data-module-shell='financeiro'] .pelegrini-sidebar::before {
+  background-image: none;
+}
+
+[data-module-shell='financeiro'] .sidebar-mobile-control {
+  border-radius: var(--financial-control-radius);
+}
+
+[data-module-shell='financeiro'] .sidebar-action {
+  border-radius: var(--financial-panel-radius);
+  transition: color var(--financial-motion-fast) ease, background-color var(--financial-motion-fast) ease;
+}
+
+[data-module-shell='financeiro'] .sidebar-item-active {
+  position: relative;
+  background: hsl(var(--sidebar-accent)) !important;
+  box-shadow: none;
+}
+
+[data-module-shell='financeiro'] .sidebar-item-active::before {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  width: 3px;
+  background: var(--pelegrini-accent);
+  content: '';
+  pointer-events: none;
+}
+
+[data-module-shell='financeiro'] .sidebar-item-index {
+  width: 1.5rem;
+  flex: 0 0 1.5rem;
+  color: hsl(var(--sidebar-muted));
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.625rem;
+  font-variant-numeric: tabular-nums;
+}
+
+[data-module-shell='financeiro'] header.safe-area-top {
+  background: hsl(var(--card));
+  box-shadow: none;
+  backdrop-filter: none;
+}
+
+[data-module-shell='financeiro'] :where(.premium-card, .premium-hover-card, .dashboard-header-card, .pelegrini-data-panel, .pelegrini-kpi-card, .pelegrini-chart-frame) {
+  border-radius: var(--financial-panel-radius) !important;
+  background-image: none !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+}
+
+[data-module-shell='financeiro'] :where(.rounded-md, .rounded-lg, .rounded-xl, .rounded-2xl, .rounded-3xl) {
+  border-radius: var(--financial-panel-radius) !important;
+}
+
+[data-module-shell='financeiro'] :where(button, input, select, textarea, [role='button'], [role='combobox'], [role='menu'], [role='dialog'], [role='tab']) {
+  border-radius: var(--financial-control-radius) !important;
+}
+
+[data-module-shell='financeiro'] :where(button, [role='button'], [role='tab']) {
+  transition-property: color, background-color, border-color, opacity;
+  transition-duration: var(--financial-motion-fast);
+}
+
+[data-module-shell='financeiro'] [role='tab'][data-state='active'] {
+  box-shadow: none !important;
+}
+
+[data-module-shell='financeiro'] .transition-transform {
+  transition-property: color, background-color, border-color, opacity;
+}
+
+[data-module-shell='financeiro'] [class*='bg-gradient'] {
+  background-image: none !important;
+}
+
+[data-module-shell='financeiro'] [class*='hover:translate']:hover,
+[data-module-shell='financeiro'] .group:hover [class*='group-hover:translate'],
+[data-module-shell='financeiro'] :where(.premium-card, .premium-hover-card, .dashboard-header-card):hover {
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+@media (min-width: 768px) {
+  [data-module-shell='financeiro'] .pelegrini-sidebar-collapsible,
+  [data-module-shell='financeiro'] .pelegrini-sidebar-collapsible:hover,
+  [data-module-shell='financeiro'] .pelegrini-sidebar-collapsible:focus-within {
+    box-shadow: none;
+  }
+
+  [data-module-shell='financeiro'] .pelegrini-sidebar-collapsible:not(:hover):not(:focus-within) .sidebar-item-index {
+    display: none;
+  }
+}
+
+@media (max-width: 767px) {
+  [data-module-shell='financeiro'] header.safe-area-top > div {
+    padding-inline-start: 3.75rem;
+  }
+
+  [data-module-shell='financeiro'] .financial-toolbar {
+    max-width: 100%;
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-module-shell='financeiro'] .financial-workspace,
+  [data-module-shell='financeiro'] .financial-toolbar,
+  [data-module-shell='financeiro'] .financial-filter-control,
+  [data-module-shell='financeiro'] .financial-data-viewport,
+  .financial-overlay,
+  .financial-overlay::before,
+  .financial-overlay::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}

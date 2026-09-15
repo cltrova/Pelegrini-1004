@@ -67,7 +67,7 @@ export function EnterpriseResumoFilters({ filters, onChange, empresas, anos = []
   ].filter(Boolean).join(' | ');
 
   return (
-    <EnterpriseFilterBar activeCount={activeCount} onClear={() => onChange(emptyFilters)} summary={summary}>
+    <EnterpriseFilterBar className="financial-toolbar" activeCount={activeCount} onClear={() => onChange(emptyFilters)} summary={summary}>
       <EnterpriseSearchFilter
         label="Busca"
         onChange={(value) => update({ search: value })}
@@ -79,6 +79,7 @@ export function EnterpriseResumoFilters({ filters, onChange, empresas, anos = []
         label="Status"
         onChange={(value) => update({ status: (value as ResumoFilters['status'] | undefined) ?? 'todos' })}
         options={statusOptions}
+        contentClassName="financial-overlay"
         value={filters.status === 'todos' ? undefined : filters.status}
       />
       <EnterpriseSelectFilter
@@ -86,6 +87,7 @@ export function EnterpriseResumoFilters({ filters, onChange, empresas, anos = []
         label="Filial"
         onChange={(value) => update({ empresa: value ?? 'todas' })}
         options={empresas.map((empresa) => ({ value: empresa, label: empresa }))}
+        contentClassName="financial-overlay"
         value={filters.empresa === 'todas' ? undefined : filters.empresa}
       />
       <EnterpriseMultiSelectFilter
@@ -94,6 +96,7 @@ export function EnterpriseResumoFilters({ filters, onChange, empresas, anos = []
         onChange={(values) => update({ anos: values })}
         options={anos.map((ano) => ({ value: ano, label: ano }))}
         searchable={false}
+        contentClassName="financial-overlay"
         values={filters.anos ?? []}
       />
       <EnterpriseMultiSelectFilter
@@ -102,15 +105,16 @@ export function EnterpriseResumoFilters({ filters, onChange, empresas, anos = []
         onChange={(values) => update({ meses: values })}
         options={MESES}
         searchable={false}
+        contentClassName="financial-overlay"
         values={filters.meses ?? []}
       />
       <label className="min-w-[9rem] max-w-full space-y-1">
         <span className="block text-[10px] font-semibold uppercase text-muted-foreground">Inicio</span>
-        <Input className="h-8 text-xs" onChange={(event) => update({ dataInicio: event.target.value || null })} type="date" value={filters.dataInicio ?? ''} />
+        <Input className="financial-filter-control h-8 text-xs" onChange={(event) => update({ dataInicio: event.target.value || null })} type="date" value={filters.dataInicio ?? ''} />
       </label>
       <label className="min-w-[9rem] max-w-full space-y-1">
         <span className="block text-[10px] font-semibold uppercase text-muted-foreground">Fim</span>
-        <Input className="h-8 text-xs" onChange={(event) => update({ dataFim: event.target.value || null })} type="date" value={filters.dataFim ?? ''} />
+        <Input className="financial-filter-control h-8 text-xs" onChange={(event) => update({ dataFim: event.target.value || null })} type="date" value={filters.dataFim ?? ''} />
       </label>
     </EnterpriseFilterBar>
   );

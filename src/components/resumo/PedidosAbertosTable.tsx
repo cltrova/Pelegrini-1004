@@ -67,7 +67,7 @@ export function PedidosAbertosTable({ pedidos }: Props) {
       noPadding
     >
 
-      <EnterpriseTable className="rounded-none border-0">
+      <EnterpriseTable className="financial-data-viewport rounded-none border-0">
           <EnterpriseThead>
             <EnterpriseTr>
               <EnterpriseTh numeric className="w-[120px]">Pedido</EnterpriseTh>

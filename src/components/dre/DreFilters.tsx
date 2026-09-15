@@ -272,7 +272,7 @@ export function DreFilters({
               <ChevronDown className="h-4 w-4 opacity-50" />
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-auto min-w-[240px] max-w-[calc(100vw-2rem)] p-2 bg-popover z-50" align="start">
+          <PopoverContent className="financial-overlay z-50 w-auto min-w-[240px] max-w-[calc(100vw-2rem)] bg-popover p-2" align="start">
             <div className="space-y-2">
               <Tabs value={periodoTab} onValueChange={setPeriodoTab} className="w-full">
                 <TabsList className="grid grid-cols-3 w-full h-9 p-1 bg-muted/60">
@@ -401,7 +401,7 @@ export function DreFilters({
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder={labelEmpresa} />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="financial-overlay">
               <SelectItem value="all">{labelTodas}</SelectItem>
               {empresas.length === 0 ? (
                 <SelectItem value="__none__" disabled>
@@ -435,7 +435,7 @@ export function DreFilters({
               <ChevronDown className="h-4 w-4 opacity-50" />
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-[280px] p-2" align="start">
+          <PopoverContent className="financial-overlay w-[min(280px,calc(100vw-2rem))] p-2" align="start">
             <div className="space-y-2">
               {/* Botão Todos/Limpar */}
               <Button
@@ -492,7 +492,7 @@ export function DreFilters({
                 <ChevronDown className="h-4 w-4 opacity-50" />
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-[300px] p-2" align="start">
+            <PopoverContent className="financial-overlay w-[min(300px,calc(100vw-2rem))] p-2" align="start">
               <div className="space-y-2">
                 <Button
                   variant="ghost"
@@ -554,7 +554,7 @@ export function DreFilters({
                 <ChevronDown className="h-4 w-4 opacity-50" />
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-[300px] p-2" align="start">
+            <PopoverContent className="financial-overlay w-[min(300px,calc(100vw-2rem))] p-2" align="start">
               <div className="space-y-2">
                 <Button
                   variant="ghost"
@@ -617,7 +617,7 @@ export function DreFilters({
                 <ChevronDown className="h-4 w-4 opacity-50" />
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-[300px] p-2" align="start">
+            <PopoverContent className="financial-overlay w-[min(300px,calc(100vw-2rem))] p-2" align="start">
               <div className="space-y-2">
                 <Button
                   variant="ghost"
@@ -680,7 +680,7 @@ export function DreFilters({
                 <ChevronDown className="h-4 w-4 opacity-50" />
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-[300px] p-2" align="start">
+            <PopoverContent className="financial-overlay w-[min(300px,calc(100vw-2rem))] p-2" align="start">
               <div className="space-y-2">
                 <Button
                   variant="ghost"
@@ -743,7 +743,7 @@ export function DreFilters({
               <ChevronDown className="h-4 w-4 opacity-50" />
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-[380px] p-2" align="start">
+          <PopoverContent className="financial-overlay w-[min(380px,calc(100vw-2rem))] p-2" align="start">
             <div className="space-y-2">
               {/* Campo de pesquisa - busca código E descrição */}
               <div className="relative">

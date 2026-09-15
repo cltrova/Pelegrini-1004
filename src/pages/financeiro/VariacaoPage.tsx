@@ -186,23 +186,23 @@ export default function VariacaoPage() {
   // Mobile
   if (isMobile) {
     return (
-      <div className="flex h-screen flex-col overflow-hidden bg-background pb-20">
+      <div className="financial-workspace flex h-screen min-w-0 max-w-full flex-col overflow-hidden bg-background pb-20">
         <MobileHeader
           title="Variação"
           subtitle="Fluxo de Caixa"
           actions={
-            <div className="flex items-center gap-2">
+            <div className="financial-toolbar flex items-center gap-2">
               <Sheet open={showMobileFilters} onOpenChange={setShowMobileFilters}>
                 <SheetTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-9 w-9">
+                  <Button variant="ghost" size="icon" className="financial-filter-control h-9 w-9">
                     <Filter className="h-4 w-4" />
                   </Button>
                 </SheetTrigger>
-                <SheetContent side="bottom" className="h-[70vh] rounded-t-3xl">
+                <SheetContent side="bottom" className="financial-overlay flex h-[70dvh] max-w-full flex-col overflow-hidden">
                   <SheetHeader>
                     <SheetTitle>Filtros</SheetTitle>
                   </SheetHeader>
-                  <div className="mt-4 space-y-4 overflow-y-auto">
+                  <div className="financial-filter-control mt-4 min-h-0 min-w-0 flex-1 space-y-3 overflow-y-auto">
                     {activeTab === 'demonstracao' ? (
                       <DFCFilters
                         anos={anosOptions}
@@ -237,14 +237,14 @@ export default function VariacaoPage() {
                   </div>
                 </SheetContent>
               </Sheet>
-              <Button variant="ghost" size="icon" onClick={() => refetch()} className="h-9 w-9">
+              <Button variant="ghost" size="icon" onClick={() => refetch()} className="financial-filter-control h-9 w-9">
                 <RefreshCw className="h-4 w-4" />
               </Button>
             </div>
           }
         />
 
-        <div className="sticky top-14 z-30 bg-background border-b border-border">
+        <div className="financial-toolbar sticky top-14 z-30 border-b border-border bg-background">
           <div className="flex">
             <button
               className={`flex-1 py-3 text-sm font-medium flex items-center justify-center gap-2 transition-colors ${
@@ -271,7 +271,7 @@ export default function VariacaoPage() {
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto">
+        <div className="financial-data-viewport min-w-0 flex-1 overflow-y-auto overflow-x-hidden">
           {!hasSearched ? (
             <div className="p-4">
               <FinanceiroSearchPrompt />
@@ -294,7 +294,7 @@ export default function VariacaoPage() {
                 <EmptyState title="Nenhum resultado" message="Nenhum dado encontrado para os períodos." />
               </div>
             ) : (
-              <div className="p-4 space-y-6">
+              <div className="financial-metric-strip min-w-0 max-w-full space-y-3 p-4">
                 <LazyDFCTable
                   linhas={dfc.linhas}
                   anoPeriodo1={anoPeriodo1}
@@ -322,11 +322,11 @@ export default function VariacaoPage() {
 
   // Desktop
   return (
-    <div className="flex h-full min-h-0 flex-1 overflow-hidden">
+    <div className="financial-workspace flex h-full min-h-0 min-w-0 max-w-full flex-1 flex-col overflow-hidden">
       <Header
         actions={
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={() => refetch()}>
+          <div className="financial-toolbar flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={() => refetch()} className="financial-filter-control">
               <RefreshCw className="h-4 w-4 mr-2" />
               Atualizar
             </Button>
@@ -334,7 +334,7 @@ export default function VariacaoPage() {
         }
       />
 
-      <div className="enterprise-page-shell max-w-[1600px]">
+      <div className="enterprise-page-shell min-w-0 max-w-[1600px] overflow-hidden">
         {isLoading && hasSearched ? (
           <LoadingState message="Carregando dados de fluxo de caixa..." />
         ) : isError ? (
@@ -347,10 +347,11 @@ export default function VariacaoPage() {
           <Tabs
             value={activeTab}
             onValueChange={(v) => setActiveTab(v as 'demonstracao' | 'dashboard' | 'assistente' | 'configuracao')}
-            className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden"
+            className="flex min-h-0 min-w-0 max-w-full flex-1 flex-col gap-2 overflow-hidden"
           >
             {activeTab === 'demonstracao' ? (
               <CollapsibleFilterBar
+                className="financial-toolbar financial-filter-control min-w-0 max-w-full"
                 title="Filtros - Demonstração"
                 activeFiltersCount={activeFiltersCountDFC}
                 summary={filterSummaryDFC}
@@ -375,6 +376,7 @@ export default function VariacaoPage() {
               </CollapsibleFilterBar>
             ) : activeTab === 'dashboard' ? (
               <CollapsibleFilterBar
+                className="financial-toolbar financial-filter-control min-w-0 max-w-full"
                 title="Filtros - Dashboard"
                 activeFiltersCount={activeFiltersCountDashboard}
                 summary={filterSummaryDashboard}
@@ -395,38 +397,38 @@ export default function VariacaoPage() {
               </CollapsibleFilterBar>
             ) : null}
 
-            <TabsList className="h-10 shrink-0 gap-1 rounded-lg border border-border/60 bg-muted/40 p-1 backdrop-blur">
+            <TabsList className="financial-toolbar h-9 max-w-full shrink-0 justify-start gap-1 overflow-x-auto border border-border/60 bg-muted/30 p-0.5">
               <TabsTrigger
                 value="demonstracao"
-                className="gap-2 h-9 px-4 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-md data-[state=active]:text-foreground text-muted-foreground transition-all"
+                className="financial-filter-control h-8 gap-2 px-3 data-[state=active]:bg-background data-[state=active]:text-foreground text-muted-foreground transition-colors"
               >
                 <FileText className="h-4 w-4" />
                 Demonstração
               </TabsTrigger>
               <TabsTrigger
                 value="dashboard"
-                className="gap-2 h-9 px-4 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-md data-[state=active]:text-foreground text-muted-foreground transition-all"
+                className="financial-filter-control h-8 gap-2 px-3 data-[state=active]:bg-background data-[state=active]:text-foreground text-muted-foreground transition-colors"
               >
                 <BarChart3 className="h-4 w-4" />
                 Dashboard
               </TabsTrigger>
               <TabsTrigger
                 value="assistente"
-                className="gap-2 h-9 px-4 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-md data-[state=active]:text-foreground text-muted-foreground transition-all"
+                className="financial-filter-control h-8 gap-2 px-3 data-[state=active]:bg-background data-[state=active]:text-foreground text-muted-foreground transition-colors"
               >
                 <Bot className="h-4 w-4" />
                 Assistente
               </TabsTrigger>
               <TabsTrigger
                 value="configuracao"
-                className="gap-2 h-9 px-4 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-md data-[state=active]:text-foreground text-muted-foreground transition-all"
+                className="financial-filter-control h-8 gap-2 px-3 data-[state=active]:bg-background data-[state=active]:text-foreground text-muted-foreground transition-colors"
               >
                 <Settings2 className="h-4 w-4" />
                 Configuração
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="demonstracao" className="mt-0 min-h-0 flex-1 space-y-3 overflow-auto">
+            <TabsContent value="demonstracao" className="financial-data-viewport mt-0 min-h-0 min-w-0 flex-1 space-y-3 overflow-auto">
               <Suspense fallback={<VariacaoTabFallback />}>
               {!hasSearched ? (
                 <FinanceiroSearchPrompt />
@@ -446,7 +448,7 @@ export default function VariacaoPage() {
               </Suspense>
             </TabsContent>
 
-            <TabsContent value="dashboard" className="mt-0 min-h-0 flex-1 space-y-3 overflow-auto">
+            <TabsContent value="dashboard" className="financial-data-viewport financial-metric-strip mt-0 min-h-0 min-w-0 flex-1 space-y-3 overflow-y-auto overflow-x-hidden">
               <Suspense fallback={<VariacaoTabFallback />}>
               {!hasSearched ? (
                 <FinanceiroSearchPrompt />
@@ -460,7 +462,7 @@ export default function VariacaoPage() {
               </Suspense>
             </TabsContent>
 
-            <TabsContent value="assistente" className="mt-0 min-h-0 flex-1 space-y-3 overflow-auto">
+            <TabsContent value="assistente" className="financial-data-viewport mt-0 min-h-0 min-w-0 flex-1 space-y-3 overflow-y-auto overflow-x-hidden">
               <Suspense fallback={<VariacaoTabFallback />}>
               <LazyVariacaoAssistant
                 variacaoData={variacaoData || []} 
@@ -472,7 +474,7 @@ export default function VariacaoPage() {
               </Suspense>
             </TabsContent>
 
-            <TabsContent value="configuracao" className="mt-0 min-h-0 flex-1 space-y-3 overflow-auto">
+            <TabsContent value="configuracao" className="financial-data-viewport mt-0 min-h-0 min-w-0 flex-1 space-y-3 overflow-y-auto overflow-x-hidden">
               <Suspense fallback={<VariacaoTabFallback />}>
                 <LazyDfcConfigTab />
               </Suspense>

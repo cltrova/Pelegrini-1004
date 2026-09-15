@@ -152,7 +152,7 @@ function CardHeader({ title, description }: { title: string; description: string
               <Info className="h-4 w-4" />
             </button>
           </TooltipTrigger>
-          <TooltipContent side="left" className="max-w-xs">
+          <TooltipContent side="left" className="financial-overlay max-w-xs">
             <p className="text-xs">{description}</p>
           </TooltipContent>
         </UITooltip>
@@ -404,7 +404,7 @@ export function DreDashboardLegacy({
             <div className="flex items-center rounded-md border-l-4 transition-colors hover:bg-muted/40" style={{ borderLeftColor: 'hsl(210, 70%, 50%)', backgroundColor: 'hsl(210, 70%, 50%, 0.1)', '--dre-row-color': 'hsl(210, 70%, 50%, 0.4)', '--dre-row-color-bg-hover': 'hsl(210, 70%, 50%, 0.25)' } as React.CSSProperties}>
               <span className="flex-1 px-3 py-2 text-sm font-bold text-foreground flex items-center gap-1">
                 Vendas Líquidas de Devolução
-                <TooltipProvider delayDuration={0}><UITooltip><TooltipTrigger asChild><Info className="h-3 w-3 text-muted-foreground cursor-help relative z-50" /></TooltipTrigger><TooltipContent side="top" className="max-w-sm z-[100]"><div className="text-xs space-y-0.5"><p className="font-semibold mb-1">Composição:</p><p>• Receitas</p><p>• Devoluções</p><p className="mt-1 text-muted-foreground">Base para todos os percentuais (AV%)</p></div></TooltipContent></UITooltip></TooltipProvider>
+                <TooltipProvider delayDuration={0}><UITooltip><TooltipTrigger asChild><Info className="h-3 w-3 text-muted-foreground cursor-help relative z-50" /></TooltipTrigger><TooltipContent side="top" className="financial-overlay max-w-sm z-[100]"><div className="text-xs space-y-0.5"><p className="font-semibold mb-1">Composição:</p><p>• Receitas</p><p>• Devoluções</p><p className="mt-1 text-muted-foreground">Base para todos os percentuais (AV%)</p></div></TooltipContent></UITooltip></TooltipProvider>
               </span>
               <span className="px-3 py-2 text-sm font-bold text-foreground">{formatCurrency(analiseGrupoRaiz.vendasLiquidas.valor)}</span>
               <span className="px-3 py-2 text-sm font-bold text-foreground w-24 text-right">{analiseGrupoRaiz.vendasLiquidas.pct.toFixed(2)}%</span>
@@ -413,7 +413,7 @@ export function DreDashboardLegacy({
             <div className="flex items-center rounded-md border-l-4 transition-colors hover:bg-muted/40" style={{ borderLeftColor: 'hsl(50, 70%, 45%)', backgroundColor: 'hsl(50, 70%, 45%, 0.1)', '--dre-row-color': 'hsl(50, 70%, 45%, 0.4)', '--dre-row-color-bg-hover': 'hsl(50, 70%, 45%, 0.25)' } as React.CSSProperties}>
               <span className="flex-1 px-3 py-2 text-sm font-bold text-foreground flex items-center gap-1">
                 Lucro Bruto
-                <TooltipProvider delayDuration={0}><UITooltip><TooltipTrigger asChild><Info className="h-3 w-3 text-muted-foreground cursor-help relative z-50" /></TooltipTrigger><TooltipContent side="top" className="max-w-sm z-[100]"><div className="text-xs space-y-0.5"><p className="font-semibold mb-1">Composição:</p><p>• Receitas</p><p>• (-) Deduções de Receita</p><p>• Custos de Vendas de Mercadorias</p><p>• Custos de Vendas de Serviços</p><p className="mt-1 text-muted-foreground">% = Lucro Bruto ÷ |Vendas Líquidas|</p></div></TooltipContent></UITooltip></TooltipProvider>
+                <TooltipProvider delayDuration={0}><UITooltip><TooltipTrigger asChild><Info className="h-3 w-3 text-muted-foreground cursor-help relative z-50" /></TooltipTrigger><TooltipContent side="top" className="financial-overlay max-w-sm z-[100]"><div className="text-xs space-y-0.5"><p className="font-semibold mb-1">Composição:</p><p>• Receitas</p><p>• (-) Deduções de Receita</p><p>• Custos de Vendas de Mercadorias</p><p>• Custos de Vendas de Serviços</p><p className="mt-1 text-muted-foreground">% = Lucro Bruto ÷ |Vendas Líquidas|</p></div></TooltipContent></UITooltip></TooltipProvider>
               </span>
               <span className="px-3 py-2 text-sm font-bold text-foreground">{formatCurrency(analiseGrupoRaiz.lucroBruto.valor)}</span>
               <span className="px-3 py-2 text-sm font-bold text-foreground w-24 text-right">{analiseGrupoRaiz.lucroBruto.pct.toFixed(2)}%</span>
@@ -446,7 +446,7 @@ export function DreDashboardLegacy({
             <div className="flex items-center rounded-md border-l-4 transition-colors hover:bg-muted/40" style={{ borderLeftColor: 'hsl(0, 80%, 55%)', backgroundColor: 'hsl(0, 80%, 55%, 0.1)', '--dre-row-color': 'hsl(0, 80%, 55%, 0.4)', '--dre-row-color-bg-hover': 'hsl(0, 80%, 55%, 0.25)' } as React.CSSProperties}>
               <span className="flex-1 px-3 py-2 text-sm font-bold text-foreground flex items-center gap-1">
                 Total Despesas
-                <TooltipProvider delayDuration={0}><UITooltip><TooltipTrigger asChild><Info className="h-3 w-3 text-muted-foreground cursor-help relative z-50" /></TooltipTrigger><TooltipContent side="top" className="max-w-sm z-[100]"><div className="text-xs space-y-0.5"><p className="font-semibold mb-1">Composição:</p><p>• Despesas Fixas</p><p>• Despesas Variáveis</p><p className="mt-1 text-muted-foreground">% = |Total Desp.| ÷ |Vendas Líquidas|</p></div></TooltipContent></UITooltip></TooltipProvider>
+                <TooltipProvider delayDuration={0}><UITooltip><TooltipTrigger asChild><Info className="h-3 w-3 text-muted-foreground cursor-help relative z-50" /></TooltipTrigger><TooltipContent side="top" className="financial-overlay max-w-sm z-[100]"><div className="text-xs space-y-0.5"><p className="font-semibold mb-1">Composição:</p><p>• Despesas Fixas</p><p>• Despesas Variáveis</p><p className="mt-1 text-muted-foreground">% = |Total Desp.| ÷ |Vendas Líquidas|</p></div></TooltipContent></UITooltip></TooltipProvider>
               </span>
               <span className="px-3 py-2 text-sm font-bold text-foreground">{formatCurrency(Math.abs(analiseGrupoRaiz.totalDespesas.valor))}</span>
               <span className="px-3 py-2 text-sm font-bold text-foreground w-24 text-right">{analiseGrupoRaiz.totalDespesas.pct.toFixed(2)}%</span>
@@ -455,7 +455,7 @@ export function DreDashboardLegacy({
             <div className="flex items-center rounded-md border-l-4 transition-colors hover:bg-muted/40" style={{ borderLeftColor: 'hsl(30, 100%, 55%)', backgroundColor: 'hsl(30, 100%, 55%, 0.1)', '--dre-row-color': 'hsl(30, 100%, 55%, 0.4)', '--dre-row-color-bg-hover': 'hsl(30, 100%, 55%, 0.25)' } as React.CSSProperties}>
               <span className="flex-1 px-3 py-2 text-sm font-semibold text-foreground flex items-center gap-1">
                 Custo Médio
-                <TooltipProvider delayDuration={0}><UITooltip><TooltipTrigger asChild><Info className="h-3 w-3 text-muted-foreground cursor-help relative z-50" /></TooltipTrigger><TooltipContent side="top" className="max-w-sm z-[100]"><div className="text-xs space-y-0.5"><p className="font-semibold mb-1">Fórmula:</p><p>• |Custos de Vendas de Mercadorias|</p><p>• ÷ |Vendas Líquidas|</p></div></TooltipContent></UITooltip></TooltipProvider>
+                <TooltipProvider delayDuration={0}><UITooltip><TooltipTrigger asChild><Info className="h-3 w-3 text-muted-foreground cursor-help relative z-50" /></TooltipTrigger><TooltipContent side="top" className="financial-overlay max-w-sm z-[100]"><div className="text-xs space-y-0.5"><p className="font-semibold mb-1">Fórmula:</p><p>• |Custos de Vendas de Mercadorias|</p><p>• ÷ |Vendas Líquidas|</p></div></TooltipContent></UITooltip></TooltipProvider>
               </span>
               <span className="px-3 py-2 text-sm font-semibold text-foreground">{formatCurrency(analiseGrupoRaiz.custoMedio.valor)}</span>
               <span className="px-3 py-2 text-sm font-semibold text-foreground w-24 text-right">{analiseGrupoRaiz.custoMedio.pct.toFixed(2)}%</span>
@@ -464,7 +464,7 @@ export function DreDashboardLegacy({
             <div className="flex items-center rounded-md border-l-4 transition-colors hover:bg-muted/40" style={{ borderLeftColor: 'hsl(120, 100%, 35%)', backgroundColor: 'hsl(120, 100%, 35%, 0.1)', '--dre-row-color': 'hsl(120, 100%, 35%, 0.4)', '--dre-row-color-bg-hover': 'hsl(120, 100%, 35%, 0.25)' } as React.CSSProperties}>
               <span className="flex-1 px-3 py-2 text-sm font-bold text-foreground flex items-center gap-1">
                 Lucro Operacional
-                <TooltipProvider delayDuration={0}><UITooltip><TooltipTrigger asChild><Info className="h-3 w-3 text-muted-foreground cursor-help relative z-50" /></TooltipTrigger><TooltipContent side="top" className="max-w-sm z-[100]"><div className="text-xs space-y-0.5"><p className="font-semibold mb-1">Composição:</p><p>• Lucro Bruto</p><p>• + Total Despesas</p><p>• + Resultado Financeiro</p><p>• + Outras Receitas/Despesas</p><p className="mt-1 text-muted-foreground">% = Lucro Op. ÷ |Vendas Líquidas|</p></div></TooltipContent></UITooltip></TooltipProvider>
+                <TooltipProvider delayDuration={0}><UITooltip><TooltipTrigger asChild><Info className="h-3 w-3 text-muted-foreground cursor-help relative z-50" /></TooltipTrigger><TooltipContent side="top" className="financial-overlay max-w-sm z-[100]"><div className="text-xs space-y-0.5"><p className="font-semibold mb-1">Composição:</p><p>• Lucro Bruto</p><p>• + Total Despesas</p><p>• + Resultado Financeiro</p><p>• + Outras Receitas/Despesas</p><p className="mt-1 text-muted-foreground">% = Lucro Op. ÷ |Vendas Líquidas|</p></div></TooltipContent></UITooltip></TooltipProvider>
               </span>
               <span className="px-3 py-2 text-sm font-bold text-foreground">{formatCurrency(analiseGrupoRaiz.lucroOperacional.valor)}</span>
               <span className="px-3 py-2 text-sm font-bold text-foreground w-24 text-right">{analiseGrupoRaiz.lucroOperacional.pct.toFixed(2)}%</span>
@@ -473,7 +473,7 @@ export function DreDashboardLegacy({
             <div className="flex items-center rounded-md border-l-4 transition-colors hover:bg-muted/40" style={{ borderLeftColor: 'hsl(200, 60%, 50%)', backgroundColor: 'hsl(200, 60%, 50%, 0.1)', '--dre-row-color': 'hsl(200, 60%, 50%, 0.4)', '--dre-row-color-bg-hover': 'hsl(200, 60%, 50%, 0.25)' } as React.CSSProperties}>
               <span className="flex-1 px-3 py-2 text-sm font-semibold text-foreground flex items-center gap-1">
                 Resultado Financeiro Líquido
-                <TooltipProvider delayDuration={0}><UITooltip><TooltipTrigger asChild><Info className="h-3 w-3 text-muted-foreground cursor-help relative z-50" /></TooltipTrigger><TooltipContent side="top" className="max-w-sm z-[100]"><div className="text-xs space-y-0.5"><p className="font-semibold mb-1">Composição:</p><p>• Receitas Financeiras</p><p>• Despesas Financeiras</p><p className="mt-1 text-muted-foreground">% = Resultado Financeiro ÷ |Vendas Líquidas|</p></div></TooltipContent></UITooltip></TooltipProvider>
+                <TooltipProvider delayDuration={0}><UITooltip><TooltipTrigger asChild><Info className="h-3 w-3 text-muted-foreground cursor-help relative z-50" /></TooltipTrigger><TooltipContent side="top" className="financial-overlay max-w-sm z-[100]"><div className="text-xs space-y-0.5"><p className="font-semibold mb-1">Composição:</p><p>• Receitas Financeiras</p><p>• Despesas Financeiras</p><p className="mt-1 text-muted-foreground">% = Resultado Financeiro ÷ |Vendas Líquidas|</p></div></TooltipContent></UITooltip></TooltipProvider>
               </span>
               <span className="px-3 py-2 text-sm font-semibold text-foreground">{formatCurrency(analiseGrupoRaiz.resultadoFinanceiro.valor)}</span>
               <span className="px-3 py-2 text-sm font-semibold text-foreground w-24 text-right">{analiseGrupoRaiz.resultadoFinanceiro.pct.toFixed(2)}%</span>
@@ -482,7 +482,7 @@ export function DreDashboardLegacy({
             <div className="flex items-center rounded-md border-l-4 transition-colors hover:bg-muted/40" style={{ borderLeftColor: 'hsl(320, 60%, 50%)', backgroundColor: 'hsl(320, 60%, 50%, 0.1)', '--dre-row-color': 'hsl(320, 60%, 50%, 0.4)', '--dre-row-color-bg-hover': 'hsl(320, 60%, 50%, 0.25)' } as React.CSSProperties}>
               <span className="flex-1 px-3 py-2 text-sm font-semibold text-foreground flex items-center gap-1">
                 Provisão Para IRPJ e CSLL
-                <TooltipProvider delayDuration={0}><UITooltip><TooltipTrigger asChild><Info className="h-3 w-3 text-muted-foreground cursor-help relative z-50" /></TooltipTrigger><TooltipContent side="top" className="max-w-sm z-[100]"><div className="text-xs space-y-0.5"><p className="font-semibold mb-1">Composição:</p><p>• Provisão para IRPJ</p><p>• Provisão para CSLL</p><p className="mt-1 text-muted-foreground">% = |Provisão| ÷ |Vendas Líquidas|</p></div></TooltipContent></UITooltip></TooltipProvider>
+                <TooltipProvider delayDuration={0}><UITooltip><TooltipTrigger asChild><Info className="h-3 w-3 text-muted-foreground cursor-help relative z-50" /></TooltipTrigger><TooltipContent side="top" className="financial-overlay max-w-sm z-[100]"><div className="text-xs space-y-0.5"><p className="font-semibold mb-1">Composição:</p><p>• Provisão para IRPJ</p><p>• Provisão para CSLL</p><p className="mt-1 text-muted-foreground">% = |Provisão| ÷ |Vendas Líquidas|</p></div></TooltipContent></UITooltip></TooltipProvider>
               </span>
               <span className="px-3 py-2 text-sm font-semibold text-foreground">{formatCurrency(Math.abs(analiseGrupoRaiz.provisaoIRPJ.valor))}</span>
               <span className="px-3 py-2 text-sm font-semibold text-foreground w-24 text-right">{analiseGrupoRaiz.provisaoIRPJ.pct.toFixed(2)}%</span>
@@ -491,7 +491,7 @@ export function DreDashboardLegacy({
             <div className="flex items-center rounded-md border-l-4 transition-colors hover:bg-muted/40" style={{ borderLeftColor: 'hsl(140, 80%, 30%)', backgroundColor: 'hsl(140, 80%, 30%, 0.1)', '--dre-row-color': 'hsl(140, 80%, 30%, 0.4)', '--dre-row-color-bg-hover': 'hsl(140, 80%, 30%, 0.25)' } as React.CSSProperties}>
               <span className="flex-1 px-3 py-2 text-sm font-bold text-foreground flex items-center gap-1">
                 Lucro Final
-                <TooltipProvider delayDuration={0}><UITooltip><TooltipTrigger asChild><Info className="h-3 w-3 text-muted-foreground cursor-help relative z-50" /></TooltipTrigger><TooltipContent side="top" className="max-w-sm z-[100]"><div className="text-xs space-y-0.5"><p className="font-semibold mb-1">Composição:</p><p>• Soma total de todas as contas</p><p>• (Resultado líquido do exercício)</p><p className="mt-1 text-muted-foreground">% = Lucro Final ÷ |Vendas Líquidas|</p></div></TooltipContent></UITooltip></TooltipProvider>
+                <TooltipProvider delayDuration={0}><UITooltip><TooltipTrigger asChild><Info className="h-3 w-3 text-muted-foreground cursor-help relative z-50" /></TooltipTrigger><TooltipContent side="top" className="financial-overlay max-w-sm z-[100]"><div className="text-xs space-y-0.5"><p className="font-semibold mb-1">Composição:</p><p>• Soma total de todas as contas</p><p>• (Resultado líquido do exercício)</p><p className="mt-1 text-muted-foreground">% = Lucro Final ÷ |Vendas Líquidas|</p></div></TooltipContent></UITooltip></TooltipProvider>
               </span>
               <span className="px-3 py-2 text-sm font-bold text-foreground">{formatCurrency(analiseGrupoRaiz.lucroFinal.valor)}</span>
               <span className="px-3 py-2 text-sm font-bold text-foreground w-24 text-right">{analiseGrupoRaiz.lucroFinal.pct.toFixed(2)}%</span>
@@ -502,7 +502,7 @@ export function DreDashboardLegacy({
             <div className="flex items-center rounded-md border-l-4 transition-colors hover:bg-muted/40" style={{ borderLeftColor: 'hsl(50, 70%, 45%)', backgroundColor: 'hsl(50, 70%, 45%, 0.1)', '--dre-row-color': 'hsl(50, 70%, 45%, 0.4)', '--dre-row-color-bg-hover': 'hsl(50, 70%, 45%, 0.25)' } as React.CSSProperties}>
               <span className="flex-1 px-3 py-2 text-sm font-bold text-foreground flex items-center gap-1">
                 Markup médio
-                <TooltipProvider delayDuration={0}><UITooltip><TooltipTrigger asChild><Info className="h-3 w-3 text-muted-foreground cursor-help relative z-50" /></TooltipTrigger><TooltipContent side="top" className="max-w-sm z-[100]"><div className="text-xs space-y-0.5"><p className="font-semibold mb-1">Fórmula:</p><p>• |Receitas|</p><p>• ÷ (|Impostos| + |CMV/CSV|)</p></div></TooltipContent></UITooltip></TooltipProvider>
+                <TooltipProvider delayDuration={0}><UITooltip><TooltipTrigger asChild><Info className="h-3 w-3 text-muted-foreground cursor-help relative z-50" /></TooltipTrigger><TooltipContent side="top" className="financial-overlay max-w-sm z-[100]"><div className="text-xs space-y-0.5"><p className="font-semibold mb-1">Fórmula:</p><p>• |Receitas|</p><p>• ÷ (|Impostos| + |CMV/CSV|)</p></div></TooltipContent></UITooltip></TooltipProvider>
               </span>
               <span className="px-3 py-2 text-sm font-bold text-foreground w-24 text-right">{analiseGrupoRaiz.markup.toFixed(4)}</span>
             </div>

@@ -288,7 +288,7 @@ export function AnaliseClienteTab({ clientes, duplicatas, pedidos = [], empresas
             <SelectTrigger className="h-9 w-[160px]">
               <SelectValue placeholder="Status" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="financial-overlay">
               <SelectItem value="todos">Todos os status</SelectItem>
               <SelectItem value="a_vencer">A vencer</SelectItem>
               <SelectItem value="vence_hoje">Vence hoje</SelectItem>
@@ -301,7 +301,7 @@ export function AnaliseClienteTab({ clientes, duplicatas, pedidos = [], empresas
             <SelectTrigger className="h-9 w-[180px]">
               <SelectValue placeholder="Filial" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="financial-overlay">
               <SelectItem value="todas">Todas as filiais</SelectItem>
               {empresas.map((e) => (
                 <SelectItem key={e} value={e}>{e}</SelectItem>
@@ -313,7 +313,7 @@ export function AnaliseClienteTab({ clientes, duplicatas, pedidos = [], empresas
             <SelectTrigger className="h-9 w-[160px]">
               <SelectValue placeholder="Dias atraso" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="financial-overlay">
               <SelectItem value="todos">Qualquer atraso</SelectItem>
               <SelectItem value="sem_atraso">Sem atraso</SelectItem>
               <SelectItem value="1_30">1 a 30 dias</SelectItem>
@@ -506,7 +506,7 @@ function ClienteDetalheDrawer({
 
   return (
     <Sheet open={open} onOpenChange={(o) => !o && onClose()}>
-      <SheetContent side="right" className="w-full sm:max-w-2xl overflow-y-auto">
+      <SheetContent side="right" className="financial-overlay w-full sm:max-w-2xl overflow-y-auto">
         <SheetHeader>
           <SheetTitle className="text-left">
             <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground mb-1">

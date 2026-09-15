@@ -103,7 +103,7 @@ export function ResumoDuplicatasTable({ duplicatas }: Props) {
       actions={<EnterpriseBadge tone="info"><FileText className="h-3 w-3" /> ja faturado | aguarda pagamento</EnterpriseBadge>}
       noPadding
     >
-      <EnterpriseTable className="rounded-none border-0">
+      <EnterpriseTable className="financial-data-viewport rounded-none border-0">
           <EnterpriseThead>
             <EnterpriseTr>
               <EnterpriseTh className="w-[110px]">Duplicata</EnterpriseTh>

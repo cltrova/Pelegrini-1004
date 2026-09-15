@@ -76,8 +76,8 @@ export function SaldoAVencerExtraFields({ value, onChange }: Props) {
           value={value.empresa ?? SALDO_TODOS}
           onValueChange={(v) => onChange({ ...value, empresa: v })}
         >
-          <SelectTrigger className="h-10 bg-background"><SelectValue /></SelectTrigger>
-          <SelectContent className="max-h-[300px] bg-popover z-50">
+          <SelectTrigger className="financial-filter-control h-9 bg-background"><SelectValue /></SelectTrigger>
+          <SelectContent className="financial-overlay max-h-[300px] bg-popover z-50">
             <SelectItem value={SALDO_TODOS}>Todas</SelectItem>
             {opcoes.empresas.map((e) => (
               <SelectItem key={e} value={e}>{e}</SelectItem>
@@ -92,8 +92,8 @@ export function SaldoAVencerExtraFields({ value, onChange }: Props) {
           value={value.codEmpresa ?? SALDO_TODOS}
           onValueChange={(v) => onChange({ ...value, codEmpresa: v })}
         >
-          <SelectTrigger className="h-10 bg-background"><SelectValue /></SelectTrigger>
-          <SelectContent className="max-h-[300px] bg-popover z-50">
+          <SelectTrigger className="financial-filter-control h-9 bg-background"><SelectValue /></SelectTrigger>
+          <SelectContent className="financial-overlay max-h-[300px] bg-popover z-50">
             <SelectItem value={SALDO_TODOS}>Todos</SelectItem>
             {opcoes.codEmpresas.map((c) => (
               <SelectItem key={c} value={c}>{c}</SelectItem>
@@ -108,8 +108,8 @@ export function SaldoAVencerExtraFields({ value, onChange }: Props) {
           value={value.cliente ?? SALDO_TODOS}
           onValueChange={(v) => onChange({ ...value, cliente: v })}
         >
-          <SelectTrigger className="h-10 bg-background"><SelectValue /></SelectTrigger>
-          <SelectContent className="max-h-[300px] bg-popover z-50">
+          <SelectTrigger className="financial-filter-control h-9 bg-background"><SelectValue /></SelectTrigger>
+          <SelectContent className="financial-overlay max-h-[300px] bg-popover z-50">
             <SelectItem value={SALDO_TODOS}>Todos</SelectItem>
             {opcoes.clientes.map((c) => (
               <SelectItem key={c} value={c}>{c}</SelectItem>

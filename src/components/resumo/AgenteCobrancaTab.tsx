@@ -187,7 +187,7 @@ export function AgenteCobrancaTab({ duplicatas }: Props) {
           </div>
 
           <Card className="overflow-hidden">
-            <div className="overflow-x-auto">
+            <div className="financial-data-viewport overflow-x-auto">
               <table className="w-full text-sm">
                 <thead className="bg-muted/50 text-xs uppercase text-muted-foreground">
                   <tr>
@@ -331,7 +331,7 @@ export function AgenteCobrancaTab({ duplicatas }: Props) {
       </Tabs>
 
       <Dialog open={!!previewItem} onOpenChange={(o) => !o && setPreviewItem(null)}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="financial-overlay max-w-lg">
           <DialogHeader>
             <DialogTitle>Enviar cobrança</DialogTitle>
             <DialogDescription>

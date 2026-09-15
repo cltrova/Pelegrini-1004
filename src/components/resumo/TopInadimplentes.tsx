@@ -30,7 +30,7 @@ export function TopInadimplentes({ clientes, limit = 10 }: Props) {
         <h3 className="text-sm font-semibold">Top Inadimplentes</h3>
         <p className="text-xs text-muted-foreground">Clientes com maior valor vencido</p>
       </div>
-      <div className="overflow-x-auto">
+      <div className="financial-data-viewport overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow className="bg-muted/20">

@@ -24,7 +24,7 @@ export function VariacaoTable({ data, totais, ano }: VariacaoTableProps) {
   };
 
   return (
-    <div className="bg-card rounded-xl border border-border overflow-hidden">
+    <div className="financial-data-viewport min-w-0 max-w-full overflow-hidden border border-border bg-card">
       {/* Header com ações */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-muted/30">
         <h3 className="font-semibold text-foreground">Demonstração dos Fluxos de Caixa</h3>
@@ -34,7 +34,7 @@ export function VariacaoTable({ data, totais, ano }: VariacaoTableProps) {
         </Button>
       </div>
 
-      <div className="overflow-x-auto">
+      <div className="financial-data-viewport max-w-full overflow-x-auto">
         <table className="w-full">
           <thead>
             <tr className="border-b border-border bg-primary/5">

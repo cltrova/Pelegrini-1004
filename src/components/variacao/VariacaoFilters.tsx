@@ -83,7 +83,7 @@ export function VariacaoFilters({
             <SelectTrigger className="w-[120px] bg-primary/10 border-primary/30">
               <SelectValue placeholder="Selecione" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="financial-overlay">
               {anos.map((a) => (
                 <SelectItem key={a} value={a}>
                   {a}
@@ -108,7 +108,7 @@ export function VariacaoFilters({
                 <SelectTrigger className="w-[180px]">
                   <SelectValue placeholder="Todas" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="financial-overlay">
                   <SelectItem value="all">Todas</SelectItem>
                   {empresas.map((e) => (
                     <SelectItem key={e} value={e}>

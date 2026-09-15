@@ -160,7 +160,7 @@ export function SaldoAVencerKpis({
 
   if (isLoading) {
     return (
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+      <div className="financial-metric-strip grid min-w-0 gap-px overflow-hidden border border-border bg-border sm:grid-cols-2 xl:grid-cols-5">
         {Array.from({ length: 5 }).map((_, i) => (
           <div key={i} className="h-[124px] rounded-xl border border-border/60 bg-card p-4">
             <Skeleton className="h-3 w-24" />
@@ -177,7 +177,7 @@ export function SaldoAVencerKpis({
 
   return (
     <TooltipProvider delayDuration={200}>
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+      <div className="financial-metric-strip grid min-w-0 gap-px overflow-hidden border border-border bg-border sm:grid-cols-2 xl:grid-cols-5">
         {cards.map((card) => {
           const clicavel = card.detalhavel && !semDados;
           const ativo = foco === card.key;
@@ -203,11 +203,11 @@ export function SaldoAVencerKpis({
                     }
                   }}
                   className={[
-                    'group flex h-full min-h-[104px] flex-col justify-between rounded-xl border border-border/60 bg-card p-4',
-                    'transition-all duration-200 ease-out',
+                    'group flex h-full min-h-[92px] min-w-0 flex-col justify-between rounded-xl border border-border/60 bg-card p-3',
+                    'transition-colors duration-150 ease-out',
                     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
-                    clicavel ? `cursor-pointer hover:-translate-y-[2px] hover:shadow-lg hover:shadow-black/10 ${card.ring}` : '',
-                    ativo ? 'border-primary/50 shadow-md' : '',
+                    clicavel ? `cursor-pointer hover:bg-muted/30 ${card.ring}` : '',
+                    ativo ? 'border-primary/50 bg-primary/[0.04]' : '',
                   ].join(' ')}
                 >
                   <div className="flex items-start justify-between gap-2">
@@ -233,7 +233,7 @@ export function SaldoAVencerKpis({
 
                 </div>
               </TooltipTrigger>
-              <TooltipContent side="bottom" className="max-w-[240px] text-xs">
+              <TooltipContent side="bottom" className="financial-overlay max-w-[240px] text-xs">
                 {card.formula}
               </TooltipContent>
             </Tooltip>
@@ -242,7 +242,7 @@ export function SaldoAVencerKpis({
       </div>
 
       <Sheet open={!!detalhe} onOpenChange={(o) => !o && setDetalhe(null)}>
-        <SheetContent side="right" className="w-full overflow-y-auto sm:max-w-xl">
+        <SheetContent side="right" className="financial-overlay w-full overflow-y-auto sm:max-w-xl">
           <SheetHeader>
             <SheetTitle>Detalhamento</SheetTitle>
             <SheetDescription>{cardAtual?.label}</SheetDescription>
@@ -296,7 +296,7 @@ export function SaldoAVencerKpis({
                 {composicaoClientes.length === 0 ? (
                   <p className="text-muted-foreground">Sem dados para os filtros atuais</p>
                 ) : (
-                  <div className="overflow-hidden rounded-lg border border-border/60">
+                  <div className="financial-data-viewport overflow-hidden rounded-lg border border-border/60">
                     <table className="w-full text-xs">
                       <thead className="bg-muted/50 text-muted-foreground">
                         <tr>

@@ -70,13 +70,13 @@ export default function ResumoPage() {
   ), [duplicatas]);
 
   return (
-    <div className="enterprise-page-shell max-w-[1600px]">
+    <div className="financial-workspace enterprise-page-shell max-w-[1600px]">
       <EnterprisePageHeader
         title="Resumo Financeiro"
         subtitle="Monitoramento de liquidez e contas a receber"
         icon={Wallet}
         actions={
-          <div className="flex min-w-0 flex-wrap items-center justify-end gap-2">
+          <div className="financial-toolbar flex min-w-0 flex-wrap items-center justify-end gap-2">
           {hasSearched && !isLoading && hasSource && !error && alertas.length > 0 && (
             <AlertasCriticosBanner alertas={alertas} />
           )}
@@ -123,7 +123,7 @@ export default function ResumoPage() {
       )}
 
       {hasSearched && isLoading && (
-        <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
+        <div className="financial-metric-strip grid grid-cols-1 gap-px overflow-hidden border border-border bg-border sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6">
           {Array.from({ length: 6 }).map((_, i) => (
             <div key={i} className="h-[120px] rounded-lg bg-muted animate-pulse" />
           ))}
@@ -134,24 +134,26 @@ export default function ResumoPage() {
 
       {hasSearched && !isLoading && hasSource && !error && (
         <>
-          <ResumoVitalsKPIs kpis={kpis} pdd={pdd} />
+          <div className="financial-metric-strip min-w-0">
+            <ResumoVitalsKPIs kpis={kpis} pdd={pdd} />
+          </div>
 
           <FunilCarteiraBar segmentos={funil} onSelect={handleFunilSelect} />
 
           
 
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="flex min-h-0 w-full flex-1 flex-col overflow-hidden">
-            <TabsList className="grid w-full max-w-[1200px] shrink-0 grid-cols-6">
-              <TabsTrigger value="diagnostico">Diagnóstico</TabsTrigger>
-              <TabsTrigger value="clientes">Análise de Cliente</TabsTrigger>
-              <TabsTrigger value="duplicatas">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="financial-data-viewport flex min-h-0 w-full flex-1 flex-col overflow-hidden">
+            <TabsList className="financial-toolbar grid h-auto w-max min-w-full shrink-0 grid-flow-col auto-cols-[minmax(9rem,1fr)] justify-start overflow-x-auto p-1">
+              <TabsTrigger value="diagnostico" className="whitespace-nowrap">Diagnóstico</TabsTrigger>
+              <TabsTrigger value="clientes" className="whitespace-nowrap">Análise de Cliente</TabsTrigger>
+              <TabsTrigger value="duplicatas" className="whitespace-nowrap">
                 Faturado a Receber ({duplicatas.length})
               </TabsTrigger>
-              <TabsTrigger value="pedidos">
+              <TabsTrigger value="pedidos" className="whitespace-nowrap">
                 Em Aberto ({pedidos.length})
               </TabsTrigger>
-              <TabsTrigger value="agente">🤖 Agente</TabsTrigger>
-              <TabsTrigger value="acompanhamento" className="relative">
+              <TabsTrigger value="agente" className="whitespace-nowrap">🤖 Agente</TabsTrigger>
+              <TabsTrigger value="acompanhamento" className="relative whitespace-nowrap">
                 📥 Acompanhamento
                 {pendentes.length > 0 && (
                   <EnterpriseBadge tone="negative" className="ml-1 h-5 px-1.5">{pendentes.length}</EnterpriseBadge>
@@ -159,7 +161,7 @@ export default function ResumoPage() {
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="diagnostico" className="mt-3 min-h-0 flex-1 overflow-auto">
+            <TabsContent value="diagnostico" className="financial-data-viewport mt-3 min-h-0 flex-1 overflow-auto">
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
                 <div className="lg:col-span-7 space-y-4">
                   <ProjecaoRecebimentosChart buckets={projecao} />
@@ -172,11 +174,11 @@ export default function ResumoPage() {
               </div>
             </TabsContent>
 
-            <TabsContent value="clientes" className="mt-3 min-h-0 flex-1 overflow-auto">
+            <TabsContent value="clientes" className="financial-data-viewport mt-3 min-h-0 flex-1 overflow-auto">
               <AnaliseClienteTab clientes={clientesAnalytics} duplicatas={duplicatas} pedidos={pedidos} empresas={empresasDisponiveis} />
             </TabsContent>
 
-            <TabsContent value="duplicatas" className="mt-3 min-h-0 flex-1 space-y-3 overflow-auto">
+            <TabsContent value="duplicatas" className="financial-data-viewport mt-3 min-h-0 flex-1 space-y-3 overflow-auto">
               <ResumoFiltersBar
                 filters={filters}
                 onChange={setFilters}
@@ -186,15 +188,15 @@ export default function ResumoPage() {
               <ResumoDuplicatasTable duplicatas={filtradas} />
             </TabsContent>
 
-            <TabsContent value="pedidos" className="mt-3 min-h-0 flex-1 overflow-auto">
+            <TabsContent value="pedidos" className="financial-data-viewport mt-3 min-h-0 flex-1 overflow-auto">
               <PedidosAbertosTable pedidos={pedidos} />
             </TabsContent>
 
-            <TabsContent value="agente" className="mt-3 min-h-0 flex-1 overflow-auto">
+            <TabsContent value="agente" className="financial-data-viewport mt-3 min-h-0 flex-1 overflow-auto">
               <AgenteCobrancaTab duplicatas={duplicatas} />
             </TabsContent>
 
-            <TabsContent value="acompanhamento" className="mt-3 min-h-0 flex-1 overflow-auto">
+            <TabsContent value="acompanhamento" className="financial-data-viewport mt-3 min-h-0 flex-1 overflow-auto">
               <AcompanhamentoTab />
             </TabsContent>
           </Tabs>

@@ -275,7 +275,7 @@ export function DfcConfigTab() {
                                       <Search className="h-3 w-3 ml-1" />
                                     </Button>
                                   </PopoverTrigger>
-                                  <PopoverContent className="w-[460px] p-0" align="end">
+                                  <PopoverContent className="financial-overlay w-[min(460px,calc(100vw-2rem))] p-0" align="end">
                                     <ContasPicker
                                       contas={todasContas}
                                       selecionadas={eff.contas}

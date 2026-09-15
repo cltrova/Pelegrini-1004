@@ -494,7 +494,7 @@ function DreGroupedTableRPA({ data, className }: DreGroupedTableProps) {
           </div>
         </div>
       }
-      className={className}
+      className={cn('financial-data-viewport min-w-0 max-w-full overflow-auto', className)}
       description={`${hierarchy.length} categoria${hierarchy.length !== 1 ? 's' : ''} | Estrutura contabil hierarquica`}
       noPadding
       title="Demonstrativo de Resultado"

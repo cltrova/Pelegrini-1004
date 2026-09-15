@@ -74,7 +74,7 @@ export default function SaldoAVencerPage() {
 
 
   return (
-    <div className="enterprise-page-shell max-w-[1600px] animate-fade-in">
+    <div className="financial-workspace enterprise-page-shell max-w-[1600px] animate-fade-in">
       <header className="flex items-center gap-3">
         <div className="h-11 w-11 rounded-xl bg-primary/10 flex items-center justify-center">
           <Wallet className="h-6 w-6 text-primary" />
@@ -88,7 +88,7 @@ export default function SaldoAVencerPage() {
         </div>
       </header>
 
-      <Card className="border-border/60">
+      <Card className="financial-toolbar min-w-0 border-border/60">
         <button
           type="button"
           onClick={() => setFiltrosAbertos((v) => !v)}
@@ -101,15 +101,15 @@ export default function SaldoAVencerPage() {
           <ChevronDown className={`h-4 w-4 opacity-60 transition-transform ${filtrosAbertos ? 'rotate-180' : ''}`} />
         </button>
         {filtrosAbertos && (
-        <CardContent className="grid gap-4 p-4 pt-0 sm:grid-cols-2 lg:grid-cols-5">
+        <CardContent className="grid min-w-0 gap-3 p-3 pt-0 sm:grid-cols-2 lg:grid-cols-5">
           <div className="space-y-1.5">
             <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
               <Calendar className="h-3.5 w-3.5" />
               Ano
             </div>
             <Select value={ano} onValueChange={setAno}>
-              <SelectTrigger className="h-10 bg-background"><SelectValue /></SelectTrigger>
-              <SelectContent>
+              <SelectTrigger className="financial-filter-control h-9 bg-background"><SelectValue /></SelectTrigger>
+              <SelectContent className="financial-overlay">
                 <SelectItem value={TODOS}>Todos</SelectItem>
                 {anos.map((a) => <SelectItem key={a} value={a}>{a}</SelectItem>)}
               </SelectContent>
@@ -123,12 +123,12 @@ export default function SaldoAVencerPage() {
             </div>
             <Popover>
               <PopoverTrigger asChild>
-                <Button variant="outline" className="h-10 w-full justify-between bg-background font-normal">
+                <Button variant="outline" className="financial-filter-control h-9 w-full justify-between bg-background font-normal">
                   <span className="truncate">{rotuloMeses}</span>
                   <ChevronDown className="h-4 w-4 opacity-50 shrink-0" />
                 </Button>
               </PopoverTrigger>
-              <PopoverContent align="start" className="w-[240px] p-2 bg-popover z-50">
+              <PopoverContent align="start" className="financial-overlay w-[min(240px,calc(100vw-1rem))] p-2 bg-popover z-50">
                 <div className="flex items-center justify-between px-1 pb-2">
                   <span className="text-xs font-semibold text-muted-foreground">Selecione os meses</span>
                   <Button variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={() => setMeses([])}>
@@ -168,10 +168,10 @@ export default function SaldoAVencerPage() {
           />
 
           <div className="flex items-end justify-end gap-2 sm:col-span-2 lg:col-span-5">
-            <Button variant="outline" className="h-10" onClick={() => { setAno(TODOS); setMeses([]); setExtra({}); }}>
+            <Button variant="outline" className="financial-filter-control h-9" onClick={() => { setAno(TODOS); setMeses([]); setExtra({}); }}>
               Limpar
             </Button>
-            <Button className="h-10" onClick={aplicar}>
+            <Button className="financial-filter-control h-9" onClick={aplicar}>
               <Search className="h-4 w-4 mr-2" />
               Buscar
             </Button>
@@ -180,7 +180,9 @@ export default function SaldoAVencerPage() {
         )}
       </Card>
 
-      <SaldoAVencerTab filtros={appliedFiltros} />
+      <div className="financial-data-viewport min-w-0">
+        <SaldoAVencerTab filtros={appliedFiltros} />
+      </div>
 
     </div>
   );
