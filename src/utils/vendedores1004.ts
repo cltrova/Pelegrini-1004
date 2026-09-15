@@ -192,7 +192,9 @@ export function getIdsVendedoresChevrolet10041(
   return Array.from(new Set(
     (vendedoresSelecionados ?? [])
       .map((codigo) => String(codigo).trim())
-      .filter((codigo) => /^\d+$/.test(codigo) && !EQUIPE_PRINCIPAL_1004_CODES.includes(codigo)),
+      .filter((codigo) => /^\d+$/.test(codigo)
+        && !EQUIPE_PRINCIPAL_1004_CODES.includes(codigo)
+        && !FORCA_P_1004_SET.has(codigo)),
   ));
 }
 
@@ -319,7 +321,7 @@ export function vendedorOcultoFiltro1004(nome: unknown): boolean {
 }
 
 export function vendedorOcultoFiltroContextual1004(nome: unknown, isContextoChevrolet10041Ativo = false): boolean {
-  if (isContextoChevrolet10041Ativo) return false;
+  if (isContextoChevrolet10041Ativo) return vendedorForcaP1004({ nome });
   return vendedorOcultoFiltro1004(nome);
 }
 
@@ -379,6 +381,7 @@ export function montarVendedoresFiltroVendasChevrolet10041(
     const codigo = String(vendedor?.codigo ?? '').trim();
     const nome = String(vendedor?.nome ?? codigo).trim();
     if (!codigo || !nome || codigo === 'SEM_VENDEDOR') continue;
+    if (vendedorForcaP1004({ codigo, nome })) continue;
     if (!map.has(codigo)) map.set(codigo, { codigo, nome });
   }
 
@@ -499,7 +502,9 @@ export function relacionarMovimentosVendedoresChevrolet10041<T extends { codigo:
       const nome = String(movimento.nome ?? codigo).trim();
       return { codigo, nome, movimento };
     })
-    .filter(({ codigo }) => codigo && (idsSelecionados.size === 0 || idsSelecionados.has(codigo)));
+    .filter(({ codigo, nome }) => codigo
+      && !vendedorForcaP1004({ codigo, nome })
+      && (idsSelecionados.size === 0 || idsSelecionados.has(codigo)));
 }
 
 export function montarVendedoresVisualizacaoChevrolet10041<T extends { codigo: string | number; nome?: unknown }>(

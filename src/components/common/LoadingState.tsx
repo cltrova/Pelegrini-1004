@@ -5,12 +5,14 @@ interface LoadingStateProps {
   message?: string;
   className?: string;
   size?: 'sm' | 'md' | 'lg';
+  surface?: boolean;
 }
 
 export function LoadingState({
   message = 'Carregando dados da filial',
   className,
   size = 'md',
+  surface = true,
 }: LoadingStateProps) {
   const sizes = {
     sm: 'h-4 w-4',
@@ -20,8 +22,11 @@ export function LoadingState({
 
   return (
     <div
+      role="status"
+      aria-label={message || 'Carregando'}
       className={cn(
-        'flex flex-col items-center justify-center rounded-xl border border-border bg-card p-8 text-center shadow-sm text-muted-foreground',
+        'flex flex-col items-center justify-center p-8 text-center text-muted-foreground',
+        surface && 'rounded-xl border border-border bg-card shadow-sm',
         className
       )}
     >

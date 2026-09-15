@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { Skeleton } from '@/components/ui/skeleton';
+import { LoadingState } from '@/components/common/LoadingState';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { AlertCircle, LoaderCircle, RefreshCw, Search, SlidersHorizontal, X } from 'lucide-react';
@@ -164,8 +164,8 @@ export default function ComissaoPage() {
     },
   ].filter(Boolean) as Array<{ label: string; onRemove: () => void }>;
 
-  const th = 'py-2.5 px-3 text-right font-semibold whitespace-nowrap';
-  const td = 'py-2.5 px-3 text-right tabular-nums whitespace-nowrap border-l border-border/40';
+  const th = 'px-3 py-3 text-center font-semibold whitespace-nowrap';
+  const td = 'px-3 py-3 text-center tabular-nums whitespace-nowrap border-l border-border/40';
 
   return (
     <ComercialCompactPage className="comissao-page commercial-commission">
@@ -310,8 +310,8 @@ export default function ComissaoPage() {
           className={cn('commercial-table-frame', linhas.length > 0 && 'comissao-data-populated')}
         >
           {showInitialLoading ? (
-            <div className="space-y-2 p-3">
-              {Array.from({ length: 8 }).map((_, i) => <Skeleton key={i} className="h-9 w-full" />)}
+            <div className="flex min-h-64 flex-1 items-center justify-center" aria-busy="true">
+              <LoadingState message="Carregando comissões" surface={false} />
             </div>
           ) : !aplicado ? (
             <p className="flex min-h-44 items-center justify-center px-4 py-8 text-center text-sm text-muted-foreground">
@@ -326,10 +326,10 @@ export default function ComissaoPage() {
               <p className="text-xs text-muted-foreground">Revise o período ou os filtros selecionados.</p>
             </div>
           ) : (
-              <table className="w-full min-w-[56rem] border-collapse text-sm">
+              <table className="h-full w-full min-w-[56rem] border-collapse text-base">
                 <thead className="sticky top-0 z-10">
                   <tr className="bg-muted text-[11px] uppercase tracking-wide text-muted-foreground">
-                    <th className="top-0 z-30 w-56 bg-muted py-2.5 px-3 text-left font-semibold whitespace-nowrap md:sticky md:left-0">Vendedor</th>
+                    <th className="top-0 z-30 w-56 bg-muted px-3 py-3 text-left text-xs font-semibold whitespace-nowrap md:sticky md:left-0">Vendedor</th>
                     <th className={th}>Obj. mensal</th>
                     <th className={th}>Obj. diário</th>
                     <th className={th}>Pedidos em aberto</th>
@@ -343,12 +343,12 @@ export default function ComissaoPage() {
                     <tr
                       key={`${l.vendedor}-${i}`}
                       className={cn(
-                        'h-10 border-t border-border/60 transition-colors hover:bg-primary/5',
+                        'h-12 border-t border-border/60 transition-colors hover:bg-primary/5',
                         i % 2 === 1 && 'bg-muted/40',
                       )}
                     >
                       <td
-                        className={cn('z-10 w-56 max-w-56 truncate py-2.5 px-3 font-semibold whitespace-nowrap md:sticky md:left-0', i % 2 === 1 ? 'bg-muted' : 'bg-card')}
+                        className={cn('z-10 w-56 max-w-56 truncate px-3 py-3 text-left font-semibold whitespace-nowrap md:sticky md:left-0', i % 2 === 1 ? 'bg-muted' : 'bg-card')}
                         title={l.nome}
                       >
                         {l.nome || l.vendedor}
@@ -364,7 +364,7 @@ export default function ComissaoPage() {
                 </tbody>
                 <tfoot>
                   <tr className="border-t-2 border-border bg-muted/70 font-semibold">
-                    <td className="z-20 w-56 bg-muted py-2.5 px-3 md:sticky md:left-0">Total</td>
+                    <td className="z-20 w-56 bg-muted px-3 py-3 text-left md:sticky md:left-0">Total</td>
                     <td className={td}>{formatCurrency(totais.objetivoMensal)}</td>
                     <td className={td}>{formatCurrency(totais.objetivoDiario)}</td>
                     <td className={td}>{totais.pedidosAberto === null ? 'Indisponível' : formatCurrency(totais.pedidosAberto)}</td>

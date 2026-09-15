@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { ReceitaDetalheDialog } from './ReceitaDetalheDialog';
 
@@ -159,7 +159,7 @@ describe('ReceitaDetalheDialog', () => {
     expect(screen.getByTestId('receita-tabela-scroll')).toHaveClass('[&::-webkit-scrollbar-thumb]:bg-primary/35');
   });
 
-  it('exporta o Excel com as mesmas colunas simplificadas do modal', () => {
+  it('exporta o Excel com as mesmas colunas simplificadas do modal', async () => {
     xlsxMock.aoaToSheet.mockClear();
     xlsxMock.writeFile.mockClear();
 
@@ -194,6 +194,7 @@ describe('ReceitaDetalheDialog', () => {
     );
 
     fireEvent.click(screen.getByRole('button', { name: /exportar excel/i }));
+    await waitFor(() => expect(xlsxMock.aoaToSheet).toHaveBeenCalled());
 
     const planilha = (xlsxMock.aoaToSheet.mock.calls as any[])[0][0] as unknown[][];
     const cabecalho = planilha[0];
@@ -213,7 +214,7 @@ describe('ReceitaDetalheDialog', () => {
     expect(xlsxMock.writeFile).toHaveBeenCalledWith(expect.anything(), expect.stringMatching(/^receita-1004-detalhamento-/));
   });
 
-  it('exporta somente registros reais, sem linha artificial de totais', () => {
+  it('exporta somente registros reais, sem linha artificial de totais', async () => {
     xlsxMock.aoaToSheet.mockClear();
 
     render(
@@ -239,13 +240,14 @@ describe('ReceitaDetalheDialog', () => {
     );
 
     fireEvent.click(screen.getByRole('button', { name: /exportar excel/i }));
+    await waitFor(() => expect(xlsxMock.aoaToSheet).toHaveBeenCalled());
 
     const planilha = (xlsxMock.aoaToSheet.mock.calls as any[])[0][0] as unknown[][];
     expect(planilha).toHaveLength(2);
     expect(String(planilha.at(-1)?.[0] ?? '')).not.toMatch(/totais/i);
   });
 
-  it('no contexto 10041 exporta somente vendedores do sintetico e remove servicos', () => {
+  it('no contexto 10041 exporta somente vendedores do sintetico e remove servicos', async () => {
     xlsxMock.aoaToSheet.mockClear();
 
     render(
@@ -299,6 +301,7 @@ describe('ReceitaDetalheDialog', () => {
     );
 
     fireEvent.click(screen.getByRole('button', { name: /exportar excel/i }));
+    await waitFor(() => expect(xlsxMock.aoaToSheet).toHaveBeenCalled());
 
     const planilha = (xlsxMock.aoaToSheet.mock.calls as any[])[0][0] as unknown[][];
     expect(planilha).toHaveLength(2);
@@ -307,7 +310,7 @@ describe('ReceitaDetalheDialog', () => {
     expect(String(planilha)).not.toContain('SERVICOS');
   });
 
-  it('detecta escopo CCH pelos dados quando o prop de contexto nao vier ativo', () => {
+  it('detecta escopo CCH pelos dados quando o prop de contexto nao vier ativo', async () => {
     xlsxMock.aoaToSheet.mockClear();
 
     render(
@@ -360,6 +363,7 @@ describe('ReceitaDetalheDialog', () => {
     );
 
     fireEvent.click(screen.getByRole('button', { name: /exportar excel/i }));
+    await waitFor(() => expect(xlsxMock.aoaToSheet).toHaveBeenCalled());
 
     const planilha = (xlsxMock.aoaToSheet.mock.calls as any[])[0][0] as unknown[][];
     expect(planilha).toHaveLength(2);

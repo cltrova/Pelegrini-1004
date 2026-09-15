@@ -21,6 +21,12 @@ describe('getEquipePadraoFiltro1004', () => {
     expect(vendedorOcultoFiltroContextual1004('XEXEU', false)).toBe(true);
   });
 
+  it('oculta vendedores da Forca P no contexto Chevrolet 10041', () => {
+    expect(vendedorOcultoFiltroContextual1004('NATA', true)).toBe(true);
+    expect(vendedorOcultoFiltroContextual1004('DAYVID', true)).toBe(true);
+    expect(vendedorOcultoFiltroContextual1004('THIAGO THOMAS', true)).toBe(true);
+  });
+
   it('monta filtro de vendedores pela receita oficial incluindo XEXEU', () => {
     const vendedores = montarVendedoresFiltroReceita1004(new Map([
       ['47', { codigo: '47', nome: 'RAFAEL', receita: 94364.5 }],
@@ -117,6 +123,15 @@ describe('getEquipePadraoFiltro1004', () => {
     });
   });
 
+  it('remove codigos da Forca P de selecoes persistidas da Chevrolet', () => {
+    expect(
+      getFiltroVendedoresChevrolet10041(
+        ['250', '1032', '1083', '54', '30', '512'],
+        '10041',
+      ),
+    ).toEqual(['30', '512']);
+  });
+
   it('relaciona somente vendedores retornados pela fonte', () => {
     const movimentos = [
       { codigo: '78', nome: 'BRUNO B', valor: 224 },
@@ -130,8 +145,8 @@ describe('getEquipePadraoFiltro1004', () => {
       undefined,
     );
 
-    expect(relacionados).toHaveLength(4);
-    expect(relacionados.map((item) => item.codigo)).toEqual(['78', '99', '11', '30']);
+    expect(relacionados).toHaveLength(3);
+    expect(relacionados.map((item) => item.codigo)).toEqual(['99', '11', '30']);
     expect(relacionados.find((item) => item.codigo === '99')).toMatchObject({
       codigo: '99',
       nome: 'Nome divergente na API',
@@ -234,7 +249,6 @@ describe('getEquipePadraoFiltro1004', () => {
     ]);
 
     expect(vendedores).toEqual([
-      { codigo: '1083', nome: 'NATA' },
       { codigo: '47', nome: 'RAFAEL' },
     ]);
   });

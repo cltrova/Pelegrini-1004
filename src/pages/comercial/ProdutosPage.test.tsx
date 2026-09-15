@@ -164,6 +164,9 @@ describe('ProdutosPage compacta', () => {
     expect(page).toHaveClass('commercial-products');
     expect(screen.getByRole('heading', { name: 'Produtos' })).toBeInTheDocument();
     expect(screen.getByRole('searchbox', { name: 'Buscar produtos' })).toBeVisible();
+    const navigation = screen.getByTestId('produtos-navigation');
+    expect(navigation).toContainElement(screen.getByRole('tablist'));
+    expect(navigation).toContainElement(screen.getByRole('searchbox', { name: 'Buscar produtos' }));
     expect(screen.getByLabelText('Indicadores de produtos')).toHaveAttribute('data-density', 'compact');
     expect(screen.getByText('Receita dos itens')).toBeInTheDocument();
     expect(screen.getByText('Marcas ativas')).toBeInTheDocument();

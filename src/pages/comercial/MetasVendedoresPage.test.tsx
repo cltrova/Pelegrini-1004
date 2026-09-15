@@ -8,6 +8,7 @@ import { useComercialData } from '@/hooks/useComercialData';
 import { CampanhasTab } from '@/components/comercial/CampanhasTab';
 import { InsightsIATab } from '@/components/comercial/InsightsIATab';
 import { PremiumMetasView } from '@/components/comercial/PremiumMetasView';
+import { getMesesDoFiltro, getPeriodoReferencia, preservarPeriodoExplicito } from '@/utils/metasFilterPeriod';
 import MetasVendedoresPage from './MetasVendedoresPage';
 
 const {
@@ -143,6 +144,23 @@ describe('MetasVendedoresPage commercial dashboard', () => {
     expect(screen.getByLabelText('Indicadores do dashboard comercial')).toHaveClass('commercial-metric-strip');
     expect(screen.queryByText('Visão comercial')).not.toBeInTheDocument();
     expect(screen.queryByRole('tab', { name: 'Análises' })).not.toBeInTheDocument();
+  });
+
+  it('preserva um intervalo explicito e usa o ultimo mes como referencia', () => {
+    const filters = {
+      anos: ['2026'],
+      meses: ['06'],
+      periodo: { inicio: '2026-06-01', fim: '2026-09-15' },
+    };
+
+    expect(preservarPeriodoExplicito(filters, true)).toEqual(filters);
+    expect(preservarPeriodoExplicito({
+      anos: ['2026'],
+      meses: ['06'],
+      periodo: { inicio: '2026-06-10', fim: '2026-06-15' },
+    }, true)?.periodo).toEqual({ inicio: '2026-06-10', fim: '2026-06-15' });
+    expect(getPeriodoReferencia(filters, null, new Date('2026-09-15T12:00:00'))).toEqual({ ano: 2026, mes: 9 });
+    expect(getMesesDoFiltro(filters)).toEqual(new Set(['2026-06', '2026-07', '2026-08', '2026-09']));
   });
 
   it('deixa a neutralizacao da sombra do trigger ativo a cargo do shell comercial', async () => {
@@ -316,8 +334,8 @@ describe('CampanhasTab loading lifecycle', () => {
     campanhasState.value = { ...campanhasState.value, isLoading: true };
     await act(async () => rerender(<CampanhasTab />));
 
-    expect(screen.getByRole('status', { name: 'Carregando campanhas comerciais' }))
-      .toHaveClass('commercial-dashboard-panel');
+    expect(screen.getByRole('status', { name: 'Carregando campanhas' }))
+      .not.toHaveClass('commercial-dashboard-panel');
 
     campanhasState.value = { ...campanhasState.value, campanhas: [], isLoading: false };
     await act(async () => rerender(<CampanhasTab />));

@@ -13,7 +13,7 @@ import {
   ComercialDataViewport,
 } from '@/components/comercial/compact';
 import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
+import { LoadingState } from '@/components/common/LoadingState';
 import { useCotacoesAbertas } from '@/hooks/useCotacoesComerciais';
 import type { CotacaoComercial, CotacoesFiltros } from '@/types/cotacoesComerciais';
 import { calcularCotacoesKpis, filtrarCotacoes } from '@/utils/cotacoesComerciais';
@@ -83,12 +83,8 @@ function getFilterOptions(rows: readonly CotacaoComercial[], field: 'vendedor' |
 
 function CotacoesLoading() {
   return (
-    <section aria-label="Carregando cotacoes abertas" className="space-y-3" aria-busy="true">
-      <div className="grid grid-cols-2 gap-px border border-border sm:grid-cols-4">
-        {Array.from({ length: 4 }, (_, index) => <Skeleton key={index} className="h-20 rounded-none" />)}
-      </div>
-      <Skeleton className="h-12 w-full" />
-      <Skeleton className="h-80 w-full" />
+    <section aria-label="Carregando cotacoes abertas" className="flex min-h-64 items-center justify-center" aria-busy="true">
+      <LoadingState message="Carregando cotações abertas" surface={false} />
     </section>
   );
 }

@@ -147,6 +147,9 @@ describe('ClientesPage compacta', () => {
     expect(page).toHaveProperty('tagName', 'DIV');
     expect(page).toHaveClass('commercial-clients');
     expect(screen.getByRole('searchbox', { name: 'Buscar clientes' })).toBeVisible();
+    const navigation = screen.getByTestId('clientes-navigation');
+    expect(navigation).toContainElement(screen.getByRole('tablist'));
+    expect(navigation).toContainElement(screen.getByRole('searchbox', { name: 'Buscar clientes' }));
     expect(screen.getByLabelText('Indicadores da carteira')).toHaveAttribute('data-density', 'compact');
     expect(screen.getByText('Total de clientes')).toBeInTheDocument();
     expect(screen.getByText('Novos em 30 dias')).toBeInTheDocument();

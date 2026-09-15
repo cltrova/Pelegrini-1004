@@ -12,7 +12,11 @@ import { Zap, Crown, Flame } from 'lucide-react';
 import { RankingVendedoresChart } from './RankingVendedoresChart';
 import { useEmpresaAtiva } from '@/hooks/useEmpresaAtiva';
 import { useFilialSelecionada } from '@/contexts/FilialSelecionadaContext';
-import { isContextoChevrolet10041, vendedorOcultoFiltroContextual1004 } from '@/utils/vendedores1004';
+import {
+  isContextoChevrolet10041,
+  vendedorForcaP1004,
+  vendedorOcultoFiltroContextual1004,
+} from '@/utils/vendedores1004';
 import { ComercialMetricStrip } from '@/components/comercial/compact';
 
 
@@ -29,6 +33,19 @@ interface Props {
   diasUteisDecorridos: number;
   onDetalheVendedor?: (row: any, ranking: number) => void;
   onReceitaClick?: () => void;
+}
+
+function vendedorVisivelNoContexto1004(
+  vendedor: Record<string, unknown> | null | undefined,
+  isContextoChevrolet10041Ativo: boolean,
+): boolean {
+  if (isContextoChevrolet10041Ativo) {
+    return !vendedorForcaP1004({
+      codigo: vendedor?.codigo ?? vendedor?.vendedor_codigo ?? vendedor?.cod_vendedor,
+      nome: vendedor?.nome ?? vendedor?.vendedor_nome ?? vendedor?.nome_interno ?? vendedor?.nome_externo,
+    });
+  }
+  return !vendedorOcultoFiltroContextual1004(vendedor?.nome, false);
 }
 
 const STATUS_COLOR = {
@@ -138,21 +155,18 @@ export function VisaoGeralRapida1004({
     String(p?.vendedor_codigo ?? p?.vendedor_nome ?? p?.nome_interno ?? p?.nome_externo ?? '').trim();
 
   const vendedoresVisiveis1004 = useMemo(
-    () => vendedoresComMeta.filter((v) => !vendedorOcultoFiltroContextual1004(v?.nome, isContextoChevrolet10041Ativo)),
+    () => vendedoresComMeta.filter((vendedor) => vendedorVisivelNoContexto1004(vendedor, isContextoChevrolet10041Ativo)),
     [vendedoresComMeta, isContextoChevrolet10041Ativo],
   );
 
   const vendedoresGraficoVisiveis1004 = useMemo(
     () => (vendedoresGrafico ?? vendedoresComMeta)
-      .filter((v) => !vendedorOcultoFiltroContextual1004(v?.nome, isContextoChevrolet10041Ativo)),
+      .filter((vendedor) => vendedorVisivelNoContexto1004(vendedor, isContextoChevrolet10041Ativo)),
     [vendedoresGrafico, vendedoresComMeta, isContextoChevrolet10041Ativo],
   );
 
   const pedidosMesVisiveis1004 = useMemo(
-    () => pedidosMes.filter((p) => {
-      const nome = p?.vendedor_nome ?? p?.nome_interno ?? p?.nome_externo ?? '';
-      return !vendedorOcultoFiltroContextual1004(nome, isContextoChevrolet10041Ativo);
-    }),
+    () => pedidosMes.filter((pedido) => vendedorVisivelNoContexto1004(pedido, isContextoChevrolet10041Ativo)),
     [pedidosMes, isContextoChevrolet10041Ativo],
   );
 

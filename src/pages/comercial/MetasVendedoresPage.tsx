@@ -52,6 +52,7 @@ import {
 import { invalidarConsultasComerciais } from '@/utils/comercialQueryInvalidation';
 import { resolverContagemTotalizadorPelegrini } from '@/utils/comercialKpiFallback';
 import { ComercialCompactPage } from '@/components/comercial/compact';
+import { getMesesDoFiltro, getPeriodoReferencia, preservarPeriodoExplicito } from '@/utils/metasFilterPeriod';
 
 type VendedorDetalheRow = {
   codigo: string | number;
@@ -147,22 +148,9 @@ export default function MetasVendedoresPage() {
   }, [codEmpresaAtiva, empresaComFilial, filialAtiva]);
   
   const filtrosAplicadosParaDados = useMemo(() => {
-    const usarPeriodoMesFechado = isPelegriniPage;
     const filtrosComEquipe1004 = aplicarFiltroPadraoPelegrini(appliedFilters);
-    const ano = appliedFilters?.anos?.length === 1 ? Number(appliedFilters.anos[0]) : NaN;
-    const mes = appliedFilters?.meses?.length === 1 ? Number(appliedFilters.meses[0]) : NaN;
-    if (!usarPeriodoMesFechado || !Number.isFinite(ano) || !Number.isFinite(mes)) return filtrosComEquipe1004;
-    const hoje = new Date();
-    const isMesAtual = hoje.getFullYear() === ano && hoje.getMonth() + 1 === mes;
-    if (isMesAtual) return filtrosComEquipe1004;
-
-    const inicio = `${ano}-${String(mes).padStart(2, '0')}-01`;
-    const fim = `${ano}-${String(mes).padStart(2, '0')}-${String(new Date(ano, mes, 0).getDate()).padStart(2, '0')}`;
-    return {
-      ...filtrosComEquipe1004,
-      periodo: { inicio, fim },
-    };
-  }, [aplicarFiltroPadraoPelegrini, appliedFilters, codEmpresaNorm, isPelegriniPage]);
+    return preservarPeriodoExplicito(filtrosComEquipe1004, isPelegriniPage);
+  }, [aplicarFiltroPadraoPelegrini, appliedFilters, isPelegriniPage]);
 
   const filtrosTotalizadores1004 = useMemo(() => {
     if (!isPelegriniPage) return filtrosAplicadosParaDados;
@@ -256,32 +244,13 @@ export default function MetasVendedoresPage() {
     return [...vendedoresDisponiveis].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
   }, [filtersOpen, isEmpresa10041Page, isLoadingVendedoresFiltro1004, isFetchingVendedoresFiltro1004, isPelegriniPage, produtosVendedoresFiltro1004, receitaPorVendedorFiltro1004, receita1004PorVendedor, vendedoresDisponiveis]);
 
-  const hoje = new Date();
+  const hoje = useMemo(() => new Date(), []);
   const diaAtual = hoje.getDate();
 
   // Extrair período dos filtros aplicados para cálculos de dias úteis
   const periodoFiltros = useMemo(() => {
-     if (appliedFilters?.anos?.length && appliedFilters?.meses?.length) {
-      const ano = parseInt(appliedFilters.anos[0]);
-      const mes = parseInt(appliedFilters.meses[0]);
-      return {
-        ano,
-        mes
-      };
-    }
-    // Fallback para período disponível nos dados
-    if (periodoDisponivel) {
-      return {
-        ano: parseInt(periodoDisponivel.ultimoAno),
-        mes: parseInt(periodoDisponivel.ultimoMes)
-      };
-    }
-    // Último fallback: data atual
-    return {
-      ano: hoje.getFullYear(),
-      mes: hoje.getMonth() + 1
-    };
-  }, [appliedFilters, periodoDisponivel]);
+    return getPeriodoReferencia(appliedFilters, periodoDisponivel, hoje);
+  }, [appliedFilters, hoje, periodoDisponivel]);
 
   const periodoCampanhas = useMemo(() => {
     if (appliedFilters?.periodo?.inicio && appliedFilters?.periodo?.fim) {
@@ -367,18 +336,8 @@ export default function MetasVendedoresPage() {
   // Calcular performance de cada vendedor com metas
   // Conjunto de meses (YYYY-MM) selecionados no filtro. Se vazio, considera todos.
   const mesesSelecionadosSet = useMemo(() => {
-    const anos = appliedFilters?.anos ?? [];
-    const meses = appliedFilters?.meses ?? [];
-    if (!anos.length || !meses.length) return null; // null = sem restrição
-    const set = new Set<string>();
-    for (const a of anos) {
-      for (const m of meses) {
-        const mm = String(parseInt(m)).padStart(2, '0');
-        set.add(`${a}-${mm}`);
-      }
-    }
-    return set;
-  }, [appliedFilters?.anos, appliedFilters?.meses]);
+    return getMesesDoFiltro(appliedFilters);
+  }, [appliedFilters]);
 
   const vendedoresComMeta = useMemo(() => {
     const usaRegraReceitaPelegrini = isPelegriniPage;
@@ -468,7 +427,7 @@ export default function MetasVendedoresPage() {
       };
     })
     .sort((a, b) => b.percentualMetaFaturado - a.percentualMetaFaturado);
-  }, [vendedoresPerformance, pedidos, diasUteisNoMes, diasUteisDecorridos, mesesSelecionadosSet, codEmpresaNorm, isPelegriniPage]);
+  }, [vendedoresPerformance, pedidos, diasUteisNoMes, diasUteisDecorridos, mesesSelecionadosSet, isPelegriniPage]);
 
   // Vendedores exibidos no ranking: somente quem tem meta OU venda
   const vendedoresRanking = useMemo(() => {
@@ -630,7 +589,7 @@ export default function MetasVendedoresPage() {
       participacoes,
       fatVsPed: totalPedidos > 0 ? (totalFaturado / totalPedidos) * 100 : 0,
     };
-  }, [vendedoresComMeta, vendedoresComMetaFonteFinal, devolucoes, pedidos, kpis, codEmpresaAtiva, receita1004TotalizadaGeral, pedidos1004DistintosGeral, produtos1004Totalizadores, pedidosTotalizadorOficial?.quantidade_pedidos, produtosTotalizadorOficial?.quantidade_total_vendida]);
+  }, [vendedoresComMeta, vendedoresComMetaFonteFinal, devolucoes, pedidos, kpis, receita1004TotalizadaGeral, pedidos1004DistintosGeral, produtos1004Totalizadores, pedidosTotalizadorOficial?.quantidade_pedidos, produtosTotalizadorOficial?.quantidade_total_vendida, isEmpresa10041Page, isPelegriniPage]);
 
 
   // Dados para gráfico de evolução
@@ -753,8 +712,9 @@ export default function MetasVendedoresPage() {
           ) : showInitialLoading ? (
             <LoadingState
               message="Carregando visão comercial..."
-              className="commercial-dashboard-panel h-full min-h-48 rounded-md shadow-none"
+              className="h-full min-h-48"
               size="sm"
+              surface={false}
             />
           ) : isLayoutPremium ? (
             <VisaoGeralRapida1004
@@ -793,6 +753,7 @@ export default function MetasVendedoresPage() {
               pedidos={pedidosFonteFinal}
               kpisGerais={kpisGerais}
               periodoFiltros={periodoFiltros}
+              periodoAplicado={appliedFilters?.periodo}
               diasUteisNoMes={diasUteisNoMes}
               diasUteisDecorridos={diasUteisDecorridos}
             />

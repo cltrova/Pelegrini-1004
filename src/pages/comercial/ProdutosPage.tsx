@@ -145,7 +145,7 @@ export default function ProdutosPage() {
           aria-label={showBlockingLoading ? 'Carregando produtos' : 'Falha ao carregar produtos'}
         >
           {showBlockingLoading
-            ? <LoadingState message="Carregando produtos..." />
+            ? <LoadingState message="Carregando produtos..." surface={false} />
             : <ErrorState message="Erro ao carregar produtos" />}
         </section>
       </ComercialCompactPage>
@@ -177,51 +177,7 @@ export default function ProdutosPage() {
       as="div"
       className={pageClassName}
     >
-      <ComercialCommandBar
-        title="Produtos"
-        context={(
-          <span className="flex min-w-0 items-center gap-2">
-            {(productsError || baseError) ? (
-              <span role="status" aria-label="Falha ao atualizar produtos" className="flex min-w-0 items-center gap-1 text-warning">
-                <span className="truncate" title="Falha ao atualizar produtos. Dados anteriores mantidos.">Falha ao atualizar</span>
-                <button
-                  type="button"
-                  aria-label="Tentar atualizar produtos novamente"
-                  title="Tentar atualizar produtos novamente"
-                  className="flex h-6 w-6 shrink-0 items-center justify-center rounded-sm hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
-                  disabled={isRefreshing}
-                  onClick={() => {
-                    void Promise.all([
-                      queryClient.refetchQueries({ queryKey: ['comercial-produtos', codEmpresaAtiva], type: 'active' }),
-                      queryClient.refetchQueries({ queryKey: ['comercial-receita-comissao-1004', codEmpresaAtiva], type: 'active' }),
-                      queryClient.refetchQueries({ queryKey: ['comercial', 'raw', codEmpresaAtiva], type: 'active' }),
-                    ]);
-                  }}
-                >
-                  <RefreshCw aria-hidden="true" className={cn('h-3.5 w-3.5', isRefreshing && 'animate-spin motion-reduce:animate-none')} />
-                </button>
-              </span>
-            ) : selectedMarca ? (
-              <button type="button" className="font-semibold text-primary hover:underline" onClick={() => setSelectedMarca(null)}>
-                {selectedMarca} - limpar filtro
-              </button>
-            ) : `${formatNumber(totalSkusGeral, 0)} SKUs no período`}
-            {isRefreshing && !productsError && !baseError && (
-              <span role="status" aria-label="Atualizando produtos" className="commercial-refresh-indicator border border-border px-1.5 py-0.5 text-[10px]">
-                Atualizando
-              </span>
-            )}
-          </span>
-        )}
-        actions={
-          <EnterpriseSearchFilter
-            label="Buscar produtos"
-            value={searchTerm}
-            onChange={setSearchTerm}
-            placeholder="Produto, marca, cliente ou NF"
-          />
-        }
-      />
+      <ComercialCommandBar title="Produtos" />
 
       <EnterpriseComercialFilters
         pendingFilters={pendingFilters}
@@ -271,15 +227,55 @@ export default function ProdutosPage() {
           <p className="p-8 text-center text-sm text-muted-foreground">Nenhum produto encontrado no período.</p>
         </ComercialDataViewport>
       ) : <Tabs value={activeTab} onValueChange={setActiveTab} className="flex min-h-0 flex-1 flex-col gap-2 overflow-hidden">
-        <TabsList className="h-9 w-fit max-w-full shrink-0 justify-start overflow-x-auto">
-          <TabsTrigger value="marcas">Marcas</TabsTrigger>
-          <TabsTrigger value="top">Top Produtos</TabsTrigger>
-          <TabsTrigger value="categoria">Categorias</TabsTrigger>
-          <TabsTrigger value="sem-giro">Sem Giro
-            {produtosSemGiro.length > 0 && <Badge variant="secondary" className="ml-1 h-4 text-[10px] px-1.5">{produtosSemGiro.length}</Badge>}
-          </TabsTrigger>
-          <TabsTrigger value="resumo">Resumo NF</TabsTrigger>
-        </TabsList>
+        <div data-testid="produtos-navigation" className="flex min-w-0 shrink-0 flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <TabsList className="h-9 w-fit max-w-full shrink-0 justify-start overflow-x-auto">
+            <TabsTrigger value="marcas">Marcas</TabsTrigger>
+            <TabsTrigger value="top">Top Produtos</TabsTrigger>
+            <TabsTrigger value="categoria">Categorias</TabsTrigger>
+            <TabsTrigger value="sem-giro">Sem Giro
+              {produtosSemGiro.length > 0 && <Badge variant="secondary" className="ml-1 h-4 text-[10px] px-1.5">{produtosSemGiro.length}</Badge>}
+            </TabsTrigger>
+            <TabsTrigger value="resumo">Resumo NF</TabsTrigger>
+          </TabsList>
+          <div className="flex min-w-0 items-center justify-end gap-2">
+            {(productsError || baseError) ? (
+              <span role="status" aria-label="Falha ao atualizar produtos" className="flex min-w-0 items-center gap-1 text-warning">
+                <span className="truncate" title="Falha ao atualizar produtos. Dados anteriores mantidos.">Falha ao atualizar</span>
+                <button
+                  type="button"
+                  aria-label="Tentar atualizar produtos novamente"
+                  title="Tentar atualizar produtos novamente"
+                  className="flex h-6 w-6 shrink-0 items-center justify-center rounded-sm hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
+                  disabled={isRefreshing}
+                  onClick={() => {
+                    void Promise.all([
+                      queryClient.refetchQueries({ queryKey: ['comercial-produtos', codEmpresaAtiva], type: 'active' }),
+                      queryClient.refetchQueries({ queryKey: ['comercial-receita-comissao-1004', codEmpresaAtiva], type: 'active' }),
+                      queryClient.refetchQueries({ queryKey: ['comercial', 'raw', codEmpresaAtiva], type: 'active' }),
+                    ]);
+                  }}
+                >
+                  <RefreshCw aria-hidden="true" className={cn('h-3.5 w-3.5', isRefreshing && 'animate-spin motion-reduce:animate-none')} />
+                </button>
+              </span>
+            ) : selectedMarca ? (
+              <button type="button" className="hidden text-xs font-semibold text-primary hover:underline lg:block" onClick={() => setSelectedMarca(null)}>
+                {selectedMarca} - limpar filtro
+              </button>
+            ) : null}
+            {isRefreshing && !productsError && !baseError && (
+              <span role="status" aria-label="Atualizando produtos" className="commercial-refresh-indicator hidden border border-border px-1.5 py-0.5 text-[10px] lg:inline-flex">
+                Atualizando
+              </span>
+            )}
+            <EnterpriseSearchFilter
+              label="Buscar produtos"
+              value={searchTerm}
+              onChange={setSearchTerm}
+              placeholder="Produto, marca, cliente ou NF"
+            />
+          </div>
+        </div>
 
         <TabsContent value="marcas" className="mt-0 flex h-full max-h-full min-h-0 flex-1 flex-col overflow-hidden data-[state=inactive]:hidden">
           <ComercialDataViewport

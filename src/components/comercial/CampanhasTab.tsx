@@ -20,7 +20,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Skeleton } from '@/components/ui/skeleton';
+import { LoadingState } from '@/components/common/LoadingState';
 import {
   Tooltip, TooltipContent, TooltipProvider, TooltipTrigger,
 } from '@/components/ui/tooltip';
@@ -2612,12 +2612,9 @@ function CampanhasSkeleton() {
   return (
     <div
       aria-label="Carregando campanhas comerciais"
-      className="commercial-dashboard-panel space-y-5 border border-border/70 bg-card p-3"
-      role="status"
+      className="flex min-h-64 items-center justify-center"
     >
-      <div className="flex justify-between items-center"><Skeleton className="h-8 w-48" /><Skeleton className="h-9 w-36" /></div>
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">{[0, 1, 2, 3].map(i => <Skeleton key={i} className="h-28 rounded-lg" />)}</div>
-      <Skeleton className="h-64 rounded-lg" />
+      <LoadingState message="Carregando campanhas" surface={false} />
     </div>
   );
 }

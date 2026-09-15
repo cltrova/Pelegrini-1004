@@ -63,6 +63,7 @@ interface Props {
 export function VendedorDetailsDialog({ vendedor, ranking, pedidos, devolucoes, diasUteisNoMes, diasUteisDecorridos, open, onOpenChange }: Props) {
   const { codEmpresaAtiva } = useEmpresaAtiva();
   const is1005 = String(codEmpresaAtiva ?? '') === '1005';
+  const useSharedLayout = true;
   const [aiLoading, setAiLoading] = useState(false);
   const [aiInsights, setAiInsights] = useState<string | null>(null);
   const [aiError, setAiError] = useState<string | null>(null);
@@ -195,7 +196,7 @@ Sem introduções, sem rodeios, sem repetir dados óbvios. Use números apenas q
     : { label: 'Abaixo da meta', cls: 'bg-red-500/20 text-red-500 border-red-500/30' };
 
   // ============ THEMING (escopo 1005) ============
-  if (is1005) {
+  if (is1005 && !useSharedLayout) {
     const rb: { bg: string; color: string; icon: LucideIcon | null } =
       ranking === 1 ? { bg: `${C.amber}20`, color: C.amber, icon: Crown }
       : ranking === 2 ? { bg: 'rgba(148,163,184,0.18)', color: C.sub, icon: Medal }
@@ -422,12 +423,12 @@ Sem introduções, sem rodeios, sem repetir dados óbvios. Use números apenas q
   // ============ LEGACY (demais empresas) ============
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] p-0 gap-0">
-        <DialogHeader className="px-6 pt-6 pb-4 border-b">
+      <DialogContent className="commercial-vendedor-dialog max-h-[90vh] max-w-4xl gap-0 overflow-hidden rounded-none border border-border p-0 sm:rounded-none">
+        <DialogHeader className="border-b px-5 py-4">
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-center gap-3">
               <div className={cn(
-                "h-12 w-12 rounded-full flex items-center justify-center text-base font-bold",
+                "flex h-10 w-10 items-center justify-center border text-sm font-bold",
                 ranking === 1 ? "bg-amber-500 text-black" :
                 ranking === 2 ? "bg-slate-300 text-slate-900" :
                 ranking === 3 ? "bg-amber-700 text-white" :
@@ -436,18 +437,18 @@ Sem introduções, sem rodeios, sem repetir dados óbvios. Use números apenas q
                 #{ranking}
               </div>
               <div>
-                <DialogTitle className="text-xl uppercase tracking-wide">{vendedor.nome}</DialogTitle>
-                <DialogDescription className="mt-1">
+                <DialogTitle className="text-lg uppercase">{vendedor.nome}</DialogTitle>
+                <DialogDescription className="sr-only">
                   Diagnóstico completo de performance do vendedor
                 </DialogDescription>
               </div>
             </div>
-            <Badge variant="outline" className={statusInfo.cls}>{statusInfo.label}</Badge>
+            <Badge variant="outline" className={cn('rounded-sm', statusInfo.cls)}>{statusInfo.label}</Badge>
           </div>
         </DialogHeader>
 
         <ScrollArea className="max-h-[calc(90vh-120px)]">
-          <div className="p-6 space-y-6">
+          <div className="space-y-4 p-5">
             {/* KPIs principais */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               <KPI icon={<DollarSign className="h-4 w-4" />} label="Faturado" value={formatCurrency(vendedor.faturamentoMesAtual)} color="emerald" />
@@ -457,7 +458,7 @@ Sem introduções, sem rodeios, sem repetir dados óbvios. Use números apenas q
             </div>
 
             {/* Progresso da meta */}
-            <Card>
+            <Card className="rounded-none shadow-none">
               <CardContent className="p-4 space-y-2">
                 <div className="flex items-center justify-between text-sm">
                   <span className="font-medium flex items-center gap-2"><Target className="h-4 w-4 text-primary" /> Progresso da Meta</span>
@@ -476,7 +477,7 @@ Sem introduções, sem rodeios, sem repetir dados óbvios. Use números apenas q
             {/* Operação */}
             <div>
               <h3 className="text-sm font-semibold mb-3 flex items-center gap-2"><Package className="h-4 w-4 text-primary" /> Operação no Período</h3>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div className="grid grid-cols-2 gap-px border border-border bg-border md:grid-cols-4">
                 <KPI icon={<ReceiptText className="h-4 w-4" />} label="Pedidos" value={String(stats.qtdPedidos)} small />
                 <KPI icon={<Users className="h-4 w-4" />} label="Clientes" value={String(stats.qtdClientes)} small />
                 <KPI icon={<TrendingUp className="h-4 w-4" />} label="Ticket médio" value={formatCurrency(stats.ticket)} small />
@@ -525,7 +526,7 @@ Sem introduções, sem rodeios, sem repetir dados óbvios. Use números apenas q
                 <h3 className="text-sm font-semibold mb-3 flex items-center gap-2"><MapPin className="h-4 w-4 text-primary" /> Distribuição por Estado</h3>
                 <div className="flex flex-wrap gap-2">
                   {stats.topUFs.map(u => (
-                    <Badge key={u.uf} variant="outline" className="font-mono">
+                    <Badge key={u.uf} variant="outline" className="rounded-sm font-mono">
                       {u.uf}: {formatCurrency(u.valor)}
                     </Badge>
                   ))}
@@ -550,7 +551,7 @@ Sem introduções, sem rodeios, sem repetir dados óbvios. Use números apenas q
               )}
               {aiError && <p className="text-sm text-red-500">{aiError}</p>}
               {aiInsights && (
-                <div className="prose prose-sm dark:prose-invert max-w-none bg-muted/30 rounded-lg p-4 border">
+                <div className="prose prose-sm dark:prose-invert max-w-none border bg-muted/30 p-4">
                   <ReactMarkdown>{aiInsights}</ReactMarkdown>
                 </div>
               )}
@@ -616,7 +617,7 @@ function KPI({ icon, label, value, color = 'default', small = false }: { icon: R
     primary: 'text-primary',
   }[color];
   return (
-    <div className="rounded-lg border bg-card p-3">
+    <div className="border bg-card p-3 shadow-none">
       <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1">{icon}{label}</div>
       <div className={cn("font-bold font-mono", small ? "text-sm" : "text-lg", colorCls)}>{value}</div>
     </div>

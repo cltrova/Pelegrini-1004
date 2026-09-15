@@ -142,6 +142,22 @@ describe('ComissaoPage', () => {
     expect(table.queryByText('Nome')).not.toBeInTheDocument();
     expect(table.queryByText('PMV')).not.toBeInTheDocument();
     expect(screen.getByText('XEXEU').closest('td')).toHaveAttribute('title', 'XEXEU');
+    expect(table.getByText('Obj. mensal').closest('th')).toHaveClass('text-center');
+    expect(screen.getByText('XEXEU').closest('td')).toHaveClass('text-left');
+    expect(screen.getByText('XEXEU').closest('tr')).toHaveClass('h-12');
+    expect(screen.getByRole('table')).toHaveClass('h-full', 'text-base');
+  });
+
+  it('usa o carregamento centralizado em vez de linhas skeleton', () => {
+    resolveQueryState.mockImplementation((filters: unknown) => filters
+      ? { ...queryState, data: undefined, isLoading: true, isFetching: true }
+      : { ...queryState });
+
+    render(<ComissaoPage />);
+    fireEvent.click(screen.getByRole('button', { name: 'Buscar' }));
+
+    expect(screen.getByRole('status', { name: 'Carregando comissões' })).toBeInTheDocument();
+    expect(document.querySelector('[data-testid="skeleton"]')).not.toBeInTheDocument();
   });
 
   it('mantem tabela e indicadores montados durante refetch com dados resolvidos', () => {

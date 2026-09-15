@@ -276,7 +276,7 @@ export default function ClientesPage() {
         <ComercialCommandBar title="Clientes" context="Carteira comercial" />
         <ComercialDataViewport ariaLabel="Estado da carteira de clientes" className="flex items-center justify-center">
           {showBlockingLoading
-            ? <LoadingState message="Carregando clientes..." className="w-full max-w-md rounded-md shadow-none" size="sm" />
+            ? <LoadingState message="Carregando clientes..." className="w-full max-w-md" size="sm" surface={false} />
             : <ErrorState message="Erro ao carregar clientes" />}
         </ComercialDataViewport>
       </ComercialCompactPage>
@@ -295,41 +295,7 @@ export default function ClientesPage() {
       as="div"
       className={pageClassName}
     >
-      <ComercialCommandBar
-        title="Clientes"
-        context={(
-          <span className="flex min-w-0 items-center gap-2">
-            {error ? (
-              <span role="status" aria-label="Falha ao atualizar clientes" className="flex min-w-0 items-center gap-1 text-warning">
-                <span className="truncate" title="Falha ao atualizar clientes. Dados anteriores mantidos.">Falha ao atualizar</span>
-                <button
-                  type="button"
-                  aria-label="Tentar atualizar clientes novamente"
-                  title="Tentar atualizar clientes novamente"
-                  className="flex h-6 w-6 shrink-0 items-center justify-center rounded-sm hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
-                  disabled={isRefreshing}
-                  onClick={() => { void queryClient.refetchQueries({ queryKey: ['comercial', 'raw', codEmpresaAtiva], type: 'active' }); }}
-                >
-                  <RefreshCw aria-hidden="true" className={cn('h-3.5 w-3.5', isRefreshing && 'animate-spin motion-reduce:animate-none')} />
-                </button>
-              </span>
-            ) : `${clientesPerformance.length} clientes no período`}
-            {isRefreshing && !error && (
-              <span role="status" aria-label="Atualizando clientes" className="commercial-refresh-indicator border border-border px-1.5 py-0.5 text-[10px]">
-                Atualizando
-              </span>
-            )}
-          </span>
-        )}
-        actions={
-          <EnterpriseSearchFilter
-            label="Buscar clientes"
-            value={searchTerm}
-            onChange={handleSearchChange}
-            placeholder="Nome, razão social ou fantasia"
-          />
-        }
-      />
+      <ComercialCommandBar title="Clientes" />
 
       <EnterpriseComercialFilters
         pendingFilters={pendingFilters}
@@ -359,12 +325,42 @@ export default function ClientesPage() {
           <p className="p-8 text-center text-sm text-muted-foreground">Nenhum cliente encontrado no período.</p>
         </ComercialDataViewport>
       ) : <Tabs value={activeTab} onValueChange={setActiveTab} className="flex min-h-0 flex-1 flex-col gap-2 overflow-hidden">
-        <TabsList className="h-9 w-fit max-w-full shrink-0 justify-start overflow-x-auto">
-          <TabsTrigger value="ranking">Ranking</TabsTrigger>
-          <TabsTrigger value="evolucao">Evolução</TabsTrigger>
-          <TabsTrigger value="insights">Carteira</TabsTrigger>
-          <TabsTrigger value="geografico">Geográfico</TabsTrigger>
-        </TabsList>
+        <div data-testid="clientes-navigation" className="flex min-w-0 shrink-0 flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <TabsList className="h-9 w-fit max-w-full shrink-0 justify-start overflow-x-auto">
+            <TabsTrigger value="ranking">Ranking</TabsTrigger>
+            <TabsTrigger value="evolucao">Evolução</TabsTrigger>
+            <TabsTrigger value="insights">Carteira</TabsTrigger>
+            <TabsTrigger value="geografico">Geográfico</TabsTrigger>
+          </TabsList>
+          <div className="flex min-w-0 items-center justify-end gap-2">
+            {error && (
+              <span role="status" aria-label="Falha ao atualizar clientes" className="flex min-w-0 items-center gap-1 text-xs text-warning">
+                <span className="truncate" title="Falha ao atualizar clientes. Dados anteriores mantidos.">Falha ao atualizar</span>
+                <button
+                  type="button"
+                  aria-label="Tentar atualizar clientes novamente"
+                  title="Tentar atualizar clientes novamente"
+                  className="flex h-6 w-6 shrink-0 items-center justify-center rounded-sm hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
+                  disabled={isRefreshing}
+                  onClick={() => { void queryClient.refetchQueries({ queryKey: ['comercial', 'raw', codEmpresaAtiva], type: 'active' }); }}
+                >
+                  <RefreshCw aria-hidden="true" className={cn('h-3.5 w-3.5', isRefreshing && 'animate-spin motion-reduce:animate-none')} />
+                </button>
+              </span>
+            )}
+            {isRefreshing && !error && (
+              <span role="status" aria-label="Atualizando clientes" className="commercial-refresh-indicator hidden border border-border px-1.5 py-0.5 text-[10px] lg:inline-flex">
+                Atualizando
+              </span>
+            )}
+            <EnterpriseSearchFilter
+              label="Buscar clientes"
+              value={searchTerm}
+              onChange={handleSearchChange}
+              placeholder="Nome, razão social ou fantasia"
+            />
+          </div>
+        </div>
 
         {/* =================================================== RANKING */}
         <TabsContent value="ranking" className="mt-0 flex h-full max-h-full min-h-0 flex-1 flex-col overflow-hidden data-[state=inactive]:hidden">
