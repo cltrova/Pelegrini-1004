@@ -283,7 +283,10 @@ describe('ClientesPage compacta', () => {
     mockClientesData({ clientesPerformance: [], kpis: { qtdClientes: 0 }, isLoading: true });
     const loading = renderClientesPage();
 
-    expect(screen.getByText('Carregando clientes...')).toBeInTheDocument();
+    const status = screen.getByRole('status', { name: 'Carregando clientes' });
+    expect(status).toBeInTheDocument();
+    expect(screen.queryByText('Carregando clientes...')).not.toBeInTheDocument();
+    expect(within(status).getByTestId('loading-indicator')).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Clientes' })).toBeInTheDocument();
     expect(screen.getByRole('region', { name: 'Estado da carteira de clientes' })).toBeInTheDocument();
     expect(screen.getByRole('main').querySelector('.comercial-compact-page')).toBeInTheDocument();
@@ -306,7 +309,8 @@ describe('ClientesPage compacta', () => {
 
     renderClientesPage();
 
-    expect(screen.getByText('Carregando clientes...')).toBeInTheDocument();
+    expect(screen.getByRole('status', { name: 'Carregando clientes' })).toBeInTheDocument();
+    expect(screen.queryByText('Carregando clientes...')).not.toBeInTheDocument();
     expect(screen.queryByText('Nenhum cliente encontrado no período.')).not.toBeInTheDocument();
     expect(screen.queryByLabelText('Indicadores da carteira')).not.toBeInTheDocument();
     expect(screen.queryByRole('table')).not.toBeInTheDocument();
@@ -317,6 +321,7 @@ describe('ClientesPage compacta', () => {
     const refetch = renderClientesPage();
 
     expect(screen.getByRole('status', { name: 'Atualizando clientes' })).toBeInTheDocument();
+    expect(within(screen.getByRole('status', { name: 'Atualizando clientes' })).getByTestId('loading-indicator')).toHaveClass('h-4', 'w-4');
     expect(screen.queryByText('Carregando clientes...')).not.toBeInTheDocument();
     expect(screen.getByLabelText('Indicadores da carteira')).toBeInTheDocument();
     expect(screen.getByRole('table', { name: 'Ranking completo de clientes' })).toBeInTheDocument();
@@ -346,7 +351,9 @@ describe('ClientesPage compacta', () => {
 
     mockClientesData({ error: new Error('Falha no refresh'), isFetching: true });
     rerender(<ClientesPage />);
-    expect(screen.getByRole('button', { name: 'Tentar atualizar clientes novamente' })).toBeDisabled();
+    const retryButton = screen.getByRole('button', { name: 'Tentar atualizar clientes novamente' });
+    expect(retryButton).toBeDisabled();
+    expect(within(retryButton).getByTestId('loading-indicator')).toHaveClass('h-4', 'w-4');
     expect(screen.getByRole('table')).toBe(table);
 
     mockClientesData();

@@ -1,5 +1,6 @@
 import { Filter, RotateCcw, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { LoadingIndicator } from '@/components/common/LoadingState';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -216,7 +217,8 @@ export function CotacoesFilters({
       )}
       actions={(
         <>
-          <Button type="button" size="sm" className="h-9" onClick={() => onApply(copyFilters(pendingFilters))} disabled={isApplying}>
+          <Button type="button" size="sm" className="h-9 min-w-24" onClick={() => onApply(copyFilters(pendingFilters))} disabled={isApplying}>
+            {isApplying && <LoadingIndicator size="sm" />}
             Aplicar
           </Button>
           <TooltipProvider>

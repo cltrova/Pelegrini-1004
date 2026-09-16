@@ -369,7 +369,7 @@ export default function VendedoresPage() {
     setChatMessage('');
   };
 
-  if (isLoading) return <LoadingState message="Carregando vendedores..." />;
+  if (isLoading) return <LoadingState message="Carregando vendedores" variant="content" />;
   if (error) return <ErrorState message="Erro ao carregar vendedores" />;
 
   return (

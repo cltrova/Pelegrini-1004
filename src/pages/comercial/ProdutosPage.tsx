@@ -2,7 +2,7 @@ import { useMemo, useState, useCallback, useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useComercialProdutos } from '@/hooks/useComercialProdutos';
 import { formatCurrency, formatCurrencyCompact, formatNumber } from '@/utils/formatters';
-import { LoadingState } from '@/components/common/LoadingState';
+import { LoadingIndicator, LoadingState } from '@/components/common/LoadingState';
 import { ErrorState } from '@/components/common/ErrorState';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -145,7 +145,7 @@ export default function ProdutosPage() {
           aria-label={showBlockingLoading ? 'Carregando produtos' : 'Falha ao carregar produtos'}
         >
           {showBlockingLoading
-            ? <LoadingState message="Carregando produtos..." surface={false} />
+            ? <LoadingState message="Carregando produtos" variant="content" surface={false} />
             : <ErrorState message="Erro ao carregar produtos" />}
         </section>
       </ComercialCompactPage>
@@ -255,7 +255,9 @@ export default function ProdutosPage() {
                     ]);
                   }}
                 >
-                  <RefreshCw aria-hidden="true" className={cn('h-3.5 w-3.5', isRefreshing && 'animate-spin motion-reduce:animate-none')} />
+                  {isRefreshing
+                    ? <LoadingIndicator size="sm" />
+                    : <RefreshCw aria-hidden="true" className="h-3.5 w-3.5" />}
                 </button>
               </span>
             ) : selectedMarca ? (
@@ -264,8 +266,8 @@ export default function ProdutosPage() {
               </button>
             ) : null}
             {isRefreshing && !productsError && !baseError && (
-              <span role="status" aria-label="Atualizando produtos" className="commercial-refresh-indicator hidden border border-border px-1.5 py-0.5 text-[10px] lg:inline-flex">
-                Atualizando
+              <span role="status" aria-label="Atualizando produtos" className="commercial-refresh-indicator hidden h-6 w-6 items-center justify-center lg:inline-flex">
+                <LoadingIndicator size="sm" />
               </span>
             )}
             <EnterpriseSearchFilter

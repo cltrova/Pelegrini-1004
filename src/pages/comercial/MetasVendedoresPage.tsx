@@ -3,12 +3,12 @@ import { useIsFetching, useQueryClient } from '@tanstack/react-query';
 import { useComercialData } from '@/hooks/useComercialData';
 import { useEmpresaAtiva } from '@/hooks/useEmpresaAtiva';
 import { useFilialSelecionada } from '@/contexts/FilialSelecionadaContext';
-import { LoadingState } from '@/components/common/LoadingState';
+import { LoadingIndicator, LoadingState } from '@/components/common/LoadingState';
 import { ErrorState } from '@/components/common/ErrorState';
 import { 
   Target, TrendingUp, TrendingDown, DollarSign, Calendar,
   Users, FileText, ReceiptText, Trophy, AlertTriangle,
-  ChevronUp, ChevronDown, Minus, Crown, Medal, Award, User, Eye, Loader2
+  ChevronUp, ChevronDown, Minus, Crown, Medal, Award, User, Eye
 } from 'lucide-react';
 import { VendedorDetailsDialog } from '@/components/comercial/VendedorDetailsDialog';
 import { getDiasUteisNoMes, getDiasUteisDecorridos, type ComercialFilters as ComercialFiltersType, type Pedido } from '@/types/comercial';
@@ -82,7 +82,7 @@ const LazyInsightsIATab = lazy(loadInsights);
 const LazyCampanhasTab = lazy(loadCampanhas);
 
 function ComercialTabFallback() {
-  return <div aria-label="Carregando aba comercial" className="flex min-h-24 items-center justify-center text-xs text-muted-foreground" role="status">Carregando...</div>;
+  return <LoadingState message="Carregando aba comercial" variant="content" className="min-h-24" />;
 }
 
 // Metas fixas de fallback para empresas que não possuem MetaVendedor no JSON
@@ -660,7 +660,7 @@ export default function MetasVendedoresPage() {
         className="commercial-refresh-indicator pointer-events-none absolute right-3 top-3 z-10 flex h-6 w-6 shrink-0 items-center justify-center text-muted-foreground"
       >
         {isRefreshing && <>
-          <Loader2 aria-hidden="true" className="h-3.5 w-3.5 animate-spin motion-reduce:animate-none" />
+          <LoadingIndicator size="sm" />
           <span className="sr-only">Atualizando dados comerciais...</span>
         </>}
       </span>
@@ -711,9 +711,9 @@ export default function MetasVendedoresPage() {
             <ErrorState message="Erro ao carregar dados comerciais" />
           ) : showInitialLoading ? (
             <LoadingState
-              message="Carregando visão comercial..."
+              message="Carregando visão comercial"
               className="h-full min-h-48"
-              size="sm"
+              variant="content"
               surface={false}
             />
           ) : isLayoutPremium ? (

@@ -104,7 +104,7 @@ function getFilterOptions(rows: readonly CotacaoComercial[], field: 'vendedor' |
 function CotacoesLoading() {
   return (
     <section aria-label="Carregando vendas perdidas" className="flex min-h-64 items-center justify-center" aria-busy="true">
-      <LoadingState message="Carregando vendas perdidas" surface={false} />
+      <LoadingState message="Carregando vendas perdidas" variant="content" surface={false} />
     </section>
   );
 }

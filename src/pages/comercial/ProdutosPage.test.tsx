@@ -260,8 +260,10 @@ describe('ProdutosPage compacta', () => {
     renderPage();
 
     expect(screen.getByRole('main').querySelector('.comercial-compact-page')).toBeInTheDocument();
-    expect(screen.getByRole('region', { name: 'Carregando produtos' })).toBeInTheDocument();
-    expect(screen.getByText('Carregando produtos...')).toBeInTheDocument();
+    const status = screen.getByRole('status', { name: 'Carregando produtos' });
+    expect(status).toBeInTheDocument();
+    expect(screen.queryByText('Carregando produtos...')).not.toBeInTheDocument();
+    expect(within(status).getByTestId('loading-indicator')).toBeInTheDocument();
   });
 
   it('prioriza a hidratacao da empresa antes do estado sem fonte', () => {
@@ -270,8 +272,8 @@ describe('ProdutosPage compacta', () => {
 
     renderPage();
 
-    expect(screen.getByRole('region', { name: 'Carregando produtos' })).toBeInTheDocument();
-    expect(screen.getByText('Carregando produtos...')).toBeInTheDocument();
+    expect(screen.getByRole('status', { name: 'Carregando produtos' })).toBeInTheDocument();
+    expect(screen.queryByText('Carregando produtos...')).not.toBeInTheDocument();
     expect(screen.queryByText('Fonte de produtos não configurada')).not.toBeInTheDocument();
   });
 
@@ -280,6 +282,7 @@ describe('ProdutosPage compacta', () => {
     const refetch = renderPage();
 
     expect(screen.getByRole('status', { name: 'Atualizando produtos' })).toBeInTheDocument();
+    expect(within(screen.getByRole('status', { name: 'Atualizando produtos' })).getByTestId('loading-indicator')).toHaveClass('h-4', 'w-4');
     expect(screen.getByLabelText('Indicadores de produtos')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Selecionar EATON' })).toBeInTheDocument();
 
@@ -339,7 +342,9 @@ describe('ProdutosPage compacta', () => {
 
     fail(true);
     rerender(<ProdutosPage />);
-    expect(screen.getByRole('button', { name: 'Tentar atualizar produtos novamente' })).toBeDisabled();
+    const retryButton = screen.getByRole('button', { name: 'Tentar atualizar produtos novamente' });
+    expect(retryButton).toBeDisabled();
+    expect(within(retryButton).getByTestId('loading-indicator')).toHaveClass('h-4', 'w-4');
     expect(screen.getByRole('table')).toBe(table);
     mockData();
     rerender(<ProdutosPage />);

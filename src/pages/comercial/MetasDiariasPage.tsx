@@ -272,12 +272,7 @@ export default function MetasDiariasPage() {
   }
 
   if (isLoading && !vendedoresPerformance.length) {
-    return (
-      <div className="enterprise-page-shell items-center justify-center">
-        <RefreshCw className="h-12 w-12 text-primary animate-spin mb-4" />
-        <p className="text-lg text-muted-foreground">Carregando dados reais...</p>
-      </div>
-    );
+    return <LoadingState message="Carregando metas diárias" variant="content" />;
   }
 
   if (error) {

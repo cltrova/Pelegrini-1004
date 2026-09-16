@@ -21,6 +21,23 @@ vi.mock('xlsx', () => ({
 }));
 
 describe('ReceitaDetalheDialog', () => {
+  it('usa o carregamento de conteudo sem texto visivel no corpo do dialogo', () => {
+    render(
+      <ReceitaDetalheDialog
+        open
+        onOpenChange={vi.fn()}
+        totalEsperado={0}
+        produtos={[]}
+        isLoading
+      />,
+    );
+
+    const status = screen.getByRole('status', { name: 'Carregando itens da receita' });
+    expect(status).toBeInTheDocument();
+    expect(screen.queryByText('Carregando itens da receita...')).not.toBeInTheDocument();
+    expect(screen.getByTestId('loading-indicator')).toBeInTheDocument();
+  });
+
   it('mostra a receita detalhada sem comparar com o totalizador oficial', () => {
     render(
       <ReceitaDetalheDialog

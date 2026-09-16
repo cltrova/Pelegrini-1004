@@ -170,7 +170,9 @@ describe('ComissaoPage', () => {
 
     expect(screen.getByRole('table')).toHaveTextContent('XEXEU');
     expect(screen.getByLabelText('Indicadores comerciais')).toHaveTextContent('Pedidos em aberto');
-    expect(screen.getByRole('button', { name: 'Buscando' })).toBeDisabled();
+    const searchButton = screen.getByRole('button', { name: 'Buscar' });
+    expect(searchButton).toBeDisabled();
+    expect(within(searchButton).getByTestId('loading-indicator')).toHaveClass('h-4', 'w-4');
     expect(screen.queryByTestId('comissao-empty-state')).not.toBeInTheDocument();
   });
 
@@ -193,7 +195,9 @@ describe('ComissaoPage', () => {
     expect(resolveQueryState).toHaveBeenLastCalledWith(expect.objectContaining({ cod_meta: '77' }));
     expect(screen.getByRole('table')).toHaveTextContent('XEXEU');
     expect(screen.getByLabelText('Indicadores comerciais')).toHaveTextContent('Pedidos em aberto');
-    expect(screen.getByRole('button', { name: 'Buscando' })).toBeDisabled();
+    const searchButton = screen.getByRole('button', { name: 'Buscar' });
+    expect(searchButton).toBeDisabled();
+    expect(within(searchButton).getByTestId('loading-indicator')).toHaveClass('h-4', 'w-4');
   });
 
   it('explica os indicadores sem adicionar textos auxiliares permanentes', () => {

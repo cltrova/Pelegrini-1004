@@ -624,12 +624,15 @@ describe('open quotes page', () => {
     expect(screen.getByRole('button', { name: /exportar/i })).toBeDisabled();
   });
 
-  it('shows a loading skeleton while the initial query is pending', async () => {
+  it('shows the standard content loader while the initial query is pending', async () => {
     mockOpenQuotesQuery({ data: undefined, isLoading: true, isFetching: true });
 
     await renderCotacoesAbertasPage();
 
-    expect(screen.getByLabelText('Carregando cotacoes abertas')).toBeInTheDocument();
+    const status = screen.getByRole('status', { name: 'Carregando cotações abertas' });
+    expect(status).toBeInTheDocument();
+    expect(screen.queryByText('Carregando cotações abertas')).not.toBeInTheDocument();
+    expect(within(status).getByTestId('loading-indicator')).toBeInTheDocument();
     expect(screen.queryByLabelText('Indicadores comerciais')).not.toBeInTheDocument();
     expect(screen.queryByLabelText('Prioridades de cotacoes abertas')).not.toBeInTheDocument();
   });
@@ -641,7 +644,10 @@ describe('open quotes page', () => {
 
     expect(screen.getByRole('table')).toHaveTextContent('9101');
     expect(screen.getByLabelText('Indicadores comerciais')).toHaveTextContent('Valor em aberto');
-    expect(screen.getByRole('button', { name: 'Aplicar' })).toBeDisabled();
+    const applyButton = screen.getByRole('button', { name: 'Aplicar' });
+    expect(applyButton).toBeDisabled();
+    expect(applyButton).toHaveClass('h-9', 'min-w-24');
+    expect(within(applyButton).getByTestId('loading-indicator')).toHaveClass('h-4', 'w-4');
     expect(screen.getByRole('button', { name: /exportar/i })).toBeEnabled();
     expect(screen.queryByLabelText('Carregando cotacoes abertas')).not.toBeInTheDocument();
   });
@@ -906,6 +912,18 @@ describe('lost sales page', () => {
     expect(within(screen.getByRole('table')).getByText('Motivo da perda')).toBeInTheDocument();
   }, 30_000);
 
+  it('shows the standard content loader while the initial query is pending', async () => {
+    mockLostQuotesQuery({ data: undefined, isLoading: true, isFetching: true });
+    mockLostReasonsQuery({ data: undefined, isLoading: true, isFetching: true });
+
+    await renderVendasPerdidasPage();
+
+    const status = screen.getByRole('status', { name: 'Carregando vendas perdidas' });
+    expect(status).toBeInTheDocument();
+    expect(screen.queryByText('Carregando vendas perdidas')).not.toBeInTheDocument();
+    expect(within(status).getByTestId('loading-indicator')).toBeInTheDocument();
+  });
+
   it('preserves rows, totals, and reasons during a real refetch', async () => {
     mockLostQuotesQuery({ isFetching: true });
     mockLostReasonsQuery({ isFetching: true });
@@ -914,7 +932,10 @@ describe('lost sales page', () => {
 
     expect(screen.getByRole('table')).toHaveTextContent('9201');
     expect(screen.getByLabelText('Indicadores comerciais')).toHaveTextContent('Preço');
-    expect(screen.getByRole('button', { name: 'Aplicar' })).toBeDisabled();
+    const applyButton = screen.getByRole('button', { name: 'Aplicar' });
+    expect(applyButton).toBeDisabled();
+    expect(applyButton).toHaveClass('h-9', 'min-w-24');
+    expect(within(applyButton).getByTestId('loading-indicator')).toHaveClass('h-4', 'w-4');
     expect(screen.getByRole('button', { name: /exportar/i })).toBeEnabled();
     expect(screen.queryByLabelText('Carregando vendas perdidas')).not.toBeInTheDocument();
   });

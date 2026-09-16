@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -200,7 +200,10 @@ describe('MetasVendedoresPage commercial dashboard', () => {
     } as ReturnType<typeof useComercialData>);
 
     await act(async () => rerender(<MetasVendedoresPage />));
-    expect(screen.getByText('Carregando visão comercial...')).toBeInTheDocument();
+    const initialLoading = screen.getByRole('status', { name: 'Carregando visão comercial' });
+    expect(initialLoading).toBeInTheDocument();
+    expect(screen.queryByText('Carregando visão comercial...')).not.toBeInTheDocument();
+    expect(within(initialLoading).getByTestId('loading-indicator')).toBeInTheDocument();
 
     vi.mocked(useComercialData).mockReturnValue(comercialData as ReturnType<typeof useComercialData>);
     await act(async () => rerender(<MetasVendedoresPage />));
@@ -217,6 +220,7 @@ describe('MetasVendedoresPage commercial dashboard', () => {
     expect(screen.getByText('Conteudo preservado')).toBeInTheDocument();
     expect(screen.getByRole('status', { name: 'Atualizando dados comerciais' })).toBeInTheDocument();
     expect(screen.getByRole('status', { name: 'Atualizando dados comerciais' })).toBe(status);
+    expect(within(status).getByTestId('loading-indicator')).toHaveClass('h-4', 'w-4');
     expect(Array.from(page.children)).toEqual(pageChildren);
     expect(screen.queryByText('Carregando visão comercial...')).not.toBeInTheDocument();
 

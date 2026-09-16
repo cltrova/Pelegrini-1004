@@ -3,10 +3,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { LoadingState } from '@/components/common/LoadingState';
+import { LoadingIndicator, LoadingState } from '@/components/common/LoadingState';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { AlertCircle, LoaderCircle, RefreshCw, Search, SlidersHorizontal, X } from 'lucide-react';
+import { AlertCircle, RefreshCw, Search, SlidersHorizontal, X } from 'lucide-react';
 import { formatCurrency } from '@/utils/formatters';
 import { useComissaoVendedores, type ComissaoFiltros, type ComissaoLinha } from '@/hooks/useComissaoVendedores';
 import { useFilialSelecionada } from '@/contexts/FilialSelecionadaContext';
@@ -207,9 +207,9 @@ export default function ComissaoPage() {
           </>
         )}
         actions={(
-          <Button className="min-w-28 gap-2" onClick={buscar} disabled={showInitialLoading || isRefreshing}>
-            {isFetching ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
-            {isFetching ? 'Buscando' : 'Buscar'}
+          <Button aria-label="Buscar" className="min-w-28 gap-2" onClick={buscar} disabled={showInitialLoading || isRefreshing}>
+            {isFetching ? <LoadingIndicator size="sm" /> : <Search className="h-4 w-4" />}
+            Buscar
           </Button>
         )}
       >
@@ -311,7 +311,7 @@ export default function ComissaoPage() {
         >
           {showInitialLoading ? (
             <div className="flex min-h-64 flex-1 items-center justify-center" aria-busy="true">
-              <LoadingState message="Carregando comissões" surface={false} />
+              <LoadingState message="Carregando comissões" variant="content" surface={false} />
             </div>
           ) : !aplicado ? (
             <p className="flex min-h-44 items-center justify-center px-4 py-8 text-center text-sm text-muted-foreground">

@@ -3,7 +3,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useComercialData } from '@/hooks/useComercialData';
 import { useEmpresaAtiva } from '@/hooks/useEmpresaAtiva';
 import { formatCurrency, formatPercent } from '@/utils/formatters';
-import { LoadingState } from '@/components/common/LoadingState';
+import { LoadingIndicator, LoadingState } from '@/components/common/LoadingState';
 import { ErrorState } from '@/components/common/ErrorState';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
@@ -276,7 +276,7 @@ export default function ClientesPage() {
         <ComercialCommandBar title="Clientes" context="Carteira comercial" />
         <ComercialDataViewport ariaLabel="Estado da carteira de clientes" className="flex items-center justify-center">
           {showBlockingLoading
-            ? <LoadingState message="Carregando clientes..." className="w-full max-w-md" size="sm" surface={false} />
+            ? <LoadingState message="Carregando clientes" variant="content" className="w-full max-w-md" surface={false} />
             : <ErrorState message="Erro ao carregar clientes" />}
         </ComercialDataViewport>
       </ComercialCompactPage>
@@ -344,13 +344,15 @@ export default function ClientesPage() {
                   disabled={isRefreshing}
                   onClick={() => { void queryClient.refetchQueries({ queryKey: ['comercial', 'raw', codEmpresaAtiva], type: 'active' }); }}
                 >
-                  <RefreshCw aria-hidden="true" className={cn('h-3.5 w-3.5', isRefreshing && 'animate-spin motion-reduce:animate-none')} />
+                  {isRefreshing
+                    ? <LoadingIndicator size="sm" />
+                    : <RefreshCw aria-hidden="true" className="h-3.5 w-3.5" />}
                 </button>
               </span>
             )}
             {isRefreshing && !error && (
-              <span role="status" aria-label="Atualizando clientes" className="commercial-refresh-indicator hidden border border-border px-1.5 py-0.5 text-[10px] lg:inline-flex">
-                Atualizando
+              <span role="status" aria-label="Atualizando clientes" className="commercial-refresh-indicator hidden h-6 w-6 items-center justify-center lg:inline-flex">
+                <LoadingIndicator size="sm" />
               </span>
             )}
             <EnterpriseSearchFilter

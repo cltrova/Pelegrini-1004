@@ -361,7 +361,7 @@ export function ReceitaDetalheDialog({
           className="flex-1 min-h-0 overflow-auto rounded-lg border border-border/50 bg-background/25 [&::-webkit-scrollbar]:h-2 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-corner]:bg-transparent [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-primary/35 hover:[&::-webkit-scrollbar-thumb]:bg-primary/50"
         >
           {isLoading ? (
-            <LoadingState message="Carregando itens da receita..." />
+            <LoadingState message="Carregando itens da receita" variant="content" />
           ) : error ? (
             <ErrorState message="Erro ao carregar itens." />
           ) : ordenados.length === 0 ? (

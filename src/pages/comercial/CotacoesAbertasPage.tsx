@@ -84,7 +84,7 @@ function getFilterOptions(rows: readonly CotacaoComercial[], field: 'vendedor' |
 function CotacoesLoading() {
   return (
     <section aria-label="Carregando cotacoes abertas" className="flex min-h-64 items-center justify-center" aria-busy="true">
-      <LoadingState message="Carregando cotações abertas" surface={false} />
+      <LoadingState message="Carregando cotações abertas" variant="content" surface={false} />
     </section>
   );
 }
