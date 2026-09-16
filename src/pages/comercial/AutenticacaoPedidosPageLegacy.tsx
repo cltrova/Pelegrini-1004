@@ -1,9 +1,10 @@
 import { useMemo, useRef, useState } from 'react';
 import * as XLSX from 'xlsx';
 import { format } from 'date-fns';
-import { Upload, FileCheck2, FileX2, AlertTriangle, FileQuestion, Download, History, Loader2, FileSpreadsheet, Search } from 'lucide-react';
+import { Upload, FileCheck2, FileX2, AlertTriangle, FileQuestion, Download, History, FileSpreadsheet, Search } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { LoadingIndicator } from '@/components/common/LoadingState';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
@@ -538,12 +539,9 @@ export default function AutenticacaoPedidosPageLegacy() {
                   onClick={executarAutenticacao}
                   disabled={(!linhasPlanilha.length && !linhasCliente.length) || processando || loadingSistema}
                 >
-                  {(processando || loadingSistema) && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                  {(processando || loadingSistema) && <LoadingIndicator size="sm" />}
                   Auditar
                 </Button>
-                {loadingSistema && (linhasPlanilha.length > 0 || linhasCliente.length > 0) && (
-                  <span className="ml-3 text-xs text-muted-foreground">Carregando pedidos do sistema…</span>
-                )}
               </div>
             </CardContent>
           </Card>

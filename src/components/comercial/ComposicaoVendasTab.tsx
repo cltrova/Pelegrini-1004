@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { ChevronDown, ChevronRight, Download, Search, Layers, Package } from 'lucide-react';
 import { formatCurrency } from '@/utils/formatters';
 import type { ProdutoItem } from '@/types/comercialProdutos';
+import { LoadingState } from '@/components/common/LoadingState';
 
 interface Props {
   produtos: ProdutoItem[];
@@ -224,7 +225,7 @@ export function ComposicaoVendasTab({ produtos, isLoading, periodoLabel }: Props
 
         <div className="max-h-[70vh] overflow-y-auto">
           {isLoading ? (
-            <div className="py-12 text-center text-sm text-muted-foreground">Carregando composição…</div>
+            <LoadingState message="Carregando composicao de vendas" variant="content" className="min-h-24" />
           ) : !filtered.length ? (
             <div className="py-12 text-center text-sm text-muted-foreground">
               Nenhum registro encontrado no período com os filtros atuais.

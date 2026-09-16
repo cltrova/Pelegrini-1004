@@ -48,12 +48,12 @@ import {
   MoreVertical, 
   UserX, 
   UserCheck,
-  Loader2,
   Users,
   Clock,
   CheckCircle2,
   XCircle
 } from 'lucide-react';
+import { LoadingIndicator, LoadingState } from '@/components/common/LoadingState';
 import { applyPhoneMask, formatPhoneDisplay, isValidBrazilianPhone } from '@/utils/phoneUtils';
 
 export function VendedoresTab() {
@@ -196,11 +196,7 @@ export function VendedoresTab() {
       
       {/* Loading */}
       {isLoading && (
-        <Card>
-          <CardContent className="flex items-center justify-center py-12">
-            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-          </CardContent>
-        </Card>
+        <LoadingState message="Carregando vendedores do WhatsApp" variant="content" />
       )}
       
       {/* Empty State */}
@@ -412,7 +408,7 @@ export function VendedoresTab() {
                 (isMaster && !formData.empresaId)
               }
             >
-              {createVendedor.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              {createVendedor.isPending && <LoadingIndicator size="sm" />}
               Cadastrar
             </Button>
           </DialogFooter>

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
-import { Check, Eye, EyeOff, Keyboard, Loader2, LockKeyhole, LogIn, Mail } from 'lucide-react';
+import { Check, Eye, EyeOff, Keyboard, LockKeyhole, LogIn, Mail } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { useAuth } from '@/contexts/AuthContext';
@@ -9,6 +9,7 @@ import { formatAuthDialogError } from '@/components/auth/LoginDialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { LoadingIndicator } from '@/components/common/LoadingState';
 import { TransmissionFullLogo } from '@/components/pelegrini/TransmissionFullLogo';
 
 type LoginBranch = 'transmissao' | 'chevrolet';
@@ -235,7 +236,7 @@ export function PelegriniLoginPage() {
               )}
             </AnimatePresence>
             <Button type="submit" className="pelegrini-login-submit h-11 w-full gap-2" disabled={isSubmitting} aria-busy={isSubmitting}>
-              {isSubmitting ? <Loader2 className="animate-spin" /> : <LogIn />}
+              {isSubmitting ? <LoadingIndicator size="sm" /> : <LogIn />}
               {isSubmitting ? 'Validando acesso...' : 'Entrar no sistema'}
             </Button>
           </form>

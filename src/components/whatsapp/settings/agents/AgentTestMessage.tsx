@@ -6,13 +6,14 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Send, Loader2, CheckCircle2, AlertCircle, FlaskConical } from 'lucide-react';
+import { Send, CheckCircle2, AlertCircle, FlaskConical } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import {
   useAgentGroups, useAgentGroupMembers,
 } from '@/hooks/useWhatsappAgents';
 import type { WhatsappAgent } from '@/hooks/useWhatsappAgents';
+import { LoadingIndicator } from '@/components/common/LoadingState';
 
 interface Props {
   agent: WhatsappAgent;
@@ -177,7 +178,7 @@ export function AgentTestMessage({ agent }: Props) {
                   : 'Selecione um grupo.'}
               </p>
               <Button onClick={handleSend} disabled={sending || !selectedGroupId || !senderPhone || !content.trim()}>
-                {sending ? <><Loader2 className="h-4 w-4 mr-1 animate-spin" />Enviando...</>
+                {sending ? <><LoadingIndicator size="sm" />Enviando...</>
                          : <><Send className="h-4 w-4 mr-1" />Enviar teste</>}
               </Button>
             </div>

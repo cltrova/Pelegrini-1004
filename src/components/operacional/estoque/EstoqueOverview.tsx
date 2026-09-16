@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { EmptyState } from '@/components/common/EmptyState';
 import { cn } from '@/lib/utils';
+import { LoadingIndicator } from '@/components/common/LoadingState';
 import { buildStockOverviewProducts, buildStockOverviewSummary, type OverviewMetric, type OverviewProduct } from './estoqueOverviewData';
 
 interface Props {
@@ -63,7 +64,7 @@ export function EstoqueOverview({ stockData, movementData, activeCompanyCode, on
     <div aria-label="Controles da visão geral" className="operational-filter-control flex min-h-10 shrink-0 items-center gap-2 border-b border-border/60 bg-background/95 px-2.5 py-1.5" role="toolbar">
       <Button aria-label="Abrir filtros da visão geral" className="h-7 w-7" onClick={() => setFiltersOpen(true)} size="icon" type="button" variant="outline" title="Filtros"><Filter className="h-3.5 w-3.5" /></Button>
       <span className="text-[11px] text-muted-foreground">{number.format(filtered.length)} produtos analisados</span>
-      <div className="ml-auto flex items-center gap-1"><span className="hidden text-[11px] text-muted-foreground sm:inline">{months} meses</span>{onRefresh && <Button aria-label="Atualizar visão geral" className="h-7 w-7" disabled={isFetching} onClick={onRefresh} size="icon" type="button" variant="ghost"><RefreshCw className={cn('h-3.5 w-3.5', isFetching && 'animate-spin')} /></Button>}</div>
+      <div className="ml-auto flex items-center gap-1"><span className="hidden text-[11px] text-muted-foreground sm:inline">{months} meses</span>{onRefresh && <Button aria-label="Atualizar visão geral" className="h-7 w-7" disabled={isFetching} onClick={onRefresh} size="icon" type="button" variant="ghost">{isFetching ? <LoadingIndicator size="sm" /> : <RefreshCw className={cn('h-3.5 w-3.5')} />}</Button>}</div>
     </div>
     <Dialog open={filtersOpen} onOpenChange={setFiltersOpen}>
       <DialogContent className="operational-overlay max-w-md border-border/80 bg-card p-4">

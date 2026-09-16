@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Sparkles, RefreshCw, Loader2 } from 'lucide-react';
+import { Sparkles, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { ComercialAIContext } from '@/utils/comercialAIContext';
+import { LoadingIndicator, LoadingState } from '@/components/common/LoadingState';
 
 interface FeedInsight {
   emoji: string;
@@ -81,10 +82,7 @@ export function AIInsightsFeed({ contexto }: Props) {
         {/* Scrolling content */}
         <div className="flex-1 min-w-0 overflow-hidden">
           {loading && insights.length === 0 && (
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              Analisando dados comerciais...
-            </div>
+            <LoadingState message="Carregando insights comerciais" variant="inline" className="w-full" />
           )}
           {error && insights.length === 0 && (
             <p className="text-xs text-muted-foreground">Análise indisponível no momento.</p>
@@ -118,7 +116,7 @@ export function AIInsightsFeed({ contexto }: Props) {
           title="Atualizar insights"
           disabled={loading}
         >
-          <RefreshCw className={cn('h-3.5 w-3.5', loading && 'animate-spin')} />
+          {loading ? <LoadingIndicator size="sm" /> : <RefreshCw className="h-3.5 w-3.5" />}
         </button>
       </div>
     </div>

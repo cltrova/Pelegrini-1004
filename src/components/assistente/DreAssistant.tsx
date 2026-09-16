@@ -12,7 +12,6 @@ import {
   User,
   Lightbulb,
   BarChart3,
-  Loader2,
   RefreshCw,
   Copy,
   ThumbsUp,
@@ -32,6 +31,7 @@ import {
   CornerDownLeft,
   Command,
 } from 'lucide-react';
+import { LoadingIndicator } from '@/components/common/LoadingState';
 import { cn } from '@/lib/utils';
 
 interface ToolAction {
@@ -699,7 +699,7 @@ export function DreAssistant({ dreData, indicators, contasDespVar, contasDespFix
               'disabled:opacity-50 disabled:shadow-none disabled:translate-y-0'
             )}
           >
-            {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
+            {isLoading ? <LoadingIndicator size="sm" /> : <Send className="h-3.5 w-3.5" />}
           </Button>
         </form>
         <div className="flex items-center justify-between mt-2 px-1">

@@ -23,6 +23,7 @@ import { useCobrancaIntervencoes } from '@/hooks/useCobrancaIntervencoes';
 import { EnterpriseBadge, EnterprisePageHeader } from '@/components/enterprise';
 import { FinanceiroSearchPrompt } from '@/components/financeiro/FinanceiroSearchPrompt';
 import { useFinanceiroSearch } from '@/contexts/FinanceiroSearchContext';
+import { LoadingIndicator } from '@/components/common/LoadingState';
 
 
 const initialFilters: ResumoFilters = {
@@ -87,7 +88,7 @@ export default function ResumoPage() {
             Buscar
           </Button>
           <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isLoading || !hasSearched}>
-            <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+            {isLoading ? <LoadingIndicator size="sm" /> : <RefreshCw className="h-4 w-4 mr-2" />}
             Atualizar
           </Button>
           </div>

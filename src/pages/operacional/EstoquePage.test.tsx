@@ -23,6 +23,8 @@ vi.mock('@/hooks/useEstoqueData', () => ({
 
 import EstoquePage from './EstoquePage';
 
+const estoqueAssistantModulePromise = import('@/components/operacional/EstoqueAssistantTab');
+
 const detalhadoData = [
   {
     ...estoqueFixture[0],
@@ -641,12 +643,13 @@ describe('EstoquePage', () => {
   });
 
   it('abre o Assistente de Estoque real', async () => {
+    await estoqueAssistantModulePromise;
     renderEstoquePage();
 
     fireEvent.click(screen.getByRole('tab', { name: 'Assistente' }));
 
     expect(screen.queryByRole('heading', { name: 'Assistente de Estoque' })).not.toBeInTheDocument();
-    expect(await screen.findByRole('region', { name: 'Assistente de estoque' }, { timeout: 5_000 })).toBeInTheDocument();
+    expect(await screen.findByRole('region', { name: 'Assistente de estoque' })).toBeInTheDocument();
     expect(screen.getByPlaceholderText('Pergunte sobre seu estoque...')).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: 'Insights' })).toBeInTheDocument();
     expect(screen.queryByRole('tab', { name: 'Cérebro' })).not.toBeInTheDocument();

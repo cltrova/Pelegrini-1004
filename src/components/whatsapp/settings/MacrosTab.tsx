@@ -31,10 +31,9 @@ import {
   Pencil,
   Trash2,
   Hash,
-  Loader2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { LoadingState } from '@/components/common/LoadingState';
+import { LoadingIndicator, LoadingState } from '@/components/common/LoadingState';
 import { EmptyState } from '@/components/common/EmptyState';
 import { useWhatsappMacros } from '@/hooks/useWhatsappData';
 import { useCreateMacro, useUpdateMacro, useDeleteMacro } from '@/hooks/useWhatsappSettings';
@@ -333,7 +332,7 @@ export function MacrosTab() {
               disabled={createMacro.isPending || updateMacro.isPending}
             >
               {(createMacro.isPending || updateMacro.isPending) && (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                <LoadingIndicator size="sm" />
               )}
               {selectedMacro ? 'Salvar' : 'Criar'}
             </Button>

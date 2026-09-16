@@ -5,10 +5,11 @@ import { ComercialMobileLayout } from './ComercialMobileLayout';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useFilialSelecionada } from '@/contexts/FilialSelecionadaContext';
 import { Button } from '@/components/ui/button';
-import { Loader2, Building2, Lock } from 'lucide-react';
+import { Building2, Lock } from 'lucide-react';
 import { getFilialAccessState } from '@/utils/filialAccess';
 import { useAuth } from '@/contexts/AuthContext';
 import { PelegriniModuleShell } from '@/components/pelegrini';
+import { LoadingIndicator } from '@/components/common/LoadingState';
 
 export function ComercialLayout() {
   const isMobile = useIsMobile();
@@ -73,7 +74,7 @@ export function ComercialLayout() {
         </p>
       )}
       <Button variant="ghost" size="sm" onClick={() => navigate('/')}>Voltar aos módulos</Button>
-      {filiais.length === 0 && <Loader2 className="h-5 w-5 text-muted-foreground animate-spin" />}
+      {filiais.length === 0 && <LoadingIndicator size="sm" />}
     </div>
   );
 

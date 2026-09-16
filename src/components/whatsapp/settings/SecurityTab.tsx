@@ -11,10 +11,10 @@ import {
   UserCheck,
   Lightbulb,
   CheckCircle2,
-  Loader2
 } from 'lucide-react';
 import { useSecuritySettings, useUpdateSecuritySettings } from '@/hooks/useWhatsappSettings';
 import { useToast } from '@/hooks/use-toast';
+import { LoadingIndicator } from '@/components/common/LoadingState';
 
 interface SecuritySettings {
   restrict_signup_by_domain: boolean;
@@ -74,7 +74,7 @@ export function SecurityTab() {
           disabled={!hasChanges || updateSettings.isPending}
         >
           {updateSettings.isPending && (
-            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            <LoadingIndicator size="sm" />
           )}
           Salvar Alterações
         </Button>

@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import {
@@ -19,6 +18,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { LoadingIndicator } from '@/components/common/LoadingState';
 import {
   MOTIVOS_PERDA,
   useSalvarMotivoPerda10041,
@@ -145,7 +145,7 @@ export function MotivoPerdaDialog({ open, onOpenChange, cotacao, registro }: Mot
             Cancelar
           </Button>
           <Button type="button" onClick={handleSave} disabled={salvarMotivo.isPending || !cotacao} aria-label={salvarMotivo.isPending ? 'Salvando motivo' : 'Salvar motivo'}>
-            {salvarMotivo.isPending && <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />}
+            {salvarMotivo.isPending && <LoadingIndicator size="sm" />}
             {salvarMotivo.isPending ? 'Salvando...' : 'Salvar motivo'}
           </Button>
         </DialogFooter>

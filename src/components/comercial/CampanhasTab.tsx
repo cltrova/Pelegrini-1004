@@ -20,7 +20,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Checkbox } from '@/components/ui/checkbox';
-import { LoadingState } from '@/components/common/LoadingState';
+import { LoadingIndicator, LoadingState } from '@/components/common/LoadingState';
 import {
   Tooltip, TooltipContent, TooltipProvider, TooltipTrigger,
 } from '@/components/ui/tooltip';
@@ -28,7 +28,7 @@ import {
   Trophy, Plus, Pencil, Trash2, Target, Sparkles, Calendar, Gift,
   TrendingUp, AlertTriangle, ArrowUpRight, Minus, Crown, Medal,
   Award, DollarSign, Wallet, X, MessageSquare, Info, ChevronDown,
-  Calculator, Zap, Loader2,
+  Calculator, Zap,
 } from 'lucide-react';
 import { formatCurrency } from '@/utils/formatters';
 import { cn } from '@/lib/utils';
@@ -711,7 +711,7 @@ export function CampanhasTab({ periodoFiltro }: CampanhasTabProps = {}) {
                 className="commercial-refresh-indicator flex h-5 w-5 shrink-0 items-center justify-center text-muted-foreground"
               >
                 {isRefreshing && <>
-                  <Loader2 aria-hidden="true" className="h-3.5 w-3.5 animate-spin motion-reduce:animate-none" />
+                  <LoadingIndicator size="sm" />
                   <span className="sr-only">Atualizando campanhas comerciais...</span>
                 </>}
               </span>

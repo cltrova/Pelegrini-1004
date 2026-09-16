@@ -5,13 +5,14 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
   Search, Layers, TrendingUp, Trophy, Sparkles, Lightbulb,
-  AlertTriangle, Target, Loader2, RefreshCw, X, Crown, Package,
+  AlertTriangle, Target, RefreshCw, X, Crown, Package,
   ChevronRight, LucideIcon,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { formatCurrency, formatNumber } from '@/utils/formatters';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { LoadingIndicator } from '@/components/common/LoadingState';
 import {
   Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription,
 } from '@/components/ui/sheet';
@@ -279,7 +280,7 @@ export function PremiumCategoriasView({
             className="h-7 gap-1.5 text-xs"
           >
             {aiLoading
-              ? <Loader2 className="h-3 w-3 animate-spin" />
+              ? <LoadingIndicator size="sm" className="h-3 w-3" />
               : <RefreshCw className="h-3 w-3" />}
             Atualizar
           </Button>

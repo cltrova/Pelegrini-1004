@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { BarChart3, AlertTriangle, TrendingUp, Info, CheckCircle2, Loader2, RefreshCw } from 'lucide-react';
+import { BarChart3, AlertTriangle, TrendingUp, Info, CheckCircle2, RefreshCw } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { LoadingIndicator, LoadingState } from '@/components/common/LoadingState';
 
 interface Insight {
   tipo: 'alerta' | 'oportunidade' | 'info' | 'sucesso';
@@ -69,16 +70,7 @@ export function InsightsIATab({ vendedores, kpis }: Props) {
   }
 
   if (showInitialLoading) {
-    return (
-      <div
-        aria-label="Carregando análises comerciais"
-        className="commercial-dashboard-panel commercial-insight-loading flex min-h-48 flex-col items-center justify-center rounded-md border border-border/70 bg-card text-center"
-        role="status"
-      >
-        <Loader2 className="mb-3 h-6 w-6 animate-spin text-primary motion-reduce:animate-none" />
-        <p className="text-xs text-muted-foreground">Analisando dados comerciais...</p>
-      </div>
-    );
+    return <LoadingState message="Carregando análises comerciais" variant="content" className="min-h-48" />;
   }
 
   return (
@@ -89,16 +81,10 @@ export function InsightsIATab({ vendedores, kpis }: Props) {
           <h3 className="text-sm font-semibold">Análises comerciais</h3>
         </div>
         <Button variant="outline" size="sm" onClick={gerarInsights} disabled={loading}>
-          <RefreshCw className={cn('h-4 w-4 mr-2', isRefreshing && 'animate-spin motion-reduce:animate-none')} />
+          {isRefreshing ? <LoadingIndicator size="sm" /> : <RefreshCw className={cn('h-4 w-4 mr-2')} />}
           {isRefreshing ? 'Atualizando' : 'Atualizar'}
         </Button>
       </div>
-
-      {isRefreshing && (
-        <div aria-label="Atualizando análises comerciais" className="commercial-refresh-indicator text-xs text-muted-foreground" role="status">
-          Atualizando análises comerciais...
-        </div>
-      )}
 
       {insights && insights.length === 0 ? (
         <div className="commercial-dashboard-panel border border-border/60 bg-card py-10 text-center text-muted-foreground">

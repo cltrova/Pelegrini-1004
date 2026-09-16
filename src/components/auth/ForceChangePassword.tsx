@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Loader2, KeyRound, Eye, EyeOff, LogOut, AlertCircle } from 'lucide-react';
+import { KeyRound, Eye, EyeOff, LogOut, AlertCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
+import { LoadingIndicator } from '@/components/common/LoadingState';
 import { useAuth } from '@/contexts/AuthContext';
 
 function translateAuthError(err: any): string {
@@ -131,7 +132,7 @@ export function ForceChangePassword() {
               />
             </div>
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Salvando...</> : 'Salvar nova senha'}
+              {loading ? <><LoadingIndicator size="sm" />Salvando...</> : 'Salvar nova senha'}
             </Button>
             <Button type="button" variant="ghost" className="w-full" onClick={logout} disabled={loading}>
               <LogOut className="h-4 w-4 mr-2" /> Sair

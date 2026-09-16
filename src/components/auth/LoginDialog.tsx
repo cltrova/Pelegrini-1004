@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { LogIn, Eye, EyeOff, Loader2, UserPlus } from 'lucide-react';
+import { LogIn, Eye, EyeOff, UserPlus } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -9,6 +9,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { LoadingIndicator } from '@/components/common/LoadingState';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -230,7 +231,7 @@ export function LoginDialog({ trigger, open: controlledOpen, onOpenChange }: Log
               <Button type="submit" className="w-full" disabled={loading}>
                 {loading ? (
                   <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    <LoadingIndicator size="sm" />
                     Entrando...
                   </>
                 ) : (
@@ -310,7 +311,7 @@ export function LoginDialog({ trigger, open: controlledOpen, onOpenChange }: Log
               <Button type="submit" className="w-full" disabled={loading}>
                 {loading ? (
                   <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    <LoadingIndicator size="sm" />
                     Criando conta...
                   </>
                 ) : (

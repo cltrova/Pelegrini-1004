@@ -4,10 +4,11 @@ import { useAgrupadoCliente } from '@/hooks/useComercialAgrupado';
 import { useEmpresaAtiva } from '@/hooks/useEmpresaAtiva';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Info, Loader2 } from 'lucide-react';
+import { Info } from 'lucide-react';
 import { QuedaKPIs } from '@/components/comercial/queda/QuedaKPIs';
 import { QuedaGraficos } from '@/components/comercial/queda/QuedaGraficos';
 import { QuedaBlocosAnaliticos } from '@/components/comercial/queda/QuedaBlocosAnaliticos';
+import { LoadingIndicator } from '@/components/common/LoadingState';
 import {
   agregarQuedaClientes,
   mapAgrupadoClientesToQueda,
@@ -131,7 +132,7 @@ export default function QuedaClientesPage({ periodo }: Props) {
             </Tabs>
             {isLoading && (
               <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
+                <LoadingIndicator size="sm" />
                 Atualizando dados...
               </span>
             )}

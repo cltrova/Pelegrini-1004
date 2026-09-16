@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { formatCurrency, formatNumber } from '@/utils/formatters';
 import { cn } from '@/lib/utils';
+import { LoadingIndicator } from '@/components/common/LoadingState';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import type { MarcaAgg } from '@/types/comercialProdutos';
@@ -292,7 +293,7 @@ export function PremiumMarcasView({
             disabled={aiLoading || !porMarca.length}
             className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground transition-colors uppercase tracking-wider disabled:opacity-40"
           >
-            <RefreshCw className={cn("h-3 w-3", aiLoading && 'animate-spin')} />
+            {aiLoading ? <LoadingIndicator size="sm" className="h-3 w-3" /> : <RefreshCw className="h-3 w-3" />}
             {aiLoading ? 'Analisando...' : 'Atualizar'}
           </button>
         </div>

@@ -9,13 +9,14 @@ import {
 import {
   Trophy, X, Search, TrendingUp, Package, DollarSign, Crown, Medal, Award,
   ExternalLink, Calendar, User, FileText, BarChart3, ArrowUpRight,
-  Sparkles, AlertTriangle, Lightbulb, Target, RefreshCw, Loader2,
+  Sparkles, AlertTriangle, Lightbulb, Target, RefreshCw,
 } from 'lucide-react';
 import { formatCurrency, formatNumber } from '@/utils/formatters';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import type { TopProdutoAgg, ResumoVendaLinha } from '@/types/comercialProdutos';
+import { LoadingIndicator } from '@/components/common/LoadingState';
 
 interface AIInsight {
   title: string;
@@ -268,7 +269,7 @@ export function PremiumTopProdutos({
           className="h-8 gap-1.5 text-xs"
         >
           {aiLoading
-            ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ? <LoadingIndicator size="sm" />
             : <RefreshCw className="h-3.5 w-3.5" />}
           {aiLoading ? 'Gerando…' : 'Atualizar'}
         </Button>

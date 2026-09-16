@@ -10,7 +10,6 @@ import {
   Pin,
   Plus,
   Trash2,
-  Loader2,
   Star,
   ThumbsUp,
   ThumbsDown,
@@ -25,6 +24,7 @@ import {
   Lightbulb,
   Zap
 } from 'lucide-react';
+import { LoadingIndicator } from '@/components/common/LoadingState';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
@@ -297,7 +297,7 @@ export function ChatDetails({ conversationId, onBack, onClose, isMobile }: ChatD
             disabled={analyzeSentiment.isPending}
           >
             {analyzeSentiment.isPending ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
+              <LoadingIndicator size="sm" />
             ) : (
               <Zap className="h-4 w-4" />
             )}

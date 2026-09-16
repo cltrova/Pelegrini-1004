@@ -8,7 +8,7 @@ import { Separator } from '@/components/ui/separator';
 import { Progress } from '@/components/ui/progress';
 import {
   DollarSign, Target, TrendingUp, TrendingDown, Users, ReceiptText,
-  Trophy, AlertTriangle, Sparkles, MapPin, Calendar, Percent, Package, Loader2, Crown, Medal, Award
+  Trophy, AlertTriangle, Sparkles, MapPin, Calendar, Percent, Package, Crown, Medal, Award
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { formatCurrency, formatPercent } from '@/utils/formatters';
@@ -16,6 +16,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
 import ReactMarkdown from 'react-markdown';
 import { useEmpresaAtiva } from '@/hooks/useEmpresaAtiva';
+import { LoadingIndicator } from '@/components/common/LoadingState';
 import type { Pedido, Devolucao } from '@/types/comercial';
 
 /* ─────────── Palette (escopo 1005) ─────────── */
@@ -395,7 +396,7 @@ Sem introduções, sem rodeios, sem repetir dados óbvios. Use números apenas q
                     disabled={aiLoading}
                     style={{ background: C.blue, color: '#fff', border: 'none' }}
                   >
-                    {aiLoading ? <><Loader2 className="h-3.5 w-3.5 mr-2 animate-spin" /> Analisando...</> : <><Sparkles className="h-3.5 w-3.5 mr-2" /> {aiInsights ? 'Gerar novamente' : 'Gerar análise'}</>}
+                    {aiLoading ? <><LoadingIndicator size="sm" /> Analisando...</> : <><Sparkles className="h-3.5 w-3.5 mr-2" /> {aiInsights ? 'Gerar novamente' : 'Gerar análise'}</>}
                   </Button>
                 </div>
                 {!aiInsights && !aiLoading && !aiError && (
@@ -543,7 +544,7 @@ Sem introduções, sem rodeios, sem repetir dados óbvios. Use números apenas q
                   <Sparkles className="h-4 w-4 text-primary" /> Insights da IA
                 </h3>
                 <Button size="sm" onClick={gerarInsightsIA} disabled={aiLoading}>
-                  {aiLoading ? <><Loader2 className="h-3.5 w-3.5 mr-2 animate-spin" /> Analisando...</> : <><Sparkles className="h-3.5 w-3.5 mr-2" /> {aiInsights ? 'Gerar novamente' : 'Gerar análise'}</>}
+                  {aiLoading ? <><LoadingIndicator size="sm" /> Analisando...</> : <><Sparkles className="h-3.5 w-3.5 mr-2" /> {aiInsights ? 'Gerar novamente' : 'Gerar análise'}</>}
                 </Button>
               </div>
               {!aiInsights && !aiLoading && !aiError && (

@@ -48,7 +48,6 @@ import {
   RotateCcw,
   CheckCircle2,
   XCircle,
-  Loader2,
   Clock,
   RefreshCw,
   Smartphone,
@@ -57,7 +56,7 @@ import {
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
-import { LoadingState } from '@/components/common/LoadingState';
+import { LoadingIndicator, LoadingState } from '@/components/common/LoadingState';
 import { EmptyState } from '@/components/common/EmptyState';
 import { useWhatsappInstances, useWhatsappRealtime } from '@/hooks/useWhatsappData';
 import { useCreateInstance, useUpdateInstance, useDeleteInstance, useTestInstance, useConnectInstance, useDisconnectInstance, useInviteMember } from '@/hooks/useWhatsappSettings';
@@ -607,7 +606,7 @@ export function InstancesTab() {
                       className="w-full text-primary"
                     >
                       {isSyncing === instance.id ? (
-                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                        <LoadingIndicator size="sm" />
                       ) : (
                         <Phone className="h-4 w-4 mr-2" />
                       )}
@@ -643,7 +642,7 @@ export function InstancesTab() {
                         className="text-destructive hover:text-destructive"
                       >
                         {disconnectInstance.isPending ? (
-                          <Loader2 className="h-4 w-4 animate-spin mr-1" />
+                          <LoadingIndicator size="sm" />
                         ) : (
                           <WifiOff className="h-4 w-4 mr-1" />
                         )}
@@ -658,7 +657,7 @@ export function InstancesTab() {
                         className="text-green-600 hover:text-green-600"
                       >
                         {connectInstance.isPending ? (
-                          <Loader2 className="h-4 w-4 animate-spin mr-1" />
+                          <LoadingIndicator size="sm" />
                         ) : (
                           <QrCode className="h-4 w-4 mr-1" />
                         )}
@@ -672,7 +671,7 @@ export function InstancesTab() {
                       disabled={testInstance.isPending}
                     >
                       {testInstance.isPending ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <LoadingIndicator size="sm" />
                       ) : (
                         <RefreshCw className="h-4 w-4 mr-1" />
                       )}
@@ -816,7 +815,7 @@ export function InstancesTab() {
               disabled={createInstance.isPending || updateInstance.isPending}
             >
               {(createInstance.isPending || updateInstance.isPending) && (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                <LoadingIndicator size="sm" />
               )}
               {selectedInstance ? 'Salvar' : 'Criar'}
             </Button>
@@ -882,10 +881,7 @@ export function InstancesTab() {
                 />
               </div>
             ) : (
-              <div className="flex flex-col items-center gap-3">
-                <Loader2 className="h-12 w-12 animate-spin text-muted-foreground" />
-                <p className="text-sm text-muted-foreground">Gerando QR Code...</p>
-              </div>
+              <LoadingState message="Gerando QR Code" variant="content" className="min-h-48" />
             )}
             
             {qrInstance?.status !== 'connected' && (
@@ -900,7 +896,7 @@ export function InstancesTab() {
                   disabled={connectInstance.isPending}
                 >
                   {connectInstance.isPending ? (
-                    <Loader2 className="h-4 w-4 animate-spin mr-1" />
+                    <LoadingIndicator size="sm" />
                   ) : (
                     <RefreshCw className="h-4 w-4 mr-1" />
                   )}

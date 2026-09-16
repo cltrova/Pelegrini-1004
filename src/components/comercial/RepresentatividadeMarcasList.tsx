@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { formatCurrency, formatPercent } from '@/utils/formatters';
 import { cn } from '@/lib/utils';
+import { LoadingState } from '@/components/common/LoadingState';
 
 interface MarcaItem {
   marca: string;
@@ -111,7 +112,7 @@ export function RepresentatividadeMarcasList({ marcas, isLoading }: Props) {
 
       <CardContent className="p-2 md:p-3">
         {isLoading && rows.length === 0 ? (
-          <div className="py-8 text-center text-xs text-muted-foreground">Carregando marcas...</div>
+          <LoadingState message="Carregando representatividade de marcas" variant="content" className="min-h-24" />
         ) : filtered.length === 0 ? (
           <div className="py-8 text-center text-xs text-muted-foreground">Nenhuma marca encontrada para "{query}"</div>
         ) : (

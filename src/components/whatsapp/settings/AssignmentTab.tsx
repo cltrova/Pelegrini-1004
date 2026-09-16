@@ -38,10 +38,9 @@ import {
   Trash2,
   User,
   Users,
-  Loader2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { LoadingState } from '@/components/common/LoadingState';
+import { LoadingIndicator, LoadingState } from '@/components/common/LoadingState';
 import { EmptyState } from '@/components/common/EmptyState';
 import { useWhatsappInstances } from '@/hooks/useWhatsappData';
 import { 
@@ -450,7 +449,7 @@ export function AssignmentTab() {
               disabled={createRule.isPending || updateRule.isPending}
             >
               {(createRule.isPending || updateRule.isPending) && (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                <LoadingIndicator size="sm" />
               )}
               {selectedRule ? 'Salvar' : 'Criar'}
             </Button>

@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 import type { EstoqueRecord } from '@/types/estoque';
@@ -85,5 +85,22 @@ describe('EstoqueOverview', () => {
 
     fireEvent.mouseLeave(screen.getByTestId('brand-pie-chart'));
     expect(tooltip).toHaveTextContent('false');
+  });
+
+  it('uses the shared inline indicator while refreshing', () => {
+    render(
+      <EstoqueOverview
+        activeCompanyCode={1004}
+        isFetching
+        movementData={[]}
+        onOpenCentral={vi.fn()}
+        onRefresh={vi.fn()}
+        stockData={stock}
+      />,
+    );
+
+    const refreshButton = screen.getByRole('button', { name: 'Atualizar visão geral' });
+    expect(refreshButton).toBeDisabled();
+    expect(within(refreshButton).getByTestId('loading-indicator')).toHaveClass('h-4', 'w-4');
   });
 });

@@ -186,7 +186,9 @@ describe('lost quote reason dialog', () => {
 
     expect(screen.getByRole('combobox', { name: 'Motivo da perda' })).toBeDisabled();
     expect(screen.getByLabelText('Observação')).toBeDisabled();
-    expect(screen.getByRole('button', { name: 'Salvando motivo' })).toBeDisabled();
+    const saveButton = screen.getByRole('button', { name: 'Salvando motivo' });
+    expect(saveButton).toBeDisabled();
+    expect(within(saveButton).getByTestId('loading-indicator')).toHaveClass('h-4', 'w-4');
   });
 });
 
@@ -910,6 +912,7 @@ describe('lost sales page', () => {
     expect(screen.getByLabelText('Concentracao de vendas perdidas')).toBeInTheDocument();
     expect(screen.queryByText('Análise das perdas e registro dos motivos no período selecionado.')).not.toBeInTheDocument();
     expect(within(screen.getByRole('table')).getByText('Motivo da perda')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Aplicar' })).not.toHaveClass('min-w-24');
   }, 30_000);
 
   it('shows the standard content loader while the initial query is pending', async () => {

@@ -13,8 +13,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { isLocalPreviewEnabled } from '@/config/localPreview';
 import { buildApiProxyUrl } from '@/utils/apiEndpointResolver';
 import {
-  FileJson, Upload, X, Loader2, Wifi, WifiOff, ChevronDown, Check, AlertTriangle,
+  FileJson, Upload, X, Wifi, WifiOff, ChevronDown, Check, AlertTriangle,
 } from 'lucide-react';
+import { LoadingIndicator } from '@/components/common/LoadingState';
 
 interface EmpresaFormDialogProps {
   open: boolean;
@@ -588,7 +589,7 @@ export function EmpresaFormDialog({ open, onOpenChange, empresa }: EmpresaFormDi
               </div>
             ) : isUploading ? (
               <div className="flex items-center gap-2 px-3 py-2 bg-muted/40 ring-1 ring-border rounded-md text-xs text-muted-foreground">
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                <LoadingIndicator size="sm" />
                 {uploadProgress || 'Enviando...'}
               </div>
             ) : (
@@ -681,7 +682,7 @@ export function EmpresaFormDialog({ open, onOpenChange, empresa }: EmpresaFormDi
                         disabled={testingConnection || !formData.endpoint_url}
                         className="h-10 gap-2 border-border bg-transparent text-foreground hover:bg-muted/60 hover:text-foreground"
                       >
-                        {testingConnection ? <Loader2 className="h-4 w-4 animate-spin" />
+                        {testingConnection ? <LoadingIndicator size="sm" />
                           : connectionResult === 'success' ? <Wifi className="h-4 w-4 text-emerald-400" />
                           : connectionResult === 'error' ? <WifiOff className="h-4 w-4 text-red-400" />
                           : null}
@@ -886,7 +887,7 @@ export function EmpresaFormDialog({ open, onOpenChange, empresa }: EmpresaFormDi
             disabled={isLoading || !!uploadingModule}
             className="h-9 gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90"
           >
-            {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+            {isLoading ? <LoadingIndicator size="sm" /> : <Check className="h-4 w-4" />}
             {isLoading ? 'Salvando' : empresa ? 'Salvar' : 'Criar'}
           </Button>
         </div>

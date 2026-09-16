@@ -18,6 +18,7 @@ import {
 } from '@/hooks/useCobrancaAgente';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { LoadingIndicator } from '@/components/common/LoadingState';
 
 interface Props {
   duplicatas: DuplicataAgregada[];
@@ -555,7 +556,7 @@ function SimuladorPanel({ cfg, duplicatas }: { cfg: CobrancaConfig; duplicatas: 
 
         <div className="flex gap-2 pt-2">
           <Button onClick={iniciar} disabled={loading} className="flex-1">
-            <RefreshCw className={`size-4 mr-1 ${loading ? 'animate-spin' : ''}`} />
+            {loading ? <LoadingIndicator size="sm" /> : <RefreshCw className="size-4 mr-1" />}
             {messages.length === 0 ? 'Iniciar conversa' : 'Reiniciar'}
           </Button>
         </div>

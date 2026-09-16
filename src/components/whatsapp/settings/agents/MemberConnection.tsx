@@ -7,12 +7,13 @@ import {
   Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter,
 } from '@/components/ui/dialog';
 import {
-  Smartphone, QrCode, CheckCircle2, AlertCircle, Loader2, Plug, RefreshCw,
+  Smartphone, QrCode, CheckCircle2, AlertCircle, Plug, RefreshCw,
 } from 'lucide-react';
 import {
   useMemberInstanceByPhone, useCreateInstanceForMember,
 } from '@/hooks/useMemberInstance';
 import { useInstanceAction } from '@/hooks/useAgentInstance';
+import { LoadingIndicator, LoadingState } from '@/components/common/LoadingState';
 
 interface Props {
   phoneE164: string;
@@ -92,7 +93,7 @@ export function MemberConnection({ phoneE164, displayName }: Props) {
       connecting: {
         label: 'Conectando',
         cls: 'bg-blue-500/15 text-blue-700 dark:text-blue-400 border-blue-500/30',
-        Icon: Loader2,
+        Icon: RefreshCw,
       },
       disconnected: {
         label: 'Desconectado',
@@ -106,7 +107,9 @@ export function MemberConnection({ phoneE164, displayName }: Props) {
       <>
         <div className="flex items-center gap-1">
           <Badge variant="outline" className={`gap-1 text-[10px] py-0 ${m.cls}`}>
-            <m.Icon className={`h-2.5 w-2.5 ${s === 'connecting' ? 'animate-spin' : ''}`} />
+            {s === 'connecting'
+              ? <LoadingIndicator size="sm" className="h-2.5 w-2.5" />
+              : <m.Icon className="h-2.5 w-2.5" />}
             {m.label}
           </Badge>
           {s !== 'connected' && (
@@ -152,10 +155,7 @@ export function MemberConnection({ phoneE164, displayName }: Props) {
                   <p className="text-xs text-muted-foreground">{qrError}</p>
                 </div>
               ) : (
-                <div className="flex flex-col items-center gap-2 text-muted-foreground">
-                  <Loader2 className="h-8 w-8 animate-spin" />
-                  <p className="text-sm">Gerando QR Code...</p>
-                </div>
+                <LoadingState message="Gerando QR Code" variant="content" className="min-h-24" />
               )}
               <p className="text-xs text-muted-foreground mt-3">
                 A janela fechará automaticamente quando conectar.

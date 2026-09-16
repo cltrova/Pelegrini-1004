@@ -1,8 +1,9 @@
 import { useMemo, useState } from 'react';
 import * as XLSX from 'xlsx';
 import { format } from 'date-fns';
-import { Download, History, Sparkles, Loader2 } from 'lucide-react';
+import { Download, History, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { LoadingState } from '@/components/common/LoadingState';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
@@ -429,10 +430,7 @@ export default function AutenticacaoPedidosPagePremium() {
             )}
 
             {loadingSistema && hasFile && (
-              <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Carregando pedidos do sistema...
-              </div>
+              <LoadingState message="Carregando pedidos do sistema" variant="content" className="min-h-24" />
             )}
           </TabsContent>
 

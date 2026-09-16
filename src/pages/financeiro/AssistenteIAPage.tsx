@@ -27,7 +27,6 @@ import {
   Lightbulb,
   BarChart3,
   ArrowLeftRight,
-  Loader2,
   RefreshCw,
   Zap,
   Target,
@@ -37,6 +36,7 @@ import {
   ThumbsUp,
   ThumbsDown,
 } from 'lucide-react';
+import { LoadingIndicator } from '@/components/common/LoadingState';
 import { cn } from '@/lib/utils';
 
 interface Message {
@@ -598,7 +598,7 @@ export default function AssistenteIAPage() {
         />
         <Button type="submit" disabled={isLoading || !inputValue.trim()}>
           {isLoading ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
+            <LoadingIndicator size="sm" />
           ) : (
             <Send className="h-4 w-4" />
           )}

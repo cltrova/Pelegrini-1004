@@ -34,13 +34,12 @@ import {
   CheckCircle2,
   XCircle,
   UserCog,
-  Loader2,
   Crown,
   Shield,
   User
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { LoadingState } from '@/components/common/LoadingState';
+import { LoadingIndicator, LoadingState } from '@/components/common/LoadingState';
 import { EmptyState } from '@/components/common/EmptyState';
 import { useAuth } from '@/contexts/AuthContext';
 import { 
@@ -346,7 +345,7 @@ export function TeamTab() {
               disabled={inviteMember.isPending}
             >
               {inviteMember.isPending && (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                <LoadingIndicator size="sm" />
               )}
               Enviar Convite
             </Button>

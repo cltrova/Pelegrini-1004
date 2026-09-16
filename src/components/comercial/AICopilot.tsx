@@ -1,11 +1,12 @@
 import { useState, useRef, useEffect } from 'react';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
-import { Sparkles, Send, Loader2, X, MessageSquare, Lightbulb } from 'lucide-react';
+import { Sparkles, Send, X, MessageSquare, Lightbulb } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
 import ReactMarkdown from 'react-markdown';
 import type { ComercialAIContext } from '@/utils/comercialAIContext';
+import { LoadingIndicator } from '@/components/common/LoadingState';
 
 interface Props {
   contexto: ComercialAIContext;
@@ -189,7 +190,7 @@ export function AICopilot({ contexto }: Props) {
               className="flex-1 h-10 px-3.5 rounded-lg bg-background border border-border/50 focus:border-primary/50 focus:ring-2 focus:ring-primary/20 outline-none text-sm transition-colors"
             />
             <Button type="submit" size="icon" disabled={loading || !input.trim()} className="h-10 w-10 rounded-lg shrink-0">
-              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+              {loading ? <LoadingIndicator size="sm" /> : <Send className="h-4 w-4" />}
             </Button>
           </form>
           <p className="text-[10px] text-muted-foreground text-center mt-1.5">

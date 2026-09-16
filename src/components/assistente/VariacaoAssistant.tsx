@@ -12,7 +12,6 @@ import {
   User,
   Lightbulb,
   ArrowLeftRight,
-  Loader2,
   RefreshCw,
   Copy,
   ThumbsUp,
@@ -29,6 +28,7 @@ import {
   Plus,
   Minus,
 } from 'lucide-react';
+import { LoadingIndicator } from '@/components/common/LoadingState';
 import { cn } from '@/lib/utils';
 
 interface ToolAction {
@@ -649,7 +649,7 @@ export function VariacaoAssistant({
             disabled={isLoading || !inputValue.trim()}
             className="h-8 w-8 shrink-0 bg-gradient-to-br from-blue-500 to-violet-600 hover:from-blue-400 hover:to-violet-500 shadow-[0_0_15px_-3px_rgba(59,130,246,0.6)] disabled:opacity-40 disabled:shadow-none"
           >
-            {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
+            {isLoading ? <LoadingIndicator size="sm" /> : <Send className="h-3.5 w-3.5" />}
           </Button>
         </form>
       </div>

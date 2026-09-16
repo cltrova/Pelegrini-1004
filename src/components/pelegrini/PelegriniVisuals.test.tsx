@@ -369,11 +369,8 @@ describe('Pelegrini visual components', () => {
 
     const status = screen.getByRole('status');
     expect(status).toHaveClass('min-h-64', 'w-full');
-    expect(status).not.toHaveClass(
-      'rounded-xl',
-      'border',
-      'bg-card',
-      'shadow-sm',
-    );
+    for (const forbiddenClass of ['rounded-xl', 'border', 'bg-card', 'shadow-sm']) {
+      expect(status).not.toHaveClass(forbiddenClass);
+    }
   });
 });
