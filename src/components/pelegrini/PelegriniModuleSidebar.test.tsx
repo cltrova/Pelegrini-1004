@@ -139,17 +139,18 @@ describe('PelegriniModuleSidebar', () => {
     expect(screen.getByTestId('sidebar-home-label')).toHaveTextContent('Voltar aos módulos');
   });
 
-  it('keeps compact links accessible by name and exposes native tooltip titles', () => {
+  it('keeps navigation accessible without duplicated hover labels', () => {
     renderSidebar();
 
     items.forEach((item) => {
-      expect(screen.getByRole('link', { name: item.label })).toHaveAttribute('title', item.label);
+      const link = screen.getByRole('link', { name: item.label });
+      expect(link).not.toHaveAttribute('title');
+      expect(link).not.toHaveAttribute('data-state');
     });
 
-    expect(screen.getByRole('button', { name: 'Voltar aos módulos' })).toHaveAttribute(
-      'title',
-      'Voltar aos módulos',
-    );
+    const homeButton = screen.getByRole('button', { name: 'Voltar aos módulos' });
+    expect(homeButton).not.toHaveAttribute('title');
+    expect(homeButton).not.toHaveAttribute('data-state');
   });
 
   it('keeps the mobile menu trigger inside the compact 44 px header rail', () => {
