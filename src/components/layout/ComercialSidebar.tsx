@@ -9,7 +9,6 @@ import {
 } from 'lucide-react';
 import { useEmpresaAtiva } from '@/hooks/useEmpresaAtiva';
 import { resolvePelegriniTheme } from '@/config/pelegriniTheme';
-import { getComprasComercialMenuItem } from '@/config/comercialCompras';
 import { useFilialSelecionada } from '@/contexts/FilialSelecionadaContext';
 import {
   PelegriniModuleSidebar,
@@ -33,9 +32,6 @@ export function getComercialMenuItems(codEmpresa: string): PelegriniSidebarItem[
     items.push({ label: 'Cotações Abertas', icon: Clock, path: '/comercial/cotacoes' });
     items.push({ label: 'Vendas Perdidas', icon: XCircle, path: '/comercial/perdidas' });
   }
-
-  const comprasItem = getComprasComercialMenuItem(codEmpresa);
-  if (comprasItem) items.push(comprasItem);
 
   return items;
 }

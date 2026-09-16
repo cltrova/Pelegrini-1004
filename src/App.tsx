@@ -31,7 +31,6 @@ const ProdutosPage = lazy(() => import('./pages/comercial/ProdutosPage'));
 const ComissaoPage = lazy(() => import('./pages/comercial/ComissaoPage'));
 const CotacoesAbertasPage = lazy(() => import('./pages/comercial/CotacoesAbertasPage'));
 const VendasPerdidasPage = lazy(() => import('./pages/comercial/VendasPerdidasPage'));
-const ComprasPage = lazy(() => import('./pages/comercial/ComprasPage'));
 const EstoquePage = lazy(() => import('./pages/operacional/EstoquePage'));
 const DistribuidoresPage = lazy(() => import('./pages/operacional/DistribuidoresPage'));
 const EstoqueRetroativoPage = lazy(() => import('./pages/operacional/EstoqueRetroativoPage'));
@@ -98,26 +97,6 @@ function VendasPerdidasRoute() {
 export const VENDAS_PERDIDAS_ROUTE = {
   path: 'perdidas',
   Component: VendasPerdidasRoute,
-} as const;
-
-function RequireCasaDaTransmissao({ children, redirectTo }: { children: React.ReactNode; redirectTo: string }) {
-  const { codEmpresaAtiva, pending } = useGuardContext();
-  if (pending) return <GuardSpinner />;
-  if (codEmpresaAtiva !== '1004') return <Navigate to={redirectTo} replace />;
-  return <>{children}</>;
-}
-
-function ComprasRoute() {
-  return (
-    <RequireCasaDaTransmissao redirectTo="/comercial/dashboard">
-      <ComprasPage />
-    </RequireCasaDaTransmissao>
-  );
-}
-
-export const COMPRAS_ROUTE = {
-  path: 'compras',
-  Component: ComprasRoute,
 } as const;
 
 function ComercialDashboardByEmpresa() {
@@ -234,7 +213,6 @@ const App = () => (
                   </RequireCotacoesPelegrini>
                 } />
                 <Route {...VENDAS_PERDIDAS_ROUTE} />
-                <Route {...COMPRAS_ROUTE} />
                 <Route path="progresso-vendedor" element={
                   <Navigate to="/comercial/dashboard" replace />
                 } />
