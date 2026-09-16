@@ -185,7 +185,7 @@ export function SaldoAVencerTab({ filtros }: { filtros?: SaldoAVencerFiltros }) 
   }, [periodo]);
 
   // Carrega a carteira da fonte validada e aplica o período localmente pelo vencimento.
-  const { data, isLoading, error, refetch } = usePedidosSaldoAVencer();
+  const { data, isLoading, isFetching, error, refetch } = usePedidosSaldoAVencer();
   const auditFonte = (data as unknown as { __audit?: Record<string, unknown> } | undefined)?.__audit;
   const semCamposSaldo = Boolean(auditFonte?.semCamposSaldo);
 
@@ -639,7 +639,9 @@ export function SaldoAVencerTab({ filtros }: { filtros?: SaldoAVencerFiltros }) 
   };
 
 
-  if (isLoading) return <LoadingState message="Carregando saldo a vencer..." />;
+  if (isLoading && !data) {
+    return <LoadingState message="Carregando saldo a vencer" variant="content" />;
+  }
   if (error)
     return (
       <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4">
@@ -687,7 +689,7 @@ export function SaldoAVencerTab({ filtros }: { filtros?: SaldoAVencerFiltros }) 
     );
 
     return (
-      <div className="financial-data-viewport min-w-0 space-y-3 animate-fade-in">
+      <div aria-busy={isFetching || undefined} className="financial-data-viewport min-w-0 space-y-3 animate-fade-in">
         <div className="financial-toolbar flex flex-wrap items-center gap-2 rounded-xl border border-border/60 bg-card/60 p-2">
           <Button variant="ghost" size="sm" onClick={() => setClienteSel(null)}>
             <ArrowLeft className="mr-2 h-4 w-4" /> Voltar ao ranking
@@ -857,7 +859,7 @@ export function SaldoAVencerTab({ filtros }: { filtros?: SaldoAVencerFiltros }) 
 
   // ================= Dashboard 1 =================
   return (
-    <div className="financial-data-viewport min-w-0 space-y-3 animate-fade-in">
+    <div aria-busy={isFetching || undefined} className="financial-data-viewport min-w-0 space-y-3 animate-fade-in">
       {semCamposSaldo && (
         <div className="flex items-start gap-2 rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 text-sm">
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />

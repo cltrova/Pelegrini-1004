@@ -66,5 +66,8 @@ describe('DistribuidoresPage', () => {
 
     expect(screen.getByRole('region', { name: /evolução de distribuidores/i }))
       .toHaveClass('operational-distributors');
+    expect(screen.getByRole('status', { name: 'Carregando evolução de distribuidores' }))
+      .toBeInTheDocument();
+    expect(screen.queryByText('Carregando evolução de distribuidores')).not.toBeInTheDocument();
   });
 });

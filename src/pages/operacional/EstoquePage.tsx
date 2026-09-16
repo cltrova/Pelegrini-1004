@@ -4,7 +4,7 @@ import { AlertTriangle, RefreshCw, Search, X } from 'lucide-react';
 import { EmptyState } from '@/components/common/EmptyState';
 import { ErrorState } from '@/components/common/ErrorState';
 import { FilterDropdownChip, MultiSelectOptions, SingleSelectOptions } from '@/components/common/FilterDropdownChip';
-import { LoadingState } from '@/components/common/LoadingState';
+import { LoadingIndicator, LoadingState } from '@/components/common/LoadingState';
 import { EstoqueCommandCenter } from '@/components/operacional/estoque/EstoqueCommandCenter';
 import { GiroFilterPopover } from '@/components/operacional/estoque/GiroFilterPopover';
 import { countVisibleGiroFilters, GIRO_STATUS_LABELS, summarizeVisibleGiroFilters } from '@/components/operacional/estoque/giroFilterPresentation';
@@ -69,8 +69,8 @@ const LazyEstoqueAssistantTab = lazy(() => import('@/components/operacional/Esto
 
 function EstoqueTabFallback() {
   return (
-    <EstoqueDataViewport className="p-4" role="status" aria-label="Carregando visão do estoque">
-      <LoadingState />
+    <EstoqueDataViewport className="p-4">
+      <LoadingState message="Carregando visão do estoque" variant="content" />
     </EstoqueDataViewport>
   );
 }
@@ -227,8 +227,9 @@ export default function EstoquePage({ initialTab = 'overview' }: EstoquePageProp
           : activeSource === 'giro'
             ? 'Movimentacoes indisponiveis; indicadores de giro podem estar incompletos.'
             : 'Os ultimos dados carregados foram preservados e podem estar desatualizados.'}
-        <Button variant="ghost" size="sm" className="ml-2 h-7" disabled={isFetching} onClick={() => { void refetch(); }}>
-          <RefreshCw className="mr-1 h-3.5 w-3.5" />{isFetching ? 'Consultando...' : 'Tentar novamente'}
+        <Button aria-busy={isFetching || undefined} variant="ghost" size="sm" className="ml-2 h-7 min-w-32" disabled={isFetching} onClick={() => { void refetch(); }}>
+          {isFetching ? <LoadingIndicator size="sm" /> : <RefreshCw aria-hidden="true" className="mr-1 h-3.5 w-3.5" />}
+          Tentar novamente
         </Button>
       </AlertDescription>
       <Button
@@ -249,7 +250,7 @@ export default function EstoquePage({ initialTab = 'overview' }: EstoquePageProp
   if (companyContextLoading || (activeSourceLoading && isLoading && !detailedStockLoading && !movementLoading)) {
     return (
       <EstoqueWorkspace>
-        <EstoqueDataViewport className="p-4"><LoadingState /></EstoqueDataViewport>
+        <EstoqueDataViewport className="p-4"><LoadingState variant="content" /></EstoqueDataViewport>
       </EstoqueWorkspace>
     );
   }
@@ -266,11 +267,12 @@ export default function EstoquePage({ initialTab = 'overview' }: EstoquePageProp
     return (
       <EstoqueWorkspace>
         <EstoqueDataViewport
-          aria-label={isOverview ? 'Carregando dados para Visao geral' : 'Carregando dados completos do estoque'}
           className="p-4"
-          role="status"
         >
-          <LoadingState />
+          <LoadingState
+            message={isOverview ? 'Carregando dados para Visao geral' : 'Carregando dados completos do estoque'}
+            variant="content"
+          />
         </EstoqueDataViewport>
       </EstoqueWorkspace>
     );
@@ -301,7 +303,8 @@ export default function EstoquePage({ initialTab = 'overview' }: EstoquePageProp
           />
           <span className="hidden shrink-0 text-xs tabular-nums text-muted-foreground sm:inline">{lastUpdateLabel}</span>
           <Button
-            aria-label={isFetching ? 'Atualizando dados do estoque' : 'Atualizar dados do estoque'}
+            aria-busy={isFetching || undefined}
+            aria-label="Atualizar dados do estoque"
             className="h-8 w-8 shrink-0"
             disabled={isFetching}
             onClick={() => { void refetch(); }}
@@ -310,17 +313,19 @@ export default function EstoquePage({ initialTab = 'overview' }: EstoquePageProp
             type="button"
             variant="ghost"
           >
-            <RefreshCw aria-hidden="true" className={`h-4 w-4 ${isFetching ? 'animate-spin' : ''}`} />
+            {isFetching
+              ? <LoadingIndicator size="sm" />
+              : <RefreshCw aria-hidden="true" className="h-4 w-4" />}
           </Button>
         </EstoqueWorkspaceHeader>
 
         {detailedStockLoading ? (
-          <EstoqueDataViewport className="p-4" role="status" aria-label="Carregando dados detalhados do estoque">
-            <LoadingState />
+          <EstoqueDataViewport className="p-4">
+            <LoadingState message="Carregando dados detalhados do estoque" variant="content" />
           </EstoqueDataViewport>
         ) : movementLoading ? (
-          <EstoqueDataViewport className="p-4" role="status" aria-label="Carregando movimentacoes do estoque">
-            <LoadingState />
+          <EstoqueDataViewport className="p-4">
+            <LoadingState message="Carregando movimentacoes do estoque" variant="content" />
           </EstoqueDataViewport>
         ) : activeError ? (
           <EstoqueDataViewport className="p-4" role="alert">
@@ -329,19 +334,24 @@ export default function EstoquePage({ initialTab = 'overview' }: EstoquePageProp
               message={`${activeError.message} Os dados nao puderam ser consultados; isso nao significa estoque zerado.`}
               onRetry={isFetching ? undefined : () => { void refetch(); }}
             />
-            {isFetching && <p role="status" className="p-3 text-center text-sm text-muted-foreground">Consultando novamente...</p>}
+            {isFetching && (
+              <LoadingState
+                className="w-full p-3"
+                message="Consultando novamente"
+                size="sm"
+                variant="inline"
+              />
+            )}
           </EstoqueDataViewport>
         ) : (
           <>
         <TabsContent className="m-0 min-h-0 flex-1 data-[state=active]:flex data-[state=active]:flex-col" aria-labelledby="pelegrini-tab-central" id="pelegrini-tabpanel-central" value="central">
           {recoveringStock && estoqueData.length === 0 ? (
             <EstoqueDataViewport
-              aria-label="Recuperando dados completos do estoque"
               className="p-4"
-              role="status"
             >
               {sourceNotice}
-              <LoadingState />
+              <LoadingState message="Recuperando dados completos do estoque" variant="content" />
             </EstoqueDataViewport>
           ) : (
             <EstoqueCommandCenter

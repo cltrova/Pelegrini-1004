@@ -66,6 +66,7 @@ describe('DistributorEvolutionTab', () => {
       { mes: '2026-08', marca: 'ZF', cod_marca: '11', cod_grupo: '1', grupo: 'ZF Pesado', classe: '1', valor_estoque: 120, percentual_estoque: 60, duracao_estoque: 28, valor_vendas: 50, percentual_vendas: 60, percentual_acumulado_vendas: 60, margem_venda: 22, prazo_medio_venda: 9, valor_devolucoes: 1, valor_compras: 30, percentual_compras: 100, prazo_medio_compra: 7, percentual_diferenca_compra_cmv: 4 },
     ];
     queryState.error = null;
+    queryState.isLoading = false;
     queryState.isFetching = false;
     queryState.refetch.mockReset();
     productsState.produtos = [];
@@ -210,5 +211,29 @@ describe('DistributorEvolutionTab', () => {
 
     expect(queryState.refetch).toHaveBeenCalledOnce();
     expect(productsState.refetch).toHaveBeenCalledOnce();
+  });
+
+  it('mostra carregamento inicial nomeado sem copia visivel', () => {
+    queryState.data = [];
+    queryState.isLoading = true;
+
+    render(<DistributorEvolutionTab active />);
+
+    expect(screen.getByRole('status', { name: 'Carregando evolução dos distribuidores' }))
+      .toBeInTheDocument();
+    expect(screen.queryByText('Carregando evolução dos distribuidores')).not.toBeInTheDocument();
+  });
+
+  it('preserva grafico e tabela durante atualizacao em segundo plano', () => {
+    queryState.isFetching = true;
+
+    render(<DistributorEvolutionTab active />);
+
+    expect(screen.getByTestId('sales-purchases-chart')).toBeInTheDocument();
+    expect(screen.getByRole('table', { name: 'Comparativo mensal dos distribuidores' })).toBeInTheDocument();
+    const refresh = screen.getByRole('button', { name: 'Atualizar relatório' });
+    expect(refresh).toBeDisabled();
+    expect(refresh).toHaveAttribute('aria-busy', 'true');
+    expect(within(refresh).getByTestId('loading-indicator')).toBeInTheDocument();
   });
 });

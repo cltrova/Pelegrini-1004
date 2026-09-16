@@ -5,7 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Bot, Send, User, Loader2, Lightbulb, MessageSquare, RefreshCw, TrendingUp, TrendingDown, AlertTriangle, Package, ShoppingCart, BarChart3, Brain, Sparkles, Save, Check, ChevronDown, ChevronUp, DollarSign, Tags, Factory, Boxes, FileText, FileDown, Download, Mic, MicOff, Zap } from 'lucide-react';
+import { Bot, Send, User, Lightbulb, MessageSquare, RefreshCw, TrendingUp, TrendingDown, AlertTriangle, Package, ShoppingCart, BarChart3, Brain, Sparkles, Save, Check, ChevronDown, ChevronUp, DollarSign, Tags, Factory, Boxes, FileText, FileDown, Download, Mic, MicOff, Zap } from 'lucide-react';
+import { LoadingIndicator, LoadingState } from '@/components/common/LoadingState';
 import { EstoqueRecord, GiroRecord } from '@/types/estoque';
 import { supabase } from '@/integrations/supabase/client';
 import ReactMarkdown from 'react-markdown';
@@ -369,9 +370,9 @@ function InsightsTab({ estoqueData, giroData, now }: Props) {
             <p className="text-xs text-muted-foreground mt-0.5">Atualizado em {lastGenerated}</p>
           )}
         </div>
-        <Button variant="outline" size="sm" onClick={generateInsights} disabled={isLoading} className="gap-2">
-          <RefreshCw className={`h-3.5 w-3.5 ${isLoading ? 'animate-spin motion-reduce:animate-none' : ''}`} />
-          {isLoading ? 'Analisando...' : insights.length > 0 ? 'Atualizar' : 'Gerar Insights'}
+        <Button aria-busy={isLoading || undefined} variant="outline" size="sm" onClick={generateInsights} disabled={isLoading} className="min-w-32 gap-2">
+          {isLoading ? <LoadingIndicator size="sm" /> : <RefreshCw aria-hidden="true" className="h-3.5 w-3.5" />}
+          {insights.length > 0 ? 'Atualizar' : 'Gerar Insights'}
         </Button>
       </div>
 
@@ -382,10 +383,11 @@ function InsightsTab({ estoqueData, giroData, now }: Props) {
           <p className="text-xs text-muted-foreground">A análise avalia giro, custos, fornecedores, rupturas e mais</p>
         </div>
       ) : isLoading && insights.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-8 space-y-3">
-          <Loader2 className="h-8 w-8 animate-spin text-amber-500 motion-reduce:animate-none" />
-          <p className="text-sm text-muted-foreground">Analisando estoque como um gerente especialista...</p>
-        </div>
+        <LoadingState
+          className="bg-transparent py-8"
+          message="Analisando insights do estoque"
+          variant="content"
+        />
       ) : (
         <>
           {/* Category filter chips */}
@@ -707,14 +709,12 @@ function ChatTab({ estoqueData, giroData, now, customPrompt, codEmpresaBi, credi
           <p className="text-xs text-amber-700 dark:text-amber-300" role="status">{creditWarning}</p>
         )}
         {isLoading && (
-          <div className="flex gap-3">
-            <div className="h-8 w-8 rounded-full bg-amber-500/20 flex items-center justify-center">
-              <Loader2 className="h-4 w-4 animate-spin text-amber-500 motion-reduce:animate-none" />
-            </div>
-            <div className="bg-muted rounded-lg p-3">
-              <p className="text-sm text-muted-foreground">Analisando dados...</p>
-            </div>
-          </div>
+          <LoadingState
+            className="self-start rounded-lg bg-muted p-3"
+            message="Analisando dados do estoque"
+            size="sm"
+            variant="inline"
+          />
         )}
       </div>
 
@@ -729,10 +729,12 @@ function ChatTab({ estoqueData, giroData, now, customPrompt, codEmpresaBi, credi
           </div>
         )}
         {isTranscribing && (
-          <div className="flex items-center gap-2 mb-3 px-3 py-2 rounded-lg bg-muted">
-            <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground motion-reduce:animate-none" />
-            <span className="text-xs text-muted-foreground">Transcrevendo áudio...</span>
-          </div>
+          <LoadingState
+            className="mb-3 rounded-lg bg-muted px-3 py-2"
+            message="Transcrevendo áudio"
+            size="sm"
+            variant="inline"
+          />
         )}
         <form onSubmit={(e) => { e.preventDefault(); sendMessage(); }} className="flex gap-2">
           <Input
@@ -758,8 +760,8 @@ function ChatTab({ estoqueData, giroData, now, customPrompt, codEmpresaBi, credi
           >
             {isRecording ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
           </Button>
-          <Button aria-label="Enviar pergunta" type="submit" size="icon" disabled={isLoading || !input.trim() || isRecording}>
-            <Send className="h-4 w-4" />
+          <Button aria-busy={isLoading || undefined} aria-label="Enviar pergunta" type="submit" size="icon" disabled={isLoading || !input.trim() || isRecording}>
+            {isLoading ? <LoadingIndicator size="sm" /> : <Send aria-hidden="true" className="h-4 w-4" />}
           </Button>
         </form>
       </div>
@@ -879,11 +881,7 @@ function BrainTab({ codEmpresaBi }: { codEmpresaBi: string }) {
   };
 
   if (isLoadingPrompt) {
-    return (
-      <div className="flex items-center justify-center py-16">
-        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground motion-reduce:animate-none" />
-      </div>
-    );
+    return <LoadingState message="Carregando configuração do assistente" variant="content" />;
   }
 
   const hasChanges = prompt !== savedPrompt;
@@ -903,13 +901,14 @@ function BrainTab({ codEmpresaBi }: { codEmpresaBi: string }) {
             </p>
           </div>
           <Button
+            aria-busy={isSaving || undefined}
             size="sm"
             onClick={savePrompt}
             disabled={isSaving || !hasChanges}
             className="gap-2"
           >
-            {isSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin motion-reduce:animate-none" /> : hasChanges ? <Save className="h-3.5 w-3.5" /> : <Check className="h-3.5 w-3.5" />}
-            {isSaving ? 'Salvando...' : hasChanges ? 'Salvar' : 'Salvo'}
+            {isSaving ? <LoadingIndicator size="sm" /> : hasChanges ? <Save className="h-3.5 w-3.5" /> : <Check className="h-3.5 w-3.5" />}
+            {hasChanges ? 'Salvar' : 'Salvo'}
           </Button>
         </div>
 
@@ -945,13 +944,14 @@ function BrainTab({ codEmpresaBi }: { codEmpresaBi: string }) {
               onKeyDown={e => e.key === 'Enter' && askAiHelp()}
             />
             <Button
+              aria-busy={isAiLoading || undefined}
               size="sm"
               variant="outline"
               onClick={askAiHelp}
               disabled={isAiLoading || !aiRequest.trim()}
               className="gap-2 shrink-0"
             >
-              {isAiLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin motion-reduce:animate-none" /> : <Sparkles className="h-3.5 w-3.5" />}
+              {isAiLoading ? <LoadingIndicator size="sm" /> : <Sparkles className="h-3.5 w-3.5" />}
               Sugerir
             </Button>
           </div>

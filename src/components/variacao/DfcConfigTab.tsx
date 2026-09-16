@@ -10,7 +10,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { useDfcLineConfig, DfcLineConfigRow, DfcModo } from '@/hooks/useDfcLineConfig';
 import { useVariacaoData, ESTRUTURA_DFC } from '@/hooks/useVariacaoData';
 import { useEmpresaAtiva } from '@/hooks/useEmpresaAtiva';
-import { LoadingState } from '@/components/common/LoadingState';
+import { LoadingIndicator, LoadingState } from '@/components/common/LoadingState';
 import { EmptyState } from '@/components/common/EmptyState';
 import { cn } from '@/lib/utils';
 import { formatCurrency } from '@/utils/formatters';
@@ -107,7 +107,9 @@ export function DfcConfigTab() {
   if (!codEmpresaAtiva) {
     return <EmptyState title="Selecione uma empresa" message="Escolha uma empresa ativa para configurar a DFC." />;
   }
-  if (isLoading) return <LoadingState message="Carregando configuração..." />;
+  if (isLoading) {
+    return <LoadingState message="Carregando configuração da DFC" variant="content" />;
+  }
 
   const totalAlterados = Object.keys(draft).length;
 
@@ -126,9 +128,9 @@ export function DfcConfigTab() {
               <X className="h-4 w-4 mr-1" /> Descartar ({totalAlterados})
             </Button>
           )}
-          <Button size="sm" onClick={handleSalvar} disabled={isSaving || totalAlterados === 0}>
-            <Save className="h-4 w-4 mr-1" />
-            {isSaving ? 'Salvando...' : `Salvar (${totalAlterados})`}
+          <Button aria-busy={isSaving || undefined} className="min-w-28" size="sm" onClick={handleSalvar} disabled={isSaving || totalAlterados === 0}>
+            {isSaving ? <LoadingIndicator size="sm" /> : <Save aria-hidden="true" className="h-4 w-4 mr-1" />}
+            Salvar ({totalAlterados})
           </Button>
         </div>
       </div>

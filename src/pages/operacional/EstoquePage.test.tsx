@@ -189,9 +189,10 @@ describe('EstoquePage', () => {
 
     renderEstoquePage();
 
-    const refresh = screen.getByRole('button', { name: 'Atualizando dados do estoque' });
+    const refresh = screen.getByRole('button', { name: 'Atualizar dados do estoque' });
     expect(refresh).toBeDisabled();
-    expect(refresh.querySelector('svg')).toHaveClass('animate-spin');
+    expect(refresh).toHaveAttribute('aria-busy', 'true');
+    expect(within(refresh).getByTestId('loading-indicator')).toBeInTheDocument();
   });
 
   it('mantem dados anteriores montados durante uma nova consulta', () => {
@@ -207,7 +208,7 @@ describe('EstoquePage', () => {
     renderEstoquePage();
 
     expect(within(screen.getByRole('table')).getByText('Produto preservado')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Atualizando dados do estoque' }))
+    expect(screen.getByRole('button', { name: 'Atualizar dados do estoque' }))
       .toBeDisabled();
   });
 
@@ -238,7 +239,7 @@ describe('EstoquePage', () => {
     expect(await screen.findByRole('region', { name: 'Visão geral do estoque' })).toBeInTheDocument();
     expect(screen.getByLabelText('Estado da fonte de estoque: Movimentacoes indisponiveis')).toHaveAttribute('data-issue', 'true');
     expect(screen.getByText(/Movimentacoes indisponiveis; indicadores da Visao geral podem estar incompletos/i)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Atualizando dados do estoque' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Atualizar dados do estoque' })).toBeDisabled();
   });
 
   it('aguarda consolidado e giro antes da primeira montagem da Visao geral', () => {
@@ -263,7 +264,7 @@ describe('EstoquePage', () => {
     renderEstoquePage({ initialTab: 'overview' });
 
     expect(await screen.findByRole('region', { name: 'Visão geral do estoque' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Atualizando dados do estoque' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Atualizar dados do estoque' })).toBeDisabled();
     expect(screen.queryByRole('status', { name: 'Carregando dados para Visao geral' })).not.toBeInTheDocument();
   });
 
@@ -285,11 +286,13 @@ describe('EstoquePage', () => {
 
     renderEstoquePage({ initialTab });
 
-    expect(screen.getByText('Carregando dados da filial')).toBeInTheDocument();
     if (loadingSource === 'giro') {
       expect(screen.getByRole('status', { name: 'Carregando movimentacoes do estoque' })).toBeInTheDocument();
+      expect(screen.queryByText('Carregando movimentacoes do estoque')).not.toBeInTheDocument();
       expect(screen.getByRole('tab', { name: 'Central de Estoque' })).toBeInTheDocument();
     } else {
+      expect(screen.getByRole('status', { name: 'Carregando dados da filial' })).toBeInTheDocument();
+      expect(screen.queryByText('Carregando dados da filial')).not.toBeInTheDocument();
       expect(screen.queryByRole('tab', { name: 'Central de Estoque' })).not.toBeInTheDocument();
     }
   });
@@ -328,7 +331,7 @@ describe('EstoquePage', () => {
     renderEstoquePage();
 
     expect(screen.getByRole('status', { name: 'Recuperando dados completos do estoque' })).toBeInTheDocument();
-    expect(screen.getByText('Carregando dados da filial')).toBeInTheDocument();
+    expect(screen.queryByText('Recuperando dados completos do estoque')).not.toBeInTheDocument();
     expect(screen.getByText('Recuperando estoque completo')).toBeInTheDocument();
     expect(screen.queryByText('Estoque indisponivel')).not.toBeInTheDocument();
     expect(screen.queryByRole('region', { name: 'Resumo do estoque' })).not.toBeInTheDocument();
@@ -643,7 +646,7 @@ describe('EstoquePage', () => {
     fireEvent.click(screen.getByRole('tab', { name: 'Assistente' }));
 
     expect(screen.queryByRole('heading', { name: 'Assistente de Estoque' })).not.toBeInTheDocument();
-    expect(await screen.findByRole('region', { name: 'Assistente de estoque' })).toBeInTheDocument();
+    expect(await screen.findByRole('region', { name: 'Assistente de estoque' }, { timeout: 5_000 })).toBeInTheDocument();
     expect(screen.getByPlaceholderText('Pergunte sobre seu estoque...')).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: 'Insights' })).toBeInTheDocument();
     expect(screen.queryByRole('tab', { name: 'Cérebro' })).not.toBeInTheDocument();
@@ -750,7 +753,8 @@ describe('EstoquePage', () => {
 
     renderEstoquePage();
 
-    expect(screen.getByText('Carregando dados da filial')).toBeInTheDocument();
+    expect(screen.getByRole('status', { name: 'Carregando dados da filial' })).toBeInTheDocument();
+    expect(screen.queryByText('Carregando dados da filial')).not.toBeInTheDocument();
     expect(screen.queryByRole('tab', { name: 'Central de Estoque' })).not.toBeInTheDocument();
   });
 
@@ -767,7 +771,8 @@ describe('EstoquePage', () => {
 
     renderEstoquePage({ initialTab: 'overview' });
 
-    expect(screen.getByText('Carregando dados da filial')).toBeInTheDocument();
+    expect(screen.getByRole('status', { name: 'Carregando dados da filial' })).toBeInTheDocument();
+    expect(screen.queryByText('Carregando dados da filial')).not.toBeInTheDocument();
     expect(screen.queryByText('O módulo Operacional não está ativado para esta empresa.')).not.toBeInTheDocument();
   });
 

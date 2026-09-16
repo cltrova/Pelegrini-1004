@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { EstoqueAssistantTab } from './EstoqueAssistantTab';
 import { EstoqueInsights } from './EstoqueInsights';
@@ -126,8 +126,10 @@ describe('EstoqueAssistantTab', () => {
     fireEvent.change(input, { target: { value: 'Teste' } });
     fireEvent.keyDown(input, { key: 'Enter', code: 'Enter' });
 
-    expect(await screen.findByText('Analisando dados...')).toBeInTheDocument();
+    expect(await screen.findByRole('status', { name: 'Analisando dados do estoque' })).toBeInTheDocument();
+    expect(screen.queryByText('Analisando dados...')).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Enviar pergunta' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Enviar pergunta' })).toHaveAttribute('aria-busy', 'true');
     expect(screen.getByTestId('stock-assistant-composer')).toBeVisible();
     resolveRequest({ ok: true, json: async () => ({ response: 'OK' }) });
     expect(await screen.findByText('OK')).toBeInTheDocument();

@@ -115,7 +115,9 @@ describe('EstoqueRetroativoPage', () => {
     expect(screen.getByRole('searchbox', { name: 'Buscar nos resultados' })).toHaveValue('ITEM CT');
 
     fireEvent.click(screen.getByRole('button', { name: 'Consultar' }));
-    expect(within(screen.getByRole('region', { name: 'Dados do estoque' })).getByRole('status')).toHaveTextContent('Consultando estoque retroativo');
+    const viewport = screen.getByRole('region', { name: 'Dados do estoque' });
+    expect(within(viewport).getByRole('table')).toHaveTextContent('ITEM CT');
+    expect(viewport).toHaveAttribute('aria-busy', 'true');
     await waitFor(() => expect(fetch).toHaveBeenCalledTimes(2));
 
     testState.codEmpresaBi = '10041';
@@ -148,7 +150,12 @@ describe('EstoqueRetroativoPage', () => {
     fireEvent.change(screen.getByLabelText('Data do estoque'), { target: { value: '2026-08-31' } });
     fireEvent.click(screen.getByRole('button', { name: 'Consultar' }));
     const viewport = screen.getByRole('region', { name: 'Dados do estoque' });
-    expect(within(viewport).getByRole('status')).toHaveTextContent('Consultando estoque retroativo');
+    expect(within(viewport).getByRole('status', { name: /Consultando estoque retroativo/i })).toBeInTheDocument();
+    expect(viewport).toHaveAttribute('aria-busy', 'true');
+    const consultButton = screen.getByRole('button', { name: 'Consultar' });
+    expect(consultButton).toHaveAttribute('aria-busy', 'true');
+    expect(within(consultButton).getByTestId('loading-indicator')).toBeInTheDocument();
+    expect(screen.queryByText(/Consultando estoque retroativo/i)).not.toBeInTheDocument();
     await waitFor(() => expect(fetch).toHaveBeenCalledTimes(1));
 
     await act(async () => {
@@ -164,6 +171,34 @@ describe('EstoqueRetroativoPage', () => {
     expect(fetch).toHaveBeenCalledTimes(2);
     expect(consoleError).toHaveBeenCalledOnce();
     consoleError.mockRestore();
+  });
+
+  it('preserva a tabela valida durante nova consulta da mesma data', async () => {
+    let resolveRefresh!: (response: Response) => void;
+    vi.stubGlobal('fetch', vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify([
+        { CodEmpresa_bi: 1004, empresa_codigo: 1, cod_produto: 12, descricao: 'ITEM PRESERVADO', saldo_estoque: 3 },
+      ]), { status: 200 }))
+      .mockImplementationOnce(() => new Promise<Response>(resolve => { resolveRefresh = resolve; })));
+    render(<EstoqueRetroativoPage />);
+
+    fireEvent.change(screen.getByLabelText('Data do estoque'), { target: { value: '2026-08-31' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Consultar' }));
+    await screen.findAllByText('ITEM PRESERVADO');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Consultar' }));
+
+    expect(screen.getByRole('table')).toHaveTextContent('ITEM PRESERVADO');
+    expect(screen.getByRole('region', { name: 'Dados do estoque' })).toHaveAttribute('aria-busy', 'true');
+    expect(screen.getByRole('button', { name: 'Consultar' })).toHaveAttribute('aria-busy', 'true');
+    await waitFor(() => expect(fetch).toHaveBeenCalledTimes(2));
+
+    await act(async () => {
+      resolveRefresh(new Response(JSON.stringify([
+        { CodEmpresa_bi: 1004, empresa_codigo: 1, cod_produto: 12, descricao: 'ITEM ATUALIZADO', saldo_estoque: 4 },
+      ]), { status: 200 }));
+    });
+    expect(await screen.findAllByText('ITEM ATUALIZADO')).not.toHaveLength(0);
   });
 
   it('diferencia resultado sem correspondencia de uma consulta vazia', async () => {

@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { useComercialRawData } from '@/hooks/useComercialData';
 import { useEmpresaAtiva } from '@/hooks/useEmpresaAtiva';
 import { useFilialSelecionada } from '@/contexts/FilialSelecionadaContext';
-import { LoadingState } from '@/components/common/LoadingState';
+import { LoadingIndicator, LoadingState } from '@/components/common/LoadingState';
 import { EmptyState } from '@/components/common/EmptyState';
 import { StatCard } from '@/components/common/StatCard';
 import { UnifiedFilterBar } from '@/components/common/UnifiedFilterBar';
@@ -360,14 +360,16 @@ export function EstoqueRelatorioNovosClientesTab() {
     toast.success(`${rows.length} linhas exportadas`);
   };
 
-  if (isLoading) return <LoadingState />;
+  if (isLoading && !rawData) {
+    return <LoadingState message="Carregando relatório de novos clientes" variant="content" />;
+  }
   if (error) return <EmptyState message="Erro ao carregar dados comerciais." />;
 
   const maxValor = Math.max(...rows.map(r => r.valorTotal), 1);
   const naoTemDadosBrutos = !allPedidos.length;
 
   return (
-    <div className="space-y-4">
+    <div aria-busy={isFetching || undefined} className="space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-3">
@@ -445,7 +447,12 @@ export function EstoqueRelatorioNovosClientesTab() {
       <div className="rounded-xl border border-border bg-muted/20 px-4 py-3 text-xs">
         <div className="flex items-center gap-2 font-medium mb-2">
           <Info className="h-3.5 w-3.5 text-blue-500" />
-          Validação da carga {isFetching && <span className="text-muted-foreground">(atualizando…)</span>}
+          Validação da carga
+          {isFetching && (
+            <span aria-label="Atualizando relatório de novos clientes" role="status">
+              <LoadingIndicator size="sm" />
+            </span>
+          )}
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-1 tabular-nums text-muted-foreground">
           <div>Período real enviado: <span className="text-foreground">{periodo.inicio} → {periodo.fim}</span></div>

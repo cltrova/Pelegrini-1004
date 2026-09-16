@@ -22,8 +22,8 @@ export default function DistribuidoresPage() {
   if (isLoading) {
     return (
       <EstoqueWorkspace aria-label="Evolução de distribuidores" className="operational-distributors bg-background">
-        <EstoqueDataViewport className="p-4" role="status">
-          <LoadingState />
+        <EstoqueDataViewport className="p-4">
+          <LoadingState message="Carregando evolução de distribuidores" variant="content" />
         </EstoqueDataViewport>
       </EstoqueWorkspace>
     );
@@ -45,8 +45,8 @@ export default function DistribuidoresPage() {
       </EstoqueWorkspaceHeader>
       <Suspense
         fallback={(
-          <EstoqueDataViewport className="p-4" role="status">
-            <LoadingState />
+          <EstoqueDataViewport className="p-4">
+            <LoadingState message="Carregando evolução de distribuidores" variant="content" />
           </EstoqueDataViewport>
         )}
       >

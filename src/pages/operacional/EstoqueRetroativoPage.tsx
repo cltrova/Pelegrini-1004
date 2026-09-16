@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Loader2, Search, FileSpreadsheet, CalendarDays, Package, Boxes, Building2, CircleDollarSign } from 'lucide-react';
+import { Search, FileSpreadsheet, CalendarDays, Package, Boxes, Building2, CircleDollarSign } from 'lucide-react';
 import { useEmpresaAtiva } from '@/hooks/useEmpresaAtiva';
 import { useFilialSelecionada } from '@/contexts/FilialSelecionadaContext';
 import { resolveCodEmpresaBiParam } from '@/utils/filialEndpoint';
@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ErrorState } from '@/components/common/ErrorState';
-import { LoadingState } from '@/components/common/LoadingState';
+import { LoadingIndicator, LoadingState } from '@/components/common/LoadingState';
 import {
   EstoqueDataViewport,
   EstoqueToolbar,
@@ -170,8 +170,11 @@ export default function EstoqueRetroativoPage() {
     requestControllerRef.current = controller;
     setLoading(true);
     setError(null);
-    setRows([]);
-    setUltimaData('');
+    const hasCurrentResults = ultimaData === dataEstoque && rows.length > 0;
+    if (!hasCurrentResults) {
+      setRows([]);
+      setUltimaData('');
+    }
     try {
       const url = buildApiProxyUrl(
         empresa,
@@ -343,9 +346,9 @@ export default function EstoqueRetroativoPage() {
             value={dataEstoque}
           />
         </div>
-        <Button className="h-8 shrink-0 gap-2 px-3" disabled={loading || !dataEstoque} onClick={consultar} size="sm">
-          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
-          {loading ? 'Consultando' : 'Consultar'}
+        <Button aria-busy={loading || undefined} className="h-8 min-w-28 shrink-0 gap-2 px-3" disabled={loading || !dataEstoque} onClick={consultar} size="sm">
+          {loading ? <LoadingIndicator size="sm" /> : <Search aria-hidden="true" className="h-4 w-4" />}
+          Consultar
         </Button>
         <span aria-hidden="true" className="h-5 w-px shrink-0 bg-border" />
         <Select disabled={!ultimaData} value={filialFiltro} onValueChange={setFilialFiltro}>
@@ -378,13 +381,13 @@ export default function EstoqueRetroativoPage() {
 
       {ultimaData && rows.length > 0 ? <EstoqueMetricStrip metrics={metrics} /> : null}
 
-      <EstoqueDataViewport>
-        {loading ? (
-          <div className="min-h-0 flex-1 p-3" role="status">
+      <EstoqueDataViewport aria-busy={loading || undefined}>
+        {loading && !(ultimaData === dataEstoque && rows.length > 0) ? (
+          <div className="min-h-0 flex-1 p-3">
             <LoadingState
               className="h-full rounded-md border-border/70 shadow-none"
-              message="Consultando estoque retroativo..."
-              size="sm"
+              message="Consultando estoque retroativo"
+              variant="content"
             />
           </div>
         ) : error ? (
