@@ -44,12 +44,11 @@ function SidebarAction({
   onClick,
   labelTestId = 'sidebar-label',
 }: SidebarActionProps) {
-  const action = (
+  return (
     <button
       type="button"
       aria-label={label}
       aria-disabled={disabled || undefined}
-      title={label}
       disabled={disabled}
       onClick={onClick}
       className={cn('sidebar-action sidebar-item', disabled && 'cursor-not-allowed opacity-40', className)}
@@ -63,13 +62,6 @@ function SidebarAction({
       </span>
     </button>
   );
-
-  return (
-    <Tooltip>
-      <TooltipTrigger asChild>{action}</TooltipTrigger>
-      <TooltipContent side="right">{label}</TooltipContent>
-    </Tooltip>
-  );
 }
 
 interface SidebarLinkProps {
@@ -82,11 +74,10 @@ interface SidebarLinkProps {
 
 function SidebarLink({ item, index, indexed, active, onNavigate }: SidebarLinkProps) {
   const Icon = item.icon;
-  const link = (
+  return (
     <NavLink
       to={item.path}
       aria-label={item.label}
-      title={item.label}
       onClick={onNavigate}
       className={cn('sidebar-action sidebar-item', active ? 'sidebar-item-active' : 'hover:bg-sidebar-accent/50')}
     >
@@ -103,13 +94,6 @@ function SidebarLink({ item, index, indexed, active, onNavigate }: SidebarLinkPr
         {item.badge && <span className="sidebar-badge">{item.badge}</span>}
       </span>
     </NavLink>
-  );
-
-  return (
-    <Tooltip>
-      <TooltipTrigger asChild>{link}</TooltipTrigger>
-      <TooltipContent side="right">{item.label}</TooltipContent>
-    </Tooltip>
   );
 }
 
