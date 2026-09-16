@@ -1,74 +1,59 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import {
-  BarChart3,
+  BadgeDollarSign,
   Clock,
-  DollarSign,
+  LayoutDashboard,
   Package,
-  ShoppingCart,
   Users,
   XCircle,
 } from 'lucide-react';
 import { useEmpresaAtiva } from '@/hooks/useEmpresaAtiva';
-import { useFilialSelecionada } from '@/contexts/FilialSelecionadaContext';
 import { resolvePelegriniTheme } from '@/config/pelegriniTheme';
+import { useFilialSelecionada } from '@/contexts/FilialSelecionadaContext';
 import {
   PelegriniModuleSidebar,
   type PelegriniSidebarItem,
 } from '@/components/pelegrini';
 
-const baseMenuItems: PelegriniSidebarItem[] = [
-  { label: 'Dashboard', path: '/comercial/dashboard', icon: BarChart3 },
-  { label: 'Clientes', path: '/comercial/clientes', icon: Users },
-  { label: 'Produtos', path: '/comercial/produtos', icon: Package },
-  { label: 'Comissão', path: '/comercial/comissao', icon: DollarSign },
-];
+function hasCotacoesComerciais(codEmpresa: string) {
+  return codEmpresa === '1004' || codEmpresa === '10041';
+}
 
-const cotacoesItems: PelegriniSidebarItem[] = [
-  { label: 'Cotações Abertas', path: '/comercial/cotacoes', icon: Clock },
-  { label: 'Vendas Perdidas', path: '/comercial/perdidas', icon: XCircle },
-];
-
-const comprasItem: PelegriniSidebarItem = {
-  label: 'Compras',
-  path: '/comercial/compras',
-  icon: ShoppingCart,
-  disabled: true,
-};
-
-export function getComercialMenuItems(codEmpresaAtiva?: string | null): PelegriniSidebarItem[] {
-  const companyCode = String(codEmpresaAtiva ?? '');
-
-  return [
-    ...baseMenuItems,
-    ...(companyCode === '10041' ? cotacoesItems : []),
-    ...(companyCode === '1004' ? [comprasItem] : []),
+// eslint-disable-next-line react-refresh/only-export-components
+export function getComercialMenuItems(codEmpresa: string): PelegriniSidebarItem[] {
+  const items: PelegriniSidebarItem[] = [
+    { label: 'Dashboard', icon: LayoutDashboard, path: '/comercial/dashboard' },
+    { label: 'Produtos', icon: Package, path: '/comercial/produtos' },
+    { label: 'Clientes', icon: Users, path: '/comercial/clientes' },
+    { label: 'Comissão', icon: BadgeDollarSign, path: '/comercial/comissao' },
   ];
+
+  if (hasCotacoesComerciais(codEmpresa)) {
+    items.push({ label: 'Cotações Abertas', icon: Clock, path: '/comercial/cotacoes' });
+    items.push({ label: 'Vendas Perdidas', icon: XCircle, path: '/comercial/perdidas' });
+  }
+
+  return items;
 }
 
 const futureMenuItems: PelegriniSidebarItem[] = [
-  { label: 'Cotações Abertas', path: '/comercial/cotacoes', icon: Clock, disabled: true, badge: 'BREVE' },
-  { label: 'Vendas Perdidas', path: '/comercial/perdidas', icon: XCircle, disabled: true, badge: 'BREVE' },
+  { label: 'Cotações Abertas', icon: Clock, path: '/comercial/cotacoes', disabled: true, badge: 'BREVE' },
+  { label: 'Vendas Perdidas', icon: XCircle, path: '/comercial/perdidas', disabled: true, badge: 'BREVE' },
 ];
 
-export default function ComercialSidebar() {
+export function ComercialSidebar() {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const { codEmpresaAtiva } = useEmpresaAtiva();
   const { filialAtiva } = useFilialSelecionada();
-  const theme = resolvePelegriniTheme(filialAtiva);
-  const companyCode = String(codEmpresaAtiva ?? '');
-
-  useEffect(() => {
-    const openSidebar = () => setIsMobileOpen(true);
-    window.addEventListener('open-comercial-sidebar', openSidebar);
-    return () => window.removeEventListener('open-comercial-sidebar', openSidebar);
-  }, []);
+  const theme = resolvePelegriniTheme(filialAtiva || codEmpresaAtiva);
+  const comercialMenuItems = getComercialMenuItems(codEmpresaAtiva || '');
+  const showFutureItems = !hasCotacoesComerciais(codEmpresaAtiva || '');
 
   return (
     <PelegriniModuleSidebar
-      indexed
       theme={theme}
-      items={getComercialMenuItems(companyCode)}
-      futureItems={companyCode === '10041' ? undefined : futureMenuItems}
+      items={comercialMenuItems}
+      futureItems={showFutureItems ? futureMenuItems : undefined}
       mobileOpen={isMobileOpen}
       onMobileOpenChange={setIsMobileOpen}
     />
