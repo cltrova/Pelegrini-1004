@@ -239,19 +239,12 @@ export function ClientsReportTab({ filters }: ClientsReportTabProps) {
                                 onClick={() => handleAnalyze(client)}
                                 disabled={isAnalyzing || !client.latestConversationId}
                                 aria-busy={isAnalyzing || undefined}
-                                className="h-8 px-3"
+                                className="h-8 min-w-[7.5rem] px-3"
                               >
-                                {isAnalyzing ? (
-                                  <>
-                                    <LoadingIndicator size="sm" className="mr-1.5" />
-                                    Analisando
-                                  </>
-                                ) : (
-                                  <>
-                                    <Sparkles className="h-3.5 w-3.5 mr-1.5" />
-                                    Avaliar
-                                  </>
-                                )}
+                                <span aria-hidden="true" className="inline-flex h-4 w-4 shrink-0 items-center justify-center">
+                                  {isAnalyzing ? <LoadingIndicator size="sm" /> : <Sparkles className="h-3.5 w-3.5" />}
+                                </span>
+                                {isAnalyzing ? 'Analisando' : 'Avaliar'}
                               </Button>
 
                               {client.hasAnalysis && client.summary && (
@@ -352,19 +345,12 @@ export function ClientsReportTab({ filters }: ClientsReportTabProps) {
                         onClick={() => handleAnalyze(client)}
                         disabled={isAnalyzing || !client.latestConversationId}
                         aria-busy={isAnalyzing || undefined}
-                        className="h-8 px-3 flex-1"
+                        className="h-8 min-w-[7.5rem] px-3 flex-1"
                       >
-                        {isAnalyzing ? (
-                          <>
-                            <LoadingIndicator size="sm" className="mr-1.5" />
-                            Analisando
-                          </>
-                        ) : (
-                          <>
-                            <Sparkles className="h-3.5 w-3.5 mr-1.5" />
-                            Avaliar
-                          </>
-                        )}
+                        <span aria-hidden="true" className="inline-flex h-4 w-4 shrink-0 items-center justify-center">
+                          {isAnalyzing ? <LoadingIndicator size="sm" /> : <Sparkles className="h-3.5 w-3.5" />}
+                        </span>
+                        {isAnalyzing ? 'Analisando' : 'Avaliar'}
                       </Button>
 
                       {client.hasAnalysis && client.summary && (

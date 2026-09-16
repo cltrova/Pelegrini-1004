@@ -1,7 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Skeleton } from '@/components/ui/skeleton';
 import { LoadingIndicator } from '@/components/common/LoadingState';
 
 interface SmartRepliesProps {
@@ -15,7 +14,10 @@ export function SmartReplies({ replies, onSelect, isVisible, isLoading }: SmartR
   if (!isVisible) return null;
 
   return (
-    <div className="flex items-center gap-2 px-3 py-2 border-b border-border/50 bg-muted/30 overflow-x-auto">
+    <div
+      aria-busy={isLoading || undefined}
+      className="flex min-h-11 items-center gap-2 px-3 py-2 border-b border-border/50 bg-muted/30 overflow-x-auto"
+    >
       <div className="flex items-center gap-1 text-muted-foreground shrink-0">
         {isLoading ? (
           <LoadingIndicator size="sm" />
@@ -24,14 +26,8 @@ export function SmartReplies({ replies, onSelect, isVisible, isLoading }: SmartR
         )}
         <span className="text-xs font-medium">Sugestões IA</span>
       </div>
-      <div className="flex items-center gap-2">
-        {isLoading ? (
-          <>
-            <Skeleton className="h-7 w-32 rounded-md" />
-            <Skeleton className="h-7 w-28 rounded-md" />
-            <Skeleton className="h-7 w-24 rounded-md" />
-          </>
-        ) : replies.length > 0 ? (
+      {!isLoading && <div className="flex items-center gap-2">
+        {replies.length > 0 ? (
           replies.map((reply, index) => (
             <Button
               key={index}
@@ -50,7 +46,7 @@ export function SmartReplies({ replies, onSelect, isVisible, isLoading }: SmartR
         ) : (
           <span className="text-xs text-muted-foreground">Nenhuma sugestão disponível</span>
         )}
-      </div>
+      </div>}
     </div>
   );
 }

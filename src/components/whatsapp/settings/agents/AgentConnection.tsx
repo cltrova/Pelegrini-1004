@@ -138,8 +138,12 @@ export function AgentConnection({ agent }: Props) {
               <Button size="sm" variant="outline"
                 onClick={() => action.mutate({ instanceId: agent.instance_id!, action: 'status' })}
                 disabled={action.isPending}
+                className="gap-1"
                 aria-busy={isActionPending('status') || undefined}>
-                {isActionPending('status') ? <LoadingIndicator size="sm" className="mr-1" /> : <RefreshCw className="h-3 w-3 mr-1" />} Atualizar status
+                <span aria-hidden="true" className="inline-flex h-4 w-4 shrink-0 items-center justify-center">
+                  {isActionPending('status') ? <LoadingIndicator size="sm" /> : <RefreshCw className="h-3 w-3" />}
+                </span>
+                Atualizar status
               </Button>
               <Button size="sm"
                 onClick={() => { setQrOpen(true); setQrCode(null); }}
@@ -150,15 +154,22 @@ export function AgentConnection({ agent }: Props) {
               <Button size="sm" variant="outline"
                 onClick={() => action.mutate({ instanceId: agent.instance_id!, action: 'restart' })}
                 disabled={action.isPending}
+                className="gap-1"
                 aria-busy={isActionPending('restart') || undefined}>
-                {isActionPending('restart') ? <LoadingIndicator size="sm" className="mr-1" /> : <RotateCw className="h-3 w-3 mr-1" />} Reiniciar
+                <span aria-hidden="true" className="inline-flex h-4 w-4 shrink-0 items-center justify-center">
+                  {isActionPending('restart') ? <LoadingIndicator size="sm" /> : <RotateCw className="h-3 w-3" />}
+                </span>
+                Reiniciar
               </Button>
               {instance.status === 'connected' && (
                 <Button size="sm" variant="outline" className="text-destructive"
                   onClick={() => action.mutate({ instanceId: agent.instance_id!, action: 'disconnect' })}
                   disabled={action.isPending}
                   aria-busy={isActionPending('disconnect') || undefined}>
-                  {isActionPending('disconnect') ? <LoadingIndicator size="sm" className="mr-1" /> : <Power className="h-3 w-3 mr-1" />} Desconectar
+                  <span aria-hidden="true" className="inline-flex h-4 w-4 shrink-0 items-center justify-center">
+                    {isActionPending('disconnect') ? <LoadingIndicator size="sm" /> : <Power className="h-3 w-3" />}
+                  </span>
+                  Desconectar
                 </Button>
               )}
             </div>
@@ -166,12 +177,15 @@ export function AgentConnection({ agent }: Props) {
             <div className="pt-2">
               <Button
                 variant="ghost" size="sm"
-                className="text-xs text-muted-foreground hover:text-destructive"
+                className="gap-1 text-xs text-muted-foreground hover:text-destructive"
                 onClick={() => unlink.mutate(agent.id)}
                 disabled={unlink.isPending}
                 aria-busy={unlink.isPending || undefined}
               >
-                {unlink.isPending ? <LoadingIndicator size="sm" className="mr-1" /> : <Unlink className="h-3 w-3 mr-1" />} Desvincular instância deste agente
+                <span aria-hidden="true" className="inline-flex h-4 w-4 shrink-0 items-center justify-center">
+                  {unlink.isPending ? <LoadingIndicator size="sm" /> : <Unlink className="h-3 w-3" />}
+                </span>
+                Desvincular instância deste agente
               </Button>
             </div>
           </CardContent>
@@ -283,8 +297,11 @@ export function AgentConnection({ agent }: Props) {
                   onSuccess: () => setMode('choose'),
                 })}
                 disabled={!form.name || !form.instance_name || !form.api_url || !form.api_key || createInstance.isPending}
+                className="w-40 gap-2"
                 aria-busy={createInstance.isPending || undefined}>
-                {createInstance.isPending && <LoadingIndicator size="sm" className="mr-2" />}
+                <span aria-hidden="true" className="inline-flex h-4 w-4 shrink-0 items-center justify-center">
+                  {createInstance.isPending && <LoadingIndicator size="sm" />}
+                </span>
                 {createInstance.isPending ? 'Criando...' : 'Criar e vincular'}
               </Button>
             </div>
@@ -319,8 +336,11 @@ export function AgentConnection({ agent }: Props) {
                   { onSuccess: () => setMode('choose') }
                 )}
                 disabled={!selectedInstanceId || linkInstance.isPending}
+                className="w-36 gap-2"
                 aria-busy={linkInstance.isPending || undefined}>
-                {linkInstance.isPending && <LoadingIndicator size="sm" className="mr-2" />}
+                <span aria-hidden="true" className="inline-flex h-4 w-4 shrink-0 items-center justify-center">
+                  {linkInstance.isPending && <LoadingIndicator size="sm" />}
+                </span>
                 {linkInstance.isPending ? 'Vinculando...' : 'Vincular'}
               </Button>
             </div>

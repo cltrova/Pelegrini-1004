@@ -136,8 +136,10 @@ export function EstoqueAssistantSettings({ codEmpresaBi }: EstoqueAssistantSetti
             Defina o comportamento usado no Chat e nos Insights da empresa selecionada.
           </p>
         </div>
-        <Button aria-busy={isSaving || undefined} size="sm" onClick={savePrompt} disabled={isSaving || !hasChanges} className="gap-2">
-          {isSaving ? <LoadingIndicator size="sm" /> : hasChanges ? <Save className="h-4 w-4" /> : <Check className="h-4 w-4" />}
+        <Button aria-busy={isSaving || undefined} size="sm" onClick={savePrompt} disabled={isSaving || !hasChanges} className="w-28 gap-2">
+          <span aria-hidden="true" className="inline-flex h-4 w-4 shrink-0 items-center justify-center">
+            {isSaving ? <LoadingIndicator size="sm" /> : hasChanges ? <Save className="h-4 w-4" /> : <Check className="h-4 w-4" />}
+          </span>
           {isSaving ? 'Salvando' : hasChanges ? 'Salvar' : 'Salvo'}
         </Button>
       </div>

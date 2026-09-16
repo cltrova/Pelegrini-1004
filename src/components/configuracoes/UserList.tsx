@@ -350,6 +350,7 @@ export function UserList({ onEdit, filterByCompany }: UserListProps) {
                 <AlertDialogCancel disabled={resetLoading}>Cancelar</AlertDialogCancel>
                 <AlertDialogAction
                   disabled={resetLoading}
+                  className="w-48 gap-2"
                   aria-busy={resetLoading || undefined}
                   onClick={async (e) => {
                     e.preventDefault();
@@ -371,7 +372,9 @@ export function UserList({ onEdit, filterByCompany }: UserListProps) {
                     }
                   }}
                 >
-                  {resetLoading && <LoadingIndicator size="sm" className="mr-2" />}
+                  <span aria-hidden="true" className="inline-flex h-4 w-4 shrink-0 items-center justify-center">
+                    {resetLoading && <LoadingIndicator size="sm" />}
+                  </span>
                   Gerar nova senha
                 </AlertDialogAction>
               </AlertDialogFooter>

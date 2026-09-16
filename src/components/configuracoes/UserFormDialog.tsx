@@ -884,8 +884,10 @@ export function UserFormDialog({
               >
                 Cancelar
               </Button>
-              <Button type="submit" disabled={loading} aria-busy={loading || undefined}>
-                {loading && <LoadingIndicator size="sm" className="mr-2" />}
+              <Button type="submit" disabled={loading} aria-busy={loading || undefined} className="w-36 gap-2">
+                <span aria-hidden="true" className="inline-flex h-4 w-4 shrink-0 items-center justify-center">
+                  {loading && <LoadingIndicator size="sm" />}
+                </span>
                 {isEditing ? 'Salvar' : 'Criar Usuário'}
               </Button>
             </DialogFooter>

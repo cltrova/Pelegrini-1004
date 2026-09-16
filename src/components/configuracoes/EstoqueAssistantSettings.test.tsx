@@ -54,10 +54,14 @@ describe('EstoqueAssistantSettings', () => {
     fireEvent.change(prompt, { target: { value: `${supabaseState.prompt} Seja breve.` } });
 
     const saveButton = screen.getByRole('button', { name: 'Salvar', exact: true });
+    expect(saveButton).toHaveClass('w-28');
+    expect(saveButton.querySelector('span')).toHaveClass('inline-flex', 'h-4', 'w-4');
     fireEvent.click(saveButton);
 
     await waitFor(() => expect(saveButton).toHaveAttribute('aria-busy', 'true'));
     expect(saveButton).toHaveAccessibleName('Salvando');
+    expect(saveButton).toHaveClass('w-28');
+    expect(saveButton.querySelector('span')).toHaveClass('inline-flex', 'h-4', 'w-4');
     expect(saveButton).toContainElement(screen.getByTestId('loading-indicator'));
 
     supabaseState.resolveSave?.();
