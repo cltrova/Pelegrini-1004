@@ -408,7 +408,7 @@ export function VendedoresTab() {
                 (isMaster && !formData.empresaId)
               }
             >
-              {createVendedor.isPending && <LoadingIndicator size="sm" />}
+              {createVendedor.isPending && <LoadingIndicator size="sm" className="mr-2" />}
               Cadastrar
             </Button>
           </DialogFooter>

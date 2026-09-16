@@ -1,7 +1,7 @@
 import { useMemo, useState, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { EstoqueRecord, EstoqueFiltersState } from '@/types/estoque';
-import { Skeleton } from '@/components/ui/skeleton';
+import { LoadingState } from '@/components/common/LoadingState';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as ReTooltip,
   ResponsiveContainer, PieChart, Pie, Cell, Legend, Treemap
@@ -225,16 +225,7 @@ export function EstoqueChartsPremium({ data, allData, filters, setFilters, isLoa
   }, [filters, drillFilter, setFilters, clearDrill]);
 
   if (isLoading) {
-    return (
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {[...Array(4)].map((_, i) => (
-          <Card key={i} className="premium-card">
-            <CardHeader className="pb-2"><Skeleton className="h-4 w-40" /></CardHeader>
-            <CardContent><Skeleton className="h-[280px] w-full rounded-lg" /></CardContent>
-          </Card>
-        ))}
-      </div>
-    );
+    return <LoadingState message="Carregando gráficos do estoque" variant="content" className="min-h-[280px]" />;
   }
 
   const svgGradients = (

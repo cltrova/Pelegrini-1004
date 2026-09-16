@@ -24,12 +24,11 @@ import {
   Lightbulb,
   Zap
 } from 'lucide-react';
-import { LoadingIndicator } from '@/components/common/LoadingState';
+import { LoadingIndicator, LoadingState } from '@/components/common/LoadingState';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Skeleton } from '@/components/ui/skeleton';
 import { Progress } from '@/components/ui/progress';
 import {
   Collapsible,
@@ -273,11 +272,7 @@ export function ChatDetails({ conversationId, onBack, onClose, isMobile }: ChatD
         <div className="p-4 space-y-4">
           {/* Contact info */}
           {isLoadingConversation ? (
-            <div className="text-center space-y-2">
-              <Skeleton className="h-16 w-16 rounded-full mx-auto" />
-              <Skeleton className="h-5 w-32 mx-auto" />
-              <Skeleton className="h-4 w-24 mx-auto" />
-            </div>
+            <LoadingState message="Carregando detalhes da conversa" variant="content" className="min-h-32" />
           ) : (
             <div className="text-center pb-4 border-b border-border">
               <div className="h-16 w-16 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center mx-auto mb-3">
@@ -693,10 +688,7 @@ export function ChatDetails({ conversationId, onBack, onClose, isMobile }: ChatD
                 
                 {/* Notes list */}
                 {isLoadingNotes ? (
-                  <div className="space-y-2">
-                    <Skeleton className="h-20 w-full" />
-                    <Skeleton className="h-20 w-full" />
-                  </div>
+                  <LoadingState message="Carregando notas da conversa" variant="content" className="min-h-40" />
                 ) : notes?.length ? (
                   <div className="space-y-2">
                     {notes.map((note) => (

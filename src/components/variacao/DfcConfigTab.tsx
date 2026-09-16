@@ -129,7 +129,7 @@ export function DfcConfigTab() {
             </Button>
           )}
           <Button aria-busy={isSaving || undefined} className="min-w-28" size="sm" onClick={handleSalvar} disabled={isSaving || totalAlterados === 0}>
-            {isSaving ? <LoadingIndicator size="sm" /> : <Save aria-hidden="true" className="h-4 w-4 mr-1" />}
+            {isSaving ? <LoadingIndicator size="sm" className="mr-1" /> : <Save aria-hidden="true" className="h-4 w-4 mr-1" />}
             Salvar ({totalAlterados})
           </Button>
         </div>

@@ -11,6 +11,7 @@ import {
 } from '@/hooks/useComercialAgrupado';
 import { useEmpresaAtiva } from '@/hooks/useEmpresaAtiva';
 import { ErrorState } from '@/components/common/ErrorState';
+import { LoadingState } from '@/components/common/LoadingState';
 import { getVendedorAvatar } from '@/config/vendedorAvatars';
 import { EvolucaoTab } from './EvolucaoTab';
 import { FaturamentoPorFilialPremium } from './FaturamentoPorFilialPremium';
@@ -624,18 +625,7 @@ type TendenciaView = 'diario' | 'mensal';
 
  
     if (isLoading) {
-      return (
-        <div className="p-6">
-          <div className="grid grid-cols-2 md:grid-cols-6 gap-4 mb-6">
-            {[...Array(6)].map((_, i) => (
-              <Card key={i} className="animate-pulse">
-                <CardContent className="p-4 h-20" />
-              </Card>
-            ))}
-          </div>
-          <Card className="animate-pulse h-96" />
-        </div>
-      );
+      return <LoadingState message="Carregando dados comerciais" variant="content" className="min-h-96" />;
     }
  
    if (error) {

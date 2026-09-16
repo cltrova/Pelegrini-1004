@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Skeleton } from '@/components/ui/skeleton';
+import { LoadingState } from '@/components/common/LoadingState';
 import {
   Popover,
   PopoverContent,
@@ -155,16 +155,7 @@ export function ConversationList({
       <ScrollArea className="flex-1">
         <div className="divide-y divide-border/50">
           {isLoading ? (
-            // Loading skeleton
-            Array.from({ length: 5 }).map((_, i) => (
-              <div key={i} className="p-3 sm:p-4 flex gap-3">
-                <Skeleton className="h-11 w-11 sm:h-12 sm:w-12 rounded-full flex-shrink-0" />
-                <div className="flex-1 space-y-2">
-                  <Skeleton className="h-4 w-32" />
-                  <Skeleton className="h-3 w-48" />
-                </div>
-              </div>
-            ))
+            <LoadingState message="Carregando conversas do WhatsApp" variant="content" className="min-h-64" />
           ) : conversations.length === 0 ? (
             <div className="p-8 text-center text-muted-foreground">
               <MessageSquare className="h-12 w-12 mx-auto mb-3 opacity-50" />

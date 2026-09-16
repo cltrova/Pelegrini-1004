@@ -23,7 +23,7 @@ import { useCobrancaIntervencoes } from '@/hooks/useCobrancaIntervencoes';
 import { EnterpriseBadge, EnterprisePageHeader } from '@/components/enterprise';
 import { FinanceiroSearchPrompt } from '@/components/financeiro/FinanceiroSearchPrompt';
 import { useFinanceiroSearch } from '@/contexts/FinanceiroSearchContext';
-import { LoadingIndicator } from '@/components/common/LoadingState';
+import { LoadingIndicator, LoadingState } from '@/components/common/LoadingState';
 
 
 const initialFilters: ResumoFilters = {
@@ -88,7 +88,7 @@ export default function ResumoPage() {
             Buscar
           </Button>
           <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isLoading || !hasSearched}>
-            {isLoading ? <LoadingIndicator size="sm" /> : <RefreshCw className="h-4 w-4 mr-2" />}
+            {isLoading ? <LoadingIndicator size="sm" className="mr-2" /> : <RefreshCw className="h-4 w-4 mr-2" />}
             Atualizar
           </Button>
           </div>
@@ -124,11 +124,7 @@ export default function ResumoPage() {
       )}
 
       {hasSearched && isLoading && (
-        <div className="financial-metric-strip grid grid-cols-1 gap-px overflow-hidden border border-border bg-border sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="h-[120px] rounded-lg bg-muted animate-pulse" />
-          ))}
-        </div>
+        <LoadingState message="Carregando resumo financeiro" variant="content" className="min-h-[120px]" />
       )}
 
       {!hasSearched && <FinanceiroSearchPrompt />}

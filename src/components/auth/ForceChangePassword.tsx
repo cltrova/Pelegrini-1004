@@ -132,7 +132,7 @@ export function ForceChangePassword() {
               />
             </div>
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? <><LoadingIndicator size="sm" />Salvando...</> : 'Salvar nova senha'}
+              {loading ? <><LoadingIndicator size="sm" className="mr-2" />Salvando...</> : 'Salvar nova senha'}
             </Button>
             <Button type="button" variant="ghost" className="w-full" onClick={logout} disabled={loading}>
               <LogOut className="h-4 w-4 mr-2" /> Sair

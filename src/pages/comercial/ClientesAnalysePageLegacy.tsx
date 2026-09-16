@@ -578,38 +578,7 @@ export default function ClientesAnalysePageLegacy() {
   if (isLoading || (isEmpresaPelegrini && isLoadingClientesAnaliseApi)) {
     return (
       <div className="enterprise-page-shell max-w-[1600px]">
-        {/* Hero skeleton */}
-        <div className="rounded-lg border border-border/60 bg-card p-6 md:p-8">
-          <div className="mb-6 space-y-2">
-            <div className="h-3 w-32 animate-pulse rounded bg-muted" />
-            <div className="h-6 w-56 animate-pulse rounded bg-muted" />
-          </div>
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4 xl:grid-cols-5">
-            {[...Array(5)].map((_, i) => (
-              <div
-                key={i}
-                className="h-32 animate-pulse rounded-lg border border-border/60 bg-card"
-                style={{ animationDelay: `${i * 60}ms` }}
-              />
-            ))}
-          </div>
-        </div>
-        {/* Filtros skeleton */}
-        <div className="h-14 animate-pulse rounded-lg border border-border/60 bg-card" />
-        {/* Tabs skeleton */}
-        <div className="h-10 animate-pulse rounded-lg bg-muted/50" />
-        {/* Hero chart skeleton */}
-        <div className="min-h-0 flex-1 animate-pulse rounded-lg border border-border/60 bg-card" />
-        {/* Grid skeleton */}
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-          {[...Array(3)].map((_, i) => (
-            <div
-              key={i}
-              className="h-80 animate-pulse rounded-lg border border-border/60 bg-card"
-              style={{ animationDelay: `${i * 80}ms` }}
-            />
-          ))}
-        </div>
+        <LoadingState message="Carregando análise de clientes" variant="content" className="min-h-[420px]" />
       </div>
     );
   }

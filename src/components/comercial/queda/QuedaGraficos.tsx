@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
+import { LoadingState } from '@/components/common/LoadingState';
 import { Tooltip as UITooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 import { X } from 'lucide-react';
@@ -64,18 +64,7 @@ export function QuedaGraficos({
   const totalClientes = clientes.length;
 
   if (isLoading) {
-    return (
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-        {[0, 1].map(i => (
-          <Card key={i} className="premium-card">
-            <CardHeader className="pb-2"><Skeleton className="h-5 w-56" /></CardHeader>
-            <CardContent className={cn(CARD_BODY, 'space-y-3')}>
-              {Array.from({ length: 6 }).map((_, k) => <Skeleton key={k} className="h-9 w-full" />)}
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-    );
+    return <LoadingState message="Carregando gráficos de queda de clientes" variant="content" className="min-h-64" />;
   }
 
   return (

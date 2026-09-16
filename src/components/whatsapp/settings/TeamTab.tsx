@@ -345,7 +345,7 @@ export function TeamTab() {
               disabled={inviteMember.isPending}
             >
               {inviteMember.isPending && (
-                <LoadingIndicator size="sm" />
+                <LoadingIndicator size="sm" className="mr-2" />
               )}
               Enviar Convite
             </Button>

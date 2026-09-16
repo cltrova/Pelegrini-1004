@@ -71,4 +71,20 @@ describe('PremiumMarcasView embutida', () => {
     expect(screen.getByText('Nenhuma marca encontrada no recorte atual.')).toBeInTheDocument();
     expect(screen.queryByRole('table')).not.toBeInTheDocument();
   });
+
+  it('usa o estado compartilhado durante a primeira análise de IA', async () => {
+    invoke.mockReturnValueOnce(new Promise(() => undefined));
+
+    const { container } = render(
+      <PremiumMarcasView
+        porMarca={marcas}
+        selectedMarca={null}
+        onSelectMarca={vi.fn()}
+        showInsights
+      />,
+    );
+
+    expect(await screen.findByRole('status', { name: 'Carregando análises por marca' })).toBeInTheDocument();
+    expect(container.querySelector('.animate-pulse')).not.toBeInTheDocument();
+  });
 });

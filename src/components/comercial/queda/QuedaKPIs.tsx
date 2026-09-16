@@ -1,5 +1,5 @@
 import { Card, CardContent } from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
+import { LoadingState } from '@/components/common/LoadingState';
 import { UserX, TrendingDown, DollarSign, Percent } from 'lucide-react';
 import { formatCurrency } from '@/utils/formatters';
 import type { ClienteQueda } from '@/utils/quedaClientes';
@@ -54,24 +54,7 @@ export function QuedaKPIs({ clientes, isLoading }: Props) {
   ];
 
   if (isLoading) {
-    return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <Card key={i} className="premium-card">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <Skeleton className="h-11 w-11 rounded-lg" />
-                <div className="flex-1 space-y-2">
-                  <Skeleton className="h-3 w-24" />
-                  <Skeleton className="h-5 w-20" />
-                </div>
-              </div>
-              <Skeleton className="mt-2 h-3 w-full" />
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-    );
+    return <LoadingState message="Carregando indicadores de queda de clientes" variant="content" className="min-h-32" />;
   }
 
   return (

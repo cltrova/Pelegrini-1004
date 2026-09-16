@@ -74,7 +74,7 @@ export function SecurityTab() {
           disabled={!hasChanges || updateSettings.isPending}
         >
           {updateSettings.isPending && (
-            <LoadingIndicator size="sm" />
+            <LoadingIndicator size="sm" className="mr-2" />
           )}
           Salvar Alterações
         </Button>

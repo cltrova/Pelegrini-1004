@@ -596,7 +596,7 @@ export default function AssistenteIAPage() {
           className="flex-1"
           disabled={isLoading}
         />
-        <Button type="submit" disabled={isLoading || !inputValue.trim()}>
+        <Button type="submit" aria-label="Enviar mensagem" aria-busy={isLoading} disabled={isLoading || !inputValue.trim()}>
           {isLoading ? (
             <LoadingIndicator size="sm" />
           ) : (
@@ -641,14 +641,10 @@ export default function AssistenteIAPage() {
                 {isLoading && (
                   <div className="flex gap-3">
                     <div className="h-8 w-8 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center">
-                      <Sparkles className="h-4 w-4 text-white animate-pulse" />
+                      <Sparkles className="h-4 w-4 text-white" />
                     </div>
                     <div className="bg-muted px-4 py-3 rounded-2xl rounded-bl-sm">
-                      <div className="flex gap-1">
-                        <span className="w-2 h-2 bg-foreground/30 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                        <span className="w-2 h-2 bg-foreground/30 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                        <span className="w-2 h-2 bg-foreground/30 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
-                      </div>
+                      <LoadingIndicator size="sm" />
                     </div>
                   </div>
                 )}
@@ -693,14 +689,10 @@ export default function AssistenteIAPage() {
                 {isLoading && (
                   <div className="flex gap-3">
                     <div className="h-8 w-8 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center">
-                      <Sparkles className="h-4 w-4 text-white animate-pulse" />
+                      <Sparkles className="h-4 w-4 text-white" />
                     </div>
                     <div className="bg-muted px-4 py-3 rounded-2xl rounded-bl-sm">
-                      <div className="flex gap-1">
-                        <span className="w-2 h-2 bg-foreground/30 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                        <span className="w-2 h-2 bg-foreground/30 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                        <span className="w-2 h-2 bg-foreground/30 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
-                      </div>
+                      <LoadingIndicator size="sm" />
                     </div>
                   </div>
                 )}

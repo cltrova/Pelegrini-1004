@@ -585,13 +585,11 @@ export function VariacaoAssistant({
             {isLoading && (
               <div className="flex gap-3">
                 <div className="h-8 w-8 rounded-full bg-gradient-to-br from-blue-500 to-violet-600 flex items-center justify-center ring-1 ring-blue-400/30 shadow-[0_0_18px_-4px_rgba(59,130,246,0.6)]">
-                  <Sparkles className="h-4 w-4 text-white animate-pulse" />
+                  <Sparkles className="h-4 w-4 text-white" />
                 </div>
                 <div className="bg-slate-800/60 border border-white/5 backdrop-blur px-4 py-3 rounded-2xl rounded-bl-sm">
                   <div className="flex gap-1 items-center">
-                    <span className="w-1.5 h-1.5 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                    <span className="w-1.5 h-1.5 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                    <span className="w-1.5 h-1.5 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                    <LoadingIndicator size="sm" />
                     <span className="text-[11px] text-slate-400 ml-2">Analisando…</span>
                   </div>
                 </div>
@@ -645,6 +643,8 @@ export function VariacaoAssistant({
           />
           <Button
             type="submit"
+            aria-label="Enviar mensagem"
+            aria-busy={isLoading}
             size="icon"
             disabled={isLoading || !inputValue.trim()}
             className="h-8 w-8 shrink-0 bg-gradient-to-br from-blue-500 to-violet-600 hover:from-blue-400 hover:to-violet-500 shadow-[0_0_15px_-3px_rgba(59,130,246,0.6)] disabled:opacity-40 disabled:shadow-none"

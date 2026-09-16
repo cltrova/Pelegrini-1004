@@ -612,13 +612,11 @@ export function DreAssistant({ dreData, indicators, contasDespVar, contasDespFix
             {isLoading && messages[messages.length - 1]?.role === 'assistant' && !messages[messages.length - 1]?.content && (
               <div className="flex gap-3 animate-fade-in">
                 <div className="h-8 w-8 rounded-xl bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center shadow-[0_0_16px_-2px_hsl(217_91%_60%/0.55)]">
-                  <Sparkles className="h-4 w-4 text-white animate-pulse" />
+                  <Sparkles className="h-4 w-4 text-white" />
                 </div>
                 <div className="bg-muted/60 border border-border/50 backdrop-blur-sm px-4 py-3 rounded-2xl rounded-bl-sm">
                   <div className="flex items-center gap-1.5">
-                    <span className="w-1.5 h-1.5 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                    <span className="w-1.5 h-1.5 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                    <span className="w-1.5 h-1.5 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                    <LoadingIndicator size="sm" />
                     <span className="text-[11px] text-muted-foreground ml-1">Analisando...</span>
                   </div>
                 </div>
@@ -689,6 +687,8 @@ export function DreAssistant({ dreData, indicators, contasDespVar, contasDespFix
           </div>
           <Button
             type="submit"
+            aria-label="Enviar mensagem"
+            aria-busy={isLoading}
             size="sm"
             disabled={isLoading || (!inputValue.trim() && !pendingImage)}
             className={cn(

@@ -6,7 +6,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet';
-import { Skeleton } from '@/components/ui/skeleton';
+import { LoadingState } from '@/components/common/LoadingState';
 import { Badge } from '@/components/ui/badge';
 import {
   Tooltip,
@@ -159,18 +159,7 @@ export function SaldoAVencerKpis({
   }, [registrosDetalhe]);
 
   if (isLoading) {
-    return (
-      <div className="financial-metric-strip grid min-w-0 gap-px overflow-hidden border border-border bg-border sm:grid-cols-2 xl:grid-cols-5">
-        {Array.from({ length: 5 }).map((_, i) => (
-          <div key={i} className="h-[124px] rounded-xl border border-border/60 bg-card p-4">
-            <Skeleton className="h-3 w-24" />
-            <Skeleton className="mt-4 h-7 w-32" />
-            <Skeleton className="mt-4 h-3 w-20" />
-            <Skeleton className="mt-3 h-1 w-full" />
-          </div>
-        ))}
-      </div>
-    );
+    return <LoadingState message="Carregando indicadores de saldo a vencer" variant="content" className="min-h-[124px]" />;
   }
 
   const semDados = totais.parcelas === 0 && totais.total === 0;

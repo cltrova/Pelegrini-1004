@@ -1,6 +1,7 @@
 import { useMemo, useRef, useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { LoadingState } from '@/components/common/LoadingState';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -139,7 +140,7 @@ export function AcompanhamentoTab() {
       </div>
 
       {isLoading ? (
-        <div className="h-32 rounded-lg bg-muted animate-pulse" />
+        <LoadingState message="Carregando acompanhamento de cobranças" variant="content" className="min-h-32" />
       ) : list.length === 0 ? (
         <Card className="p-10 text-center text-muted-foreground">
           <Bot className="size-10 mx-auto mb-2 opacity-50" />

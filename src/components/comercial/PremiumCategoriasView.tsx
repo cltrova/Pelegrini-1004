@@ -12,7 +12,7 @@ import { cn } from '@/lib/utils';
 import { formatCurrency, formatNumber } from '@/utils/formatters';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { LoadingIndicator } from '@/components/common/LoadingState';
+import { LoadingIndicator, LoadingState } from '@/components/common/LoadingState';
 import {
   Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription,
 } from '@/components/ui/sheet';
@@ -287,9 +287,7 @@ export function PremiumCategoriasView({
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {aiInsights.length === 0 && aiLoading && (
-            <>
-              <InsightSkeleton /><InsightSkeleton /><InsightSkeleton />
-            </>
+            <LoadingState message="Carregando análises por categoria" variant="content" className="min-h-32 sm:col-span-2 lg:col-span-3" />
           )}
           {aiInsights.map((ins, i) => (
             <InsightCard
@@ -504,7 +502,6 @@ export function PremiumCategoriasView({
     </div>
   );
 }
-
 // ============ SUBCOMPONENTES ============
 
 function RankBadge({ rank, large }: { rank: number; large?: boolean }) {
@@ -614,25 +611,6 @@ function InsightCard({ insight, onClick }: { insight: AIInsight; onClick?: () =>
           </p>
         )}
         <p className="text-xs text-foreground/80 leading-snug line-clamp-3">{insight.insight}</p>
-      </CardContent>
-    </Card>
-  );
-}
-
-function InsightSkeleton() {
-  return (
-    <Card className="overflow-hidden border-border/60 bg-muted/20">
-      <CardContent className="p-4 space-y-2 animate-pulse">
-        <div className="flex items-center gap-2">
-          <div className="h-9 w-9 rounded-lg bg-muted" />
-          <div className="space-y-1.5 flex-1">
-            <div className="h-2 w-16 bg-muted rounded" />
-            <div className="h-3 w-28 bg-muted rounded" />
-          </div>
-        </div>
-        <div className="h-5 w-24 bg-muted rounded" />
-        <div className="h-2 w-full bg-muted rounded" />
-        <div className="h-2 w-3/4 bg-muted rounded" />
       </CardContent>
     </Card>
   );

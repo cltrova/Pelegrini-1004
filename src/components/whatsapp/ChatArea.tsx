@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Skeleton } from '@/components/ui/skeleton';
+import { LoadingState } from '@/components/common/LoadingState';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -90,13 +90,7 @@ export function ChatArea({ conversationId, onBack, onOpenDetails, isMobile }: Ch
         )}
         
         {isLoadingConversation ? (
-          <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
-            <Skeleton className="h-9 w-9 sm:h-10 sm:w-10 rounded-full flex-shrink-0" />
-            <div className="space-y-1 sm:space-y-1.5 min-w-0">
-              <Skeleton className="h-3.5 sm:h-4 w-24 sm:w-32" />
-              <Skeleton className="h-2.5 sm:h-3 w-20 sm:w-24" />
-            </div>
-          </div>
+          <LoadingState message="Carregando contato da conversa" variant="inline" className="min-w-0 flex-1 py-2" />
         ) : (
           <>
             <Avatar className="h-9 w-9 sm:h-10 sm:w-10 flex-shrink-0">
@@ -163,13 +157,7 @@ export function ChatArea({ conversationId, onBack, onOpenDetails, isMobile }: Ch
       <div className="flex-1 overflow-y-auto overflow-x-hidden min-h-0">
         <div className="p-3 sm:p-4">
           {isLoadingMessages ? (
-            <div className="space-y-4">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <div key={i} className={cn("flex", i % 2 === 0 ? "justify-start" : "justify-end")}>
-                  <Skeleton className="h-12 w-48 rounded-2xl" />
-                </div>
-              ))}
-            </div>
+            <LoadingState message="Carregando mensagens da conversa" variant="content" className="min-h-48" />
           ) : (
             <div className="space-y-3 sm:space-y-4">
               {Object.entries(groupedMessages).map(([date, dayMessages]) => (

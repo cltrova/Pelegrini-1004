@@ -81,7 +81,7 @@ export function InsightsIATab({ vendedores, kpis }: Props) {
           <h3 className="text-sm font-semibold">Análises comerciais</h3>
         </div>
         <Button variant="outline" size="sm" onClick={gerarInsights} disabled={loading}>
-          {isRefreshing ? <LoadingIndicator size="sm" /> : <RefreshCw className={cn('h-4 w-4 mr-2')} />}
+          {isRefreshing ? <LoadingIndicator size="sm" className="mr-2" /> : <RefreshCw className={cn('h-4 w-4 mr-2')} />}
           {isRefreshing ? 'Atualizando' : 'Atualizar'}
         </Button>
       </div>

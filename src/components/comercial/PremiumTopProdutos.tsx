@@ -16,7 +16,7 @@ import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import type { TopProdutoAgg, ResumoVendaLinha } from '@/types/comercialProdutos';
-import { LoadingIndicator } from '@/components/common/LoadingState';
+import { LoadingIndicator, LoadingState } from '@/components/common/LoadingState';
 
 interface AIInsight {
   title: string;
@@ -277,11 +277,7 @@ export function PremiumTopProdutos({
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         {aiInsights.length === 0 && aiLoading && (
-          <>
-            <InsightSkeleton />
-            <InsightSkeleton />
-            <InsightSkeleton />
-          </>
+          <LoadingState message="Carregando insights de produtos" variant="content" className="min-h-32 sm:col-span-3" />
         )}
         {aiInsights.length === 0 && !aiLoading && (
           <Card className="sm:col-span-3 border-dashed border-border/60">
@@ -714,7 +710,6 @@ export function PremiumTopProdutos({
     </div>
   );
 }
-
 function DetalheKPI({
   label, value, color,
 }: { label: string; value: string; color: 'primary' | 'success' | 'accent' | 'warning' | 'destructive' }) {
@@ -805,25 +800,6 @@ function InsightCard({ insight }: { insight: AIInsight }) {
           </p>
         )}
         <p className="text-xs text-foreground/80 leading-snug line-clamp-3">{insight.insight}</p>
-      </CardContent>
-    </Card>
-  );
-}
-
-function InsightSkeleton() {
-  return (
-    <Card className="overflow-hidden border-border/60 bg-muted/20">
-      <CardContent className="p-4 space-y-2 animate-pulse">
-        <div className="flex items-center gap-2">
-          <div className="h-9 w-9 rounded-lg bg-muted" />
-          <div className="space-y-1.5 flex-1">
-            <div className="h-2 w-16 bg-muted rounded" />
-            <div className="h-3 w-28 bg-muted rounded" />
-          </div>
-        </div>
-        <div className="h-5 w-24 bg-muted rounded" />
-        <div className="h-2 w-full bg-muted rounded" />
-        <div className="h-2 w-3/4 bg-muted rounded" />
       </CardContent>
     </Card>
   );

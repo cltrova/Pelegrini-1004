@@ -110,7 +110,7 @@ export function AuthDropzone({ fileName, fileSize, loading, hasData, onFile, onC
             <p>Compara cada linha da planilha com os pedidos do sistema no período detectado, destacando divergências de valor e cliente.</p>
           </div>
           <Button onClick={onRun} disabled={!canRun || loading} size="lg" className="w-full">
-            {loading ? <LoadingIndicator size="sm" /> : null}
+            {loading ? <LoadingIndicator size="sm" className="mr-2" /> : null}
             {loading ? 'Processando...' : 'Executar autenticação'}
           </Button>
         </div>

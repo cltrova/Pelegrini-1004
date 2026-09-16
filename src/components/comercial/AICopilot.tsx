@@ -167,9 +167,7 @@ export function AICopilot({ contexto }: Props) {
                 <Sparkles className="h-3.5 w-3.5 text-primary-foreground" />
               </div>
               <div className="bg-card border border-border/50 rounded-lg rounded-bl-sm px-3.5 py-2.5 flex items-center gap-1.5">
-                <span className="h-1.5 w-1.5 rounded-full bg-primary animate-bounce" style={{ animationDelay: '0ms' }} />
-                <span className="h-1.5 w-1.5 rounded-full bg-primary animate-bounce" style={{ animationDelay: '150ms' }} />
-                <span className="h-1.5 w-1.5 rounded-full bg-primary animate-bounce" style={{ animationDelay: '300ms' }} />
+                <LoadingIndicator size="sm" />
               </div>
             </div>
           )}
@@ -189,7 +187,7 @@ export function AICopilot({ contexto }: Props) {
               disabled={loading}
               className="flex-1 h-10 px-3.5 rounded-lg bg-background border border-border/50 focus:border-primary/50 focus:ring-2 focus:ring-primary/20 outline-none text-sm transition-colors"
             />
-            <Button type="submit" size="icon" disabled={loading || !input.trim()} className="h-10 w-10 rounded-lg shrink-0">
+            <Button type="submit" size="icon" aria-label="Enviar mensagem" aria-busy={loading} disabled={loading || !input.trim()} className="h-10 w-10 rounded-lg shrink-0">
               {loading ? <LoadingIndicator size="sm" /> : <Send className="h-4 w-4" />}
             </Button>
           </form>

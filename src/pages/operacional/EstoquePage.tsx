@@ -228,7 +228,7 @@ export default function EstoquePage({ initialTab = 'overview' }: EstoquePageProp
             ? 'Movimentacoes indisponiveis; indicadores de giro podem estar incompletos.'
             : 'Os ultimos dados carregados foram preservados e podem estar desatualizados.'}
         <Button aria-busy={isFetching || undefined} variant="ghost" size="sm" className="ml-2 h-7 min-w-32" disabled={isFetching} onClick={() => { void refetch(); }}>
-          {isFetching ? <LoadingIndicator size="sm" /> : <RefreshCw aria-hidden="true" className="mr-1 h-3.5 w-3.5" />}
+          {isFetching ? <LoadingIndicator size="sm" className="mr-1" /> : <RefreshCw aria-hidden="true" className="mr-1 h-3.5 w-3.5" />}
           Tentar novamente
         </Button>
       </AlertDescription>

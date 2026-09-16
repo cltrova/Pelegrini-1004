@@ -332,7 +332,7 @@ export function MacrosTab() {
               disabled={createMacro.isPending || updateMacro.isPending}
             >
               {(createMacro.isPending || updateMacro.isPending) && (
-                <LoadingIndicator size="sm" />
+                <LoadingIndicator size="sm" className="mr-2" />
               )}
               {selectedMacro ? 'Salvar' : 'Criar'}
             </Button>

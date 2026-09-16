@@ -231,7 +231,7 @@ export function LoginDialog({ trigger, open: controlledOpen, onOpenChange }: Log
               <Button type="submit" className="w-full" disabled={loading}>
                 {loading ? (
                   <>
-                    <LoadingIndicator size="sm" />
+                    <LoadingIndicator size="sm" className="mr-2" />
                     Entrando...
                   </>
                 ) : (
@@ -311,7 +311,7 @@ export function LoginDialog({ trigger, open: controlledOpen, onOpenChange }: Log
               <Button type="submit" className="w-full" disabled={loading}>
                 {loading ? (
                   <>
-                    <LoadingIndicator size="sm" />
+                    <LoadingIndicator size="sm" className="mr-2" />
                     Criando conta...
                   </>
                 ) : (

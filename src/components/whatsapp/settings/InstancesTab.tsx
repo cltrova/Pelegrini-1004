@@ -606,7 +606,7 @@ export function InstancesTab() {
                       className="w-full text-primary"
                     >
                       {isSyncing === instance.id ? (
-                        <LoadingIndicator size="sm" />
+                        <LoadingIndicator size="sm" className="mr-2" />
                       ) : (
                         <Phone className="h-4 w-4 mr-2" />
                       )}
@@ -642,7 +642,7 @@ export function InstancesTab() {
                         className="text-destructive hover:text-destructive"
                       >
                         {disconnectInstance.isPending ? (
-                          <LoadingIndicator size="sm" />
+                          <LoadingIndicator size="sm" className="mr-1" />
                         ) : (
                           <WifiOff className="h-4 w-4 mr-1" />
                         )}
@@ -657,7 +657,7 @@ export function InstancesTab() {
                         className="text-green-600 hover:text-green-600"
                       >
                         {connectInstance.isPending ? (
-                          <LoadingIndicator size="sm" />
+                          <LoadingIndicator size="sm" className="mr-1" />
                         ) : (
                           <QrCode className="h-4 w-4 mr-1" />
                         )}
@@ -671,7 +671,7 @@ export function InstancesTab() {
                       disabled={testInstance.isPending}
                     >
                       {testInstance.isPending ? (
-                        <LoadingIndicator size="sm" />
+                        <LoadingIndicator size="sm" className="mr-1" />
                       ) : (
                         <RefreshCw className="h-4 w-4 mr-1" />
                       )}
@@ -815,7 +815,7 @@ export function InstancesTab() {
               disabled={createInstance.isPending || updateInstance.isPending}
             >
               {(createInstance.isPending || updateInstance.isPending) && (
-                <LoadingIndicator size="sm" />
+                <LoadingIndicator size="sm" className="mr-2" />
               )}
               {selectedInstance ? 'Salvar' : 'Criar'}
             </Button>
@@ -896,7 +896,7 @@ export function InstancesTab() {
                   disabled={connectInstance.isPending}
                 >
                   {connectInstance.isPending ? (
-                    <LoadingIndicator size="sm" />
+                    <LoadingIndicator size="sm" className="mr-1" />
                   ) : (
                     <RefreshCw className="h-4 w-4 mr-1" />
                   )}

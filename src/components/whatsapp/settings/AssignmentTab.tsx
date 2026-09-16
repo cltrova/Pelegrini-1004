@@ -449,7 +449,7 @@ export function AssignmentTab() {
               disabled={createRule.isPending || updateRule.isPending}
             >
               {(createRule.isPending || updateRule.isPending) && (
-                <LoadingIndicator size="sm" />
+                <LoadingIndicator size="sm" className="mr-2" />
               )}
               {selectedRule ? 'Salvar' : 'Criar'}
             </Button>

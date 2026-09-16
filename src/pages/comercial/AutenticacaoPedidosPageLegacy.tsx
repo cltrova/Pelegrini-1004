@@ -539,7 +539,7 @@ export default function AutenticacaoPedidosPageLegacy() {
                   onClick={executarAutenticacao}
                   disabled={(!linhasPlanilha.length && !linhasCliente.length) || processando || loadingSistema}
                 >
-                  {(processando || loadingSistema) && <LoadingIndicator size="sm" />}
+                  {(processando || loadingSistema) && <LoadingIndicator size="sm" className="mr-2" />}
                   Auditar
                 </Button>
               </div>

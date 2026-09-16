@@ -178,7 +178,7 @@ export function AgentTestMessage({ agent }: Props) {
                   : 'Selecione um grupo.'}
               </p>
               <Button onClick={handleSend} disabled={sending || !selectedGroupId || !senderPhone || !content.trim()}>
-                {sending ? <><LoadingIndicator size="sm" />Enviando...</>
+                {sending ? <><LoadingIndicator size="sm" className="mr-1" />Enviando...</>
                          : <><Send className="h-4 w-4 mr-1" />Enviar teste</>}
               </Button>
             </div>

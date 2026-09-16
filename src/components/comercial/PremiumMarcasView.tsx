@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import { formatCurrency, formatNumber } from '@/utils/formatters';
 import { cn } from '@/lib/utils';
-import { LoadingIndicator } from '@/components/common/LoadingState';
+import { LoadingIndicator, LoadingState } from '@/components/common/LoadingState';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import type { MarcaAgg } from '@/types/comercialProdutos';
@@ -190,6 +190,7 @@ export function PremiumMarcasView({
   // ===== Insights por IA =====
   const [aiInsights, setAiInsights] = useState<AIInsight[] | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
+  const [initialAiLoading, setInitialAiLoading] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
 
   // Fingerprint inclui marca selecionada — muda quando o usuário filtra
@@ -222,7 +223,10 @@ export function PremiumMarcasView({
       } catch { /* ignore */ }
     }
 
-    // Mostra fallback imediato enquanto a IA processa — UX rápida
+    const isInitialRequest = !aiInsights;
+    setInitialAiLoading(isInitialRequest);
+
+    // Mantém um fallback local pronto caso a análise remota falhe.
     if (!aiInsights) {
       const instant = buildFallbackInsights(porMarca, selectedMarca);
       if (instant.length) setAiInsights(instant);
@@ -259,6 +263,7 @@ export function PremiumMarcasView({
       toast.error('Análise remota indisponível; mantendo os cálculos locais.');
     } finally {
       setAiLoading(false);
+      setInitialAiLoading(false);
     }
   };
 
@@ -283,7 +288,7 @@ export function PremiumMarcasView({
       {showInsights && <div className="space-y-2">
         <div className="flex items-center justify-between gap-2 px-1">
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <Brain className={cn("h-3.5 w-3.5 text-primary", aiLoading && 'animate-pulse')} />
+            {aiLoading ? <LoadingIndicator size="sm" className="h-3.5 w-3.5" /> : <Brain className="h-3.5 w-3.5 text-primary" />}
             <span className="uppercase tracking-widest font-medium">
               {selectedMarca ? `Análises · ${selectedMarca}` : 'Análises · Visão geral'}
             </span>
@@ -298,11 +303,9 @@ export function PremiumMarcasView({
           </button>
         </div>
 
-        {aiLoading && !aiInsights && (
+        {initialAiLoading && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-            {[0, 1, 2, 3].map(i => (
-              <div key={i} className="h-32 rounded-lg border border-border/60 bg-muted/30 animate-pulse" />
-            ))}
+            <LoadingState message="Carregando análises por marca" variant="content" className="min-h-32 sm:col-span-2 lg:col-span-4" />
           </div>
         )}
 
@@ -312,7 +315,7 @@ export function PremiumMarcasView({
           </div>
         )}
 
-        {aiInsights && (
+        {aiInsights && !initialAiLoading && (
           <div className={cn(
             "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 animate-fade-in transition-opacity",
             aiLoading && 'opacity-60'
