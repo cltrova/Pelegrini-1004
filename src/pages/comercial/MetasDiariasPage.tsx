@@ -72,6 +72,7 @@ export default function MetasDiariasPage() {
     resolvedCompanyRef.current = companyKey;
   }
   const hasResolvedCompanyData = resolvedCompanyRef.current === companyKey && companyKey !== '';
+  const blockingCompanyDataError = hasResolvedCompanyData ? null : companyDataError;
 
 
   // Inicializar filtros padrão mesmo quando periodoDisponivel vier nulo
@@ -286,11 +287,11 @@ export default function MetasDiariasPage() {
     return <AnaliseDiariaLayout />;
   }
 
-  if (isLoadingEmpresa || (!companyDataError && !hasResolvedCompanyData)) {
+  if (isLoadingEmpresa || (!blockingCompanyDataError && !hasResolvedCompanyData)) {
     return <LoadingState message="Carregando metas diárias" variant="content" />;
   }
 
-  if (companyDataError) {
+  if (blockingCompanyDataError) {
     return (
       <div className="enterprise-page-shell">
         <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-6 text-center max-w-md mx-auto">

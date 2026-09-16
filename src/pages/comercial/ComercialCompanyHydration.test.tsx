@@ -162,4 +162,41 @@ describe('commercial company hydration ownership', () => {
     expect(screen.queryByRole('status', { name: 'Carregando metas diárias' })).not.toBeInTheDocument();
     expect(screen.getByText('Nenhum dado encontrado para o período')).toBeInTheDocument();
   });
+
+  it('preserva metas diarias possuidas quando o refresh de produtos falha', async () => {
+    empresaState.value = {
+      empresa: { nome: 'Empresa 1004', possui_meta_vendedor: true },
+      codEmpresaAtiva: '1004',
+      isLoading: false,
+    };
+
+    const { rerender } = render(<MetasDiariasPage />);
+    expect(await screen.findByText('Vendedor da empresa anterior')).toBeInTheDocument();
+
+    produtosState.value = {
+      ...produtosState.value,
+      error: new Error('Falha ao atualizar produtos'),
+    };
+    await act(async () => rerender(<MetasDiariasPage />));
+
+    expect(screen.getByText('Vendedor da empresa anterior')).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Erro ao carregar dados' })).not.toBeInTheDocument();
+  });
+
+  it('mantem a falha inicial de produtos acionavel em metas diarias', () => {
+    empresaState.value = {
+      empresa: { nome: 'Empresa 1004', possui_meta_vendedor: true },
+      codEmpresaAtiva: '1004',
+      isLoading: false,
+    };
+    produtosState.value = {
+      ...produtosState.value,
+      error: new Error('Falha inicial de produtos'),
+    };
+
+    render(<MetasDiariasPage />);
+
+    expect(screen.getByRole('heading', { name: 'Erro ao carregar dados' })).toBeInTheDocument();
+    expect(screen.queryByText('Vendedor da empresa anterior')).not.toBeInTheDocument();
+  });
 });

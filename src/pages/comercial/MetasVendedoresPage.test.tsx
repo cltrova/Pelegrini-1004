@@ -334,6 +334,47 @@ describe('MetasVendedoresPage commercial dashboard', () => {
     expect(await screen.findByText('Conteudo preservado')).toBeInTheDocument();
   });
 
+  it('preserva metas possuidas quando o refresh de produtos falha', async () => {
+    const { rerender } = render(<MetasVendedoresPage />);
+    expect(await screen.findByText('Conteudo preservado')).toBeInTheDocument();
+
+    produtosState.value = {
+      ...produtosState.value,
+      error: new Error('Falha ao atualizar produtos'),
+    };
+    await act(async () => rerender(<MetasVendedoresPage />));
+
+    expect(screen.getByText('Conteudo preservado')).toBeInTheDocument();
+    expect(screen.queryByText('Erro ao carregar dados comerciais')).not.toBeInTheDocument();
+  });
+
+  it('preserva metas possuidas quando as opcoes de filtro falham', async () => {
+    const { rerender } = render(<MetasVendedoresPage />);
+    expect(await screen.findByText('Conteudo preservado')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Expandir filtros' }));
+    produtosFiltroState.value = {
+      ...produtosFiltroState.value,
+      error: new Error('Falha ao atualizar opcoes de vendedores'),
+    };
+    await act(async () => rerender(<MetasVendedoresPage />));
+
+    expect(screen.getByText('Conteudo preservado')).toBeInTheDocument();
+    expect(screen.queryByText('Erro ao carregar dados comerciais')).not.toBeInTheDocument();
+  });
+
+  it('mantem a falha inicial de dependencia acionavel', () => {
+    produtosState.value = {
+      ...produtosState.value,
+      error: new Error('Falha inicial de produtos'),
+    };
+
+    render(<MetasVendedoresPage />);
+
+    expect(screen.getByText('Erro ao carregar dados comerciais')).toBeInTheDocument();
+    expect(screen.queryByText('Conteudo preservado')).not.toBeInTheDocument();
+  });
+
   it('usa uma estrutura neutra para os cenarios dentro da secao premium', async () => {
     sessionStorage.setItem('comercial:metas:tab', 'comparativos');
     vi.mocked(useComercialData).mockReturnValue({

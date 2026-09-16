@@ -240,6 +240,7 @@ export default function MetasVendedoresPage() {
     resolvedCompanyRef.current = codEmpresaNorm;
   }
   const hasResolvedData = resolvedCompanyRef.current === codEmpresaNorm && codEmpresaNorm !== '';
+  const blockingCompanyDataError = hasResolvedData ? null : companyDataError;
 
   const vendedoresParaFiltro1004 = useMemo(() => {
     if (!isPelegriniPage || !filtersOpen) return vendedoresDisponiveis;
@@ -620,7 +621,7 @@ export default function MetasVendedoresPage() {
     return <LayoutAlternativoComercial />;
   }
 
-  const showInitialLoading = isLoadingEmpresa || (!companyDataError && !hasResolvedData);
+  const showInitialLoading = isLoadingEmpresa || (!blockingCompanyDataError && !hasResolvedData);
   const isFetching = commercialFetchCount > 0;
   const isRefreshing = isFetching && hasResolvedData;
 
@@ -713,7 +714,7 @@ export default function MetasVendedoresPage() {
 
         {/* ==================== ABA: VISÃO GERAL ==================== */}
         <TabsContent value="visao-geral" className="mt-0 min-h-0 flex-1 space-y-3 overflow-auto">
-          {companyDataError ? (
+          {blockingCompanyDataError ? (
             <ErrorState message="Erro ao carregar dados comerciais" />
           ) : isLayoutPremium ? (
             <VisaoGeralRapida1004
