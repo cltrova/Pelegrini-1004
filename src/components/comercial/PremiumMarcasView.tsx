@@ -190,7 +190,6 @@ export function PremiumMarcasView({
   // ===== Insights por IA =====
   const [aiInsights, setAiInsights] = useState<AIInsight[] | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
-  const [initialAiLoading, setInitialAiLoading] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
 
   // Fingerprint inclui marca selecionada — muda quando o usuário filtra
@@ -223,13 +222,9 @@ export function PremiumMarcasView({
       } catch { /* ignore */ }
     }
 
-    const isInitialRequest = !aiInsights;
-    setInitialAiLoading(isInitialRequest);
-
-    // Mantém um fallback local pronto caso a análise remota falhe.
     if (!aiInsights) {
       const instant = buildFallbackInsights(porMarca, selectedMarca);
-      if (instant.length) setAiInsights(instant);
+      if (instant.length > 0) setAiInsights(instant);
     }
 
     setAiLoading(true);
@@ -263,7 +258,6 @@ export function PremiumMarcasView({
       toast.error('Análise remota indisponível; mantendo os cálculos locais.');
     } finally {
       setAiLoading(false);
-      setInitialAiLoading(false);
     }
   };
 
@@ -303,7 +297,7 @@ export function PremiumMarcasView({
           </button>
         </div>
 
-        {initialAiLoading && (
+        {aiLoading && !aiInsights && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             <LoadingState message="Carregando análises por marca" variant="content" className="min-h-32 sm:col-span-2 lg:col-span-4" />
           </div>
@@ -315,7 +309,7 @@ export function PremiumMarcasView({
           </div>
         )}
 
-        {aiInsights && !initialAiLoading && (
+        {aiInsights && (
           <div className={cn(
             "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 animate-fade-in transition-opacity",
             aiLoading && 'opacity-60'

@@ -72,7 +72,7 @@ describe('PremiumMarcasView embutida', () => {
     expect(screen.queryByRole('table')).not.toBeInTheDocument();
   });
 
-  it('usa o estado compartilhado durante a primeira análise de IA', async () => {
+  it('mantém o fallback local visível durante a análise remota', async () => {
     invoke.mockReturnValueOnce(new Promise(() => undefined));
 
     const { container } = render(
@@ -84,7 +84,25 @@ describe('PremiumMarcasView embutida', () => {
       />,
     );
 
-    expect(await screen.findByRole('status', { name: 'Carregando análises por marca' })).toBeInTheDocument();
+    expect(await screen.findByText('Líder receita')).toBeInTheDocument();
+    expect(await screen.findByText('Analisando...')).toBeInTheDocument();
+    expect(screen.queryByRole('status', { name: 'Carregando análises por marca' })).not.toBeInTheDocument();
     expect(container.querySelector('.animate-pulse')).not.toBeInTheDocument();
+  });
+
+  it('usa o estado compartilhado quando não existe fallback local válido', async () => {
+    invoke.mockReturnValueOnce(new Promise(() => undefined));
+
+    render(
+      <PremiumMarcasView
+        porMarca={marcas}
+        selectedMarca="MARCA INEXISTENTE"
+        onSelectMarca={vi.fn()}
+        showInsights
+      />,
+    );
+
+    expect(await screen.findByRole('status', { name: 'Carregando análises por marca' })).toBeInTheDocument();
+    expect(screen.queryByText('Líder receita')).not.toBeInTheDocument();
   });
 });

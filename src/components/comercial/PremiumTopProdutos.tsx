@@ -269,7 +269,7 @@ export function PremiumTopProdutos({
           className="h-8 gap-1.5 text-xs"
         >
           {aiLoading
-            ? <LoadingIndicator size="sm" />
+            ? <LoadingIndicator size="sm" className="h-3.5 w-3.5" />
             : <RefreshCw className="h-3.5 w-3.5" />}
           {aiLoading ? 'Gerando…' : 'Atualizar'}
         </Button>

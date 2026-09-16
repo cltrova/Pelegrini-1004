@@ -396,7 +396,7 @@ Sem introduções, sem rodeios, sem repetir dados óbvios. Use números apenas q
                     disabled={aiLoading}
                     style={{ background: C.blue, color: '#fff', border: 'none' }}
                   >
-                    {aiLoading ? <><LoadingIndicator size="sm" className="mr-2" /> Analisando...</> : <><Sparkles className="h-3.5 w-3.5 mr-2" /> {aiInsights ? 'Gerar novamente' : 'Gerar análise'}</>}
+                    {aiLoading ? <><LoadingIndicator size="sm" className="h-3.5 w-3.5 mr-2" /> Analisando...</> : <><Sparkles className="h-3.5 w-3.5 mr-2" /> {aiInsights ? 'Gerar novamente' : 'Gerar análise'}</>}
                   </Button>
                 </div>
                 {!aiInsights && !aiLoading && !aiError && (
@@ -544,7 +544,7 @@ Sem introduções, sem rodeios, sem repetir dados óbvios. Use números apenas q
                   <Sparkles className="h-4 w-4 text-primary" /> Insights da IA
                 </h3>
                 <Button size="sm" onClick={gerarInsightsIA} disabled={aiLoading}>
-                  {aiLoading ? <><LoadingIndicator size="sm" className="mr-2" /> Analisando...</> : <><Sparkles className="h-3.5 w-3.5 mr-2" /> {aiInsights ? 'Gerar novamente' : 'Gerar análise'}</>}
+                  {aiLoading ? <><LoadingIndicator size="sm" className="h-3.5 w-3.5 mr-2" /> Analisando...</> : <><Sparkles className="h-3.5 w-3.5 mr-2" /> {aiInsights ? 'Gerar novamente' : 'Gerar análise'}</>}
                 </Button>
               </div>
               {!aiInsights && !aiLoading && !aiError && (
