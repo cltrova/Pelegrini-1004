@@ -25,6 +25,13 @@ describe('local preview mode', () => {
     expect(isLocalPreviewEnabled({})).toBe(false);
   });
 
+  it('nunca ativa o preview local em build de producao', () => {
+    expect(isLocalPreviewEnabled({
+      PROD: true,
+      VITE_LOCAL_PREVIEW: 'true',
+    })).toBe(false);
+  });
+
   it('cria a empresa Pelegrini 1004 com os quatro modulos principais liberados', () => {
     expect(createLocalPreviewEmpresa()).toMatchObject({
       cod_empresa_bi: '1004',
