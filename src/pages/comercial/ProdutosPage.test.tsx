@@ -10,6 +10,10 @@ const empresaAtivaMock = vi.hoisted(() => ({
   current: { codEmpresaAtiva: '1004' as string | null, isLoading: false },
 }));
 
+const filialAtivaMock = vi.hoisted(() => ({
+  current: { filialAtiva: 'transmissao', filialNome: 'Casa da Transmissao' },
+}));
+
 const refetchQueries = vi.hoisted(() => vi.fn().mockResolvedValue(undefined));
 vi.mock('@tanstack/react-query', async (importOriginal) => ({
   ...await importOriginal<typeof import('@tanstack/react-query')>(),
@@ -37,7 +41,7 @@ vi.mock('@/contexts/AuthContext', () => ({
 }));
 
 vi.mock('@/contexts/FilialSelecionadaContext', () => ({
-  useFilialSelecionada: () => ({ filialAtiva: 'transmissao', filialNome: 'Casa da Transmissao' }),
+  useFilialSelecionada: () => filialAtivaMock.current,
 }));
 
 vi.mock('@/components/comercial/PremiumMarcasView', () => ({
@@ -152,6 +156,7 @@ describe('ProdutosPage compacta', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     empresaAtivaMock.current = { codEmpresaAtiva: '1004', isLoading: false };
+    filialAtivaMock.current = { filialAtiva: 'transmissao', filialNome: 'Casa da Transmissao' };
     mockData();
   });
 
@@ -276,6 +281,28 @@ describe('ProdutosPage compacta', () => {
     expect(screen.getByRole('status', { name: 'Carregando produtos' })).toBeInTheDocument();
     expect(screen.queryByText('Carregando produtos...')).not.toBeInTheDocument();
     expect(screen.queryByText('Fonte de produtos não configurada')).not.toBeInTheDocument();
+  });
+
+  it('bloqueia os produtos resolvidos de transmissao enquanto chevrolet esta pendente', () => {
+    const view = renderPage();
+
+    expect(screen.getByRole('button', { name: 'Selecionar EATON' })).toBeInTheDocument();
+
+    filialAtivaMock.current = { filialAtiva: 'chevrolet', filialNome: 'Chevrolet' };
+    mockData(true, {
+      topProdutos: [],
+      porMarca: [],
+      porCategoria: [],
+      produtosSemGiro: [],
+      resumoVendas: [],
+      isLoading: true,
+      isFetching: true,
+    });
+    view.rerender(<main aria-label="Modulo comercial"><ProdutosPage /></main>);
+
+    expect(screen.getByRole('status', { name: 'Carregando produtos' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Selecionar EATON' })).not.toBeInTheDocument();
+    expect(screen.queryByText('Nenhum produto encontrado no período.')).not.toBeInTheDocument();
   });
 
   it('preserva os dados durante refetch e distingue erro de vazio', () => {
@@ -472,6 +499,24 @@ describe('ProdutosPage compacta', () => {
     expect(dialog).toHaveClass('commercial-overlay', 'commercial-detail-panel');
     expect(dialog.querySelectorAll('.commercial-kpi-cell')).toHaveLength(4);
     expectNoNestedCommercialPanels(document.body);
+  });
+
+  it('preserva a superficie escura do drilldown durante o carregamento', async () => {
+    const { ClienteDetalheDrilldown } = await import('@/components/comercial/ClienteDetalheDrilldown');
+    mockData(true, { produtos: [], isLoading: true });
+
+    render(
+      <ClienteDetalheDrilldown
+        open
+        onOpenChange={vi.fn()}
+        cliente={{ codigo: '101', nome: 'Oficina Central' }}
+        periodo={{ inicio: '2026-09-01', fim: '2026-09-11' }}
+      />,
+    );
+
+    const loading = screen.getByRole('status', { name: 'Carregando itens do cliente' });
+    expect(loading).toHaveClass('bg-transparent');
+    expect(loading).not.toHaveClass('bg-background');
   });
 
   it('mostra estados vazios nas tabelas de Sem Giro e Resumo NF', () => {

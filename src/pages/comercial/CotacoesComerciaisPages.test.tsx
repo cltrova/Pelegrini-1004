@@ -195,9 +195,11 @@ describe('lost quote reason dialog', () => {
 function FiltersHarness({
   mode,
   onApply,
+  isApplying = false,
 }: {
   mode: 'abertas' | 'perdidas';
   onApply: (filters: CotacoesFiltros) => void;
+  isApplying?: boolean;
 }) {
   const [pendingFilters, setPendingFilters] = useState(emptyFilters);
 
@@ -211,6 +213,7 @@ function FiltersHarness({
       motivos={motivos}
       onApply={onApply}
       onClear={vi.fn()}
+      isApplying={isApplying}
     />
   );
 }
@@ -263,6 +266,20 @@ describe('shared commercial quote components', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Aplicar' }));
 
     expect(onApply).toHaveBeenCalledWith(expect.objectContaining({ busca: 'oficina', diasMin: 0 }));
+  });
+
+  it('keeps the Apply width contract stable from idle to busy', () => {
+    const view = render(<FiltersHarness mode="abertas" onApply={vi.fn()} />);
+    const idleButton = screen.getByRole('button', { name: 'Aplicar' });
+    const idleWidthClasses = Array.from(idleButton.classList).filter((className) => className.includes('w-'));
+
+    view.rerender(<FiltersHarness mode="abertas" onApply={vi.fn()} isApplying />);
+    const busyButton = screen.getByRole('button', { name: 'Aplicar' });
+    const busyWidthClasses = Array.from(busyButton.classList).filter((className) => className.includes('w-'));
+
+    expect(idleWidthClasses).toEqual(['min-w-24']);
+    expect(busyWidthClasses).toEqual(idleWidthClasses);
+    expect(within(busyButton).getByTestId('loading-indicator')).toBeInTheDocument();
   });
 
   it('renders only controls that apply to the selected quote mode', () => {
@@ -912,7 +929,7 @@ describe('lost sales page', () => {
     expect(screen.getByLabelText('Concentracao de vendas perdidas')).toBeInTheDocument();
     expect(screen.queryByText('Análise das perdas e registro dos motivos no período selecionado.')).not.toBeInTheDocument();
     expect(within(screen.getByRole('table')).getByText('Motivo da perda')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Aplicar' })).not.toHaveClass('min-w-24');
+    expect(screen.getByRole('button', { name: 'Aplicar' })).toHaveClass('h-9', 'min-w-24');
   }, 30_000);
 
   it('shows the standard content loader while the initial query is pending', async () => {

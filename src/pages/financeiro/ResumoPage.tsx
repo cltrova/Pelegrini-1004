@@ -55,6 +55,7 @@ export default function ResumoPage() {
     empresasDisponiveis,
     funil,
     isLoading,
+    isFetching,
     error,
     offlineError,
     hasSource,
@@ -87,8 +88,14 @@ export default function ResumoPage() {
           <Button size="sm" onClick={() => markSearched()}>
             Buscar
           </Button>
-          <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isLoading || !hasSearched}>
-            {isLoading ? <LoadingIndicator size="sm" className="mr-2" /> : <RefreshCw className="h-4 w-4 mr-2" />}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => refetch()}
+            disabled={isFetching || !hasSearched}
+            aria-busy={isFetching || undefined}
+          >
+            {isFetching ? <LoadingIndicator size="sm" className="mr-2" /> : <RefreshCw className="h-4 w-4 mr-2" />}
             Atualizar
           </Button>
           </div>

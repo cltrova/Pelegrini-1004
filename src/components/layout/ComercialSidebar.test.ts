@@ -205,6 +205,24 @@ describe('commercial sidebar menu access', () => {
       .toHaveAttribute('data-module-shell', 'comercial');
   });
 
+  it('announces branch options loading as a named busy status', () => {
+    vi.mocked(useIsMobile).mockReturnValue(true);
+    vi.mocked(useFilialSelecionada).mockReturnValue({
+      filialAtiva: null,
+      codEmpresaContexto: '9999',
+      clearFilial: vi.fn(),
+      setFilialAtivaForEmpresa: vi.fn(),
+      empresaPossuiFiliaisAtiva: true,
+    } as never);
+    vi.mocked(useAuth).mockReturnValue({ isMaster: false, profile: null } as never);
+
+    render(createElement(MemoryRouter, undefined, createElement(ComercialLayout)));
+
+    const status = screen.getByRole('status', { name: 'Carregando filiais comerciais' });
+    expect(status).toHaveAttribute('aria-busy', 'true');
+    expect(status).toHaveAttribute('aria-live', 'polite');
+  });
+
   it('exposes both quote routes in the 1004 mobile secondary navigation', () => {
     mockCompany('1004');
     render(createElement(

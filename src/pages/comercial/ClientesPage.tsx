@@ -2,6 +2,7 @@ import { useState, useMemo, useCallback, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useComercialData } from '@/hooks/useComercialData';
 import { useEmpresaAtiva } from '@/hooks/useEmpresaAtiva';
+import { useFilialSelecionada } from '@/contexts/FilialSelecionadaContext';
 import { formatCurrency, formatPercent } from '@/utils/formatters';
 import { LoadingIndicator, LoadingState } from '@/components/common/LoadingState';
 import { ErrorState } from '@/components/common/ErrorState';
@@ -88,6 +89,7 @@ const filtrosIniciais: ComercialFiltersType = {
 export default function ClientesPage() {
   const queryClient = useQueryClient();
   const { codEmpresaAtiva, isLoading: isLoadingEmpresa } = useEmpresaAtiva();
+  const { filialAtiva } = useFilialSelecionada();
   const [searchTerm, setSearchTerm] = useState('');
   const [rankingPage, setRankingPage] = useState(1);
   const [activeTab, setActiveTab] = useState('ranking');
@@ -260,12 +262,14 @@ export default function ClientesPage() {
     return `${months[parseInt(month) - 1]}/${year.slice(2)}`;
   };
 
-  const resolvedCompanyRef = useRef<string | null>(null);
+  const resolvedScopeRef = useRef<string | null>(null);
   const companyKey = String(codEmpresaAtiva ?? '').trim();
+  const branchKey = String(filialAtiva ?? '').trim() || 'sem-filial';
+  const dataScopeKey = companyKey ? `${companyKey}:${branchKey}` : '';
   if (!isLoadingEmpresa && companyKey && !isLoading && !isFetching && !error) {
-    resolvedCompanyRef.current = companyKey;
+    resolvedScopeRef.current = dataScopeKey;
   }
-  const hasResolvedData = resolvedCompanyRef.current === companyKey && companyKey !== '';
+  const hasResolvedData = resolvedScopeRef.current === dataScopeKey && dataScopeKey !== '';
   const hasClientData = clientesPerformance.length > 0;
   const isRefreshing = (isLoading || isFetching) && hasResolvedData;
   const blockingError = error && !hasResolvedData;

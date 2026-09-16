@@ -9,7 +9,7 @@ import { Building2, Lock } from 'lucide-react';
 import { getFilialAccessState } from '@/utils/filialAccess';
 import { useAuth } from '@/contexts/AuthContext';
 import { PelegriniModuleShell } from '@/components/pelegrini';
-import { LoadingIndicator } from '@/components/common/LoadingState';
+import { LoadingState } from '@/components/common/LoadingState';
 
 export function ComercialLayout() {
   const isMobile = useIsMobile();
@@ -74,7 +74,9 @@ export function ComercialLayout() {
         </p>
       )}
       <Button variant="ghost" size="sm" onClick={() => navigate('/')}>Voltar aos módulos</Button>
-      {filiais.length === 0 && <LoadingIndicator size="sm" />}
+      {filiais.length === 0 && (
+        <LoadingState message="Carregando filiais comerciais" variant="inline" size="sm" />
+      )}
     </div>
   );
 

@@ -18,6 +18,7 @@ import { MarcasViewLegacy } from '@/components/comercial/legacy/MarcasViewLegacy
 import { TopProdutosLegacy } from '@/components/comercial/legacy/TopProdutosLegacy';
 import { CategoriasViewLegacy } from '@/components/comercial/legacy/CategoriasViewLegacy';
 import { useEmpresaAtiva } from '@/hooks/useEmpresaAtiva';
+import { useFilialSelecionada } from '@/contexts/FilialSelecionadaContext';
 import { EnterpriseSearchFilter } from '@/components/enterprise';
 import { EnterpriseComercialFilters } from '@/components/comercial/EnterpriseComercialFilters';
 import {
@@ -32,6 +33,7 @@ const ANOS = ['2023', '2024', '2025', '2026'];
 export default function ProdutosPage() {
   const queryClient = useQueryClient();
   const { codEmpresaAtiva, isLoading: isLoadingEmpresa } = useEmpresaAtiva();
+  const { filialAtiva } = useFilialSelecionada();
   const isLayoutPremium = String(codEmpresaAtiva ?? '') === '1004';
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState('marcas');
@@ -56,8 +58,10 @@ export default function ProdutosPage() {
     hasSource, isLoading, isFetching, error: productsError,
   } = useComercialProdutos(appliedFilters);
 
-  const resolvedCompanyRef = useRef<string | null>(null);
+  const resolvedScopeRef = useRef<string | null>(null);
   const companyKey = String(codEmpresaAtiva ?? '').trim();
+  const branchKey = String(filialAtiva ?? '').trim() || 'sem-filial';
+  const dataScopeKey = companyKey ? `${companyKey}:${branchKey}` : '';
   const hasProductData = topProdutos.length > 0
     || porMarca.length > 0
     || porCategoria.length > 0
@@ -66,9 +70,9 @@ export default function ProdutosPage() {
   if (!isLoadingEmpresa && companyKey
     && !isLoading && !loadingBase && !isFetching && !fetchingBase
     && !productsError && !baseError) {
-    resolvedCompanyRef.current = companyKey;
+    resolvedScopeRef.current = dataScopeKey;
   }
-  const hasResolvedData = resolvedCompanyRef.current === companyKey && companyKey !== '';
+  const hasResolvedData = resolvedScopeRef.current === dataScopeKey && dataScopeKey !== '';
   const isRefreshing = (isFetching || fetchingBase || isLoading || loadingBase) && hasResolvedData;
   const blockingError = (productsError || baseError) && !hasResolvedData;
   const showBlockingLoading = isLoadingEmpresa || (!productsError && !baseError && !hasResolvedData);

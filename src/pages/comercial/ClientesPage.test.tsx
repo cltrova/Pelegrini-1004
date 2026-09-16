@@ -8,6 +8,10 @@ const empresaAtivaMock = vi.hoisted(() => ({
   current: { codEmpresaAtiva: '1004' as string | null, isLoading: false },
 }));
 
+const filialAtivaMock = vi.hoisted(() => ({
+  current: { filialAtiva: 'transmissao', filialNome: 'Casa da Transmissao' },
+}));
+
 const refetchQueries = vi.hoisted(() => vi.fn().mockResolvedValue(undefined));
 vi.mock('@tanstack/react-query', async (importOriginal) => ({
   ...await importOriginal<typeof import('@tanstack/react-query')>(),
@@ -31,7 +35,7 @@ vi.mock('@/contexts/AuthContext', () => ({
 }));
 
 vi.mock('@/contexts/FilialSelecionadaContext', () => ({
-  useFilialSelecionada: () => ({ filialAtiva: 'transmissao', filialNome: 'Casa da Transmissao' }),
+  useFilialSelecionada: () => filialAtivaMock.current,
 }));
 
 vi.mock('@/hooks/useEmpresaAtiva', () => ({
@@ -136,6 +140,7 @@ describe('ClientesPage compacta', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     empresaAtivaMock.current = { codEmpresaAtiva: '1004', isLoading: false };
+    filialAtivaMock.current = { filialAtiva: 'transmissao', filialNome: 'Casa da Transmissao' };
     mockClientesData();
   });
 
@@ -314,6 +319,25 @@ describe('ClientesPage compacta', () => {
     expect(screen.queryByText('Nenhum cliente encontrado no período.')).not.toBeInTheDocument();
     expect(screen.queryByLabelText('Indicadores da carteira')).not.toBeInTheDocument();
     expect(screen.queryByRole('table')).not.toBeInTheDocument();
+  });
+
+  it('bloqueia a carteira resolvida de transmissao enquanto chevrolet esta pendente', () => {
+    const view = renderClientesPage();
+
+    expect(screen.getByRole('table', { name: 'Ranking completo de clientes' })).toHaveTextContent('Oficina Central');
+
+    filialAtivaMock.current = { filialAtiva: 'chevrolet', filialNome: 'Chevrolet' };
+    mockClientesData({
+      clientesPerformance: [],
+      kpis: { qtdClientes: 0 },
+      isLoading: true,
+      isFetching: true,
+    });
+    view.rerender(<main aria-label="Modulo comercial"><ClientesPage /></main>);
+
+    expect(screen.getByRole('status', { name: 'Carregando clientes' })).toBeInTheDocument();
+    expect(screen.queryByText('Oficina Central')).not.toBeInTheDocument();
+    expect(screen.queryByText('Nenhum cliente encontrado no período.')).not.toBeInTheDocument();
   });
 
   it('preserva a carteira durante refetch e distingue o estado vazio', () => {

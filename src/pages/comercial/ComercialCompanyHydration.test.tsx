@@ -6,7 +6,7 @@ import { useComercialData } from '@/hooks/useComercialData';
 import MetasDiariasPage from './MetasDiariasPage';
 import VendedoresPage from './VendedoresPage';
 
-const { commercialState, empresaState, produtosState } = vi.hoisted(() => ({
+const { commercialState, empresaState, filialState, produtosState } = vi.hoisted(() => ({
   commercialState: { value: {} as ReturnType<typeof useComercialData> },
   empresaState: {
     value: {
@@ -14,6 +14,9 @@ const { commercialState, empresaState, produtosState } = vi.hoisted(() => ({
       codEmpresaAtiva: '2000' as string | undefined,
       isLoading: true,
     },
+  },
+  filialState: {
+    value: { filialAtiva: 'transmissao', filialNome: 'Casa da Transmissao' },
   },
   produtosState: {
     value: {
@@ -37,6 +40,10 @@ vi.mock('@/hooks/useEmpresaAtiva', () => ({
   useEmpresaAtiva: () => empresaState.value,
 }));
 
+vi.mock('@/contexts/FilialSelecionadaContext', () => ({
+  useFilialSelecionada: () => filialState.value,
+}));
+
 vi.mock('@/components/comercial/EnterpriseComercialFilters', () => ({
   EnterpriseComercialFilters: () => null,
 }));
@@ -52,6 +59,8 @@ vi.mock('recharts', async (importOriginal) => {
     ResponsiveContainer: ({ children }: { children?: ReactNode }) => <>{children}</>,
   };
 });
+
+vi.stubGlobal('Input', (props: React.InputHTMLAttributes<HTMLInputElement>) => <input {...props} />);
 
 const staleSeller = {
   codigo: 5,
@@ -93,6 +102,7 @@ describe('commercial company hydration ownership', () => {
       codEmpresaAtiva: '2000',
       isLoading: true,
     };
+    filialState.value = { filialAtiva: 'transmissao', filialNome: 'Casa da Transmissao' };
     commercialState.value = comercialData();
     produtosState.value = {
       receitaPorVendedor1004: new Map(),
@@ -198,5 +208,42 @@ describe('commercial company hydration ownership', () => {
 
     expect(screen.getByRole('heading', { name: 'Erro ao carregar dados' })).toBeInTheDocument();
     expect(screen.queryByText('Vendedor da empresa anterior')).not.toBeInTheDocument();
+  });
+
+  it('bloqueia metas diarias resolvidas de transmissao enquanto chevrolet esta pendente', async () => {
+    empresaState.value = {
+      empresa: { nome: 'Empresa 1004', possui_meta_vendedor: true },
+      codEmpresaAtiva: '1004',
+      isLoading: false,
+    };
+    const { rerender } = render(<MetasDiariasPage />);
+
+    expect(await screen.findByText('Vendedor da empresa anterior')).toBeInTheDocument();
+
+    filialState.value = { filialAtiva: 'chevrolet', filialNome: 'Chevrolet' };
+    commercialState.value = comercialData({ isLoading: true, isFetching: true });
+    produtosState.value = { ...produtosState.value, isLoading: true, isFetching: true };
+    await act(async () => rerender(<MetasDiariasPage />));
+
+    expect(screen.getByRole('status', { name: 'Carregando metas diárias' })).toBeInTheDocument();
+    expect(screen.queryByText('Vendedor da empresa anterior')).not.toBeInTheDocument();
+  });
+
+  it('bloqueia vendedores resolvidos de transmissao enquanto chevrolet esta pendente', async () => {
+    empresaState.value = {
+      empresa: { nome: 'Empresa 1004', possui_meta_vendedor: true },
+      codEmpresaAtiva: '1004',
+      isLoading: false,
+    };
+    const { rerender } = render(<VendedoresPage />);
+
+    expect(screen.getByRole('heading', { name: 'Painel de Vendedores' })).toBeInTheDocument();
+
+    filialState.value = { filialAtiva: 'chevrolet', filialNome: 'Chevrolet' };
+    commercialState.value = comercialData({ isLoading: true, isFetching: true });
+    await act(async () => rerender(<VendedoresPage />));
+
+    expect(screen.getByRole('status', { name: 'Carregando vendedores' })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Painel de Vendedores' })).not.toBeInTheDocument();
   });
 });

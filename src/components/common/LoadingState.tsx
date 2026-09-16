@@ -52,6 +52,7 @@ export function LoadingState({
       role="status"
       aria-label={message || 'Carregando'}
       aria-live="polite"
+      aria-busy="true"
       className={cn(loadingStateVariants[variant], className)}
     >
       <LoadingIndicator size={size} />

@@ -3,6 +3,7 @@ import { useComercialData } from '@/hooks/useComercialData';
 import { useComercialProdutos } from '@/hooks/useComercialProdutos';
 
 import { useEmpresaAtiva } from '@/hooks/useEmpresaAtiva';
+import { useFilialSelecionada } from '@/contexts/FilialSelecionadaContext';
 import { LoadingState } from '@/components/common/LoadingState';
 import { ErrorState } from '@/components/common/ErrorState';
 import { VendedorMetaDiariaCard } from '@/components/comercial/VendedorMetaDiariaCard';
@@ -44,6 +45,7 @@ const ANOS_DISPONIVEIS = ['2023', '2024', '2025', '2026'];
 
 export default function MetasDiariasPage() {
   const { empresa, codEmpresaAtiva, isLoading: isLoadingEmpresa } = useEmpresaAtiva();
+  const { filialAtiva } = useFilialSelecionada();
   const [initialized, setInitialized] = useState(false);
   
   // Filtros - estado pendente e aplicado (undefined até periodoDisponivel chegar,
@@ -51,10 +53,12 @@ export default function MetasDiariasPage() {
   const [pendingFilters, setPendingFilters] = useState<ComercialFiltersType | undefined>(undefined);
   const [appliedFilters, setAppliedFilters] = useState<ComercialFiltersType | undefined>(undefined);
   const [filtersOpen, setFiltersOpen] = useState(false);
-  const resolvedCompanyRef = useRef<string | null>(null);
+  const resolvedScopeRef = useRef<string | null>(null);
   
   const { vendedoresPerformance, pedidos, periodoDisponivel, vendedoresDisponiveis, isLoading, isFetching, error } = useComercialData(appliedFilters);
   const companyKey = String(codEmpresaAtiva ?? '').trim();
+  const branchKey = String(filialAtiva ?? '').trim() || 'sem-filial';
+  const dataScopeKey = companyKey ? `${companyKey}:${branchKey}` : '';
 
   // 1004 (Pelegrini): M.REAL precisa vir da MESMA fonte do card "Receita".
   const isEmpresa1004 = String(codEmpresaAtiva ?? '') === '1004';
@@ -69,9 +73,9 @@ export default function MetasDiariasPage() {
     || isFetching
     || (isEmpresa1004 && (isLoadingProdutos || isFetchingProdutos));
   if (!isLoadingEmpresa && companyKey && !isCompanyDataPending && !companyDataError) {
-    resolvedCompanyRef.current = companyKey;
+    resolvedScopeRef.current = dataScopeKey;
   }
-  const hasResolvedCompanyData = resolvedCompanyRef.current === companyKey && companyKey !== '';
+  const hasResolvedCompanyData = resolvedScopeRef.current === dataScopeKey && dataScopeKey !== '';
   const blockingCompanyDataError = hasResolvedCompanyData ? null : companyDataError;
 
 

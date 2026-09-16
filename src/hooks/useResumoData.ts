@@ -173,6 +173,7 @@ export function useResumoData() {
   return {
     records: query.data?.records ?? [],
     isLoading: query.isLoading,
+    isFetching: query.isFetching,
     error: query.error as Error | null,
     offlineError: query.data?.offlineError ?? null,
     refetch: query.refetch,
@@ -813,7 +814,7 @@ export function calcAlertasCriticos(
 }
 
 export function useResumoComputed(filters: ResumoFilters) {
-  const { records, isLoading, error, offlineError, hasSource, refetch } = useResumoData();
+  const { records, isLoading, isFetching, error, offlineError, hasSource, refetch } = useResumoData();
 
   const computed = useMemo(() => {
     const duplicatas = aggregateDuplicatas(records);
@@ -839,5 +840,5 @@ export function useResumoComputed(filters: ResumoFilters) {
     };
   }, [records, filters]);
 
-  return { ...computed, isLoading, error, offlineError, hasSource, refetch, totalRecords: records.length };
+  return { ...computed, isLoading, isFetching, error, offlineError, hasSource, refetch, totalRecords: records.length };
 }

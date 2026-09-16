@@ -217,7 +217,7 @@ export function CotacoesFilters({
       )}
       actions={(
         <>
-          <Button type="button" size="sm" className={isApplying ? 'h-9 min-w-24' : 'h-9'} onClick={() => onApply(copyFilters(pendingFilters))} disabled={isApplying}>
+          <Button type="button" size="sm" className="h-9 min-w-24" onClick={() => onApply(copyFilters(pendingFilters))} disabled={isApplying}>
             {isApplying && <LoadingIndicator size="sm" />}
             Aplicar
           </Button>

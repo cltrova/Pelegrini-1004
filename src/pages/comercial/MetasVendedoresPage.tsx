@@ -125,7 +125,7 @@ export default function MetasVendedoresPage() {
   const isPelegriniPage = isEmpresa1004Page || isEmpresa10041Page;
   const isLayoutPremium = isPelegriniPage;
   const [initialized, setInitialized] = useState(false);
-  const resolvedCompanyRef = useRef<string | null>(null);
+  const resolvedScopeRef = useRef<string | null>(null);
   const [activeTab, setActiveTab] = useState<string>(() => {
     try {
       const saved = sessionStorage.getItem('comercial:metas:tab');
@@ -236,10 +236,12 @@ export default function MetasVendedoresPage() {
     ))
     || (isEmpresa10041Page && (isLoadingTotalizadorOficial || isFetchingTotalizadorOficial))
     || (isFiltroProdutosRequired && (isLoadingVendedoresFiltro1004 || isFetchingVendedoresFiltro1004));
+  const branchKey = String(filialAtiva ?? '').trim() || 'sem-filial';
+  const dataScopeKey = codEmpresaNorm ? `${codEmpresaNorm}:${branchKey}` : '';
   if (!isLoadingEmpresa && codEmpresaNorm && !isCompanyDataPending && !companyDataError) {
-    resolvedCompanyRef.current = codEmpresaNorm;
+    resolvedScopeRef.current = dataScopeKey;
   }
-  const hasResolvedData = resolvedCompanyRef.current === codEmpresaNorm && codEmpresaNorm !== '';
+  const hasResolvedData = resolvedScopeRef.current === dataScopeKey && dataScopeKey !== '';
   const blockingCompanyDataError = hasResolvedData ? null : companyDataError;
 
   const vendedoresParaFiltro1004 = useMemo(() => {

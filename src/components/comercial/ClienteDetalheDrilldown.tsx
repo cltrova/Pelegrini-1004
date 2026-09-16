@@ -289,7 +289,7 @@ export function ClienteDetalheDrilldown({ open, onOpenChange, cliente, periodo }
 
         <div className="flex-1 overflow-y-auto px-6 py-4">
           {isLoading ? (
-            <LoadingState message="Carregando itens do cliente" variant="content" className="min-h-24" />
+            <LoadingState message="Carregando itens do cliente" variant="content" className="min-h-24 bg-transparent" />
           ) : rowsFiltradas.length === 0 ? (
             <div className="text-center py-12 text-sm" style={{ color: C.sub }}>
               Nenhum produto encontrado neste período para este cliente.

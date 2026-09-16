@@ -1,6 +1,7 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { useComercialData } from '@/hooks/useComercialData';
 import { useEmpresaAtiva } from '@/hooks/useEmpresaAtiva';
+import { useFilialSelecionada } from '@/contexts/FilialSelecionadaContext';
 import { formatCurrency, formatNumber, formatPercent } from '@/utils/formatters';
 import { LoadingState } from '@/components/common/LoadingState';
 import { ErrorState } from '@/components/common/ErrorState';
@@ -105,6 +106,7 @@ const ANOS_DISPONIVEIS = ['2023', '2024', '2025', '2026'];
 
 export default function VendedoresPage() {
   const { codEmpresaAtiva, isLoading: isLoadingEmpresa } = useEmpresaAtiva();
+  const { filialAtiva } = useFilialSelecionada();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedVendedor, setSelectedVendedor] = useState<string | number | null>(null);
   const [activeTab, setActiveTab] = useState('visao-geral');
@@ -113,7 +115,7 @@ export default function VendedoresPage() {
     { role: 'assistant', content: 'Olá! Sou sua assistente de análise comercial. Posso ajudar a analisar a performance dos vendedores, projeções de metas e insights. Como posso ajudar?' }
   ]);
   const [initialized, setInitialized] = useState(false);
-  const resolvedCompanyRef = useRef<string | null>(null);
+  const resolvedScopeRef = useRef<string | null>(null);
   
   // Filtros - estado pendente e aplicado
   const [pendingFilters, setPendingFilters] = useState<ComercialFiltersType>(() => getDefaultFiltersForEmpresa(codEmpresaAtiva));
@@ -132,10 +134,12 @@ export default function VendedoresPage() {
     error 
   } = useComercialData(appliedFilters);
   const companyKey = String(codEmpresaAtiva ?? '').trim();
+  const branchKey = String(filialAtiva ?? '').trim() || 'sem-filial';
+  const dataScopeKey = companyKey ? `${companyKey}:${branchKey}` : '';
   if (!isLoadingEmpresa && companyKey && !isLoading && !isFetching && !error) {
-    resolvedCompanyRef.current = companyKey;
+    resolvedScopeRef.current = dataScopeKey;
   }
-  const hasResolvedCompanyData = resolvedCompanyRef.current === companyKey && companyKey !== '';
+  const hasResolvedCompanyData = resolvedScopeRef.current === dataScopeKey && dataScopeKey !== '';
 
   // Inicializar filtros com o último período disponível nos dados
   useEffect(() => {

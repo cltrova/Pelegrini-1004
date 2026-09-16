@@ -14,6 +14,7 @@ import MetasVendedoresPage from './MetasVendedoresPage';
 const {
   campanhasState,
   empresaState,
+  filialState,
   fetchingState,
   insightsQueryState,
   produtosState,
@@ -52,6 +53,9 @@ const {
       error: null,
     },
   },
+  filialState: {
+    value: { filialAtiva: 'transmissao', filialNome: 'Casa da Transmissao' },
+  },
   produtosTotalizadoresState: { value: {} as Record<string, unknown> },
   produtosFiltroState: { value: {} as Record<string, unknown> },
   totaisState: { value: {} as Record<string, unknown> },
@@ -85,7 +89,7 @@ vi.mock('@/hooks/useEmpresaAtiva', () => ({
   useEmpresaAtiva: () => empresaState.value,
 }));
 vi.mock('@/contexts/FilialSelecionadaContext', () => ({
-  useFilialSelecionada: () => ({ filialAtiva: 'transmissao', filialNome: 'Casa da Transmissao' }),
+  useFilialSelecionada: () => filialState.value,
 }));
 vi.mock('@/components/comercial/VisaoGeralRapida1004', () => ({
   VisaoGeralRapida1004: () => <section aria-label="Indicadores do dashboard comercial" className="commercial-metric-strip">Conteudo preservado</section>,
@@ -160,6 +164,23 @@ describe('MetasVendedoresPage commercial dashboard', () => {
     expect(screen.getByLabelText('Indicadores do dashboard comercial')).toHaveClass('commercial-metric-strip');
     expect(screen.queryByText('Visão comercial')).not.toBeInTheDocument();
     expect(screen.queryByRole('tab', { name: 'Análises' })).not.toBeInTheDocument();
+  });
+
+  it('bloqueia a visao resolvida de transmissao enquanto chevrolet esta pendente', async () => {
+    const { rerender } = render(<MetasVendedoresPage />);
+
+    expect(await screen.findByText('Conteudo preservado')).toBeInTheDocument();
+
+    filialState.value = { filialAtiva: 'chevrolet', filialNome: 'Chevrolet' };
+    vi.mocked(useComercialData).mockReturnValue({
+      ...comercialData,
+      isLoading: true,
+      isFetching: true,
+    } as ReturnType<typeof useComercialData>);
+    await act(async () => rerender(<MetasVendedoresPage />));
+
+    expect(screen.getByRole('status', { name: 'Carregando visão comercial' })).toBeInTheDocument();
+    expect(screen.queryByText('Conteudo preservado')).not.toBeInTheDocument();
   });
 
   it('preserva um intervalo explicito e usa o ultimo mes como referencia', () => {
@@ -268,6 +289,7 @@ describe('MetasVendedoresPage commercial dashboard', () => {
       codEmpresaAtiva: '2000',
       isLoading: false,
     };
+    filialState.value = { filialAtiva: 'transmissao', filialNome: 'Casa da Transmissao' };
     vi.mocked(useComercialData).mockReturnValue({
       ...comercialData,
       isLoading: true,
