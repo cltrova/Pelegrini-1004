@@ -15,7 +15,7 @@ import { PelegriniBranchSwitcher } from './PelegriniBranchSwitcher';
 import { PelegriniResponsiveValue } from './PelegriniResponsiveValue';
 import { PelegriniFilterBar } from './PelegriniFilterBar';
 import { PelegriniTabs } from './PelegriniTabs';
-import { LoadingState } from '@/components/common/LoadingState';
+import { LoadingIndicator, LoadingState } from '@/components/common/LoadingState';
 import { ComercialMobileHeader } from '@/components/layout/ComercialMobileHeader';
 import { PelegriniModuleShell } from './PelegriniModuleShell';
 
@@ -325,9 +325,55 @@ describe('Pelegrini visual components', () => {
     expect(screen.getByTestId('pelegrini-chart-frame')).toHaveAttribute('data-theme', 'chevrolet');
   });
 
-  it('stops the loading spinner when reduced motion is requested', () => {
-    const { container } = render(<LoadingState />);
+  it.each([
+    ['screen', ['min-h-screen'], ['min-h-64', 'p-8']],
+    ['content', ['min-h-64', 'w-full'], ['min-h-screen']],
+    ['inline', ['inline-flex'], ['min-h-screen', 'min-h-64', 'p-8']],
+  ] as const)('applies the %s loading layout', (variant, expectedClasses, absentClasses) => {
+    render(<LoadingState variant={variant} />);
 
-    expect(container.querySelector('svg')).toHaveClass('motion-reduce:animate-none');
+    const status = screen.getByRole('status');
+    expect(status).toHaveClass(...expectedClasses);
+    expect(status).not.toHaveClass(...absentClasses);
+  });
+
+  it('renders the video-inspired loader without visible copy', () => {
+    render(<LoadingState message="Carregando estoque" variant="content" />);
+
+    expect(screen.getByRole('status', { name: 'Carregando estoque' })).toHaveAttribute(
+      'aria-live',
+      'polite',
+    );
+    expect(screen.queryByText('Carregando estoque')).not.toBeInTheDocument();
+    expect(screen.getByTestId('loading-indicator')).toHaveAttribute('aria-hidden', 'true');
+  });
+
+  it('renders a decorative indicator with size, custom classes and reduced-motion support', () => {
+    render(<LoadingIndicator size="sm" className="indicator-extra" />);
+
+    expect(screen.getByTestId('loading-indicator')).toHaveClass(
+      'h-4',
+      'w-4',
+      'indicator-extra',
+      'animate-spin',
+      'motion-reduce:animate-none',
+      'rounded-full',
+      'border-2',
+      'border-primary/20',
+      'border-t-primary',
+    );
+  });
+
+  it('keeps the legacy surface prop without adding container styling', () => {
+    render(<LoadingState surface />);
+
+    const status = screen.getByRole('status');
+    expect(status).toHaveClass('min-h-64', 'w-full');
+    expect(status).not.toHaveClass(
+      'rounded-xl',
+      'border',
+      'bg-card',
+      'shadow-sm',
+    );
   });
 });
