@@ -6,10 +6,10 @@ import {
   Briefcase, 
   Heart, 
   CheckCircle2, 
-  Languages,
-  Loader2
+  Languages
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { LoadingIndicator } from '@/components/common/LoadingState';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -87,9 +87,11 @@ export function AIComposer({ text, onTextTransform, disabled }: AIComposerProps)
           size="icon" 
           className="h-9 w-9 shrink-0 text-muted-foreground hover:text-foreground"
           disabled={disabled || isProcessing}
+          aria-label="Compositor IA"
+          aria-busy={isProcessing || undefined}
         >
           {isProcessing ? (
-            <Loader2 className="h-5 w-5 animate-spin" />
+            <LoadingIndicator size="sm" />
           ) : (
             <Sparkles className="h-5 w-5" />
           )}
@@ -108,11 +110,12 @@ export function AIComposer({ text, onTextTransform, disabled }: AIComposerProps)
             key={action.type}
             onClick={() => handleAction(action.type)}
             disabled={!text.trim() || isProcessing}
+            aria-busy={processingAction === action.type || undefined}
             className="cursor-pointer flex flex-col items-start py-2"
           >
             <div className="flex items-center gap-2">
               {processingAction === action.type ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
+                <LoadingIndicator size="sm" />
               ) : (
                 <action.icon className="h-4 w-4" />
               )}

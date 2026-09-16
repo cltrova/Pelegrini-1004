@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/dialog';
 import {
   Plug, Plus, Link as LinkIcon, RefreshCw, QrCode, Power, RotateCw, Unlink,
-  CheckCircle2, AlertCircle, Loader2,
+  CheckCircle2, AlertCircle,
 } from 'lucide-react';
 import {
   useAvailableInstances, useInstanceById, useCreateInstanceForAgent,
@@ -21,6 +21,7 @@ import {
 } from '@/hooks/useAgentInstance';
 import type { WhatsappAgent } from '@/hooks/useWhatsappAgents';
 import { AgentTestMessage } from './AgentTestMessage';
+import { LoadingIndicator, LoadingState } from '@/components/common/LoadingState';
 
 interface Props {
   agent: WhatsappAgent;
@@ -40,6 +41,9 @@ export function AgentConnection({ agent }: Props) {
   const linkInstance = useLinkInstanceToAgent();
   const unlink = useUnlinkInstanceFromAgent();
   const action = useInstanceAction();
+  const isActionPending = (type: 'status' | 'disconnect' | 'restart') => (
+    action.isPending && action.variables?.action === type
+  );
 
   const pollRef = useRef<number | null>(null);
 
@@ -88,13 +92,13 @@ export function AgentConnection({ agent }: Props) {
     const map: Record<string, { label: string; cls: string; Icon: any }> = {
       connected: { label: 'Conectado', cls: 'bg-green-500/15 text-green-700 dark:text-green-400 border-green-500/30', Icon: CheckCircle2 },
       qr_pending: { label: 'Aguardando QR', cls: 'bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-500/30', Icon: QrCode },
-      connecting: { label: 'Conectando...', cls: 'bg-blue-500/15 text-blue-700 dark:text-blue-400 border-blue-500/30', Icon: Loader2 },
+      connecting: { label: 'Conectando...', cls: 'bg-blue-500/15 text-blue-700 dark:text-blue-400 border-blue-500/30', Icon: null },
       disconnected: { label: 'Desconectado', cls: 'bg-muted text-muted-foreground border-border', Icon: AlertCircle },
     };
     const m = map[s] || map.disconnected;
     return (
       <Badge variant="outline" className={`gap-1 ${m.cls}`}>
-        <m.Icon className={`h-3 w-3 ${s === 'connecting' ? 'animate-spin' : ''}`} />
+        {m.Icon ? <m.Icon className="h-3 w-3" /> : <LoadingIndicator size="sm" />}
         {m.label}
       </Badge>
     );
@@ -133,8 +137,9 @@ export function AgentConnection({ agent }: Props) {
             <div className="flex flex-wrap gap-2 pt-2 border-t">
               <Button size="sm" variant="outline"
                 onClick={() => action.mutate({ instanceId: agent.instance_id!, action: 'status' })}
-                disabled={action.isPending}>
-                <RefreshCw className="h-3 w-3 mr-1" /> Atualizar status
+                disabled={action.isPending}
+                aria-busy={isActionPending('status') || undefined}>
+                {isActionPending('status') ? <LoadingIndicator size="sm" className="mr-1" /> : <RefreshCw className="h-3 w-3 mr-1" />} Atualizar status
               </Button>
               <Button size="sm"
                 onClick={() => { setQrOpen(true); setQrCode(null); }}
@@ -144,14 +149,16 @@ export function AgentConnection({ agent }: Props) {
               </Button>
               <Button size="sm" variant="outline"
                 onClick={() => action.mutate({ instanceId: agent.instance_id!, action: 'restart' })}
-                disabled={action.isPending}>
-                <RotateCw className="h-3 w-3 mr-1" /> Reiniciar
+                disabled={action.isPending}
+                aria-busy={isActionPending('restart') || undefined}>
+                {isActionPending('restart') ? <LoadingIndicator size="sm" className="mr-1" /> : <RotateCw className="h-3 w-3 mr-1" />} Reiniciar
               </Button>
               {instance.status === 'connected' && (
                 <Button size="sm" variant="outline" className="text-destructive"
                   onClick={() => action.mutate({ instanceId: agent.instance_id!, action: 'disconnect' })}
-                  disabled={action.isPending}>
-                  <Power className="h-3 w-3 mr-1" /> Desconectar
+                  disabled={action.isPending}
+                  aria-busy={isActionPending('disconnect') || undefined}>
+                  {isActionPending('disconnect') ? <LoadingIndicator size="sm" className="mr-1" /> : <Power className="h-3 w-3 mr-1" />} Desconectar
                 </Button>
               )}
             </div>
@@ -162,8 +169,9 @@ export function AgentConnection({ agent }: Props) {
                 className="text-xs text-muted-foreground hover:text-destructive"
                 onClick={() => unlink.mutate(agent.id)}
                 disabled={unlink.isPending}
+                aria-busy={unlink.isPending || undefined}
               >
-                <Unlink className="h-3 w-3 mr-1" /> Desvincular instância deste agente
+                {unlink.isPending ? <LoadingIndicator size="sm" className="mr-1" /> : <Unlink className="h-3 w-3 mr-1" />} Desvincular instância deste agente
               </Button>
             </div>
           </CardContent>
@@ -189,10 +197,7 @@ export function AgentConnection({ agent }: Props) {
                   <p className="text-xs text-muted-foreground">{qrError}</p>
                 </div>
               ) : (
-                <div className="flex flex-col items-center gap-2 text-muted-foreground">
-                  <Loader2 className="h-8 w-8 animate-spin" />
-                  <p className="text-sm">Gerando QR Code...</p>
-                </div>
+                <LoadingState message="Gerando QR Code" variant="content" className="min-h-64 bg-transparent" />
               )}
               <p className="text-xs text-muted-foreground mt-3">
                 A janela fechará automaticamente quando conectar.
@@ -277,7 +282,9 @@ export function AgentConnection({ agent }: Props) {
                 onClick={() => createInstance.mutate({ agent_id: agent.id, ...form }, {
                   onSuccess: () => setMode('choose'),
                 })}
-                disabled={!form.name || !form.instance_name || !form.api_url || !form.api_key || createInstance.isPending}>
+                disabled={!form.name || !form.instance_name || !form.api_url || !form.api_key || createInstance.isPending}
+                aria-busy={createInstance.isPending || undefined}>
+                {createInstance.isPending && <LoadingIndicator size="sm" className="mr-2" />}
                 {createInstance.isPending ? 'Criando...' : 'Criar e vincular'}
               </Button>
             </div>
@@ -311,7 +318,9 @@ export function AgentConnection({ agent }: Props) {
                   { agent_id: agent.id, instance_id: selectedInstanceId },
                   { onSuccess: () => setMode('choose') }
                 )}
-                disabled={!selectedInstanceId || linkInstance.isPending}>
+                disabled={!selectedInstanceId || linkInstance.isPending}
+                aria-busy={linkInstance.isPending || undefined}>
+                {linkInstance.isPending && <LoadingIndicator size="sm" className="mr-2" />}
                 {linkInstance.isPending ? 'Vinculando...' : 'Vincular'}
               </Button>
             </div>

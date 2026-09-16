@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, forwardRef } from 'react';
-import { Mic, X, Check, Loader2 } from 'lucide-react';
+import { Mic, X, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { LoadingIndicator } from '@/components/common/LoadingState';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -183,9 +184,14 @@ export const AudioRecorder = forwardRef<HTMLButtonElement, AudioRecorderProps>(
     
     if (isProcessing) {
       return (
-        <div className="flex items-center gap-3 px-4 py-3 bg-card border-t border-border">
+        <div
+          role="status"
+          aria-label="Transcrevendo áudio"
+          aria-busy="true"
+          className="flex items-center gap-3 px-4 py-3 bg-card border-t border-border"
+        >
           <div className="flex-1 flex items-center justify-center gap-2">
-            <Loader2 className="h-5 w-5 animate-spin text-primary" />
+            <LoadingIndicator size="sm" />
             <span className="text-sm text-muted-foreground">Transcrevendo áudio...</span>
           </div>
         </div>
@@ -200,6 +206,7 @@ export const AudioRecorder = forwardRef<HTMLButtonElement, AudioRecorderProps>(
             variant="ghost"
             size="icon"
             onClick={cancelRecording}
+            aria-label="Cancelar gravação"
             className="h-10 w-10 shrink-0 text-destructive hover:text-destructive hover:bg-destructive/10"
           >
             <X className="h-5 w-5" />
@@ -236,6 +243,7 @@ export const AudioRecorder = forwardRef<HTMLButtonElement, AudioRecorderProps>(
           <Button
             size="icon"
             onClick={stopRecording}
+            aria-label="Concluir gravação"
             className="h-10 w-10 shrink-0 bg-green-500 hover:bg-green-600"
           >
             <Check className="h-5 w-5" />
@@ -251,6 +259,7 @@ export const AudioRecorder = forwardRef<HTMLButtonElement, AudioRecorderProps>(
         size="icon"
         onClick={startRecording}
         disabled={disabled}
+        aria-label="Gravar áudio"
         className="h-10 w-10 shrink-0 text-muted-foreground hover:text-foreground rounded-full"
       >
         <Mic className="h-5 w-5" />

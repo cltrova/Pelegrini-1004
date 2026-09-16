@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
-import { Bot, Check, Loader2, Save, Sparkles } from 'lucide-react';
+import { Bot, Check, Save, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { LoadingIndicator, LoadingState } from '@/components/common/LoadingState';
 import { supabase } from '@/integrations/supabase/client';
 
 interface EstoqueAssistantSettingsProps {
@@ -118,7 +119,7 @@ export function EstoqueAssistantSettings({ codEmpresaBi }: EstoqueAssistantSetti
   };
 
   if (isLoading) {
-    return <div className="flex min-h-52 items-center justify-center"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>;
+    return <LoadingState message="Carregando configuração do assistente" variant="content" />;
   }
 
   const hasChanges = prompt !== savedPrompt;
@@ -135,8 +136,8 @@ export function EstoqueAssistantSettings({ codEmpresaBi }: EstoqueAssistantSetti
             Defina o comportamento usado no Chat e nos Insights da empresa selecionada.
           </p>
         </div>
-        <Button size="sm" onClick={savePrompt} disabled={isSaving || !hasChanges} className="gap-2">
-          {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : hasChanges ? <Save className="h-4 w-4" /> : <Check className="h-4 w-4" />}
+        <Button aria-busy={isSaving || undefined} size="sm" onClick={savePrompt} disabled={isSaving || !hasChanges} className="gap-2">
+          {isSaving ? <LoadingIndicator size="sm" /> : hasChanges ? <Save className="h-4 w-4" /> : <Check className="h-4 w-4" />}
           {isSaving ? 'Salvando' : hasChanges ? 'Salvar' : 'Salvo'}
         </Button>
       </div>
@@ -166,8 +167,8 @@ export function EstoqueAssistantSettings({ codEmpresaBi }: EstoqueAssistantSetti
             placeholder="Ex: quero respostas mais curtas e orientadas a compra"
             disabled={isSuggesting}
           />
-          <Button variant="outline" onClick={askForSuggestion} disabled={isSuggesting || !request.trim()} className="gap-2 sm:shrink-0">
-            {isSuggesting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+          <Button aria-busy={isSuggesting || undefined} variant="outline" onClick={askForSuggestion} disabled={isSuggesting || !request.trim()} className="gap-2 sm:shrink-0">
+            {isSuggesting ? <LoadingIndicator size="sm" /> : <Sparkles className="h-4 w-4" />}
             Sugerir
           </Button>
         </div>

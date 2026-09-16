@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Loader2, Crown, Shield, User, Building2, Eye, EyeOff, MessageSquare, DollarSign, BarChart3, Bot, TrendingUp, Package, ChevronDown, ChevronRight } from 'lucide-react';
+import { Crown, Shield, User, Building2, Eye, EyeOff, MessageSquare, DollarSign, BarChart3, Bot, TrendingUp, Package, ChevronDown, ChevronRight } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { LoadingIndicator, LoadingState } from '@/components/common/LoadingState';
 import {
   Dialog,
   DialogContent,
@@ -627,9 +628,7 @@ export function UserFormDialog({
         </DialogHeader>
 
         {loadingUser ? (
-          <div className="flex items-center justify-center py-8">
-            <Loader2 className="h-6 w-6 animate-spin" />
-          </div>
+          <LoadingState message="Carregando usuário" variant="content" />
         ) : tempPassword ? (
           <div className="space-y-4 py-2">
             <div className="rounded-md border border-primary/30 bg-primary/5 p-4">
@@ -885,8 +884,8 @@ export function UserFormDialog({
               >
                 Cancelar
               </Button>
-              <Button type="submit" disabled={loading}>
-                {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              <Button type="submit" disabled={loading} aria-busy={loading || undefined}>
+                {loading && <LoadingIndicator size="sm" className="mr-2" />}
                 {isEditing ? 'Salvar' : 'Criar Usuário'}
               </Button>
             </DialogFooter>

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Loader2, Crown, Shield, User, Building2, Pencil, Trash2, UserX, KeyRound, LogIn } from 'lucide-react';
+import { Crown, Shield, User, Building2, Pencil, Trash2, UserX, KeyRound, LogIn } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -24,6 +24,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
+import { LoadingIndicator, LoadingState } from '@/components/common/LoadingState';
 import type { Profile, AppRole } from '@/types/auth';
 import {
   deleteLocalPreviewUserAccount,
@@ -210,13 +211,7 @@ export function UserList({ onEdit, filterByCompany }: UserListProps) {
   };
 
   if (loading) {
-    return (
-      <Card>
-        <CardContent className="flex items-center justify-center py-12">
-          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-        </CardContent>
-      </Card>
-    );
+    return <LoadingState message="Carregando usuários" variant="content" />;
   }
 
   if (users.length === 0) {
@@ -355,6 +350,7 @@ export function UserList({ onEdit, filterByCompany }: UserListProps) {
                 <AlertDialogCancel disabled={resetLoading}>Cancelar</AlertDialogCancel>
                 <AlertDialogAction
                   disabled={resetLoading}
+                  aria-busy={resetLoading || undefined}
                   onClick={async (e) => {
                     e.preventDefault();
                     if (!resetUserId) return;
@@ -375,7 +371,8 @@ export function UserList({ onEdit, filterByCompany }: UserListProps) {
                     }
                   }}
                 >
-                  {resetLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Gerar nova senha'}
+                  {resetLoading && <LoadingIndicator size="sm" className="mr-2" />}
+                  Gerar nova senha
                 </AlertDialogAction>
               </AlertDialogFooter>
             </>

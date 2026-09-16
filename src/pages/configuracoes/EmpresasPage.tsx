@@ -309,7 +309,7 @@ export default function EmpresasPage() {
 
         {/* Lista */}
         {isLoading ? (
-          <LoadingState message="Carregando empresas..." />
+          <LoadingState message="Carregando empresas..." variant="content" />
         ) : error ? (
           <ErrorState message="Não foi possível carregar as empresas." onRetry={refetch} />
         ) : filtered.length === 0 ? (

@@ -1,7 +1,8 @@
 import { Button } from '@/components/ui/button';
-import { Sparkles, Loader2 } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
+import { LoadingIndicator } from '@/components/common/LoadingState';
 
 interface SmartRepliesProps {
   replies: string[];
@@ -17,7 +18,7 @@ export function SmartReplies({ replies, onSelect, isVisible, isLoading }: SmartR
     <div className="flex items-center gap-2 px-3 py-2 border-b border-border/50 bg-muted/30 overflow-x-auto">
       <div className="flex items-center gap-1 text-muted-foreground shrink-0">
         {isLoading ? (
-          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          <LoadingIndicator size="sm" />
         ) : (
           <Sparkles className="h-3.5 w-3.5" />
         )}

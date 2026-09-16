@@ -18,7 +18,7 @@ import {
 } from '@/components/ui/collapsible';
 import { useWhatsappClientReports, ClientReport, ReportFilters } from '@/hooks/useWhatsappReports';
 import { useAnalyzeSentiment } from '@/hooks/useWhatsappData';
-import { LoadingState } from '@/components/common/LoadingState';
+import { LoadingIndicator, LoadingState } from '@/components/common/LoadingState';
 import { EmptyState } from '@/components/common/EmptyState';
 import { 
   Search, 
@@ -33,8 +33,7 @@ import {
   Sparkles,
   ChevronDown,
   ChevronUp,
-  FileText,
-  Loader2
+  FileText
 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -54,7 +53,7 @@ export function ClientsReportTab({ filters }: ClientsReportTabProps) {
   const queryClient = useQueryClient();
 
   if (isLoading) {
-    return <LoadingState message="Carregando dados de clientes..." />;
+    return <LoadingState message="Carregando dados de clientes..." variant="content" />;
   }
 
   if (!clients || clients.length === 0) {
@@ -239,11 +238,12 @@ export function ClientsReportTab({ filters }: ClientsReportTabProps) {
                                 size="sm"
                                 onClick={() => handleAnalyze(client)}
                                 disabled={isAnalyzing || !client.latestConversationId}
+                                aria-busy={isAnalyzing || undefined}
                                 className="h-8 px-3"
                               >
                                 {isAnalyzing ? (
                                   <>
-                                    <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                                    <LoadingIndicator size="sm" className="mr-1.5" />
                                     Analisando
                                   </>
                                 ) : (
@@ -351,11 +351,12 @@ export function ClientsReportTab({ filters }: ClientsReportTabProps) {
                         size="sm"
                         onClick={() => handleAnalyze(client)}
                         disabled={isAnalyzing || !client.latestConversationId}
+                        aria-busy={isAnalyzing || undefined}
                         className="h-8 px-3 flex-1"
                       >
                         {isAnalyzing ? (
                           <>
-                            <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                            <LoadingIndicator size="sm" className="mr-1.5" />
                             Analisando
                           </>
                         ) : (

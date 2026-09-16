@@ -22,7 +22,7 @@ export function AgentsReportTab({ filters }: AgentsReportTabProps) {
   const { data: agents, isLoading } = useWhatsappAgentReports(filters);
 
   if (isLoading) {
-    return <LoadingState message="Carregando dados de vendedores..." />;
+    return <LoadingState message="Carregando dados de vendedores..." variant="content" />;
   }
 
   if (!agents || agents.length === 0) {
