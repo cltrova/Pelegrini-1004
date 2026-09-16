@@ -263,6 +263,7 @@ describe('ProdutosPage compacta', () => {
     const status = screen.getByRole('status', { name: 'Carregando produtos' });
     expect(status).toBeInTheDocument();
     expect(screen.queryByText('Carregando produtos...')).not.toBeInTheDocument();
+    expect(screen.queryByText('Carregando dados')).not.toBeInTheDocument();
     expect(within(status).getByTestId('loading-indicator')).toBeInTheDocument();
   });
 
@@ -278,11 +279,21 @@ describe('ProdutosPage compacta', () => {
   });
 
   it('preserva os dados durante refetch e distingue erro de vazio', () => {
-    mockData(true, { isFetching: true });
     const refetch = renderPage();
+    mockData(true, { isFetching: true });
+    refetch.rerender(
+      <main aria-label="Modulo comercial">
+        <ProdutosPage />
+      </main>,
+    );
 
-    expect(screen.getByRole('status', { name: 'Atualizando produtos' })).toBeInTheDocument();
-    expect(within(screen.getByRole('status', { name: 'Atualizando produtos' })).getByTestId('loading-indicator')).toHaveClass('h-4', 'w-4');
+    fireEvent.click(screen.getByRole('button', { name: 'Expandir filtros' }));
+    const searchButton = screen.getByRole('button', { name: 'Buscar' });
+    expect(searchButton).toBeVisible();
+    expect(searchButton).toBeDisabled();
+    expect(searchButton).toHaveAttribute('aria-busy', 'true');
+    expect(within(searchButton).getByTestId('loading-indicator')).toHaveClass('h-4', 'w-4');
+    expect(screen.queryByRole('status', { name: 'Atualizando produtos' })).not.toBeInTheDocument();
     expect(screen.getByLabelText('Indicadores de produtos')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Selecionar EATON' })).toBeInTheDocument();
 
@@ -306,6 +317,26 @@ describe('ProdutosPage compacta', () => {
 
     expect(screen.getByText('Nenhum produto encontrado no período.')).toBeInTheDocument();
     expect(screen.queryByText('Erro ao carregar produtos')).not.toBeInTheDocument();
+  });
+
+  it('preserva o resultado vazio resolvido durante um novo refetch', () => {
+    const emptyResult = {
+      topProdutos: [], porMarca: [], porCategoria: [], produtosSemGiro: [], resumoVendas: [],
+    };
+    mockData(true, emptyResult);
+    const { rerender } = render(<ProdutosPage />);
+
+    expect(screen.getByText('Nenhum produto encontrado no período.')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Expandir filtros' }));
+
+    mockData(true, { ...emptyResult, isLoading: true, isFetching: true });
+    rerender(<ProdutosPage />);
+
+    const searchButton = screen.getByRole('button', { name: 'Buscar' });
+    expect(screen.getByText('Nenhum produto encontrado no período.')).toBeInTheDocument();
+    expect(screen.queryByRole('status', { name: 'Carregando produtos' })).not.toBeInTheDocument();
+    expect(searchButton).toBeDisabled();
+    expect(within(searchButton).getByTestId('loading-indicator')).toHaveClass('h-4', 'w-4');
   });
 
   it.each(['produtos', 'base'] as const)('exibe falha de %s com linhas e KPIs preservados ate a recuperacao', (source) => {

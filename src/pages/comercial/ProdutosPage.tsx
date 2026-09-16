@@ -1,4 +1,4 @@
-import { useMemo, useState, useCallback, useEffect } from 'react';
+import { useMemo, useState, useCallback, useEffect, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useComercialProdutos } from '@/hooks/useComercialProdutos';
 import { formatCurrency, formatCurrencyCompact, formatNumber } from '@/utils/formatters';
@@ -56,15 +56,22 @@ export default function ProdutosPage() {
     hasSource, isLoading, isFetching, error: productsError,
   } = useComercialProdutos(appliedFilters);
 
+  const resolvedCompanyRef = useRef<string | null>(null);
+  const companyKey = String(codEmpresaAtiva ?? '').trim();
   const hasProductData = topProdutos.length > 0
     || porMarca.length > 0
     || porCategoria.length > 0
     || produtosSemGiro.length > 0
     || resumoVendas.length > 0;
-  const isInitialLoading = (isLoading || loadingBase) && !hasProductData;
-  const isRefreshing = (isFetching || fetchingBase || isLoading || loadingBase) && hasProductData;
-  const blockingError = (productsError || baseError) && !hasProductData;
-  const showBlockingLoading = isLoadingEmpresa || isInitialLoading;
+  if (!isLoadingEmpresa && companyKey
+    && !isLoading && !loadingBase && !isFetching && !fetchingBase
+    && !productsError && !baseError) {
+    resolvedCompanyRef.current = companyKey;
+  }
+  const hasResolvedData = resolvedCompanyRef.current === companyKey && companyKey !== '';
+  const isRefreshing = (isFetching || fetchingBase || isLoading || loadingBase) && hasResolvedData;
+  const blockingError = (productsError || baseError) && !hasResolvedData;
+  const showBlockingLoading = isLoadingEmpresa || (!productsError && !baseError && !hasResolvedData);
   const pageClassName = 'commercial-products h-[calc(100dvh-9.5rem)] max-h-[calc(100dvh-9.5rem)] overflow-hidden overflow-x-hidden px-3 pb-3 pt-2 sm:px-4 md:h-full md:max-h-full';
 
   useEffect(() => {
@@ -139,7 +146,7 @@ export default function ProdutosPage() {
         as="div"
         className={pageClassName}
       >
-        <ComercialCommandBar title="Produtos" context={showBlockingLoading ? 'Carregando dados' : 'Falha na consulta'} />
+        <ComercialCommandBar title="Produtos" context={showBlockingLoading ? undefined : 'Falha na consulta'} />
         <section
           className="commercial-detail-panel flex min-h-0 flex-1 items-center justify-center"
           aria-label={showBlockingLoading ? 'Carregando produtos' : 'Falha ao carregar produtos'}
@@ -184,6 +191,7 @@ export default function ProdutosPage() {
         appliedFilters={appliedFilters}
         onPendingFiltersChange={setPendingFilters}
         onApply={handleBuscar}
+        isApplying={isRefreshing}
         onClear={handleClear}
         hasChanges={hasChanges}
         anos={ANOS}
@@ -265,11 +273,6 @@ export default function ProdutosPage() {
                 {selectedMarca} - limpar filtro
               </button>
             ) : null}
-            {isRefreshing && !productsError && !baseError && (
-              <span role="status" aria-label="Atualizando produtos" className="commercial-refresh-indicator hidden h-6 w-6 items-center justify-center lg:inline-flex">
-                <LoadingIndicator size="sm" />
-              </span>
-            )}
             <EnterpriseSearchFilter
               label="Buscar produtos"
               value={searchTerm}

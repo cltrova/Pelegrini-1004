@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from 'react';
 import { ChevronDown, Filter, Search, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { LoadingIndicator } from '@/components/common/LoadingState';
 import { cn } from '@/lib/utils';
 import { EnterpriseBadge } from './EnterpriseBadge';
 
@@ -16,6 +17,7 @@ export interface EnterpriseFilterBarProps {
   onClear?: () => void;
   onApply?: () => void;
   applyLabel?: string;
+  isApplying?: boolean;
   className?: string;
 }
 
@@ -28,6 +30,7 @@ export function EnterpriseFilterBar({
   onClear,
   onApply,
   applyLabel = 'Buscar',
+  isApplying = false,
   className,
 }: EnterpriseFilterBarProps) {
   const [internalOpen, setInternalOpen] = useState(defaultOpen);
@@ -56,8 +59,18 @@ export function EnterpriseFilterBar({
           </Button>
         )}
         {open && onApply && (
-          <Button aria-label={applyLabel} className="h-8 gap-1.5 px-2.5 text-xs" onClick={onApply} size="sm" type="button">
-            <Search aria-hidden="true" className="h-3.5 w-3.5" />
+          <Button
+            aria-busy={isApplying}
+            aria-label={applyLabel}
+            className="h-8 gap-1.5 px-2.5 text-xs"
+            disabled={isApplying}
+            onClick={onApply}
+            size="sm"
+            type="button"
+          >
+            {isApplying
+              ? <LoadingIndicator size="sm" />
+              : <Search aria-hidden="true" className="h-3.5 w-3.5" />}
             {applyLabel}
           </Button>
         )}

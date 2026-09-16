@@ -317,11 +317,21 @@ describe('ClientesPage compacta', () => {
   });
 
   it('preserva a carteira durante refetch e distingue o estado vazio', () => {
-    mockClientesData({ isLoading: false, isFetching: true });
     const refetch = renderClientesPage();
+    mockClientesData({ isLoading: false, isFetching: true });
+    refetch.rerender(
+      <main aria-label="Modulo comercial">
+        <ClientesPage />
+      </main>,
+    );
 
-    expect(screen.getByRole('status', { name: 'Atualizando clientes' })).toBeInTheDocument();
-    expect(within(screen.getByRole('status', { name: 'Atualizando clientes' })).getByTestId('loading-indicator')).toHaveClass('h-4', 'w-4');
+    fireEvent.click(screen.getByRole('button', { name: 'Expandir filtros' }));
+    const searchButton = screen.getByRole('button', { name: 'Buscar' });
+    expect(searchButton).toBeVisible();
+    expect(searchButton).toBeDisabled();
+    expect(searchButton).toHaveAttribute('aria-busy', 'true');
+    expect(within(searchButton).getByTestId('loading-indicator')).toHaveClass('h-4', 'w-4');
+    expect(screen.queryByRole('status', { name: 'Atualizando clientes' })).not.toBeInTheDocument();
     expect(screen.queryByText('Carregando clientes...')).not.toBeInTheDocument();
     expect(screen.getByLabelText('Indicadores da carteira')).toBeInTheDocument();
     expect(screen.getByRole('table', { name: 'Ranking completo de clientes' })).toBeInTheDocument();
@@ -332,6 +342,28 @@ describe('ClientesPage compacta', () => {
 
     expect(screen.getByText('Nenhum cliente encontrado no período.')).toBeInTheDocument();
     expect(screen.queryByText('Erro ao carregar clientes')).not.toBeInTheDocument();
+  });
+
+  it('preserva o resultado vazio resolvido durante um novo refetch', () => {
+    mockClientesData({ clientesPerformance: [], kpis: { qtdClientes: 0 } });
+    const { rerender } = render(<ClientesPage />);
+
+    expect(screen.getByText('Nenhum cliente encontrado no período.')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Expandir filtros' }));
+
+    mockClientesData({
+      clientesPerformance: [],
+      kpis: { qtdClientes: 0 },
+      isLoading: true,
+      isFetching: true,
+    });
+    rerender(<ClientesPage />);
+
+    const searchButton = screen.getByRole('button', { name: 'Buscar' });
+    expect(screen.getByText('Nenhum cliente encontrado no período.')).toBeInTheDocument();
+    expect(screen.queryByRole('status', { name: 'Carregando clientes' })).not.toBeInTheDocument();
+    expect(searchButton).toBeDisabled();
+    expect(within(searchButton).getByTestId('loading-indicator')).toHaveClass('h-4', 'w-4');
   });
 
   it('exibe falha de atualizacao com carteira preservada e permite tentar novamente', () => {

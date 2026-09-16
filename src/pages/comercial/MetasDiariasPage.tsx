@@ -1,4 +1,4 @@
-import { useMemo, useState, useCallback, useEffect } from 'react';
+import { useMemo, useState, useCallback, useEffect, useRef } from 'react';
 import { useComercialData } from '@/hooks/useComercialData';
 import { useComercialProdutos } from '@/hooks/useComercialProdutos';
 
@@ -51,8 +51,14 @@ export default function MetasDiariasPage() {
   const [pendingFilters, setPendingFilters] = useState<ComercialFiltersType | undefined>(undefined);
   const [appliedFilters, setAppliedFilters] = useState<ComercialFiltersType | undefined>(undefined);
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const resolvedCompanyRef = useRef<string | null>(null);
   
-  const { vendedoresPerformance, pedidos, periodoDisponivel, vendedoresDisponiveis, isLoading, error } = useComercialData(appliedFilters);
+  const { vendedoresPerformance, pedidos, periodoDisponivel, vendedoresDisponiveis, isLoading, isFetching, error } = useComercialData(appliedFilters);
+  const companyKey = String(codEmpresaAtiva ?? '').trim();
+  if (!isLoadingEmpresa && companyKey && !isLoading && !isFetching && !error) {
+    resolvedCompanyRef.current = companyKey;
+  }
+  const hasResolvedCompanyData = resolvedCompanyRef.current === companyKey && companyKey !== '';
 
   // 1004 (Pelegrini): M.REAL precisa vir da MESMA fonte do card "Receita".
   const isEmpresa1004 = String(codEmpresaAtiva ?? '') === '1004';
@@ -61,13 +67,13 @@ export default function MetasDiariasPage() {
 
   // Inicializar filtros padrão mesmo quando periodoDisponivel vier nulo
   useEffect(() => {
-    if (!initialized && !isLoading) {
+    if (!initialized && !isLoadingEmpresa && !isLoading && !isFetching) {
       const filtrosInteligentes = getDefaultFiltersForEmpresa(codEmpresaAtiva, periodoDisponivel);
       setPendingFilters(filtrosInteligentes);
       setAppliedFilters(filtrosInteligentes);
       setInitialized(true);
     }
-  }, [periodoDisponivel, isLoading, initialized, codEmpresaAtiva]);
+  }, [periodoDisponivel, isLoading, isFetching, isLoadingEmpresa, initialized, codEmpresaAtiva]);
 
   // Verificar se há mudanças pendentes
   const hasChanges = JSON.stringify(pendingFilters) !== JSON.stringify(appliedFilters);
@@ -271,7 +277,7 @@ export default function MetasDiariasPage() {
     return <AnaliseDiariaLayout />;
   }
 
-  if (isLoading && !vendedoresPerformance.length) {
+  if (isLoadingEmpresa || (!error && !hasResolvedCompanyData)) {
     return <LoadingState message="Carregando metas diárias" variant="content" />;
   }
 

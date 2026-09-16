@@ -20,6 +20,7 @@ interface EnterpriseComercialFiltersProps {
   appliedFilters: ComercialFiltersType;
   onPendingFiltersChange: (filters: ComercialFiltersType) => void;
   onApply: () => void;
+  isApplying?: boolean;
   onClear: () => void;
   hasChanges: boolean;
   anos: string[];
@@ -86,6 +87,7 @@ export function EnterpriseComercialFilters({
   appliedFilters,
   onPendingFiltersChange,
   onApply,
+  isApplying = false,
   onClear,
   hasChanges,
   anos,
@@ -129,6 +131,7 @@ export function EnterpriseComercialFilters({
       <EnterpriseFilterBar
         activeCount={activeCount}
         applyLabel="Buscar"
+        isApplying={isApplying}
         onApply={onApply}
         onClear={onClear}
         resultCount={resultCount}
@@ -167,6 +170,7 @@ export function EnterpriseComercialFilters({
     <EnterpriseFilterBar
       activeCount={activeCount}
       applyLabel="Buscar"
+      isApplying={isApplying}
       onApply={onApply}
       onClear={onClear}
       resultCount={resultCount}

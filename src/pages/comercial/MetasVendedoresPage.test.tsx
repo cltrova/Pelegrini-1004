@@ -77,9 +77,6 @@ vi.mock('@/hooks/useEmpresaAtiva', () => ({
 vi.mock('@/contexts/FilialSelecionadaContext', () => ({
   useFilialSelecionada: () => ({ filialAtiva: 'transmissao', filialNome: 'Casa da Transmissao' }),
 }));
-vi.mock('@/components/comercial/EnterpriseComercialFilters', () => ({
-  EnterpriseComercialFilters: () => <div>Filtros comerciais</div>,
-}));
 vi.mock('@/components/comercial/VisaoGeralRapida1004', () => ({
   VisaoGeralRapida1004: () => <section aria-label="Indicadores do dashboard comercial" className="commercial-metric-strip">Conteudo preservado</section>,
 }));
@@ -187,6 +184,9 @@ describe('MetasVendedoresPage commercial dashboard', () => {
     const { rerender } = render(<MetasVendedoresPage />);
     await act(async () => undefined);
 
+    expect(screen.getByRole('status', { name: 'Carregando visão comercial' })).toBeInTheDocument();
+    expect(screen.queryByText('Conteudo preservado')).not.toBeInTheDocument();
+
     empresaState.value = {
       empresa: { nome: 'Casa da Transmissao', possui_meta_vendedor: true },
       codEmpresaAtiva: '1004',
@@ -209,26 +209,54 @@ describe('MetasVendedoresPage commercial dashboard', () => {
     await act(async () => rerender(<MetasVendedoresPage />));
     expect(await screen.findByText('Conteudo preservado')).toBeInTheDocument();
 
+    fireEvent.click(screen.getByRole('button', { name: 'Expandir filtros' }));
     const page = screen.getByRole('tablist').closest('.commercial-dashboard')!;
-    const status = page.querySelector('[role="status"]')!;
-    expect(status).toHaveClass('h-6', 'w-6', 'shrink-0');
-    const pageChildren = Array.from(page.children);
 
     fetchingState.value = 1;
     await act(async () => rerender(<MetasVendedoresPage />));
 
+    const searchButton = screen.getByRole('button', { name: 'Buscar' });
     expect(screen.getByText('Conteudo preservado')).toBeInTheDocument();
-    expect(screen.getByRole('status', { name: 'Atualizando dados comerciais' })).toBeInTheDocument();
-    expect(screen.getByRole('status', { name: 'Atualizando dados comerciais' })).toBe(status);
-    expect(within(status).getByTestId('loading-indicator')).toHaveClass('h-4', 'w-4');
-    expect(Array.from(page.children)).toEqual(pageChildren);
+    expect(searchButton).toBeVisible();
+    expect(searchButton).toBeDisabled();
+    expect(searchButton).toHaveAttribute('aria-busy', 'true');
+    expect(within(searchButton).getByTestId('loading-indicator')).toHaveClass('h-4', 'w-4');
+    expect(screen.queryByRole('status', { name: 'Atualizando dados comerciais' })).not.toBeInTheDocument();
     expect(screen.queryByText('Carregando visão comercial...')).not.toBeInTheDocument();
 
     fetchingState.value = 0;
     await act(async () => rerender(<MetasVendedoresPage />));
-    expect(page.querySelector('[role="status"]')).toBe(status);
-    expect(status).toBeEmptyDOMElement();
-    expect(Array.from(page.children)).toEqual(pageChildren);
+    expect(within(screen.getByRole('button', { name: 'Buscar' })).queryByTestId('loading-indicator')).not.toBeInTheDocument();
+    expect(page).toContainElement(screen.getByText('Conteudo preservado'));
+  });
+
+  it('bloqueia dados da empresa anterior durante hidratacao e troca de empresa', async () => {
+    const { rerender } = render(<MetasVendedoresPage />);
+    expect(await screen.findByText('Conteudo preservado')).toBeInTheDocument();
+
+    empresaState.value = {
+      empresa: undefined,
+      codEmpresaAtiva: '2000',
+      isLoading: true,
+    };
+    await act(async () => rerender(<MetasVendedoresPage />));
+
+    expect(screen.getByRole('status', { name: 'Carregando visão comercial' })).toBeInTheDocument();
+    expect(screen.queryByText('Conteudo preservado')).not.toBeInTheDocument();
+
+    empresaState.value = {
+      empresa: { nome: 'Empresa 2000', possui_meta_vendedor: true },
+      codEmpresaAtiva: '2000',
+      isLoading: false,
+    };
+    vi.mocked(useComercialData).mockReturnValue({
+      ...comercialData,
+      isLoading: true,
+    } as ReturnType<typeof useComercialData>);
+    await act(async () => rerender(<MetasVendedoresPage />));
+
+    expect(screen.getByRole('status', { name: 'Carregando visão comercial' })).toBeInTheDocument();
+    expect(screen.queryByText('Conteudo preservado')).not.toBeInTheDocument();
   });
 
   it('usa uma estrutura neutra para os cenarios dentro da secao premium', async () => {
@@ -261,7 +289,7 @@ describe('MetasVendedoresPage commercial dashboard', () => {
     sessionStorage.setItem('comercial:metas:tab', 'metas-diarias');
     render(<MetasVendedoresPage />);
 
-    await waitFor(() => expect(screen.queryByText('Filtros comerciais')).not.toBeInTheDocument());
+    await waitFor(() => expect(screen.queryByTestId('enterprise-filter-bar')).not.toBeInTheDocument());
     expect(await screen.findByRole('tab', { name: 'Metas' })).toHaveAttribute('data-state', 'active');
   });
 

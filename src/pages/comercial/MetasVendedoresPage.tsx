@@ -1,9 +1,9 @@
-import { lazy, Suspense, useMemo, useState, useCallback, useEffect } from 'react';
+import { lazy, Suspense, useMemo, useState, useCallback, useEffect, useRef } from 'react';
 import { useIsFetching, useQueryClient } from '@tanstack/react-query';
 import { useComercialData } from '@/hooks/useComercialData';
 import { useEmpresaAtiva } from '@/hooks/useEmpresaAtiva';
 import { useFilialSelecionada } from '@/contexts/FilialSelecionadaContext';
-import { LoadingIndicator, LoadingState } from '@/components/common/LoadingState';
+import { LoadingState } from '@/components/common/LoadingState';
 import { ErrorState } from '@/components/common/ErrorState';
 import { 
   Target, TrendingUp, TrendingDown, DollarSign, Calendar,
@@ -125,7 +125,7 @@ export default function MetasVendedoresPage() {
   const isPelegriniPage = isEmpresa1004Page || isEmpresa10041Page;
   const isLayoutPremium = isPelegriniPage;
   const [initialized, setInitialized] = useState(false);
-  const [hasResolvedData, setHasResolvedData] = useState(false);
+  const resolvedCompanyRef = useRef<string | null>(null);
   const [activeTab, setActiveTab] = useState<string>(() => {
     try {
       const saved = sessionStorage.getItem('comercial:metas:tab');
@@ -169,21 +169,14 @@ export default function MetasVendedoresPage() {
     });
   }, [codEmpresaAtiva, isPelegriniPage, pendingFilters]);
 
-  const { vendedoresPerformance, pedidos, devolucoes, evolucaoDiaria, evolucaoMensal, clientesPerformance, insights, kpis, periodoDisponivel, vendedoresDisponiveis, isLoading, error } = useComercialData(filtrosAplicadosParaDados, {
+  const { vendedoresPerformance, pedidos, devolucoes, evolucaoDiaria, evolucaoMensal, clientesPerformance, insights, kpis, periodoDisponivel, vendedoresDisponiveis, isLoading, isFetching: isCommercialDataFetching, error } = useComercialData(filtrosAplicadosParaDados, {
     keepPreviousData: true,
   });
-  const hasRealCommercialData = Boolean(
-    periodoDisponivel
-    || vendedoresPerformance.length
-    || pedidos.length
-    || devolucoes.length,
-  );
-  useEffect(() => {
-    const isCommercialQueryEnabled = !isLoadingEmpresa;
-    if (isCommercialQueryEnabled && !isLoading) {
-      setHasResolvedData(true);
-    }
-  }, [isLoading, isLoadingEmpresa]);
+  if (!isLoadingEmpresa && codEmpresaNorm
+    && !isLoading && !isCommercialDataFetching && !error) {
+    resolvedCompanyRef.current = codEmpresaNorm;
+  }
+  const hasResolvedData = resolvedCompanyRef.current === codEmpresaNorm && codEmpresaNorm !== '';
   const [chartView, setChartView] = useState<'mensal' | 'diario'>('diario');
   const [vendedorDetalhe, setVendedorDetalhe] = useState<{ row: VendedorDetalheRow; ranking: number } | null>(null);
   const [receitaDetalheOpen, setReceitaDetalheOpen] = useState(false);
@@ -271,7 +264,6 @@ export default function MetasVendedoresPage() {
   // Aplicar filtros
   const handleBuscar = useCallback(() => {
     setAppliedFilters(aplicarFiltroPadraoPelegrini(pendingFilters));
-    setFiltersOpen(false);
     invalidarConsultasComerciais(queryClient);
   }, [aplicarFiltroPadraoPelegrini, pendingFilters, queryClient]);
 
@@ -606,10 +598,13 @@ export default function MetasVendedoresPage() {
     return <LayoutAlternativoComercial />;
   }
 
-  const hasVisibleCommercialData = hasResolvedData || hasRealCommercialData;
-  const showInitialLoading = isLoading && !hasVisibleCommercialData;
+  const showInitialLoading = isLoadingEmpresa || (!error && !hasResolvedData);
   const isFetching = commercialFetchCount > 0;
-  const isRefreshing = isFetching && hasVisibleCommercialData;
+  const isRefreshing = isFetching && hasResolvedData;
+
+  if (showInitialLoading) {
+    return <LoadingState message="Carregando visão comercial" variant="content" />;
+  }
 
   // Observação: NÃO substituímos a página inteira quando não há vendedores.
   // O aviso de "sem vendedores" é renderizado inline dentro da seção afetada
@@ -653,24 +648,13 @@ export default function MetasVendedoresPage() {
       'commercial-dashboard dashboard-commercial-page enterprise-page relative',
       isPelegriniPage && 'bg-background text-foreground',
     )}>
-      <span
-        role="status"
-        aria-label={isRefreshing ? 'Atualizando dados comerciais' : undefined}
-        title={isRefreshing ? 'Atualizando dados comerciais...' : undefined}
-        className="commercial-refresh-indicator pointer-events-none absolute right-3 top-3 z-10 flex h-6 w-6 shrink-0 items-center justify-center text-muted-foreground"
-      >
-        {isRefreshing && <>
-          <LoadingIndicator size="sm" />
-          <span className="sr-only">Atualizando dados comerciais...</span>
-        </>}
-      </span>
-
       {!tabUsaFiltroProprio && (
         <EnterpriseComercialFilters
           pendingFilters={pendingFilters || getDefaultFiltersForEmpresa(codEmpresaAtiva)}
           appliedFilters={appliedFilters || getDefaultFiltersForEmpresa(codEmpresaAtiva)}
           onPendingFiltersChange={handlePendingFiltersChange}
           onApply={handleBuscar}
+          isApplying={isRefreshing}
           onClear={handleClearFilters}
           hasChanges={hasChanges}
           anos={ANOS_DISPONIVEIS}
@@ -709,13 +693,6 @@ export default function MetasVendedoresPage() {
         <TabsContent value="visao-geral" className="mt-0 min-h-0 flex-1 space-y-3 overflow-auto">
           {error ? (
             <ErrorState message="Erro ao carregar dados comerciais" />
-          ) : showInitialLoading ? (
-            <LoadingState
-              message="Carregando visão comercial"
-              className="h-full min-h-48"
-              variant="content"
-              surface={false}
-            />
           ) : isLayoutPremium ? (
             <VisaoGeralRapida1004
               vendedoresComMeta={vendedoresComMetaFonteFinal}

@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useComercialData } from '@/hooks/useComercialData';
 import { useEmpresaAtiva } from '@/hooks/useEmpresaAtiva';
@@ -260,11 +260,16 @@ export default function ClientesPage() {
     return `${months[parseInt(month) - 1]}/${year.slice(2)}`;
   };
 
+  const resolvedCompanyRef = useRef<string | null>(null);
+  const companyKey = String(codEmpresaAtiva ?? '').trim();
+  if (!isLoadingEmpresa && companyKey && !isLoading && !isFetching && !error) {
+    resolvedCompanyRef.current = companyKey;
+  }
+  const hasResolvedData = resolvedCompanyRef.current === companyKey && companyKey !== '';
   const hasClientData = clientesPerformance.length > 0;
-  const isInitialLoading = isLoading && !hasClientData;
-  const isRefreshing = isFetching && hasClientData;
-  const blockingError = error && !hasClientData;
-  const showBlockingLoading = isLoadingEmpresa || isInitialLoading;
+  const isRefreshing = (isLoading || isFetching) && hasResolvedData;
+  const blockingError = error && !hasResolvedData;
+  const showBlockingLoading = isLoadingEmpresa || (!error && !hasResolvedData);
   const pageClassName = 'clientes-page commercial-clients h-[calc(100dvh-9.5rem)] max-h-[calc(100dvh-9.5rem)] overflow-hidden overflow-x-hidden px-3 pb-3 pt-2 sm:px-4 md:h-full md:max-h-full';
 
   if (showBlockingLoading || blockingError) {
@@ -302,6 +307,7 @@ export default function ClientesPage() {
         appliedFilters={appliedFilters}
         onPendingFiltersChange={setPendingFilters}
         onApply={handleBuscar}
+        isApplying={isRefreshing}
         onClear={handleClearFilters}
         hasChanges={hasChanges}
         anos={ANOS_DISPONIVEIS}
@@ -348,11 +354,6 @@ export default function ClientesPage() {
                     ? <LoadingIndicator size="sm" />
                     : <RefreshCw aria-hidden="true" className="h-3.5 w-3.5" />}
                 </button>
-              </span>
-            )}
-            {isRefreshing && !error && (
-              <span role="status" aria-label="Atualizando clientes" className="commercial-refresh-indicator hidden h-6 w-6 items-center justify-center lg:inline-flex">
-                <LoadingIndicator size="sm" />
               </span>
             )}
             <EnterpriseSearchFilter

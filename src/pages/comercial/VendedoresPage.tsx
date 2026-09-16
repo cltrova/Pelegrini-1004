@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { useComercialData } from '@/hooks/useComercialData';
 import { useEmpresaAtiva } from '@/hooks/useEmpresaAtiva';
 import { formatCurrency, formatNumber, formatPercent } from '@/utils/formatters';
@@ -104,7 +104,7 @@ const COLORS = [
 const ANOS_DISPONIVEIS = ['2023', '2024', '2025', '2026'];
 
 export default function VendedoresPage() {
-  const { codEmpresaAtiva } = useEmpresaAtiva();
+  const { codEmpresaAtiva, isLoading: isLoadingEmpresa } = useEmpresaAtiva();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedVendedor, setSelectedVendedor] = useState<string | number | null>(null);
   const [activeTab, setActiveTab] = useState('visao-geral');
@@ -113,6 +113,7 @@ export default function VendedoresPage() {
     { role: 'assistant', content: 'Olá! Sou sua assistente de análise comercial. Posso ajudar a analisar a performance dos vendedores, projeções de metas e insights. Como posso ajudar?' }
   ]);
   const [initialized, setInitialized] = useState(false);
+  const resolvedCompanyRef = useRef<string | null>(null);
   
   // Filtros - estado pendente e aplicado
   const [pendingFilters, setPendingFilters] = useState<ComercialFiltersType>(() => getDefaultFiltersForEmpresa(codEmpresaAtiva));
@@ -126,9 +127,15 @@ export default function VendedoresPage() {
     clientesPerformance,
     periodoDisponivel,
     vendedoresDisponiveis,
-    isLoading, 
+    isLoading,
+    isFetching,
     error 
   } = useComercialData(appliedFilters);
+  const companyKey = String(codEmpresaAtiva ?? '').trim();
+  if (!isLoadingEmpresa && companyKey && !isLoading && !isFetching && !error) {
+    resolvedCompanyRef.current = companyKey;
+  }
+  const hasResolvedCompanyData = resolvedCompanyRef.current === companyKey && companyKey !== '';
 
   // Inicializar filtros com o último período disponível nos dados
   useEffect(() => {
@@ -369,7 +376,7 @@ export default function VendedoresPage() {
     setChatMessage('');
   };
 
-  if (isLoading) return <LoadingState message="Carregando vendedores" variant="content" />;
+  if (isLoadingEmpresa || (!error && !hasResolvedCompanyData)) return <LoadingState message="Carregando vendedores" variant="content" />;
   if (error) return <ErrorState message="Erro ao carregar vendedores" />;
 
   return (
