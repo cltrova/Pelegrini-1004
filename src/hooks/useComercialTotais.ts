@@ -271,6 +271,7 @@ export function useComercialTotaisIdeal(
     devolucoes: query.data?.devolucoes || null,
     produtos: query.data?.produtos || null,
     isLoading: query.isLoading,
+    isFetching: query.isFetching,
     error: query.error,
     hasEndpoint,
   };

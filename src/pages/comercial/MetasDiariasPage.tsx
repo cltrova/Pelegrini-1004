@@ -55,14 +55,23 @@ export default function MetasDiariasPage() {
   
   const { vendedoresPerformance, pedidos, periodoDisponivel, vendedoresDisponiveis, isLoading, isFetching, error } = useComercialData(appliedFilters);
   const companyKey = String(codEmpresaAtiva ?? '').trim();
-  if (!isLoadingEmpresa && companyKey && !isLoading && !isFetching && !error) {
-    resolvedCompanyRef.current = companyKey;
-  }
-  const hasResolvedCompanyData = resolvedCompanyRef.current === companyKey && companyKey !== '';
 
   // 1004 (Pelegrini): M.REAL precisa vir da MESMA fonte do card "Receita".
   const isEmpresa1004 = String(codEmpresaAtiva ?? '') === '1004';
-  const { receitaPorVendedor1004: receita1004PorVendedor } = useComercialProdutos(appliedFilters);
+  const {
+    receitaPorVendedor1004: receita1004PorVendedor,
+    isLoading: isLoadingProdutos,
+    isFetching: isFetchingProdutos,
+    error: produtosError,
+  } = useComercialProdutos(appliedFilters);
+  const companyDataError = error || (isEmpresa1004 ? produtosError : null);
+  const isCompanyDataPending = isLoading
+    || isFetching
+    || (isEmpresa1004 && (isLoadingProdutos || isFetchingProdutos));
+  if (!isLoadingEmpresa && companyKey && !isCompanyDataPending && !companyDataError) {
+    resolvedCompanyRef.current = companyKey;
+  }
+  const hasResolvedCompanyData = resolvedCompanyRef.current === companyKey && companyKey !== '';
 
 
   // Inicializar filtros padrão mesmo quando periodoDisponivel vier nulo
@@ -277,11 +286,11 @@ export default function MetasDiariasPage() {
     return <AnaliseDiariaLayout />;
   }
 
-  if (isLoadingEmpresa || (!error && !hasResolvedCompanyData)) {
+  if (isLoadingEmpresa || (!companyDataError && !hasResolvedCompanyData)) {
     return <LoadingState message="Carregando metas diárias" variant="content" />;
   }
 
-  if (error) {
+  if (companyDataError) {
     return (
       <div className="enterprise-page-shell">
         <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-6 text-center max-w-md mx-auto">

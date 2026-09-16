@@ -17,6 +17,9 @@ const {
   fetchingState,
   insightsQueryState,
   produtosState,
+  produtosTotalizadoresState,
+  produtosFiltroState,
+  totaisState,
   supabaseInvoke,
 } = vi.hoisted(() => ({
   campanhasState: {
@@ -49,6 +52,9 @@ const {
       error: null,
     },
   },
+  produtosTotalizadoresState: { value: {} as Record<string, unknown> },
+  produtosFiltroState: { value: {} as Record<string, unknown> },
+  totaisState: { value: {} as Record<string, unknown> },
   supabaseInvoke: vi.fn(),
 }));
 
@@ -66,10 +72,14 @@ vi.mock('@/hooks/useComercialData', () => ({ useComercialData: vi.fn() }));
 vi.mock('@/hooks/useCampanhas', () => ({ useCampanhas: () => campanhasState.value }));
 vi.mock('@/contexts/AuthContext', () => ({ useAuth: () => ({ user: { id: 'user-1' } }) }));
 vi.mock('@/hooks/useComercialProdutos', () => ({
-  useComercialProdutos: () => produtosState.value,
+  useComercialProdutos: (filters?: Record<string, unknown>, options?: { enabled?: boolean }) => {
+    if (options?.enabled !== undefined) return produtosFiltroState.value;
+    if (filters?.ignorarEquipePadrao) return produtosTotalizadoresState.value;
+    return produtosState.value;
+  },
 }));
 vi.mock('@/hooks/useComercialTotais', () => ({
-  useComercialTotaisIdeal: () => ({ pedidos: null, produtos: null }),
+  useComercialTotaisIdeal: () => totaisState.value,
 }));
 vi.mock('@/hooks/useEmpresaAtiva', () => ({
   useEmpresaAtiva: () => empresaState.value,
@@ -123,6 +133,15 @@ describe('MetasVendedoresPage commercial dashboard', () => {
       receitaTotalizada: 0,
       pedidosDistintosTotalizados: 0,
       receitaPorVendedor1004: new Map(),
+      isLoading: false,
+      isFetching: false,
+      error: null,
+    };
+    produtosTotalizadoresState.value = { ...produtosState.value };
+    produtosFiltroState.value = { ...produtosState.value };
+    totaisState.value = {
+      pedidos: null,
+      produtos: null,
       isLoading: false,
       isFetching: false,
       error: null,
@@ -257,6 +276,62 @@ describe('MetasVendedoresPage commercial dashboard', () => {
 
     expect(screen.getByRole('status', { name: 'Carregando visão comercial' })).toBeInTheDocument();
     expect(screen.queryByText('Conteudo preservado')).not.toBeInTheDocument();
+  });
+
+  it('espera produtos e totalizadores quando a base da empresa resolve primeiro', async () => {
+    empresaState.value = {
+      empresa: { nome: 'Empresa 10041', possui_meta_vendedor: true },
+      codEmpresaAtiva: '10041',
+      isLoading: false,
+    };
+    produtosState.value = { ...produtosState.value, isFetching: true };
+    produtosTotalizadoresState.value = { ...produtosTotalizadoresState.value, isFetching: true };
+    totaisState.value = { ...totaisState.value, isFetching: true };
+
+    const { rerender } = render(<MetasVendedoresPage />);
+
+    expect(screen.getByRole('status', { name: 'Carregando visão comercial' })).toBeInTheDocument();
+
+    produtosState.value = { ...produtosState.value, isFetching: false };
+    await act(async () => rerender(<MetasVendedoresPage />));
+    expect(screen.getByRole('status', { name: 'Carregando visão comercial' })).toBeInTheDocument();
+
+    produtosTotalizadoresState.value = { ...produtosTotalizadoresState.value, isFetching: false };
+    await act(async () => rerender(<MetasVendedoresPage />));
+    expect(screen.getByRole('status', { name: 'Carregando visão comercial' })).toBeInTheDocument();
+
+    totaisState.value = { ...totaisState.value, isFetching: false };
+    await act(async () => rerender(<MetasVendedoresPage />));
+    expect(await screen.findByText('Conteudo preservado')).toBeInTheDocument();
+  });
+
+  it('isola a empresa anterior ate o produto do filtro aberto resolver', async () => {
+    const { rerender } = render(<MetasVendedoresPage />);
+    expect(await screen.findByText('Conteudo preservado')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Expandir filtros' }));
+    empresaState.value = {
+      empresa: undefined,
+      codEmpresaAtiva: '10041',
+      isLoading: true,
+    };
+    await act(async () => rerender(<MetasVendedoresPage />));
+    expect(screen.queryByText('Conteudo preservado')).not.toBeInTheDocument();
+
+    empresaState.value = {
+      empresa: { nome: 'Empresa 10041', possui_meta_vendedor: true },
+      codEmpresaAtiva: '10041',
+      isLoading: false,
+    };
+    produtosFiltroState.value = { ...produtosFiltroState.value, isFetching: true };
+    await act(async () => rerender(<MetasVendedoresPage />));
+
+    expect(screen.getByRole('status', { name: 'Carregando visão comercial' })).toBeInTheDocument();
+    expect(screen.queryByText('Conteudo preservado')).not.toBeInTheDocument();
+
+    produtosFiltroState.value = { ...produtosFiltroState.value, isFetching: false };
+    await act(async () => rerender(<MetasVendedoresPage />));
+    expect(await screen.findByText('Conteudo preservado')).toBeInTheDocument();
   });
 
   it('usa uma estrutura neutra para os cenarios dentro da secao premium', async () => {
@@ -439,6 +514,7 @@ describe('CampanhasTab loading lifecycle', () => {
         valor_total: 1250,
       }],
     };
+    produtosTotalizadoresState.value = { ...produtosState.value };
 
     const { rerender } = render(<CampanhasTab />);
 
@@ -448,6 +524,7 @@ describe('CampanhasTab loading lifecycle', () => {
     expect(screen.getAllByText(/1\.250,00/).length).toBeGreaterThan(0);
 
     produtosState.value = { ...produtosState.value, isFetching: true };
+    produtosTotalizadoresState.value = { ...produtosState.value };
     await act(async () => rerender(<CampanhasTab />));
 
     expect(screen.getAllByText('Campanha EATON').length).toBeGreaterThan(0);

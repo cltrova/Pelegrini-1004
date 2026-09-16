@@ -68,9 +68,15 @@ export function EnterpriseFilterBar({
             size="sm"
             type="button"
           >
-            {isApplying
-              ? <LoadingIndicator size="sm" />
-              : <Search aria-hidden="true" className="h-3.5 w-3.5" />}
+            <span
+              aria-hidden="true"
+              className="flex h-4 w-4 shrink-0 items-center justify-center"
+              data-enterprise-apply-icon
+            >
+              {isApplying
+                ? <LoadingIndicator size="sm" />
+                : <Search className="h-3.5 w-3.5" />}
+            </span>
             {applyLabel}
           </Button>
         )}

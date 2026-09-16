@@ -166,6 +166,33 @@ describe('enterprise visual foundation', () => {
     expect(onApply).toHaveBeenCalledTimes(1);
   });
 
+  it('keeps an exact fixed icon slot when Buscar changes to loading', () => {
+    const { rerender } = render(
+      <EnterpriseFilterBar defaultOpen isApplying={false} onApply={() => undefined}>
+        <EnterpriseSearchFilter label="Busca" value="" onChange={() => undefined} />
+      </EnterpriseFilterBar>,
+    );
+
+    const idleButton = screen.getByRole('button', { name: 'Buscar' });
+    const iconSlot = idleButton.querySelector('[data-enterprise-apply-icon]');
+    expect(iconSlot).toBe(idleButton.firstElementChild);
+    expect(iconSlot).toHaveClass('flex', 'h-4', 'w-4', 'shrink-0', 'items-center', 'justify-center');
+    expect(iconSlot?.firstElementChild).toHaveClass('h-3.5', 'w-3.5');
+
+    rerender(
+      <EnterpriseFilterBar defaultOpen isApplying onApply={() => undefined}>
+        <EnterpriseSearchFilter label="Busca" value="" onChange={() => undefined} />
+      </EnterpriseFilterBar>,
+    );
+
+    const loadingButton = screen.getByRole('button', { name: 'Buscar' });
+    const loadingSlot = loadingButton.querySelector('[data-enterprise-apply-icon]');
+    expect(loadingSlot).toBe(iconSlot);
+    expect(loadingSlot).toHaveClass('flex', 'h-4', 'w-4', 'shrink-0', 'items-center', 'justify-center');
+    expect(loadingSlot?.firstElementChild).toHaveClass('h-4', 'w-4');
+    expect(loadingSlot?.nextSibling?.textContent).toBe('Buscar');
+  });
+
   it('keeps enterprise filters collapsed by default across viewports', () => {
     const verboseSummary = 'Anos: 2026 | Mes: Set | Vendedores: 5 selecionados';
     render(

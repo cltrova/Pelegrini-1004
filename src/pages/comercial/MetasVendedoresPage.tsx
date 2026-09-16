@@ -172,11 +172,6 @@ export default function MetasVendedoresPage() {
   const { vendedoresPerformance, pedidos, devolucoes, evolucaoDiaria, evolucaoMensal, clientesPerformance, insights, kpis, periodoDisponivel, vendedoresDisponiveis, isLoading, isFetching: isCommercialDataFetching, error } = useComercialData(filtrosAplicadosParaDados, {
     keepPreviousData: true,
   });
-  if (!isLoadingEmpresa && codEmpresaNorm
-    && !isLoading && !isCommercialDataFetching && !error) {
-    resolvedCompanyRef.current = codEmpresaNorm;
-  }
-  const hasResolvedData = resolvedCompanyRef.current === codEmpresaNorm && codEmpresaNorm !== '';
   const [chartView, setChartView] = useState<'mensal' | 'diario'>('diario');
   const [vendedorDetalhe, setVendedorDetalhe] = useState<{ row: VendedorDetalheRow; ranking: number } | null>(null);
   const [receitaDetalheOpen, setReceitaDetalheOpen] = useState(false);
@@ -187,6 +182,7 @@ export default function MetasVendedoresPage() {
     receitaPorVendedor1004: receita1004PorVendedor,
 
     isLoading: isLoadingProdutos1004,
+    isFetching: isFetchingProdutos1004,
     error: errorProdutos1004,
   } = useComercialProdutos(filtrosAplicadosParaDados, {
     keepPreviousData: true,
@@ -195,12 +191,18 @@ export default function MetasVendedoresPage() {
     produtos: produtos1004Totalizadores,
     receitaTotalizada: receita1004TotalizadaGeral,
     pedidosDistintosTotalizados: pedidos1004DistintosGeral,
+    isLoading: isLoadingProdutosTotalizadores1004,
+    isFetching: isFetchingProdutosTotalizadores1004,
+    error: errorProdutosTotalizadores1004,
   } = useComercialProdutos(filtrosTotalizadores1004, {
     keepPreviousData: true,
   });
   const {
     pedidos: pedidosTotalizadorOficial,
     produtos: produtosTotalizadorOficial,
+    isLoading: isLoadingTotalizadorOficial,
+    isFetching: isFetchingTotalizadorOficial,
+    error: errorTotalizadorOficial,
   } = useComercialTotaisIdeal(
     filtrosTotalizadores1004?.periodo,
     null,
@@ -214,10 +216,30 @@ export default function MetasVendedoresPage() {
     receitaPorVendedor1004: receitaPorVendedorFiltro1004,
     isLoading: isLoadingVendedoresFiltro1004,
     isFetching: isFetchingVendedoresFiltro1004,
+    error: errorVendedoresFiltro1004,
   } = useComercialProdutos(filtrosVendedoresPendentes1004, {
     enabled: filtersOpen && isPelegriniPage,
     keepPreviousData: false,
   });
+  const isFiltroProdutosRequired = filtersOpen && isPelegriniPage;
+  const companyDataError = error
+    || (isPelegriniPage ? errorProdutos1004 || errorProdutosTotalizadores1004 : null)
+    || (isEmpresa10041Page ? errorTotalizadorOficial : null)
+    || (isFiltroProdutosRequired ? errorVendedoresFiltro1004 : null);
+  const isCompanyDataPending = isLoading
+    || isCommercialDataFetching
+    || (isPelegriniPage && (
+      isLoadingProdutos1004
+      || isFetchingProdutos1004
+      || isLoadingProdutosTotalizadores1004
+      || isFetchingProdutosTotalizadores1004
+    ))
+    || (isEmpresa10041Page && (isLoadingTotalizadorOficial || isFetchingTotalizadorOficial))
+    || (isFiltroProdutosRequired && (isLoadingVendedoresFiltro1004 || isFetchingVendedoresFiltro1004));
+  if (!isLoadingEmpresa && codEmpresaNorm && !isCompanyDataPending && !companyDataError) {
+    resolvedCompanyRef.current = codEmpresaNorm;
+  }
+  const hasResolvedData = resolvedCompanyRef.current === codEmpresaNorm && codEmpresaNorm !== '';
 
   const vendedoresParaFiltro1004 = useMemo(() => {
     if (!isPelegriniPage || !filtersOpen) return vendedoresDisponiveis;
@@ -598,7 +620,7 @@ export default function MetasVendedoresPage() {
     return <LayoutAlternativoComercial />;
   }
 
-  const showInitialLoading = isLoadingEmpresa || (!error && !hasResolvedData);
+  const showInitialLoading = isLoadingEmpresa || (!companyDataError && !hasResolvedData);
   const isFetching = commercialFetchCount > 0;
   const isRefreshing = isFetching && hasResolvedData;
 
@@ -691,7 +713,7 @@ export default function MetasVendedoresPage() {
 
         {/* ==================== ABA: VISÃO GERAL ==================== */}
         <TabsContent value="visao-geral" className="mt-0 min-h-0 flex-1 space-y-3 overflow-auto">
-          {error ? (
+          {companyDataError ? (
             <ErrorState message="Erro ao carregar dados comerciais" />
           ) : isLayoutPremium ? (
             <VisaoGeralRapida1004

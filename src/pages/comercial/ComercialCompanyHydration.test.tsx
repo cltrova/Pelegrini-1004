@@ -6,13 +6,21 @@ import { useComercialData } from '@/hooks/useComercialData';
 import MetasDiariasPage from './MetasDiariasPage';
 import VendedoresPage from './VendedoresPage';
 
-const { commercialState, empresaState } = vi.hoisted(() => ({
+const { commercialState, empresaState, produtosState } = vi.hoisted(() => ({
   commercialState: { value: {} as ReturnType<typeof useComercialData> },
   empresaState: {
     value: {
       empresa: undefined as { nome: string; possui_meta_vendedor: boolean } | undefined,
       codEmpresaAtiva: '2000' as string | undefined,
       isLoading: true,
+    },
+  },
+  produtosState: {
+    value: {
+      receitaPorVendedor1004: new Map(),
+      isLoading: false,
+      isFetching: false,
+      error: null,
     },
   },
 }));
@@ -22,7 +30,7 @@ vi.mock('@/hooks/useComercialData', () => ({
 }));
 
 vi.mock('@/hooks/useComercialProdutos', () => ({
-  useComercialProdutos: () => ({ receitaPorVendedor1004: new Map() }),
+  useComercialProdutos: () => produtosState.value,
 }));
 
 vi.mock('@/hooks/useEmpresaAtiva', () => ({
@@ -86,6 +94,12 @@ describe('commercial company hydration ownership', () => {
       isLoading: true,
     };
     commercialState.value = comercialData();
+    produtosState.value = {
+      receitaPorVendedor1004: new Map(),
+      isLoading: false,
+      isFetching: false,
+      error: null,
+    };
   });
 
   it('bloqueia metas diarias ate a empresa nova resolver seus proprios dados', async () => {
@@ -118,5 +132,34 @@ describe('commercial company hydration ownership', () => {
 
     expect(screen.getByRole('status', { name: 'Carregando vendedores' })).toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: 'Painel de Vendedores' })).not.toBeInTheDocument();
+  });
+
+  it('mantem metas diarias bloqueadas quando a base resolve antes dos produtos da empresa', async () => {
+    empresaState.value = {
+      empresa: { nome: 'Empresa 1004', possui_meta_vendedor: true },
+      codEmpresaAtiva: '1004',
+      isLoading: false,
+    };
+    commercialState.value = comercialData({ vendedoresPerformance: [] });
+    produtosState.value = {
+      ...produtosState.value,
+      isLoading: true,
+      isFetching: true,
+    };
+
+    const { rerender } = render(<MetasDiariasPage />);
+
+    expect(screen.getByRole('status', { name: 'Carregando metas diárias' })).toBeInTheDocument();
+    expect(screen.queryByText('Nenhum dado encontrado para o período')).not.toBeInTheDocument();
+
+    produtosState.value = {
+      ...produtosState.value,
+      isLoading: false,
+      isFetching: false,
+    };
+    await act(async () => rerender(<MetasDiariasPage />));
+
+    expect(screen.queryByRole('status', { name: 'Carregando metas diárias' })).not.toBeInTheDocument();
+    expect(screen.getByText('Nenhum dado encontrado para o período')).toBeInTheDocument();
   });
 });
