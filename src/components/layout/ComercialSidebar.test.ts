@@ -52,6 +52,10 @@ type AppExports = typeof import('@/App') & {
     path: string;
     Component: ComponentType;
   };
+  COMPRAS_ROUTE?: {
+    path: string;
+    Component: ComponentType;
+  };
 };
 
 function mockCompany(codEmpresaAtiva: string) {
@@ -118,6 +122,16 @@ describe('commercial sidebar menu access', () => {
     expect(screen.getByRole('link', { name: 'Vendas Perdidas' })).toHaveAttribute('href', '/comercial/perdidas');
     expect(screen.queryByText('Em breve')).not.toBeInTheDocument();
     expect(screen.queryByText('BREVE')).not.toBeInTheDocument();
+  });
+
+  it('shows an enabled Compras link only for Casa da Transmissao', () => {
+    const getComercialMenuItems = (ComercialSidebarModule as ComercialSidebarExports).getComercialMenuItems!;
+    expect(getComercialMenuItems('1004').map((item) => item.path)).toContain('/comercial/compras');
+    expect(getComercialMenuItems('10041').map((item) => item.path)).not.toContain('/comercial/compras');
+
+    mockCompany('1004');
+    render(createElement(MemoryRouter, { initialEntries: ['/comercial/dashboard'] }, createElement(ComercialSidebar)));
+    expect(screen.getByRole('link', { name: 'Compras' })).toHaveAttribute('href', '/comercial/compras');
   });
 
   it('uses the active branch as the visible brand instead of generic module chrome', () => {
@@ -273,4 +287,31 @@ describe('commercial sidebar menu access', () => {
     renderLostSalesRoute('9999');
     expect(screen.getByText('Dashboard comercial')).toBeInTheDocument();
   }, 30_000);
+
+  it('renders the App-registered Compras route only for company 1004', async () => {
+    const AppModule = await import('@/App');
+    const route = (AppModule as AppExports).COMPRAS_ROUTE!;
+    expect(route).toMatchObject({ path: 'compras', Component: expect.any(Function) });
+
+    const renderComprasRoute = (codEmpresa: string) => {
+      mockCompany(codEmpresa);
+      render(createElement(
+        MemoryRouter,
+        { initialEntries: ['/comercial/compras'] },
+        createElement(
+          Routes,
+          undefined,
+          createElement(Route, { path: '/comercial' }, createElement(Route, route)),
+          createElement(Route, { path: '/comercial/dashboard', element: createElement('p', undefined, 'Dashboard comercial') }),
+        ),
+      ));
+    };
+
+    renderComprasRoute('1004');
+    expect(await screen.findByRole('heading', { name: 'Compras' })).toBeInTheDocument();
+
+    cleanup();
+    renderComprasRoute('10041');
+    expect(screen.getByText('Dashboard comercial')).toBeInTheDocument();
+  });
 });
