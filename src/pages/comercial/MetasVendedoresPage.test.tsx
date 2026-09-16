@@ -375,6 +375,19 @@ describe('MetasVendedoresPage commercial dashboard', () => {
     expect(screen.queryByText('Conteudo preservado')).not.toBeInTheDocument();
   });
 
+  it('bloqueia uma aba persistida quando uma dependencia ainda nao foi resolvida', () => {
+    sessionStorage.setItem('comercial:metas:tab', 'comparativos');
+    produtosState.value = {
+      ...produtosState.value,
+      error: new Error('Falha inicial de produtos'),
+    };
+
+    render(<MetasVendedoresPage />);
+
+    expect(screen.getByText('Erro ao carregar dados comerciais')).toBeInTheDocument();
+    expect(screen.queryByText('Análises executivas')).not.toBeInTheDocument();
+  });
+
   it('usa uma estrutura neutra para os cenarios dentro da secao premium', async () => {
     sessionStorage.setItem('comercial:metas:tab', 'comparativos');
     vi.mocked(useComercialData).mockReturnValue({

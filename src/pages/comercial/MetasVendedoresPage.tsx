@@ -629,6 +629,10 @@ export default function MetasVendedoresPage() {
     return <LoadingState message="Carregando visão comercial" variant="content" />;
   }
 
+  if (blockingCompanyDataError) {
+    return <ErrorState message="Erro ao carregar dados comerciais" />;
+  }
+
   // Observação: NÃO substituímos a página inteira quando não há vendedores.
   // O aviso de "sem vendedores" é renderizado inline dentro da seção afetada
   // (mais abaixo), mantendo o shell do dashboard (header, filtros e abas)
@@ -714,9 +718,7 @@ export default function MetasVendedoresPage() {
 
         {/* ==================== ABA: VISÃO GERAL ==================== */}
         <TabsContent value="visao-geral" className="mt-0 min-h-0 flex-1 space-y-3 overflow-auto">
-          {blockingCompanyDataError ? (
-            <ErrorState message="Erro ao carregar dados comerciais" />
-          ) : isLayoutPremium ? (
+          {isLayoutPremium ? (
             <VisaoGeralRapida1004
               vendedoresComMeta={vendedoresComMetaFonteFinal}
               vendedoresGrafico={vendedoresGraficoVisaoGeral1004}
