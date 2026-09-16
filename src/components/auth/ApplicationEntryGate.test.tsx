@@ -69,6 +69,20 @@ describe('Application entry gate', () => {
     expect(screen.queryByRole('heading', { name: 'Acesso ao sistema' })).not.toBeInTheDocument();
   });
 
+  it('shows the standardized application loading state before exposing protected content', () => {
+    authState.isLoading = true;
+
+    render(
+      <PasswordGate>
+        <p>Conteudo protegido</p>
+      </PasswordGate>,
+    );
+
+    expect(screen.getByRole('status', { name: 'Carregando aplicacao' })).toBeInTheDocument();
+    expect(screen.queryByText('Conteudo protegido')).not.toBeInTheDocument();
+    expect(document.querySelector('.border-b-2')).not.toBeInTheDocument();
+  });
+
   it('rotates the institutional story automatically without branch choice buttons', () => {
     vi.useFakeTimers();
     render(<PasswordGate><p>Conteudo protegido</p></PasswordGate>);

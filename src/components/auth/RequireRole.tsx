@@ -5,6 +5,7 @@ import type { AppRole } from '@/types/auth';
 import { Shield, AlertCircle } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { LoadingState } from '@/components/common/LoadingState';
 
 interface RequireRoleProps {
   children: ReactNode;
@@ -27,11 +28,7 @@ export function RequireRole({
 
   // Mostrar loading enquanto verifica autenticação
   if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-      </div>
-    );
+    return <LoadingState message="Carregando aplicacao" variant="screen" />;
   }
 
   // Se não autenticado, redirecionar para home (que mostrará login)

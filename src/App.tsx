@@ -13,6 +13,7 @@ import { ComercialLayout } from "@/components/layout/ComercialLayout";
 import { WhatsappLayout } from "@/components/layout/WhatsappLayout";
 import { OperacionalLayout } from "@/components/layout/OperacionalLayout";
 import { AppErrorBoundary } from "@/components/common/AppErrorBoundary";
+import { LoadingState } from "@/components/common/LoadingState";
 import { RequireModule } from "@/components/auth/RequireModule";
 import { RequireRole } from "@/components/auth/RequireRole";
 import { ForceChangePassword } from "@/components/auth/ForceChangePassword";
@@ -56,11 +57,7 @@ const queryClient = new QueryClient({
 });
 
 function GuardSpinner() {
-  return (
-    <div className="min-h-screen flex items-center justify-center">
-      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-    </div>
-  );
+  return <LoadingState message="Carregando aplicacao" variant="screen" />;
 }
 
 // Enquanto auth/empresa ainda carregam, nenhum guard pode redirecionar
@@ -116,7 +113,7 @@ function FinanceiroIndexRedirect() {
   const { permissions, isLoading: permissionsLoading } = useUserModulePermissions();
 
   if (empresaLoading || permissionsLoading) {
-    return <div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" /></div>;
+    return <GuardSpinner />;
   }
 
   if (isMaster || permissions?.modulo_resumo) {

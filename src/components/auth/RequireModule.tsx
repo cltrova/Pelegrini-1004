@@ -6,6 +6,7 @@ import { useEmpresaConfig } from '@/hooks/useEmpresaConfig';
 import { Shield, Lock } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { LoadingState } from '@/components/common/LoadingState';
 
 type ModuloKey = 'dre' | 'variacao' | 'comercial' | 'whatsapp' | 'assistente_ia' | 'operacional' | 'resumo';
 
@@ -42,11 +43,7 @@ export function RequireModule({
 
   // Mostrar loading enquanto verifica
   if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-      </div>
-    );
+    return <LoadingState message="Carregando aplicacao" variant="screen" />;
   }
 
   // Se não autenticado, redirecionar para home
