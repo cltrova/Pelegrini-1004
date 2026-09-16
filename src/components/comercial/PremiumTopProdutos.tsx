@@ -29,6 +29,7 @@ interface AIInsight {
 interface PremiumTopProdutosProps {
   produtos: TopProdutoAgg[];
   resumoVendas?: ResumoVendaLinha[];
+  mode?: 'receitas' | 'devolucoes';
   selectedMarca: string | null;
   onSelectMarca: (marca: string | null) => void;
   onHoverMarca?: (marca: string | null) => void;
@@ -38,8 +39,9 @@ interface PremiumTopProdutosProps {
 const PAGE_SIZE = 20;
 
 export function PremiumTopProdutos({
-  produtos, resumoVendas = [], selectedMarca, onSelectMarca, showInsights = true,
+  produtos, resumoVendas = [], mode = 'receitas', selectedMarca, onSelectMarca, showInsights = true,
 }: PremiumTopProdutosProps) {
+  const isDevolucao = mode === 'devolucoes';
   const [busca, setBusca] = useState('');
   const [mostrar, setMostrar] = useState(PAGE_SIZE);
   const [produtoDetalhe, setProdutoDetalhe] = useState<TopProdutoAgg | null>(null);
@@ -203,18 +205,22 @@ export function PremiumTopProdutos({
   const detalhesProduto = useMemo(() => {
     if (!produtoDetalhe) return null;
     const cod = String(produtoDetalhe.cod_produto);
-    const linhas = resumoVendas.filter(l => String(l.cod_produto) === cod);
-    const receita = linhas.reduce((a, l) => a + l.receita, 0);
-    const custo = linhas.reduce((a, l) => a + l.custo, 0);
-    const lucro = linhas.reduce((a, l) => a + l.lucro, 0);
-    const margem = receita > 0 ? (lucro / receita) * 100 : 0;
+    const tipo = isDevolucao ? 'DEVOLUCAO' : 'PEDIDO';
+    const linhas = resumoVendas.filter(l => String(l.cod_produto) === cod && l.tipo === tipo);
+    const receitaAssinada = linhas.reduce((a, l) => a + l.receita, 0);
+    const custoAssinado = linhas.reduce((a, l) => a + l.custo, 0);
+    const lucroAssinado = linhas.reduce((a, l) => a + l.lucro, 0);
+    const receita = isDevolucao ? Math.abs(receitaAssinada) : receitaAssinada;
+    const custo = isDevolucao ? Math.abs(custoAssinado) : custoAssinado;
+    const lucro = isDevolucao ? 0 : lucroAssinado;
+    const margem = !isDevolucao && receita > 0 ? (lucro / receita) * 100 : 0;
 
     // Top clientes
     const porCliente = new Map<string, { nome: string; receita: number; pedidos: number }>();
     linhas.forEach(l => {
       const key = l.cliente_razao || `Cliente ${l.cliente_codigo}` || '—';
       const cur = porCliente.get(key) || { nome: key, receita: 0, pedidos: 0 };
-      cur.receita += l.receita;
+      cur.receita += isDevolucao ? Math.abs(l.receita) : l.receita;
       cur.pedidos += 1;
       porCliente.set(key, cur);
     });
@@ -226,7 +232,7 @@ export function PremiumTopProdutos({
       const d = new Date(l.data);
       if (isNaN(d.getTime())) return;
       const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-      porMes.set(key, (porMes.get(key) || 0) + l.receita);
+      porMes.set(key, (porMes.get(key) || 0) + (isDevolucao ? Math.abs(l.receita) : l.receita));
     });
     const evolucaoMensal = Array.from(porMes.entries())
       .sort(([a], [b]) => a.localeCompare(b))
@@ -242,7 +248,7 @@ export function PremiumTopProdutos({
       pedidos: linhas.length,
       topClientes, evolucaoMensal, ultimasNFs,
     };
-  }, [produtoDetalhe, resumoVendas]);
+  }, [produtoDetalhe, resumoVendas, isDevolucao]);
 
   return (
     <div className="min-w-0 max-w-full space-y-4 animate-fade-in">
@@ -302,7 +308,7 @@ export function PremiumTopProdutos({
                 <Trophy className="h-5 w-5 text-primary" />
               </div>
               <div>
-                <h3 className="font-bold text-lg leading-tight">Ranking de Produtos</h3>
+                <h3 className="font-bold text-lg leading-tight">{isDevolucao ? 'Ranking de Devoluções' : 'Ranking de Receitas'}</h3>
                 <p className="text-xs text-muted-foreground">
                   Clique no nome do produto para ver o detalhamento completo
                   {selectedMarca && <> · marca <span className="text-primary font-semibold">{selectedMarca}</span></>}
@@ -344,8 +350,8 @@ export function PremiumTopProdutos({
               <div className="hidden md:grid grid-cols-[56px_1fr_120px_180px_90px] gap-4 px-5 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground bg-muted/40">
                 <div>Rank</div>
                 <div>Produto</div>
-                <div className="text-right">Qtd vendida</div>
-                <div className="text-right">Faturamento</div>
+                <div className="text-right">{isDevolucao ? 'Qtd devolvida' : 'Qtd vendida'}</div>
+                <div className="text-right">{isDevolucao ? 'Valor devolvido' : 'Receita'}</div>
                 <div className="text-right">Share</div>
               </div>
 
@@ -520,7 +526,7 @@ export function PremiumTopProdutos({
           )}
           {filtrados.length > 0 && filtrados.length <= mostrar && (
             <div className="p-3 border-t border-border/50 text-xs text-muted-foreground text-center bg-muted/20">
-              {formatNumber(filtrados.length)} produtos exibidos · Total {formatCurrency(totalReceita, true)} · {formatNumber(totalQtd)} unidades
+              {formatNumber(filtrados.length)} produtos exibidos · {isDevolucao ? 'Total devolvido' : 'Receita total'} {formatCurrency(totalReceita, true)} · {formatNumber(totalQtd)} unidades
             </div>
           )}
         </CardContent>
@@ -560,31 +566,31 @@ export function PremiumTopProdutos({
 
               <div className="space-y-5 py-5">
                 {/* KPIs do produto */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                <div className={cn('grid grid-cols-2 gap-2', isDevolucao ? 'sm:grid-cols-3' : 'sm:grid-cols-4')}>
                   <DetalheKPI
-                    label="Receita"
+                    label={isDevolucao ? 'Valor devolvido' : 'Receita'}
                     value={formatCurrency(produtoDetalhe.faturamento, true)}
                     color="primary"
                   />
                   <DetalheKPI
-                    label="Quantidade"
+                    label={isDevolucao ? 'Quantidade devolvida' : 'Quantidade'}
                     value={formatNumber(produtoDetalhe.quantidade)}
                     color="success"
                   />
                   <DetalheKPI
-                    label="Pedidos"
+                    label={isDevolucao ? 'Devoluções' : 'Pedidos'}
                     value={formatNumber(detalhesProduto?.pedidos || produtoDetalhe.pedidos || 0)}
                     color="accent"
                   />
-                  <DetalheKPI
+                  {!isDevolucao && <DetalheKPI
                     label="Margem"
                     value={`${(detalhesProduto?.margem || 0).toFixed(1)}%`}
                     color={(detalhesProduto?.margem || 0) > 20 ? 'success' : (detalhesProduto?.margem || 0) > 10 ? 'warning' : 'destructive'}
-                  />
+                  />}
                 </div>
 
                 {/* Margem detalhada */}
-                {detalhesProduto && detalhesProduto.receita > 0 && (
+                {!isDevolucao && detalhesProduto && detalhesProduto.receita > 0 && (
                   <div className="p-3 rounded-lg border border-border/60 bg-muted/20">
                     <div className="text-[11px] uppercase font-semibold text-muted-foreground tracking-wide mb-2 flex items-center gap-1.5">
                       <BarChart3 className="h-3 w-3" /> Rentabilidade
@@ -615,7 +621,7 @@ export function PremiumTopProdutos({
                 {detalhesProduto && detalhesProduto.topClientes.length > 0 && (
                   <div>
                     <h4 className="text-[11px] uppercase font-semibold text-muted-foreground tracking-wide mb-2 flex items-center gap-1.5">
-                      <User className="h-3 w-3" /> Top 5 clientes que compraram
+                      <User className="h-3 w-3" /> {isDevolucao ? 'Top 5 clientes com devoluções' : 'Top 5 clientes que compraram'}
                     </h4>
                     <div className="space-y-1.5">
                       {detalhesProduto.topClientes.map((c, i) => {
@@ -628,7 +634,7 @@ export function PremiumTopProdutos({
                               <span className="text-sm font-bold tabular-nums shrink-0">{formatCurrency(c.receita, true)}</span>
                             </div>
                             <div className="flex items-center justify-between gap-2 text-[11px] text-muted-foreground mb-1">
-                              <span>{c.pedidos} {c.pedidos === 1 ? 'compra' : 'compras'}</span>
+                              <span>{c.pedidos} {isDevolucao ? (c.pedidos === 1 ? 'devolução' : 'devoluções') : (c.pedidos === 1 ? 'compra' : 'compras')}</span>
                             </div>
                             <div className="h-1 rounded-full bg-muted overflow-hidden">
                               <div className="h-full bg-primary" style={{ width: `${pct}%` }} />
@@ -644,7 +650,7 @@ export function PremiumTopProdutos({
                 {detalhesProduto && detalhesProduto.evolucaoMensal.length > 1 && (
                   <div>
                     <h4 className="text-[11px] uppercase font-semibold text-muted-foreground tracking-wide mb-2 flex items-center gap-1.5">
-                      <TrendingUp className="h-3 w-3" /> Evolução mensal de receita
+                      <TrendingUp className="h-3 w-3" /> Evolução mensal de {isDevolucao ? 'devoluções' : 'receita'}
                     </h4>
                     <div className="p-3 rounded-lg border border-border/60 bg-muted/10">
                       <Sparkline data={detalhesProduto.evolucaoMensal.map(e => e.valor)} />
@@ -687,7 +693,7 @@ export function PremiumTopProdutos({
                                 "px-2.5 py-1.5 text-right tabular-nums font-semibold",
                                 l.tipo === 'DEVOLUCAO' && "text-destructive"
                               )}>
-                                {formatCurrency(l.receita, true)}
+                                {formatCurrency(isDevolucao ? Math.abs(l.receita) : l.receita, true)}
                               </td>
                             </tr>
                           ))}

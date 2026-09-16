@@ -12,6 +12,7 @@ import type { TopProdutoAgg } from '@/types/comercialProdutos';
 
 interface Props {
   produtos: TopProdutoAgg[];
+  mode?: 'receitas' | 'devolucoes';
   selectedMarca: string | null;
   onSelectMarca: (marca: string | null) => void;
 }
@@ -21,7 +22,8 @@ const PAGE_SIZE = 50;
 /**
  * Legacy view (pré-Premium) — tabela paginada simples.
  */
-export function TopProdutosLegacy({ produtos, selectedMarca, onSelectMarca }: Props) {
+export function TopProdutosLegacy({ produtos, mode = 'receitas', selectedMarca, onSelectMarca }: Props) {
+  const isDevolucao = mode === 'devolucoes';
   const [page, setPage] = useState(0);
 
   const sorted = useMemo(
@@ -38,7 +40,7 @@ export function TopProdutosLegacy({ produtos, selectedMarca, onSelectMarca }: Pr
       <CardHeader className="pb-2">
         <CardTitle className="text-base flex items-center gap-2">
           <TrendingUp className="h-4 w-4 text-primary" />
-          Top produtos {selectedMarca && (
+          {isDevolucao ? 'Produtos devolvidos' : 'Receitas por produto'} {selectedMarca && (
             <Badge variant="secondary" className="text-[10px]">marca: {selectedMarca}</Badge>
           )}
         </CardTitle>
@@ -54,9 +56,9 @@ export function TopProdutosLegacy({ produtos, selectedMarca, onSelectMarca }: Pr
                 <TableHead className="w-12 text-center">#</TableHead>
                 <TableHead>Produto</TableHead>
                 <TableHead>Marca</TableHead>
-                <TableHead className="text-right">Quantidade</TableHead>
-                <TableHead className="text-right">Receita</TableHead>
-                <TableHead className="text-right">Pedidos</TableHead>
+                <TableHead className="text-right">{isDevolucao ? 'Qtd. devolvida' : 'Qtd. vendida'}</TableHead>
+                <TableHead className="text-right">{isDevolucao ? 'Valor devolvido' : 'Receita'}</TableHead>
+                <TableHead className="text-right">{isDevolucao ? 'Devoluções' : 'Pedidos'}</TableHead>
                 <TableHead className="text-right">% Mix</TableHead>
               </TableRow>
             </TableHeader>

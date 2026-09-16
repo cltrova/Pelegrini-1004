@@ -37,6 +37,7 @@ export default function ProdutosPage() {
   const isLayoutPremium = String(codEmpresaAtiva ?? '') === '1004';
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState('marcas');
+  const [topMode, setTopMode] = useState<'receitas' | 'devolucoes'>('receitas');
   const [initialized, setInitialized] = useState(false);
   const [pendingFilters, setPendingFilters] = useState<ComercialFiltersType>({});
   const [appliedFilters, setAppliedFilters] = useState<ComercialFiltersType>({});
@@ -54,7 +55,7 @@ export default function ProdutosPage() {
     error: baseError,
   } = useComercialData(appliedFilters);
   const {
-    topProdutos, porMarca, porCategoria, produtosSemGiro, resumoVendas,
+    topProdutos, topDevolucoes = [], porMarca, porCategoria, produtosSemGiro, resumoVendas,
     hasSource, isLoading, isFetching, error: productsError,
   } = useComercialProdutos(appliedFilters);
 
@@ -63,6 +64,7 @@ export default function ProdutosPage() {
   const branchKey = String(filialAtiva ?? '').trim() || 'sem-filial';
   const dataScopeKey = companyKey ? `${companyKey}:${branchKey}` : '';
   const hasProductData = topProdutos.length > 0
+    || topDevolucoes.length > 0
     || porMarca.length > 0
     || porCategoria.length > 0
     || produtosSemGiro.length > 0
@@ -103,14 +105,19 @@ export default function ProdutosPage() {
   );
 
   const topFiltrado = useMemo(
-    () => topProdutos.filter(p =>
+    () => (topMode === 'receitas' ? topProdutos : topDevolucoes).filter(p =>
       matchMarca(p.marca) && (
         !searchTerm ||
         p.descricao.toLowerCase().includes(searchTerm.toLowerCase()) ||
         String(p.cod_produto).includes(searchTerm)
       )
     ),
-    [topProdutos, searchTerm, matchMarca]
+    [topProdutos, topDevolucoes, topMode, searchTerm, matchMarca]
+  );
+
+  const resumoTop = useMemo(
+    () => resumoVendas.filter((linha) => linha.tipo === (topMode === 'receitas' ? 'PEDIDO' : 'DEVOLUCAO')),
+    [resumoVendas, topMode],
   );
 
   const resumoFiltrado = useMemo(
@@ -311,14 +318,42 @@ export default function ProdutosPage() {
         </TabsContent>
 
         <TabsContent value="top" className="mt-0 flex h-full max-h-full min-h-0 flex-1 flex-col overflow-hidden data-[state=inactive]:hidden">
+          <div className="flex shrink-0 items-center border border-b-0 border-border bg-card px-2 py-1.5">
+            <div role="tablist" aria-label="Tipo de ranking de produtos" className="inline-flex h-8 items-center rounded-md bg-muted p-0.5">
+              <button
+                type="button"
+                role="tab"
+                aria-selected={topMode === 'receitas'}
+                data-state={topMode === 'receitas' ? 'active' : 'inactive'}
+                tabIndex={topMode === 'receitas' ? 0 : -1}
+                onClick={() => setTopMode('receitas')}
+                className="h-7 rounded-sm px-3 text-xs font-semibold text-muted-foreground transition-colors hover:text-foreground data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
+              >
+                Receitas
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={topMode === 'devolucoes'}
+                data-state={topMode === 'devolucoes' ? 'active' : 'inactive'}
+                tabIndex={topMode === 'devolucoes' ? 0 : -1}
+                onClick={() => setTopMode('devolucoes')}
+                className="h-7 rounded-sm px-3 text-xs font-semibold text-muted-foreground transition-colors hover:text-foreground data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
+              >
+                Devoluções
+              </button>
+            </div>
+          </div>
           <ComercialDataViewport
-            ariaLabel="Ranking de produtos"
+            ariaLabel={topMode === 'receitas' ? 'Ranking de receitas por produto' : 'Ranking de devoluções por produto'}
             className={cn('h-full max-h-full', !isLayoutPremium && 'commercial-table-frame')}
           >
           {isLayoutPremium ? (
             <PremiumTopProdutos
+              key={topMode}
               produtos={topFiltrado}
-              resumoVendas={resumoVendas}
+              resumoVendas={resumoTop}
+              mode={topMode}
               selectedMarca={selectedMarca}
               onSelectMarca={setSelectedMarca}
               onHoverMarca={setHoverMarca}
@@ -327,6 +362,7 @@ export default function ProdutosPage() {
           ) : (
             <TopProdutosLegacy
               produtos={topFiltrado}
+              mode={topMode}
               selectedMarca={selectedMarca}
               onSelectMarca={setSelectedMarca}
             />

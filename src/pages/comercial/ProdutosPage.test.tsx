@@ -59,8 +59,11 @@ vi.mock('@/components/comercial/PremiumMarcasView', () => ({
 }));
 
 vi.mock('@/components/comercial/PremiumTopProdutos', () => ({
-  PremiumTopProdutos: ({ showInsights }: { showInsights?: boolean }) => (
-    <div data-show-insights={String(showInsights)}>Conteudo Premium Top Produtos</div>
+  PremiumTopProdutos: ({ showInsights, mode, produtos }: { showInsights?: boolean; mode?: string; produtos: Array<{ descricao: string }> }) => (
+    <div data-show-insights={String(showInsights)} data-mode={mode}>
+      Conteudo Premium Top Produtos
+      {produtos.map((produto) => <span key={produto.descricao}>{produto.descricao}</span>)}
+    </div>
   ),
 }));
 
@@ -73,6 +76,10 @@ vi.mock('@/components/comercial/PremiumCategoriasView', () => ({
 const topProdutos = [
   { cod_produto: 10, descricao: 'Cambio completo', marca: 'EATON', faturamento: 80_000, quantidade: 8 },
   { cod_produto: 20, descricao: 'Kit diferencial', marca: 'ZF', faturamento: 20_000, quantidade: 2 },
+];
+
+const topDevolucoes = [
+  { cod_produto: 30, descricao: 'Produto devolvido', marca: 'EATON', faturamento: 5_000, quantidade: 1 },
 ];
 
 const porMarca = [
@@ -120,6 +127,7 @@ function mockData(
 
   vi.mocked(useComercialProdutos).mockReturnValue({
     topProdutos,
+    topDevolucoes: overrides.topDevolucoes ?? (overrides.topProdutos ? [] : topDevolucoes),
     porMarca,
     porCategoria: [{ categoria: 'Transmissao', faturamento: 100_000, quantidade: 10 }],
     produtosSemGiro,
@@ -228,6 +236,22 @@ describe('ProdutosPage compacta', () => {
     expect(viewport.firstElementChild).toBe(table);
     expect(within(table).getByText('Engrenagem parada')).toBeInTheDocument();
     expect(viewport.querySelector('.premium-card')).not.toBeInTheDocument();
+  });
+
+  it('separa receitas e devolucoes dentro de Top Produtos', () => {
+    renderPage();
+    fireEvent.mouseDown(screen.getByRole('tab', { name: 'Top Produtos' }), { button: 0, ctrlKey: false });
+
+    expect(screen.getByRole('tab', { name: 'Receitas' })).toHaveAttribute('data-state', 'active');
+    expect(screen.getByText('Cambio completo')).toBeInTheDocument();
+    expect(screen.queryByText('Produto devolvido')).not.toBeInTheDocument();
+    expect(screen.getByText('Conteudo Premium Top Produtos')).toHaveAttribute('data-mode', 'receitas');
+
+    fireEvent.click(screen.getByRole('tab', { name: 'Devoluções' }));
+
+    expect(screen.getByText('Produto devolvido')).toBeInTheDocument();
+    expect(screen.queryByText('Cambio completo')).not.toBeInTheDocument();
+    expect(screen.getByText('Conteudo Premium Top Produtos')).toHaveAttribute('data-mode', 'devolucoes');
   });
 
   it('mostra Resumo NF como tabela compacta diretamente na viewport e preserva a busca', () => {
@@ -414,7 +438,7 @@ describe('ProdutosPage compacta', () => {
   it('mantem um unico dono da moldura nas views premium e nos overlays', async () => {
     renderPage();
     fireEvent.mouseDown(screen.getByRole('tab', { name: 'Top Produtos' }), { button: 0, ctrlKey: false });
-    const rankingViewport = screen.getByRole('region', { name: 'Ranking de produtos' });
+    const rankingViewport = screen.getByRole('region', { name: 'Ranking de receitas por produto' });
     expect(rankingViewport).toHaveClass('commercial-data-viewport', 'overflow-auto');
     expect(rankingViewport).not.toHaveClass('commercial-table-frame');
 

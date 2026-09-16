@@ -352,6 +352,45 @@ function getProdutoUniqueKey(p: ProdutoItem): string {
   ].map(value => normalizeText(value)).join('|');
 }
 
+export type ProdutoRankingMode = 'receitas' | 'devolucoes';
+
+export function aggregateTopProdutos(
+  produtos: ProdutoItem[],
+  mode: ProdutoRankingMode,
+): TopProdutoAgg[] {
+  const tipo = mode === 'devolucoes' ? 'DEVOLUCAO' : 'PEDIDO';
+  const map = new Map<string, TopProdutoAgg>();
+
+  for (const item of produtos) {
+    if (item.tipo !== tipo) continue;
+
+    const key = String(item.cod_produto);
+    const current = map.get(key) || {
+      cod_produto: item.cod_produto,
+      descricao: item.descricao,
+      categoria: item.categoria,
+      grupo: item.grupo,
+      marca: item.marca,
+      quantidade: 0,
+      faturamento: 0,
+      pedidos: 0,
+      participacao: 0,
+    };
+
+    current.quantidade += Math.abs(item.quantidade);
+    current.faturamento += Math.abs(item.valor_total);
+    current.pedidos += 1;
+    map.set(key, current);
+  }
+
+  const ranking = Array.from(map.values()).sort((a, b) => b.faturamento - a.faturamento);
+  const total = ranking.reduce((acc, produto) => acc + produto.faturamento, 0);
+  ranking.forEach((produto) => {
+    produto.participacao = total > 0 ? (produto.faturamento / total) * 100 : 0;
+  });
+  return ranking;
+}
+
 function produtoMatchesVendedor1005(p: ProdutoItem, target: unknown): boolean {
   const anyP = p as any;
   return [
@@ -1211,31 +1250,15 @@ export function useComercialProdutos(filters?: ComercialFilters, options?: { ena
     });
   }, [allEscopoPelegrini, filters, codEmpresaAtiva, codEmpresaAtivaNorm, codEmpresaParaFiltro10041, filialAtiva, usarTodasFiliais1004, isContextoChevrolet10041Ativo]);
 
-  const topProdutos = useMemo((): TopProdutoAgg[] => {
-    const map = new Map<string, TopProdutoAgg>();
-    for (const it of produtosFiltrados) {
-      const key = String(it.cod_produto);
-      const ex = map.get(key) || {
-        cod_produto: it.cod_produto,
-        descricao: it.descricao,
-        categoria: it.categoria,
-        grupo: it.grupo,
-        marca: it.marca,
-        quantidade: 0,
-        faturamento: 0,
-        pedidos: 0,
-        participacao: 0,
-      };
-      ex.quantidade += it.quantidade;
-      ex.faturamento += it.valor_total;
-      ex.pedidos += 1;
-      map.set(key, ex);
-    }
-    const arr = Array.from(map.values()).sort((a, b) => b.faturamento - a.faturamento);
-    const total = arr.reduce((acc, p) => acc + Math.max(0, p.faturamento), 0);
-    arr.forEach(p => { p.participacao = total > 0 ? (p.faturamento / total) * 100 : 0; });
-    return arr;
-  }, [produtosFiltrados]);
+  const topProdutos = useMemo(
+    () => aggregateTopProdutos(produtosFiltrados, 'receitas'),
+    [produtosFiltrados],
+  );
+
+  const topDevolucoes = useMemo(
+    () => aggregateTopProdutos(produtosFiltrados, 'devolucoes'),
+    [produtosFiltrados],
+  );
 
   const porCategoria = useMemo((): CategoriaAgg[] => {
     const map = new Map<string, CategoriaAgg & { _set: Set<string> }>();
@@ -1785,6 +1808,7 @@ export function useComercialProdutos(filters?: ComercialFilters, options?: { ena
   return {
     produtos: produtosFiltrados,
     topProdutos,
+    topDevolucoes,
     porCategoria,
     porMarca,
     produtosSemGiro,
