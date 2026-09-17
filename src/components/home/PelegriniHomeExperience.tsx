@@ -258,11 +258,15 @@ export function PelegriniHomeExperience({ mobile = false }: PelegriniHomeExperie
       <header className="pelegrini-home-header">
         <div className="pelegrini-home-header-inner">
           <div className="pelegrini-home-brand">
-            {selectedBranch ? <LayeredBrandLogo branch={selectedBranch} className="header-logo" /> : <img src="/brand/home/grupo-pelegrini.png" alt="Grupo Pelegrini" className="pelegrini-home-group-logo" />}
-            <div className="min-w-0">
-              <p>{selectedBranch ? branchPresentation[selectedBranch].name : 'Grupo Pelegrini'}</p>
-              <span>{selectedBranch ? branchPresentation[selectedBranch].subtitle : 'Central de operações das filiais'}</span>
-            </div>
+            {selectedBranch
+              ? <LayeredBrandLogo branch={selectedBranch} className="header-logo" fullWhite={selectedBranch === 'transmissao'} />
+              : <img src="/brand/home/grupo-pelegrini.png" alt="Grupo Pelegrini" className="pelegrini-home-group-logo" />}
+            {!selectedBranch && (
+              <div className="min-w-0">
+                <p>Grupo Pelegrini</p>
+                <span>Central de operações das filiais</span>
+              </div>
+            )}
           </div>
           <div className="pelegrini-home-header-actions">
             {canAccessSettings && (

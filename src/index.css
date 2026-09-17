@@ -2070,6 +2070,11 @@
 .pelegrini-home-logo-stack.header-logo.transmissao { width: 58px; height: 52px; }
 .dark .pelegrini-home-logo-stack.transmissao img { filter: grayscale(1) brightness(0) invert(1); }
 .pelegrini-home-logo-stack.transmissao.full-white img { filter: brightness(0) invert(1); }
+.pelegrini-home-logo-stack.header-logo.transmissao.full-white { width: 210px; height: 52px; }
+.dark .pelegrini-home-logo-stack.header-logo.transmissao.full-white img { filter: brightness(0) invert(1); }
+html:not(.dark) .pelegrini-home-logo-stack.header-logo.transmissao.full-white img {
+  filter: brightness(0) saturate(100%) invert(20%) sepia(45%) saturate(1736%) hue-rotate(173deg) brightness(91%) contrast(98%);
+}
 .transmission-full-logo { display: block; width: 100%; height: auto; object-fit: contain; }
 
 .pelegrini-home-backdrop {
@@ -2272,6 +2277,7 @@
   .pelegrini-home-group-logo { width: 48px; height: 40px; }
   .pelegrini-home-logo-stack.header-logo { width: 76px; height: 42px; }
   .pelegrini-home-logo-stack.header-logo.transmissao { width: 43px; height: 40px; }
+  .pelegrini-home-logo-stack.header-logo.transmissao.full-white { width: 145px; height: 40px; }
   .pelegrini-home-header-actions { gap: 0.3rem; }
   .pelegrini-home-selection { width: min(100% - 1.5rem, 440px); padding: 32px 0 48px; }
   .pelegrini-home-selection h1 { margin-bottom: 22px; font-size: 1.55rem; }

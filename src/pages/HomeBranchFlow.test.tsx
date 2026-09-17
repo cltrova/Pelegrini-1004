@@ -1,4 +1,6 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import HomePage from './HomePage';
@@ -120,6 +122,24 @@ describe('Home branch flow', () => {
     expect(screen.getByText('Filial selecionada: Casa do Chevrolet')).toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: 'Escolha a filial' })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Comercial/i })).toBeInTheDocument();
+  });
+
+  it('keeps the module header text-free and uses the full transmission logo in both themes', () => {
+    testState.filialAtiva = 'transmissao';
+    renderHome(<HomePage />);
+
+    const header = screen.getByRole('banner');
+    expect(within(header).queryByText('Casa da Transmissão')).not.toBeInTheDocument();
+    expect(within(header).queryByText('Câmbio, diferencial e motor com especialização técnica')).not.toBeInTheDocument();
+
+    const logo = within(header).getByRole('img', { name: 'Casa da Transmissão' });
+    expect(logo).toHaveAttribute('src', '/brand/home/transmissao-full-white.png');
+    expect(logo).toHaveAttribute('data-transmission-full-logo');
+
+    const css = readFileSync(join(process.cwd(), 'src', 'index.css'), 'utf8');
+    expect(css).toContain('.pelegrini-home-logo-stack.header-logo.transmissao.full-white');
+    expect(css).toContain('.dark .pelegrini-home-logo-stack.header-logo.transmissao.full-white img');
+    expect(css).toContain(':not(.dark) .pelegrini-home-logo-stack.header-logo.transmissao.full-white img');
   });
 
   it('stores the desktop branch before showing modules and then navigates directly', () => {
