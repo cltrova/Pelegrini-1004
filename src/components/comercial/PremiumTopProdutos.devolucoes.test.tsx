@@ -38,6 +38,8 @@ describe('PremiumTopProdutos em devolucoes', () => {
     expect(screen.getByText('Ranking de Devoluções')).toBeInTheDocument();
     expect(screen.getByText('Qtd devolvida')).toBeInTheDocument();
     expect(screen.getByText('Valor devolvido')).toBeInTheDocument();
+    expect(screen.getByText('Qtd devolvida').parentElement).toHaveClass('commercial-products-column-grid');
+    expect(screen.getAllByRole('button', { name: /Produto devolvido/ })[0].closest('.commercial-products-column-grid')).toBeInTheDocument();
 
     fireEvent.click(screen.getAllByRole('button', { name: /Produto devolvido/ })[0]);
     const dialog = screen.getByRole('dialog');

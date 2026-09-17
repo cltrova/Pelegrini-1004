@@ -77,7 +77,7 @@ export default function ProdutosPage() {
   const isRefreshing = (isFetching || fetchingBase || isLoading || loadingBase) && hasResolvedData;
   const blockingError = (productsError || baseError) && !hasResolvedData;
   const showBlockingLoading = isLoadingEmpresa || (!productsError && !baseError && !hasResolvedData);
-  const pageClassName = 'commercial-products h-[calc(100dvh-9.5rem)] max-h-[calc(100dvh-9.5rem)] overflow-hidden overflow-x-hidden px-3 pb-3 pt-2 sm:px-4 md:h-full md:max-h-full';
+  const pageClassName = 'commercial-products commercial-products-columns-centered h-[calc(100dvh-9.5rem)] max-h-[calc(100dvh-9.5rem)] overflow-hidden overflow-x-hidden px-3 pb-3 pt-2 sm:px-4 md:h-full md:max-h-full';
 
   useEffect(() => {
     if (!initialized && !loadingBase) {

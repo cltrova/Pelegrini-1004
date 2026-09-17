@@ -191,6 +191,7 @@ describe('ProdutosPage compacta', () => {
     const page = screen.getByRole('main', { name: 'Modulo comercial' }).querySelector('.comercial-compact-page');
     expect(page).toHaveProperty('tagName', 'DIV');
     expect(page).toHaveClass('commercial-products');
+    expect(page).toHaveClass('commercial-products-columns-centered');
     expect(screen.getByRole('heading', { name: 'Produtos' })).toBeInTheDocument();
     expect(screen.getByRole('searchbox', { name: 'Buscar produtos' })).toBeVisible();
     const navigation = screen.getByTestId('produtos-navigation');

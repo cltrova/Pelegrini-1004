@@ -18,6 +18,18 @@
   overflow: hidden;
 }
 
+[data-module-shell='comercial'] .commercial-products-columns-centered table :where(th, td) {
+  text-align: center !important;
+}
+
+[data-module-shell='comercial'] .commercial-products-columns-centered table td > .flex {
+  justify-content: center !important;
+}
+
+[data-module-shell='comercial'] .commercial-products-columns-centered .commercial-products-column-grid > * {
+  text-align: center !important;
+}
+
 [data-module-shell='comercial'] :where(.commercial-commission, .commercial-quotes, .commercial-lost-sales) {
   min-height: 0;
   min-width: 0;
