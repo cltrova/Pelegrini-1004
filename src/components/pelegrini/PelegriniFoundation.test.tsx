@@ -1,4 +1,5 @@
 import { fireEvent, render, screen } from '@testing-library/react';
+import { Suspense } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
 import { ShoppingCart } from 'lucide-react';
@@ -99,6 +100,24 @@ describe('Pelegrini visual foundation', () => {
     expect(shell).not.toHaveClass('min-h-screen');
     expect(main).toHaveClass('flex', 'flex-col', 'overflow-x-clip', 'overflow-y-hidden');
     expect(content).toHaveClass('flex', 'min-h-0', 'flex-1', 'flex-col', 'overflow-hidden');
+  });
+
+  it('keeps the module sidebar mounted while a lazy tab is loading', () => {
+    function PendingTab(): never {
+      throw new Promise<void>(() => undefined);
+    }
+
+    render(
+      <Suspense fallback={<p>Carregamento global</p>}>
+        <PelegriniModuleShell sidebar={<aside>Menu persistente</aside>} moduleKey="comercial">
+          <PendingTab />
+        </PelegriniModuleShell>
+      </Suspense>,
+    );
+
+    expect(screen.getByText('Menu persistente')).toBeInTheDocument();
+    expect(screen.getByRole('status', { name: 'Carregando conteúdo do módulo' })).toHaveClass('flex-1', 'min-h-0');
+    expect(screen.queryByText('Carregamento global')).not.toBeInTheDocument();
   });
 
   it('lays out filters and actions without introducing a panel inside a panel', () => {

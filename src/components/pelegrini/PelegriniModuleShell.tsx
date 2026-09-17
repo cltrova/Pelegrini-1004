@@ -1,4 +1,5 @@
-import type { CSSProperties, ReactNode } from 'react';
+import { Suspense, type CSSProperties, type ReactNode } from 'react';
+import { LoadingState } from '@/components/common/LoadingState';
 import type { PelegriniModuleKey } from '@/config/pelegriniIdentity';
 import { resolvePelegriniTheme } from '@/config/pelegriniTheme';
 import { useFilialSelecionada } from '@/contexts/FilialSelecionadaContext';
@@ -48,7 +49,19 @@ export function PelegriniModuleShell({
         data-pattern={theme.surfacePattern}
       >
         <div className="pelegrini-surface-pattern" aria-hidden="true" />
-        <div className="relative z-[1] flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">{children}</div>
+        <div className="relative z-[1] flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+          <Suspense
+            fallback={(
+              <LoadingState
+                message="Carregando conteúdo do módulo"
+                variant="content"
+                className="min-h-0 flex-1"
+              />
+            )}
+          >
+            {children}
+          </Suspense>
+        </div>
       </main>
     </div>
   );
