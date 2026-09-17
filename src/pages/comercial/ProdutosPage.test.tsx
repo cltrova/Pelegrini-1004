@@ -111,7 +111,21 @@ const resumoVendas = [
     margem: 30,
     nome_interno: 'Ana',
     nome_externo: 'Carlos',
-    tipo: 'VENDA',
+    tipo: 'PEDIDO',
+  },
+  {
+    data: '2026-09-02',
+    num_nf: 5678,
+    descricao: 'Produto devolvido',
+    marca: 'EATON',
+    cliente_razao: 'Auto Pecas Retorno',
+    receita: -500,
+    custo: -350,
+    lucro: -150,
+    margem: -30,
+    nome_interno: 'Ana',
+    nome_externo: 'Carlos',
+    tipo: 'DEVOLUCAO',
   },
 ];
 
@@ -238,20 +252,36 @@ describe('ProdutosPage compacta', () => {
     expect(viewport.querySelector('.premium-card')).not.toBeInTheDocument();
   });
 
-  it('separa receitas e devolucoes dentro de Top Produtos', () => {
+  it('mantem Top Produtos dedicado ao ranking de receitas', () => {
     renderPage();
     fireEvent.mouseDown(screen.getByRole('tab', { name: 'Top Produtos' }), { button: 0, ctrlKey: false });
+
+    expect(screen.getByText('Cambio completo')).toBeInTheDocument();
+    expect(screen.queryByText('Produto devolvido')).not.toBeInTheDocument();
+    expect(screen.getByText('Conteudo Premium Top Produtos')).toHaveAttribute('data-mode', 'receitas');
+    expect(screen.queryByRole('tab', { name: 'Receitas' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('tab', { name: 'Devoluções' })).not.toBeInTheDocument();
+  });
+
+  it('separa receitas e devolucoes em subabas dentro de Resumo NF', () => {
+    renderPage();
+    fireEvent.mouseDown(screen.getByRole('tab', { name: 'Resumo NF' }), { button: 0, ctrlKey: false });
 
     expect(screen.getByRole('tab', { name: 'Receitas' })).toHaveAttribute('data-state', 'active');
     expect(screen.getByText('Cambio completo')).toBeInTheDocument();
     expect(screen.queryByText('Produto devolvido')).not.toBeInTheDocument();
-    expect(screen.getByText('Conteudo Premium Top Produtos')).toHaveAttribute('data-mode', 'receitas');
+    expect(screen.getByRole('columnheader', { name: 'Receita' })).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: '% Margem' })).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('tab', { name: 'Devoluções' }));
 
     expect(screen.getByText('Produto devolvido')).toBeInTheDocument();
     expect(screen.queryByText('Cambio completo')).not.toBeInTheDocument();
-    expect(screen.getByText('Conteudo Premium Top Produtos')).toHaveAttribute('data-mode', 'devolucoes');
+    expect(screen.getByRole('columnheader', { name: 'Valor devolvido' })).toBeInTheDocument();
+    expect(screen.queryByRole('columnheader', { name: 'Lucro' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('columnheader', { name: '% Margem' })).not.toBeInTheDocument();
+    expect(screen.getByText('R$ 500,00')).toBeInTheDocument();
+    expect(screen.queryByText('-R$ 500,00')).not.toBeInTheDocument();
   });
 
   it('mostra Resumo NF como tabela compacta diretamente na viewport e preserva a busca', () => {
@@ -554,6 +584,6 @@ describe('ProdutosPage compacta', () => {
     expect(screen.getByText('Todos os produtos movimentaram no período.')).toBeInTheDocument();
 
     fireEvent.mouseDown(screen.getByRole('tab', { name: 'Resumo NF' }), { button: 0, ctrlKey: false });
-    expect(screen.getByText('Nenhuma venda encontrada no recorte atual.')).toBeInTheDocument();
+    expect(screen.getByText('Nenhuma receita encontrada no recorte atual.')).toBeInTheDocument();
   });
 });
