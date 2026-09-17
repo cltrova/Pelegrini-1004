@@ -397,7 +397,7 @@ function getCustoAssinado(item: ProdutoItem): number {
 }
 
 export function aggregateProdutosPorMarca(produtos: ProdutoItem[]): MarcaAgg[] {
-  const map = new Map<string, MarcaAgg & { _set: Set<string> }>();
+  const map = new Map<string, MarcaAgg & { _set: Set<string>; _hasSale: boolean }>();
 
   for (const item of produtos) {
     const key = (item.marca || 'SEM MARCA').toString().trim().toUpperCase();
@@ -411,16 +411,18 @@ export function aggregateProdutosPorMarca(produtos: ProdutoItem[]): MarcaAgg[] {
       produtos: 0,
       participacao: 0,
       _set: new Set<string>(),
+      _hasSale: false,
     };
 
     current.faturamento += item.valor_total;
     current.custo += getCustoAssinado(item);
     current.quantidade += item.quantidade;
     current._set.add(String(item.cod_produto));
+    if (item.tipo === 'PEDIDO' && item.valor_total > 0) current._hasSale = true;
     map.set(key, current);
   }
 
-  const marcas = Array.from(map.values()).map(({ _set, ...rest }) => {
+  const marcas = Array.from(map.values()).filter(({ _hasSale }) => _hasSale).map(({ _set, _hasSale, ...rest }) => {
     const lucro = rest.faturamento - rest.custo;
     return {
       ...rest,
