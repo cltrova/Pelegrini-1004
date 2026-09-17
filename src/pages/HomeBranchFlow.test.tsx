@@ -138,6 +138,8 @@ describe('Home branch flow', () => {
 
     const css = readFileSync(join(process.cwd(), 'src', 'index.css'), 'utf8');
     expect(css).toContain('.pelegrini-home-logo-stack.header-logo.transmissao.full-white');
+    expect(css).toContain('.pelegrini-home-logo-stack.header-logo.transmissao.full-white { width: 170px; height: 44px; }');
+    expect(css).toContain('.pelegrini-home-logo-stack.header-logo.transmissao.full-white { width: 118px; height: 34px; }');
     expect(css).toContain('.dark .pelegrini-home-logo-stack.header-logo.transmissao.full-white img');
     expect(css).toContain(':not(.dark) .pelegrini-home-logo-stack.header-logo.transmissao.full-white img');
   });
