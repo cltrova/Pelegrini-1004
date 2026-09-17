@@ -303,6 +303,13 @@ describe('ProdutosPage compacta', () => {
     expect(screen.getByText('R$ 500,00')).toHaveClass('text-center');
   });
 
+  it('destaca os valores da coluna Custo em vermelho', () => {
+    renderPage();
+    fireEvent.mouseDown(screen.getByRole('tab', { name: 'Resumo NF' }), { button: 0, ctrlKey: false });
+
+    expect(screen.getByText('R$ 7.000,00')).toHaveClass('text-destructive');
+  });
+
   it('mostra Resumo NF como tabela compacta diretamente na viewport e preserva a busca', () => {
     renderPage();
     fireEvent.change(screen.getByRole('searchbox', { name: 'Buscar produtos' }), { target: { value: 'Oficina' } });

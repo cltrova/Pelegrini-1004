@@ -471,7 +471,7 @@ export default function ProdutosPage() {
                         <td className="max-w-[200px] truncate px-2 py-1.5 text-center">{r.cliente_razao || '-'}</td>
                         <td className={cn("px-2 py-1.5 text-center tabular-nums", resumoMode === 'devolucoes' && 'font-medium text-destructive')}>{formatCurrency(resumoMode === 'devolucoes' ? Math.abs(r.receita) : r.receita)}</td>
                         {resumoMode === 'receitas' && <>
-                          <td className="px-2 py-1.5 text-center tabular-nums text-muted-foreground">{formatCurrency(r.custo)}</td>
+                          <td className="px-2 py-1.5 text-center tabular-nums text-destructive">{formatCurrency(r.custo)}</td>
                           <td className={cn("px-2 py-1.5 text-center tabular-nums", r.lucro >= 0 ? 'text-success' : 'text-destructive')}>{formatCurrency(r.lucro)}</td>
                           <td className="px-2 py-1.5 text-center tabular-nums">{r.margem.toFixed(1)}%</td>
                         </>}
