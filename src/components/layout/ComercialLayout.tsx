@@ -1,4 +1,3 @@
-import { useEffect, useRef } from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
 import { ComercialSidebar } from './ComercialSidebar';
 import { ComercialMobileLayout } from './ComercialMobileLayout';
@@ -14,9 +13,8 @@ import { LoadingState } from '@/components/common/LoadingState';
 export function ComercialLayout() {
   const isMobile = useIsMobile();
   const navigate = useNavigate();
-  const { filialAtiva, codEmpresaContexto, clearFilial, setFilialAtivaForEmpresa, empresaPossuiFiliaisAtiva } = useFilialSelecionada();
+  const { filialAtiva, codEmpresaContexto, setFilialAtivaForEmpresa, empresaPossuiFiliaisAtiva } = useFilialSelecionada();
   const { isMaster, profile } = useAuth();
-  const mountClearedRef = useRef(false);
   const filialAccess = getFilialAccessState({
     codEmpresa: codEmpresaContexto,
     isMaster,
@@ -24,16 +22,6 @@ export function ComercialLayout() {
     filialPadrao: profile?.filial_id as string | null | undefined,
   });
   const filiais = filialAccess.items;
-
-  // Apenas limpa a filial ao SAIR do módulo (a seleção é feita na home antes de entrar).
-  useEffect(() => {
-    mountClearedRef.current = true;
-    return () => {
-      if (empresaPossuiFiliaisAtiva) clearFilial();
-      mountClearedRef.current = false;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [codEmpresaContexto, empresaPossuiFiliaisAtiva]);
 
   // Bloqueio: se entrar sem filial selecionada (ex.: deep-link), abre o modal e bloqueia o conteúdo.
   const bloquearConteudo = empresaPossuiFiliaisAtiva && !filialAtiva;

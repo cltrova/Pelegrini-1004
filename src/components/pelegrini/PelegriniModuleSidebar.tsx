@@ -1,10 +1,12 @@
 import { useLocation, useNavigate, NavLink } from 'react-router-dom';
-import { ChevronLeft, Menu, X } from 'lucide-react';
+import { ChevronLeft, House, Menu, Moon, Sun, X } from 'lucide-react';
+import { useTheme } from 'next-themes';
 import type * as React from 'react';
 import type { CSSProperties, ReactNode } from 'react';
 import type { PelegriniTheme } from '@/config/pelegriniTheme';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { useFilialSelecionada } from '@/contexts/FilialSelecionadaContext';
 import { PelegriniBrandMark } from './PelegriniBrandMark';
 
 export interface PelegriniSidebarItem {
@@ -108,6 +110,9 @@ export function PelegriniModuleSidebar({
 }: PelegriniModuleSidebarProps) {
   const location = useLocation();
   const navigate = useNavigate();
+  const { clearFilial, empresaPossuiFiliaisAtiva } = useFilialSelecionada();
+  const { theme: selectedTheme, resolvedTheme, setTheme } = useTheme();
+  const isDarkTheme = (resolvedTheme ?? selectedTheme) === 'dark';
 
   const closeMobileSidebar = () => onMobileOpenChange(false);
 
@@ -219,6 +224,28 @@ export function PelegriniModuleSidebar({
             </div>
           )}
         </nav>
+
+        <div
+          data-testid="sidebar-footer"
+          className="mt-auto shrink-0 space-y-1 border-t border-sidebar-border px-3 py-3"
+        >
+          {empresaPossuiFiliaisAtiva && (
+            <SidebarAction
+              label="Trocar filial"
+              icon={House}
+              onClick={() => {
+                clearFilial();
+                navigate('/');
+                closeMobileSidebar();
+              }}
+            />
+          )}
+          <SidebarAction
+            label={isDarkTheme ? 'Ativar modo claro' : 'Ativar modo escuro'}
+            icon={isDarkTheme ? Sun : Moon}
+            onClick={() => setTheme(isDarkTheme ? 'light' : 'dark')}
+          />
+        </div>
       </aside>
     </TooltipProvider>
   );

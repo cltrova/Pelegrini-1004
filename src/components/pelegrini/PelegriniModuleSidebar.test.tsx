@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { LayoutDashboard, Package } from 'lucide-react';
 import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
@@ -6,6 +6,23 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { resolvePelegriniTheme } from '@/config/pelegriniTheme';
 import { PelegriniModuleSidebar } from './PelegriniModuleSidebar';
+
+const sidebarState = vi.hoisted(() => ({
+  clearFilial: vi.fn(),
+  setTheme: vi.fn(),
+  theme: 'dark',
+}));
+
+vi.mock('@/contexts/FilialSelecionadaContext', () => ({
+  useFilialSelecionada: () => ({
+    clearFilial: sidebarState.clearFilial,
+    empresaPossuiFiliaisAtiva: true,
+  }),
+}));
+
+vi.mock('next-themes', () => ({
+  useTheme: () => ({ theme: sidebarState.theme, resolvedTheme: sidebarState.theme, setTheme: sidebarState.setTheme }),
+}));
 
 const items = [
   { label: 'Dashboard', path: '/comercial/dashboard', icon: LayoutDashboard },
@@ -151,6 +168,22 @@ describe('PelegriniModuleSidebar', () => {
     const homeButton = screen.getByRole('button', { name: 'Voltar aos módulos' });
     expect(homeButton).not.toHaveAttribute('title');
     expect(homeButton).not.toHaveAttribute('data-state');
+  });
+
+  it('keeps branch and theme controls anchored in the sidebar footer', () => {
+    sidebarState.clearFilial.mockClear();
+    sidebarState.setTheme.mockClear();
+    sidebarState.theme = 'dark';
+    renderSidebar();
+
+    const footer = screen.getByTestId('sidebar-footer');
+    expect(footer).toHaveClass('mt-auto');
+
+    fireEvent.click(within(footer).getByRole('button', { name: 'Trocar filial' }));
+    expect(sidebarState.clearFilial).toHaveBeenCalledTimes(1);
+
+    fireEvent.click(within(footer).getByRole('button', { name: 'Ativar modo claro' }));
+    expect(sidebarState.setTheme).toHaveBeenCalledWith('light');
   });
 
   it('keeps the mobile menu trigger inside the compact 44 px header rail', () => {
