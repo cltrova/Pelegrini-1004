@@ -148,22 +148,6 @@ const TYPE_STYLES: Record<AIInsight['type'], {
   },
 };
 
-// Paleta premium sólida usada nos swatches das marcas.
-const BRAND_SWATCHES = [
-  'hsl(217, 91%, 54%)',
-  'hsl(173, 80%, 38%)',
-  'hsl(142, 71%, 40%)',
-  'hsl(38, 92%, 48%)',
-  'hsl(280, 65%, 52%)',
-  'hsl(0, 72%, 50%)',
-  'hsl(200, 80%, 46%)',
-  'hsl(330, 70%, 48%)',
-  'hsl(45, 95%, 45%)',
-  'hsl(260, 75%, 55%)',
-  'hsl(160, 70%, 37%)',
-  'hsl(20, 85%, 50%)',
-];
-
 function lucroColor(margem: number) {
   if (margem >= 25) return 'text-success';
   if (margem >= 10) return 'text-warning';
@@ -376,7 +360,7 @@ export function PremiumMarcasView({
               <thead className="sticky top-0 z-20">
                 <tr className="text-left text-[11px] uppercase tracking-wider text-muted-foreground [&>th]:bg-card [&>th]:border-b [&>th]:border-border">
                   <th className="px-3 py-2.5 w-12">Rank</th>
-                  <th className="px-3 py-2.5">Marca</th>
+                  <th className="commercial-products-primary-column px-3 py-2.5 text-left">Marca</th>
                   <th className="px-3 py-2.5 text-right">SKUs</th>
                   <th className="px-3 py-2.5 text-right">Qtd</th>
                   <th className="px-3 py-2.5 min-w-[200px]">Receita</th>
@@ -391,7 +375,6 @@ export function PremiumMarcasView({
                   const isSelected = selectedMarca === m.marca;
                   const isDimmed = selectedMarca && !isSelected;
                   const trend = tendencia(m);
-                  const swatch = BRAND_SWATCHES[i % BRAND_SWATCHES.length];
                   const pctMax = maxReceita > 0 ? (m.faturamento / maxReceita) * 100 : 0;
                   return (
                     <tr
@@ -422,12 +405,8 @@ export function PremiumMarcasView({
                         {i > 2 && <span className="text-xs font-mono text-muted-foreground">#{i + 1}</span>}
                       </td>
                       {/* Marca */}
-                      <td className="px-3 py-2.5">
-                        <div className="flex items-center gap-2">
-                          <span
-                            className="inline-block h-3 w-3 rounded-sm shrink-0"
-                            style={{ backgroundColor: swatch }}
-                          />
+                      <td className="commercial-products-primary-column px-3 py-2.5 text-left">
+                        <div className="flex items-center justify-start">
                           <span className={cn("font-medium truncate", isSelected && 'text-primary font-bold')}>
                             {m.marca}
                           </span>
@@ -498,7 +477,6 @@ export function PremiumMarcasView({
               const isSelected = selectedMarca === m.marca;
               const isDimmed = selectedMarca && !isSelected;
               const trend = tendencia(m);
-              const swatch = BRAND_SWATCHES[i % BRAND_SWATCHES.length];
               const pctMax = maxReceita > 0 ? (m.faturamento / maxReceita) * 100 : 0;
               return (
                 <button
@@ -518,8 +496,7 @@ export function PremiumMarcasView({
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2 min-w-0">
                       <span
-                        className="h-7 w-7 rounded-lg flex items-center justify-center text-xs font-bold text-white shrink-0"
-                        style={{ backgroundColor: swatch }}
+                        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-border bg-muted text-xs font-bold text-muted-foreground"
                       >
                         {i + 1}
                       </span>

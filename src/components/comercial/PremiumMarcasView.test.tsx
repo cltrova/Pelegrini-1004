@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 import { PremiumMarcasView } from './PremiumMarcasView';
@@ -38,7 +38,12 @@ describe('PremiumMarcasView embutida', () => {
     expect(screen.queryByRole('heading', { name: 'Ranking de Marcas' })).not.toBeInTheDocument();
     expect(container.querySelector('.premium-card')).not.toBeInTheDocument();
     expect(invoke).not.toHaveBeenCalled();
-    expect(screen.getByRole('table').parentElement).not.toHaveClass('max-h-[600px]', 'overflow-y-auto');
+    const table = screen.getByRole('table');
+    expect(table.parentElement).not.toHaveClass('max-h-[600px]', 'overflow-y-auto');
+    expect(within(table).getByRole('columnheader', { name: 'Marca' })).toHaveClass('commercial-products-primary-column', 'text-left');
+    const marcaCell = within(table).getByText('EATON').closest('td');
+    expect(marcaCell).toHaveClass('commercial-products-primary-column', 'text-left');
+    expect(marcaCell?.querySelector('[style*="background-color"]')).not.toBeInTheDocument();
   });
 
   it('permite selecionar a marca pelo teclado na tabela', () => {
