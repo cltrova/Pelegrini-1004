@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { aggregateTopProdutos } from './useComercialProdutos';
+import { aggregateProdutosPorMarca, aggregateTopProdutos } from './useComercialProdutos';
 import type { ProdutoItem } from '@/types/comercialProdutos';
 
 function produto(overrides: Partial<ProdutoItem>): ProdutoItem {
@@ -39,6 +39,26 @@ describe('aggregateTopProdutos', () => {
     expect(aggregateTopProdutos(movimentos, 'devolucoes')).toEqual([
       expect.objectContaining({ cod_produto: '20', quantidade: 2, faturamento: 120, participacao: 60 }),
       expect.objectContaining({ cod_produto: '10', quantidade: 1, faturamento: 80, participacao: 40 }),
+    ]);
+  });
+});
+
+describe('aggregateProdutosPorMarca', () => {
+  it('estorna receita e custo das devolucoes ao calcular lucro e margem', () => {
+    const movimentos = [
+      produto({ id: 'v1', cod_produto: '10', marca: 'INDISA', quantidade: 1, valor_total: 1_200.41, valor_custo: 1_080.37 }),
+      produto({ id: 'v2', cod_produto: '20', marca: 'INDISA', quantidade: 5, valor_total: 1_770.83, valor_custo: 1_096.07 }),
+      produto({ id: 'd1', cod_produto: '10', marca: 'INDISA', tipo: 'DEVOLUCAO', quantidade: -1, valor_total: -1_200.41, valor_custo: 1_080.37 }),
+    ];
+
+    expect(aggregateProdutosPorMarca(movimentos)).toEqual([
+      expect.objectContaining({
+        marca: 'INDISA',
+        faturamento: expect.closeTo(1_770.83, 8),
+        custo: expect.closeTo(1_096.07, 8),
+        lucro: expect.closeTo(674.76, 8),
+        margem: expect.closeTo(38.1041658431, 8),
+      }),
     ]);
   });
 });

@@ -391,6 +391,53 @@ export function aggregateTopProdutos(
   return ranking;
 }
 
+function getCustoAssinado(item: ProdutoItem): number {
+  const custo = Math.abs(item.valor_custo || 0);
+  return item.tipo === 'DEVOLUCAO' ? -custo : custo;
+}
+
+export function aggregateProdutosPorMarca(produtos: ProdutoItem[]): MarcaAgg[] {
+  const map = new Map<string, MarcaAgg & { _set: Set<string> }>();
+
+  for (const item of produtos) {
+    const key = (item.marca || 'SEM MARCA').toString().trim().toUpperCase();
+    const current = map.get(key) || {
+      marca: key,
+      faturamento: 0,
+      custo: 0,
+      lucro: 0,
+      margem: 0,
+      quantidade: 0,
+      produtos: 0,
+      participacao: 0,
+      _set: new Set<string>(),
+    };
+
+    current.faturamento += item.valor_total;
+    current.custo += getCustoAssinado(item);
+    current.quantidade += item.quantidade;
+    current._set.add(String(item.cod_produto));
+    map.set(key, current);
+  }
+
+  const marcas = Array.from(map.values()).map(({ _set, ...rest }) => {
+    const lucro = rest.faturamento - rest.custo;
+    return {
+      ...rest,
+      produtos: _set.size,
+      lucro,
+      margem: rest.faturamento > 0 ? (lucro / rest.faturamento) * 100 : 0,
+    };
+  });
+  marcas.sort((a, b) => b.faturamento - a.faturamento);
+
+  const total = marcas.reduce((acc, marca) => acc + Math.max(0, marca.faturamento), 0);
+  marcas.forEach((marca) => {
+    marca.participacao = total > 0 ? (marca.faturamento / total) * 100 : 0;
+  });
+  return marcas;
+}
+
 function produtoMatchesVendedor1005(p: ProdutoItem, target: unknown): boolean {
   const anyP = p as any;
   return [
@@ -1313,47 +1360,16 @@ export function useComercialProdutos(filters?: ComercialFilters, options?: { ena
   // -------------------- NOVAS AGREGAÇÕES --------------------
 
   // Receita por Marca (gráfico do Power BI)
-  const porMarca = useMemo((): MarcaAgg[] => {
-    const map = new Map<string, MarcaAgg & { _set: Set<string> }>();
-    for (const it of produtosFiltrados) {
-      const key = (it.marca || 'SEM MARCA').toString().trim().toUpperCase();
-      const ex = map.get(key) || {
-        marca: key,
-        faturamento: 0,
-        custo: 0,
-        lucro: 0,
-        margem: 0,
-        quantidade: 0,
-        produtos: 0,
-        participacao: 0,
-        _set: new Set<string>(),
-      };
-      ex.faturamento += it.valor_total;
-      ex.custo += it.valor_custo || 0;
-      ex.quantidade += it.quantidade;
-      ex._set.add(String(it.cod_produto));
-      map.set(key, ex);
-    }
-    const arr = Array.from(map.values()).map(({ _set, ...rest }) => {
-      const lucro = rest.faturamento - rest.custo;
-      return {
-        ...rest,
-        produtos: _set.size,
-        lucro,
-        margem: rest.faturamento > 0 ? (lucro / rest.faturamento) * 100 : 0,
-      };
-    });
-    arr.sort((a, b) => b.faturamento - a.faturamento);
-    const total = arr.reduce((acc, m) => acc + Math.max(0, m.faturamento), 0);
-    arr.forEach(m => { m.participacao = total > 0 ? (m.faturamento / total) * 100 : 0; });
-    return arr;
-  }, [produtosFiltrados]);
+  const porMarca = useMemo(
+    () => aggregateProdutosPorMarca(produtosFiltrados),
+    [produtosFiltrados],
+  );
 
   // Resumo de vendas linha a linha, com o vendedor resolvido conforme a filial ativa.
   const resumoVendas = useMemo((): ResumoVendaLinha[] => {
     return produtosFiltrados.map(it => {
       const receita = it.valor_total;
-      const custo = (it.valor_custo || 0) * (it.tipo === 'DEVOLUCAO' ? -1 : 1);
+      const custo = getCustoAssinado(it);
       const lucro = receita - custo;
       const vendedorChevrolet = isContextoChevrolet10041Ativo
         ? getVendedorProduto10041(it)
@@ -1407,7 +1423,7 @@ export function useComercialProdutos(filters?: ComercialFilters, options?: { ena
         _pedidos: new Set<string>(),
       };
       ex.receita += it.valor_total;
-      ex.custo += (it.valor_custo || 0) * (it.tipo === 'DEVOLUCAO' ? -1 : 1);
+      ex.custo += getCustoAssinado(it);
       if (it.cod_pedido) ex._pedidos.add(String(it.cod_pedido));
       map.set(nome, ex);
     }
@@ -1456,7 +1472,7 @@ export function useComercialProdutos(filters?: ComercialFilters, options?: { ena
         _pedidos: new Set<string>(),
       };
       ex.receita += it.valor_total;
-      ex.custo += (it.valor_custo || 0) * (it.tipo === 'DEVOLUCAO' ? -1 : 1);
+      ex.custo += getCustoAssinado(it);
       if (it.cod_pedido) ex._pedidos.add(String(it.cod_pedido));
       map.set(key, ex);
     }
