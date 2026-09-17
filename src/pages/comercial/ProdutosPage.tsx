@@ -249,7 +249,7 @@ export default function ProdutosPage() {
           <p className="p-8 text-center text-sm text-muted-foreground">Nenhum produto encontrado no período.</p>
         </ComercialDataViewport>
       ) : <Tabs value={activeTab} onValueChange={setActiveTab} className="flex min-h-0 flex-1 flex-col gap-2 overflow-hidden">
-        <div data-testid="produtos-navigation" className="flex min-w-0 shrink-0 flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div data-testid="produtos-navigation" className="flex min-w-0 shrink-0 flex-col gap-2 overflow-visible sm:flex-row sm:items-center sm:justify-between">
           <TabsList className="h-9 w-fit max-w-full shrink-0 justify-start overflow-x-auto">
             <TabsTrigger value="marcas">Marcas</TabsTrigger>
             <TabsTrigger value="top">Top Produtos</TabsTrigger>
@@ -259,7 +259,7 @@ export default function ProdutosPage() {
             </TabsTrigger>
             <TabsTrigger value="resumo">Resumo NF</TabsTrigger>
           </TabsList>
-          <div className="flex min-w-0 items-center justify-end gap-2">
+          <div className="flex min-w-0 flex-1 items-center justify-end gap-2">
             {(productsError || baseError) ? (
               <span role="status" aria-label="Falha ao atualizar produtos" className="flex min-w-0 items-center gap-1 text-warning">
                 <span className="truncate" title="Falha ao atualizar produtos. Dados anteriores mantidos.">Falha ao atualizar</span>
@@ -287,12 +287,14 @@ export default function ProdutosPage() {
                 {selectedMarca} - limpar filtro
               </button>
             ) : null}
-            <EnterpriseSearchFilter
-              label="Buscar produtos"
-              value={searchTerm}
-              onChange={setSearchTerm}
-              placeholder="Produto, marca, cliente ou NF"
-            />
+            <div data-testid="product-search-slot" className="w-full min-w-0 shrink p-1 sm:max-w-[19rem]">
+              <EnterpriseSearchFilter
+                label="Buscar produtos"
+                value={searchTerm}
+                onChange={setSearchTerm}
+                placeholder="Produto, marca, cliente ou NF"
+              />
+            </div>
           </div>
         </div>
 

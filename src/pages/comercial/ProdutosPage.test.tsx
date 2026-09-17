@@ -197,6 +197,9 @@ describe('ProdutosPage compacta', () => {
     const navigation = screen.getByTestId('produtos-navigation');
     expect(navigation).toContainElement(screen.getByRole('tablist'));
     expect(navigation).toContainElement(screen.getByRole('searchbox', { name: 'Buscar produtos' }));
+    const searchSlot = screen.getByTestId('product-search-slot');
+    expect(searchSlot).toHaveClass('min-w-0', 'w-full', 'shrink', 'p-1', 'sm:max-w-[19rem]');
+    expect(searchSlot).toContainElement(screen.getByRole('searchbox', { name: 'Buscar produtos' }));
     expect(screen.getByLabelText('Indicadores de produtos')).toHaveAttribute('data-density', 'compact');
     expect(screen.getByText('Receita dos itens')).toBeInTheDocument();
     expect(screen.getByText('Marcas ativas')).toBeInTheDocument();
