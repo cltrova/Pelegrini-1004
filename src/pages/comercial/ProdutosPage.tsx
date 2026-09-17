@@ -442,40 +442,54 @@ export default function ProdutosPage() {
               </button>
             </div>
           </div>
-          <ComercialDataViewport ariaLabel="Resumo de vendas por nota fiscal" className="commercial-table-frame h-full max-h-full overflow-auto">
-                <table aria-label="Resumo de vendas por nota fiscal" className="w-full min-w-max border-collapse text-xs">
+          <ComercialDataViewport ariaLabel="Resumo de vendas por nota fiscal" className="commercial-table-frame h-full max-h-full overflow-x-hidden overflow-y-auto">
+                <table aria-label="Resumo de vendas por nota fiscal" className="w-full min-w-0 table-fixed border-collapse text-[11px] xl:text-xs">
                   <caption className="sr-only">Resumo de vendas por nota fiscal</caption>
+                  <colgroup>
+                    <col className="w-[6%]" />
+                    <col className="w-[6%]" />
+                    <col className={resumoMode === 'receitas' ? 'w-[22%]' : 'w-[29%]'} />
+                    <col className="w-[9%]" />
+                    <col className={resumoMode === 'receitas' ? 'w-[16%]' : 'w-[24%]'} />
+                    <col className={resumoMode === 'receitas' ? 'w-[8%]' : 'w-[12%]'} />
+                    {resumoMode === 'receitas' && <>
+                      <col className="w-[8%]" />
+                      <col className="w-[8%]" />
+                      <col className="w-[7%]" />
+                    </>}
+                    <col className={resumoMode === 'receitas' ? 'w-[10%]' : 'w-[14%]'} />
+                  </colgroup>
                   <thead className="sticky top-0 z-10 bg-muted">
-                    <tr className="text-left text-[11px] text-muted-foreground">
-                      <th className="px-2 py-2 text-left">Data</th>
-                      <th className="px-2 py-2 text-center">NF</th>
-                      <th className="px-2 py-2 text-center">Produto</th>
-                      <th className="px-2 py-2 text-center">Marca</th>
-                      <th className="px-2 py-2 text-center">Cliente</th>
-                      <th className="px-2 py-2 text-center">{resumoMode === 'receitas' ? 'Receita' : 'Valor devolvido'}</th>
+                    <tr className="text-left text-[10px] text-muted-foreground xl:text-[11px]">
+                      <th className="whitespace-nowrap px-1.5 py-2 text-left">Data</th>
+                      <th className="whitespace-nowrap px-1.5 py-2 text-center">NF</th>
+                      <th className="whitespace-nowrap px-1.5 py-2 text-center">Produto</th>
+                      <th className="whitespace-nowrap px-1.5 py-2 text-center">Marca</th>
+                      <th className="whitespace-nowrap px-1.5 py-2 text-center">Cliente</th>
+                      <th className="whitespace-nowrap px-1.5 py-2 text-center">{resumoMode === 'receitas' ? 'Receita' : 'Valor devolvido'}</th>
                       {resumoMode === 'receitas' && <>
-                        <th className="px-2 py-2 text-center">Custo</th>
-                        <th className="px-2 py-2 text-center">Lucro</th>
-                        <th className="px-2 py-2 text-center">% Margem</th>
+                        <th className="whitespace-nowrap px-1.5 py-2 text-center">Custo</th>
+                        <th className="whitespace-nowrap px-1.5 py-2 text-center">Lucro</th>
+                        <th className="whitespace-nowrap px-1.5 py-2 text-center">% Margem</th>
                       </>}
-                      <th className="px-2 py-2 text-center">Vendedor</th>
+                      <th className="whitespace-nowrap px-1.5 py-2 text-center">Vendedor</th>
                     </tr>
                   </thead>
                   <tbody>
                     {resumoFiltrado.map((r, i) => (
                       <tr key={i} className="border-t border-border hover:bg-muted/40">
-                        <td className="px-2 py-1.5 text-left tabular-nums">{r.data ? new Date(r.data).toLocaleDateString('pt-BR') : '-'}</td>
-                        <td className="px-2 py-1.5 text-center tabular-nums">{r.num_nf || '-'}</td>
-                        <td className="px-2 py-1.5 text-center">{r.descricao}</td>
-                        <td className="px-2 py-1.5 text-center text-muted-foreground">{r.marca || '-'}</td>
-                        <td className="max-w-[200px] truncate px-2 py-1.5 text-center">{r.cliente_razao || '-'}</td>
-                        <td className={cn("px-2 py-1.5 text-center tabular-nums", resumoMode === 'devolucoes' && 'font-medium text-destructive')}>{formatCurrency(resumoMode === 'devolucoes' ? Math.abs(r.receita) : r.receita)}</td>
+                        <td className="whitespace-nowrap px-1.5 py-1.5 text-left tabular-nums">{r.data ? new Date(r.data).toLocaleDateString('pt-BR') : '-'}</td>
+                        <td className="truncate px-1.5 py-1.5 text-center tabular-nums">{r.num_nf || '-'}</td>
+                        <td className="truncate px-1.5 py-1.5 text-center" title={r.descricao}>{r.descricao}</td>
+                        <td className="truncate px-1.5 py-1.5 text-center text-muted-foreground" title={r.marca || undefined}>{r.marca || '-'}</td>
+                        <td className="truncate px-1.5 py-1.5 text-center" title={r.cliente_razao || undefined}>{r.cliente_razao || '-'}</td>
+                        <td className={cn("whitespace-nowrap px-1.5 py-1.5 text-center tabular-nums", resumoMode === 'devolucoes' && 'font-medium text-destructive')}>{formatCurrency(resumoMode === 'devolucoes' ? Math.abs(r.receita) : r.receita)}</td>
                         {resumoMode === 'receitas' && <>
-                          <td className="px-2 py-1.5 text-center tabular-nums text-destructive">{formatCurrency(r.custo)}</td>
-                          <td className={cn("px-2 py-1.5 text-center tabular-nums", r.lucro >= 0 ? 'text-success' : 'text-destructive')}>{formatCurrency(r.lucro)}</td>
-                          <td className="px-2 py-1.5 text-center tabular-nums">{r.margem.toFixed(1)}%</td>
+                          <td className="whitespace-nowrap px-1.5 py-1.5 text-center tabular-nums text-destructive">{formatCurrency(r.custo)}</td>
+                          <td className={cn("whitespace-nowrap px-1.5 py-1.5 text-center tabular-nums", r.lucro >= 0 ? 'text-success' : 'text-destructive')}>{formatCurrency(r.lucro)}</td>
+                          <td className="whitespace-nowrap px-1.5 py-1.5 text-center tabular-nums">{r.margem.toFixed(1)}%</td>
                         </>}
-                        <td className="px-2 py-1.5 text-center text-muted-foreground">{r.vendedor_nome || r.nome_interno || r.nome_externo || '-'}</td>
+                        <td className="truncate px-1.5 py-1.5 text-center text-muted-foreground" title={r.vendedor_nome || r.nome_interno || r.nome_externo || undefined}>{r.vendedor_nome || r.nome_interno || r.nome_externo || '-'}</td>
                       </tr>
                     ))}
                   </tbody>

@@ -322,6 +322,12 @@ describe('ProdutosPage compacta', () => {
     expect(within(table).getByText('Oficina Central')).toBeInTheDocument();
     expect(within(table).getByText('1234')).toBeInTheDocument();
     expect(viewport.querySelector('.premium-card')).not.toBeInTheDocument();
+    expect(viewport).toHaveClass('overflow-x-hidden', 'overflow-y-auto');
+    expect(table).toHaveClass('table-fixed', 'min-w-0');
+    expect(table).not.toHaveClass('min-w-max');
+    expect(table.querySelector('colgroup')).toBeInTheDocument();
+    expect(within(table).getByText('Cambio completo').closest('td')).toHaveClass('truncate');
+    expect(within(table).getByText('Oficina Central').closest('td')).toHaveClass('truncate');
   });
 
   it('mantem o estado sem fonte dentro do shell compacto', () => {
