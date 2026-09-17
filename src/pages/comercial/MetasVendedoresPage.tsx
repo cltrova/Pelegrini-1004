@@ -628,7 +628,7 @@ export default function MetasVendedoresPage() {
   const isRefreshing = isFetching && hasResolvedData;
 
   if (showInitialLoading) {
-    return <LoadingState message="Carregando visão comercial" variant="content" />;
+    return <LoadingState message="Carregando visão comercial" variant="content" className="min-h-0 flex-1" />;
   }
 
   if (blockingCompanyDataError) {

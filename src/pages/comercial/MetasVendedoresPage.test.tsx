@@ -242,6 +242,7 @@ describe('MetasVendedoresPage commercial dashboard', () => {
     await act(async () => rerender(<MetasVendedoresPage />));
     const initialLoading = screen.getByRole('status', { name: 'Carregando visão comercial' });
     expect(initialLoading).toBeInTheDocument();
+    expect(initialLoading).toHaveClass('flex-1', 'min-h-0');
     expect(screen.queryByText('Carregando visão comercial...')).not.toBeInTheDocument();
     expect(within(initialLoading).getByTestId('loading-indicator')).toBeInTheDocument();
 
