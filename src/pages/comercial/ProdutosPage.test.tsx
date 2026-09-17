@@ -252,6 +252,8 @@ describe('ProdutosPage compacta', () => {
     expect(viewport).toHaveClass('h-full', 'max-h-full', 'overflow-auto');
     expect(viewport.firstElementChild).toBe(table);
     expect(within(table).getByText('Engrenagem parada')).toBeInTheDocument();
+    expect(within(table).getByRole('columnheader', { name: 'Produto' })).toHaveClass('text-left');
+    expect(within(table).getByText('Engrenagem parada').closest('td')).toHaveClass('text-left');
     expect(viewport.querySelector('.premium-card')).not.toBeInTheDocument();
   });
 
@@ -279,7 +281,8 @@ describe('ProdutosPage compacta', () => {
     expect(screen.queryByRole('columnheader', { name: 'Interno' })).not.toBeInTheDocument();
     expect(screen.queryByRole('columnheader', { name: 'Externo' })).not.toBeInTheDocument();
     expect(screen.getByText('Marina Alves')).toBeInTheDocument();
-    for (const header of ['Data', 'NF', 'Produto', 'Marca', 'Cliente', 'Receita', 'Custo', 'Lucro', '% Margem', 'Vendedor']) {
+    expect(screen.getByRole('columnheader', { name: 'Data' })).toHaveClass('text-left');
+    for (const header of ['NF', 'Produto', 'Marca', 'Cliente', 'Receita', 'Custo', 'Lucro', '% Margem', 'Vendedor']) {
       expect(screen.getByRole('columnheader', { name: header })).toHaveClass('text-center');
     }
     for (const value of ['1234', 'Cambio completo', 'EATON', 'Oficina Central', 'Marina Alves']) {

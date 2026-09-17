@@ -349,7 +349,7 @@ export function PremiumTopProdutos({
               {/* Header da lista (desktop) */}
               <div className="commercial-products-column-grid hidden md:grid grid-cols-[56px_1fr_120px_180px_90px] gap-4 px-5 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground bg-muted/40">
                 <div>Rank</div>
-                <div>Produto</div>
+                <div className="commercial-products-primary-column">Produto</div>
                 <div className="text-right">{isDevolucao ? 'Qtd devolvida' : 'Qtd vendida'}</div>
                 <div className="text-right">{isDevolucao ? 'Valor devolvido' : 'Receita'}</div>
                 <div className="text-right">Share</div>
@@ -389,10 +389,10 @@ export function PremiumTopProdutos({
                       </div>
 
                       {/* Produto - título clicável */}
-                      <div className="min-w-0">
+                      <div className="commercial-products-primary-column min-w-0">
                         <button
                           onClick={() => setProdutoDetalhe(p)}
-                          className="group/title w-full text-center"
+                          className="group/title w-full text-left"
                         >
                           <span className={cn(
                             "font-medium text-sm truncate inline-flex items-center gap-1.5",
@@ -403,7 +403,7 @@ export function PremiumTopProdutos({
                             <ArrowUpRight className="h-3 w-3 opacity-0 group-hover/title:opacity-100 transition-opacity shrink-0" />
                           </span>
                         </button>
-                        <div className="mt-0.5 flex items-center justify-center gap-2">
+                        <div className="mt-0.5 flex items-center justify-start gap-2">
                           <span className="text-[11px] text-muted-foreground font-mono">#{p.cod_produto}</span>
                           {p.marca && (
                             <button

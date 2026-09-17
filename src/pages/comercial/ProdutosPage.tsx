@@ -376,7 +376,7 @@ export default function ProdutosPage() {
               <caption className="sr-only">Produtos sem giro no período</caption>
                     <thead className="sticky top-0 z-10 bg-muted">
                       <tr className="text-left text-xs text-muted-foreground">
-                        <th className="px-3 py-2">Produto</th>
+                        <th className="px-3 py-2 text-left">Produto</th>
                         <th className="px-3 py-2">Marca/Categoria</th>
                         <th className="px-3 py-2">Última Venda</th>
                         <th className="px-3 py-2 text-right">Dias parado</th>
@@ -385,7 +385,7 @@ export default function ProdutosPage() {
                     <tbody>
                       {produtosSemGiro.slice(0, 300).map(p => (
                         <tr key={String(p.cod_produto)} className="border-t border-border hover:bg-muted/40">
-                          <td className="px-3 py-2">
+                          <td className="px-3 py-2 text-left">
                             <div className="font-medium leading-tight">{p.descricao}</div>
                             <div className="text-[10px] text-muted-foreground font-mono">#{p.cod_produto}</div>
                           </td>
@@ -447,7 +447,7 @@ export default function ProdutosPage() {
                   <caption className="sr-only">Resumo de vendas por nota fiscal</caption>
                   <thead className="sticky top-0 z-10 bg-muted">
                     <tr className="text-left text-[11px] text-muted-foreground">
-                      <th className="px-2 py-2 text-center">Data</th>
+                      <th className="px-2 py-2 text-left">Data</th>
                       <th className="px-2 py-2 text-center">NF</th>
                       <th className="px-2 py-2 text-center">Produto</th>
                       <th className="px-2 py-2 text-center">Marca</th>
@@ -464,7 +464,7 @@ export default function ProdutosPage() {
                   <tbody>
                     {resumoFiltrado.map((r, i) => (
                       <tr key={i} className="border-t border-border hover:bg-muted/40">
-                        <td className="px-2 py-1.5 text-center tabular-nums">{r.data ? new Date(r.data).toLocaleDateString('pt-BR') : '-'}</td>
+                        <td className="px-2 py-1.5 text-left tabular-nums">{r.data ? new Date(r.data).toLocaleDateString('pt-BR') : '-'}</td>
                         <td className="px-2 py-1.5 text-center tabular-nums">{r.num_nf || '-'}</td>
                         <td className="px-2 py-1.5 text-center">{r.descricao}</td>
                         <td className="px-2 py-1.5 text-center text-muted-foreground">{r.marca || '-'}</td>

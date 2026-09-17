@@ -26,8 +26,20 @@
   justify-content: center !important;
 }
 
+[data-module-shell='comercial'] .commercial-products-columns-centered table :where(th, td):first-child {
+  text-align: left !important;
+}
+
+[data-module-shell='comercial'] .commercial-products-columns-centered table td:first-child > .flex {
+  justify-content: flex-start !important;
+}
+
 [data-module-shell='comercial'] .commercial-products-columns-centered .commercial-products-column-grid > * {
   text-align: center !important;
+}
+
+[data-module-shell='comercial'] .commercial-products-columns-centered .commercial-products-column-grid > .commercial-products-primary-column {
+  text-align: left !important;
 }
 
 [data-module-shell='comercial'] :where(.commercial-commission, .commercial-quotes, .commercial-lost-sales) {
