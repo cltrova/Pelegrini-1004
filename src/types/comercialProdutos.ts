@@ -141,6 +141,7 @@ export interface ResumoVendaLinha {
   custo: number;
   lucro: number;
   margem: number;
+  vendedor_nome?: string;
   nome_interno?: string;
   nome_externo?: string;
   tipo: 'PEDIDO' | 'DEVOLUCAO';

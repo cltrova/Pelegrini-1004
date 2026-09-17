@@ -1349,12 +1349,26 @@ export function useComercialProdutos(filters?: ComercialFilters, options?: { ena
     return arr;
   }, [produtosFiltrados]);
 
-  // Resumo de Vendas linha-a-linha (Data, NF, Produto, Marca, Cliente, Receita, Custo, Lucro, %, Interno, Externo)
+  // Resumo de vendas linha a linha, com o vendedor resolvido conforme a filial ativa.
   const resumoVendas = useMemo((): ResumoVendaLinha[] => {
     return produtosFiltrados.map(it => {
       const receita = it.valor_total;
       const custo = (it.valor_custo || 0) * (it.tipo === 'DEVOLUCAO' ? -1 : 1);
       const lucro = receita - custo;
+      const vendedorChevrolet = isContextoChevrolet10041Ativo
+        ? getVendedorProduto10041(it)
+        : null;
+      const vendedorNome = vendedorChevrolet && vendedorChevrolet.nome !== 'SEM VENDEDOR'
+        ? vendedorChevrolet.nome
+        : String(
+          it.vendedor_nome
+          || it.nome_interno
+          || it.vendedor_interno
+          || it.nome_externo
+          || it.vendedor_externo
+          || it.vendedor_codigo
+          || '',
+        ).trim() || undefined;
       return {
         data: (String(codEmpresaAtiva ?? '') === '1003' ? (it.data_pedido || it.data_faturamento) : (it.data_faturamento || it.data_pedido)) || '',
         num_nf: it.num_nf,
@@ -1368,12 +1382,13 @@ export function useComercialProdutos(filters?: ComercialFilters, options?: { ena
         custo,
         lucro,
         margem: receita !== 0 ? (lucro / Math.abs(receita)) * 100 : 0,
+        vendedor_nome: vendedorNome,
         nome_interno: it.nome_interno,
         nome_externo: it.nome_externo,
         tipo: it.tipo,
       };
     }).sort((a, b) => (b.data || '').localeCompare(a.data || ''));
-  }, [produtosFiltrados]);
+  }, [produtosFiltrados, isContextoChevrolet10041Ativo, codEmpresaAtiva]);
 
   // Helper para agregar vendedores por nome (Interno OU Externo)
   function agruparVendedores(getName: (it: ProdutoItem) => string | undefined): ResumoVendedor[] {

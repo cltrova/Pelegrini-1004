@@ -109,6 +109,7 @@ const resumoVendas = [
     custo: 7_000,
     lucro: 3_000,
     margem: 30,
+    vendedor_nome: 'Marina Alves',
     nome_interno: 'Ana',
     nome_externo: 'Carlos',
     tipo: 'PEDIDO',
@@ -123,6 +124,7 @@ const resumoVendas = [
     custo: -350,
     lucro: -150,
     margem: -30,
+    vendedor_nome: 'Paulo Lima',
     nome_interno: 'Ana',
     nome_externo: 'Carlos',
     tipo: 'DEVOLUCAO',
@@ -272,6 +274,10 @@ describe('ProdutosPage compacta', () => {
     expect(screen.queryByText('Produto devolvido')).not.toBeInTheDocument();
     expect(screen.getByRole('columnheader', { name: 'Receita' })).toBeInTheDocument();
     expect(screen.getByRole('columnheader', { name: '% Margem' })).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: 'Vendedor' })).toBeInTheDocument();
+    expect(screen.queryByRole('columnheader', { name: 'Interno' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('columnheader', { name: 'Externo' })).not.toBeInTheDocument();
+    expect(screen.getByText('Marina Alves')).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('tab', { name: 'Devoluções' }));
 
@@ -282,6 +288,7 @@ describe('ProdutosPage compacta', () => {
     expect(screen.queryByRole('columnheader', { name: '% Margem' })).not.toBeInTheDocument();
     expect(screen.getByText('R$ 500,00')).toBeInTheDocument();
     expect(screen.queryByText('-R$ 500,00')).not.toBeInTheDocument();
+    expect(screen.getByText('Paulo Lima')).toBeInTheDocument();
   });
 
   it('mostra Resumo NF como tabela compacta diretamente na viewport e preserva a busca', () => {

@@ -128,6 +128,7 @@ export default function ProdutosPage() {
           r.descricao.toLowerCase().includes(searchTerm.toLowerCase()) ||
           (r.cliente_razao || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
           (r.marca || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+          (r.vendedor_nome || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
           String(r.num_nf || '').includes(searchTerm)
         )
       )
@@ -457,8 +458,7 @@ export default function ProdutosPage() {
                         <th className="px-2 py-2 text-right">Lucro</th>
                         <th className="px-2 py-2 text-right">% Margem</th>
                       </>}
-                      <th className="px-2 py-2">Interno</th>
-                      <th className="px-2 py-2">Externo</th>
+                      <th className="px-2 py-2">Vendedor</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -475,8 +475,7 @@ export default function ProdutosPage() {
                           <td className={cn("px-2 py-1.5 text-right tabular-nums", r.lucro >= 0 ? 'text-success' : 'text-destructive')}>{formatCurrency(r.lucro)}</td>
                           <td className="px-2 py-1.5 text-right tabular-nums">{r.margem.toFixed(1)}%</td>
                         </>}
-                        <td className="px-2 py-1.5 text-muted-foreground">{r.nome_interno || '-'}</td>
-                        <td className="px-2 py-1.5 text-muted-foreground">{r.nome_externo || '-'}</td>
+                        <td className="px-2 py-1.5 text-muted-foreground">{r.vendedor_nome || r.nome_interno || r.nome_externo || '-'}</td>
                       </tr>
                     ))}
                   </tbody>
