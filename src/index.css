@@ -1332,8 +1332,8 @@
       will-change: width;
     }
 
-    .pelegrini-sidebar-collapsible:hover,
-    .pelegrini-sidebar-collapsible:focus-within {
+    .pelegrini-sidebar-collapsible:not([data-collapse-lock='true']):hover,
+    .pelegrini-sidebar-collapsible:not([data-collapse-lock='true']):focus-within {
       width: 248px;
       box-shadow: 18px 0 40px -24px hsl(var(--foreground) / 0.5);
     }
@@ -1373,20 +1373,20 @@
       transition: max-width 180ms cubic-bezier(0.22, 1, 0.36, 1), opacity 100ms ease;
     }
 
-    .pelegrini-sidebar-collapsible:hover .sidebar-brand-compact,
-    .pelegrini-sidebar-collapsible:focus-within .sidebar-brand-compact {
+    .pelegrini-sidebar-collapsible:not([data-collapse-lock='true']):hover .sidebar-brand-compact,
+    .pelegrini-sidebar-collapsible:not([data-collapse-lock='true']):focus-within .sidebar-brand-compact {
       opacity: 0;
       transition-delay: 190ms;
     }
 
-    .pelegrini-sidebar-collapsible:hover .sidebar-brand-expanded,
-    .pelegrini-sidebar-collapsible:focus-within .sidebar-brand-expanded {
+    .pelegrini-sidebar-collapsible:not([data-collapse-lock='true']):hover .sidebar-brand-expanded,
+    .pelegrini-sidebar-collapsible:not([data-collapse-lock='true']):focus-within .sidebar-brand-expanded {
       opacity: 1;
       transition-delay: 210ms;
     }
 
-    .pelegrini-sidebar-collapsible:hover .sidebar-label,
-    .pelegrini-sidebar-collapsible:focus-within .sidebar-label {
+    .pelegrini-sidebar-collapsible:not([data-collapse-lock='true']):hover .sidebar-label,
+    .pelegrini-sidebar-collapsible:not([data-collapse-lock='true']):focus-within .sidebar-label {
       width: auto;
       max-width: 176px;
       flex: 1 1 auto;
@@ -1397,8 +1397,8 @@
       transition-delay: 45ms, 80ms;
     }
 
-    .pelegrini-sidebar-collapsible:hover .sidebar-section-label,
-    .pelegrini-sidebar-collapsible:focus-within .sidebar-section-label {
+    .pelegrini-sidebar-collapsible:not([data-collapse-lock='true']):hover .sidebar-section-label,
+    .pelegrini-sidebar-collapsible:not([data-collapse-lock='true']):focus-within .sidebar-section-label {
       padding-left: 0.75rem;
     }
   }

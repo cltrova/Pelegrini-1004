@@ -170,6 +170,18 @@ describe('PelegriniModuleSidebar', () => {
     expect(homeButton).not.toHaveAttribute('data-state');
   });
 
+  it('collapses the desktop sidebar after navigating and unlocks it after pointer leave', () => {
+    renderSidebar();
+
+    const sidebar = screen.getByTestId('module-sidebar');
+    fireEvent.click(screen.getByRole('link', { name: 'Produtos' }));
+
+    expect(sidebar).toHaveAttribute('data-collapse-lock', 'true');
+
+    fireEvent.mouseLeave(sidebar);
+    expect(sidebar).toHaveAttribute('data-collapse-lock', 'false');
+  });
+
   it('keeps branch and theme controls anchored in the sidebar footer', () => {
     sidebarState.clearFilial.mockClear();
     sidebarState.setTheme.mockClear();

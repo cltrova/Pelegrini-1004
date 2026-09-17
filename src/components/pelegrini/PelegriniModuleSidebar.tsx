@@ -1,6 +1,7 @@
 import { useLocation, useNavigate, NavLink } from 'react-router-dom';
 import { ChevronLeft, House, Menu, Moon, Sun, X } from 'lucide-react';
 import { useTheme } from 'next-themes';
+import { useState } from 'react';
 import type * as React from 'react';
 import type { CSSProperties, ReactNode } from 'react';
 import type { PelegriniTheme } from '@/config/pelegriniTheme';
@@ -80,7 +81,10 @@ function SidebarLink({ item, index, indexed, active, onNavigate }: SidebarLinkPr
     <NavLink
       to={item.path}
       aria-label={item.label}
-      onClick={onNavigate}
+      onClick={(event) => {
+        event.currentTarget.blur();
+        onNavigate();
+      }}
       className={cn('sidebar-action sidebar-item', active ? 'sidebar-item-active' : 'hover:bg-sidebar-accent/50')}
     >
       {indexed && (
@@ -112,9 +116,14 @@ export function PelegriniModuleSidebar({
   const navigate = useNavigate();
   const { clearFilial, empresaPossuiFiliaisAtiva } = useFilialSelecionada();
   const { theme: selectedTheme, resolvedTheme, setTheme } = useTheme();
+  const [desktopCollapseLocked, setDesktopCollapseLocked] = useState(false);
   const isDarkTheme = (resolvedTheme ?? selectedTheme) === 'dark';
 
   const closeMobileSidebar = () => onMobileOpenChange(false);
+  const finishNavigation = () => {
+    setDesktopCollapseLocked(true);
+    closeMobileSidebar();
+  };
 
   return (
     <TooltipProvider delayDuration={150}>
@@ -145,7 +154,9 @@ export function PelegriniModuleSidebar({
         data-testid="module-sidebar"
         data-state="collapsed"
         data-desktop-state="collapsed"
+        data-collapse-lock={String(desktopCollapseLocked)}
         data-navigation-style={indexed ? 'indexed' : 'default'}
+        onMouseLeave={() => setDesktopCollapseLocked(false)}
         className={cn(
           'pelegrini-sidebar pelegrini-sidebar-collapsible fixed left-0 top-0 z-50 flex h-screen w-[248px] flex-col overflow-hidden bg-sidebar text-sidebar-foreground transition-transform duration-300 motion-reduce:transition-none motion-reduce:duration-0 md:translate-x-0',
           mobileOpen ? 'translate-x-0' : '-translate-x-full',
@@ -201,7 +212,7 @@ export function PelegriniModuleSidebar({
               index={index}
               indexed={indexed}
               active={location.pathname === item.path}
-              onNavigate={closeMobileSidebar}
+              onNavigate={finishNavigation}
             />
           ))}
 
