@@ -2180,12 +2180,9 @@
 .pelegrini-home-branch-card:hover,
 .pelegrini-home-branch-card:focus-visible { transform: translateY(-4px); border-color: #1779db; box-shadow: 0 18px 40px rgb(13 55 97 / 0.14); outline: none; }
 .pelegrini-home-branch-card:disabled { cursor: not-allowed; opacity: 0.42; }
-.pelegrini-home-branch-card[data-branch='transmissao'] { border-color: #165b92; background: #073f73; color: white; }
-.pelegrini-home-branch-card[data-branch='transmissao']:hover,
-.pelegrini-home-branch-card[data-branch='transmissao']:focus-visible { border-color: #39bce8; box-shadow: 0 18px 40px rgb(7 63 115 / 0.26); }
-.pelegrini-home-branch-card[data-branch='transmissao'] .pelegrini-home-branch-name { border-color: rgb(255 255 255 / 0.2); }
-.pelegrini-home-branch-card[data-branch='transmissao'] .pelegrini-home-branch-name svg { color: #49d2ff; }
 .pelegrini-home-branch-logo-stage { display: grid; width: 100%; flex: 1; place-items: center; }
+.pelegrini-home-branch-card .pelegrini-home-logo-stack.transmissao.full-white img { filter: brightness(0) saturate(100%) invert(24%) sepia(89%) saturate(1164%) hue-rotate(174deg) brightness(85%) contrast(96%); }
+.dark .pelegrini-home-branch-card .pelegrini-home-logo-stack.transmissao.full-white img { filter: brightness(0) invert(1); }
 .pelegrini-home-branch-card:hover .pelegrini-home-logo-stack { transform: scale(1.035); }
 .pelegrini-home-branch-card .pelegrini-home-logo-stack { transition: transform 520ms cubic-bezier(.22,.7,.18,1); }
 .pelegrini-home-branch-name { display: flex; width: 100%; align-items: center; justify-content: center; gap: 0.6rem; padding-top: clamp(14px, 2dvh, 20px); border-top: 1px solid hsl(var(--border)); font-size: 1rem; font-weight: 750; }

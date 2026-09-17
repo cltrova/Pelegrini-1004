@@ -37,4 +37,22 @@ describe('brand assets', () => {
     expect(css).toContain('.dark .pelegrini-chevrolet-logo');
     expect(css).toContain('filter: brightness(0) invert(1)');
   });
+
+  it('keeps both branch cards on the shared theme surface', () => {
+    const css = readFileSync(join(process.cwd(), 'src', 'index.css'), 'utf8');
+    const home = readFileSync(
+      join(process.cwd(), 'src', 'components', 'home', 'PelegriniHomeExperience.tsx'),
+      'utf8',
+    );
+
+    expect(css).toContain('.pelegrini-home-branch-card {');
+    expect(css).toContain('background: var(--home-surface);');
+    expect(css).not.toMatch(
+      /\.pelegrini-home-branch-card\[data-branch=['"]transmissao['"]\][^{]*\{[^}]*background:/s,
+    );
+    expect(home).toContain('<LayeredBrandLogo branch={filial.id} fullWhite />');
+    expect(css).toContain(
+      '.dark .pelegrini-home-branch-card .pelegrini-home-logo-stack.transmissao.full-white img',
+    );
+  });
 });
