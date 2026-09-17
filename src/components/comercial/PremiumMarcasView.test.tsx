@@ -62,6 +62,21 @@ describe('PremiumMarcasView embutida', () => {
     expect(onSelectMarca).toHaveBeenCalledWith('EATON');
   });
 
+  it('mantem os valores de SKUs legiveis no tema claro', () => {
+    render(
+      <PremiumMarcasView
+        porMarca={marcas}
+        selectedMarca={null}
+        onSelectMarca={vi.fn()}
+        showInsights={false}
+        embedded
+      />,
+    );
+
+    const skuCell = screen.getByText('4').closest('td');
+    expect(skuCell).toHaveClass('text-foreground/80', 'dark:text-muted-foreground');
+  });
+
   it('mostra um estado vazio quando nao existem marcas', () => {
     render(
       <PremiumMarcasView

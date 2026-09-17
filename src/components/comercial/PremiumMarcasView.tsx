@@ -412,7 +412,7 @@ export function PremiumMarcasView({
                           </span>
                         </div>
                       </td>
-                      <td className="px-3 py-2.5 text-right tabular-nums text-xs text-muted-foreground">
+                      <td className="px-3 py-2.5 text-right tabular-nums text-xs text-foreground/80 dark:text-muted-foreground">
                         {m.produtos}
                       </td>
                       <td className="px-3 py-2.5 text-right tabular-nums text-xs">
