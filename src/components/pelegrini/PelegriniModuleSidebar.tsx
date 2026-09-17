@@ -53,7 +53,10 @@ function SidebarAction({
       aria-label={label}
       aria-disabled={disabled || undefined}
       disabled={disabled}
-      onClick={onClick}
+      onClick={(event) => {
+        event.currentTarget.blur();
+        onClick?.();
+      }}
       className={cn('sidebar-action sidebar-item', disabled && 'cursor-not-allowed opacity-40', className)}
     >
       <span className="sidebar-icon" aria-hidden="true">
@@ -120,8 +123,11 @@ export function PelegriniModuleSidebar({
   const isDarkTheme = (resolvedTheme ?? selectedTheme) === 'dark';
 
   const closeMobileSidebar = () => onMobileOpenChange(false);
-  const finishNavigation = () => {
+  const collapseDesktopSidebar = () => {
     setDesktopCollapseLocked(true);
+  };
+  const finishNavigation = () => {
+    collapseDesktopSidebar();
     closeMobileSidebar();
   };
 
@@ -196,6 +202,7 @@ export function PelegriniModuleSidebar({
             labelTestId="sidebar-home-label"
             icon={ChevronLeft}
             onClick={() => {
+              collapseDesktopSidebar();
               navigate('/');
               closeMobileSidebar();
             }}
@@ -245,6 +252,7 @@ export function PelegriniModuleSidebar({
               label="Trocar filial"
               icon={House}
               onClick={() => {
+                collapseDesktopSidebar();
                 clearFilial();
                 navigate('/');
                 closeMobileSidebar();
@@ -254,7 +262,10 @@ export function PelegriniModuleSidebar({
           <SidebarAction
             label={isDarkTheme ? 'Ativar modo claro' : 'Ativar modo escuro'}
             icon={isDarkTheme ? Sun : Moon}
-            onClick={() => setTheme(isDarkTheme ? 'light' : 'dark')}
+            onClick={() => {
+              collapseDesktopSidebar();
+              setTheme(isDarkTheme ? 'light' : 'dark');
+            }}
           />
         </div>
       </aside>

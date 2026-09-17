@@ -180,6 +180,10 @@ describe('PelegriniModuleSidebar', () => {
 
     fireEvent.mouseLeave(sidebar);
     expect(sidebar).toHaveAttribute('data-collapse-lock', 'false');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Ativar modo claro' }));
+    expect(sidebar).toHaveAttribute('data-collapse-lock', 'true');
+    expect(sidebarState.setTheme).toHaveBeenCalledWith('light');
   });
 
   it('keeps branch and theme controls anchored in the sidebar footer', () => {
