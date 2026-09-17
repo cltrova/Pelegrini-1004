@@ -202,6 +202,7 @@ describe('ProdutosPage compacta', () => {
     expect(searchSlot).toContainElement(screen.getByRole('searchbox', { name: 'Buscar produtos' }));
     expect(screen.getByLabelText('Indicadores de produtos')).toHaveAttribute('data-density', 'compact');
     expect(screen.getByText('Receita dos itens')).toBeInTheDocument();
+    expect(screen.getByText('R$ 100.000,00')).toBeInTheDocument();
     expect(screen.getByText('Marcas ativas')).toBeInTheDocument();
     expect(screen.getByText('SKUs vendidos')).toBeInTheDocument();
     expect(screen.getByText('Quantidade total')).toBeInTheDocument();
@@ -214,11 +215,11 @@ describe('ProdutosPage compacta', () => {
   it('preserva a selecao de marca e recalcula os indicadores', () => {
     renderPage();
 
-    expect(screen.getByText('R$ 100,0K')).toBeInTheDocument();
+    expect(screen.getByText('R$ 100.000,00')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Selecionar EATON' }));
 
     expect(screen.getByText('EATON')).toBeInTheDocument();
-    expect(screen.getByText('R$ 80,0K')).toBeInTheDocument();
+    expect(screen.getByText('R$ 80.000,00')).toBeInTheDocument();
     expect(screen.getByText('1 / 2')).toBeInTheDocument();
   });
 

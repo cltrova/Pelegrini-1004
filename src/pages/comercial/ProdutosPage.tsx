@@ -1,7 +1,7 @@
 import { useMemo, useState, useCallback, useEffect, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useComercialProdutos } from '@/hooks/useComercialProdutos';
-import { formatCurrency, formatCurrencyCompact, formatNumber } from '@/utils/formatters';
+import { formatCurrency, formatNumber } from '@/utils/formatters';
 import { LoadingIndicator, LoadingState } from '@/components/common/LoadingState';
 import { ErrorState } from '@/components/common/ErrorState';
 import { Badge } from '@/components/ui/badge';
@@ -219,7 +219,7 @@ export default function ProdutosPage() {
         metrics={[
           {
             label: isFiltered ? 'Receita da marca' : 'Receita dos itens',
-            value: formatCurrencyCompact(totalReceita),
+            value: formatCurrency(totalReceita),
             context: isFiltered ? selectedMarca : undefined,
             tooltip: 'Receita somada dos itens vendidos no período selecionado.',
           },
