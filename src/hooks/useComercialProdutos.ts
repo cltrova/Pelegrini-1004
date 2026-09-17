@@ -424,7 +424,9 @@ export function aggregateProdutosPorMarca(produtos: ProdutoItem[]): MarcaAgg[] {
     map.set(key, current);
   }
 
-  const marcas = Array.from(map.values()).filter(({ _hasSale }) => _hasSale).map(({ _set, _hasSale, ...rest }) => {
+  const marcas = Array.from(map.values())
+    .filter(({ _hasSale, faturamento }) => _hasSale && faturamento > 0)
+    .map(({ _set, _hasSale, ...rest }) => {
     const lucro = rest.faturamento - rest.custo;
     return {
       ...rest,
