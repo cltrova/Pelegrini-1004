@@ -50,6 +50,7 @@ describe('aggregateProdutosPorMarca', () => {
       produto({ id: 'v2', cod_produto: '20', marca: 'INDISA', quantidade: 5, valor_total: 1_770.83, valor_custo: 1_096.07 }),
       produto({ id: 'd1', cod_produto: '10', marca: 'INDISA', tipo: 'DEVOLUCAO', quantidade: -1, valor_total: -1_200.41, valor_custo: 1_080.37 }),
       produto({ id: 'd2', cod_produto: '30', marca: 'RETROVEX', tipo: 'DEVOLUCAO', quantidade: -1, valor_total: -34, valor_custo: 15.92 }),
+      produto({ id: 'z1', cod_produto: '31', marca: 'YMAX', tipo: 'PEDIDO', quantidade: 0, valor_total: 0, valor_custo: 22.31 }),
     ];
 
     expect(aggregateProdutosPorMarca(movimentos)).toEqual([

@@ -418,7 +418,9 @@ export function aggregateProdutosPorMarca(produtos: ProdutoItem[]): MarcaAgg[] {
     current.custo += getCustoAssinado(item);
     current.quantidade += item.quantidade;
     current._set.add(String(item.cod_produto));
-    if (item.tipo === 'PEDIDO' && item.valor_total > 0) current._hasSale = true;
+    // A aba Marcas representa vendas. Devolucoes isoladas (inclusive linhas
+    // zeradas que o ERP retorna junto) ficam disponiveis somente em Devolucoes.
+    if (item.tipo !== 'DEVOLUCAO' && item.valor_total > 0) current._hasSale = true;
     map.set(key, current);
   }
 
