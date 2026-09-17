@@ -278,6 +278,12 @@ describe('ProdutosPage compacta', () => {
     expect(screen.queryByRole('columnheader', { name: 'Interno' })).not.toBeInTheDocument();
     expect(screen.queryByRole('columnheader', { name: 'Externo' })).not.toBeInTheDocument();
     expect(screen.getByText('Marina Alves')).toBeInTheDocument();
+    for (const header of ['Data', 'NF', 'Produto', 'Marca', 'Cliente', 'Receita', 'Custo', 'Lucro', '% Margem', 'Vendedor']) {
+      expect(screen.getByRole('columnheader', { name: header })).toHaveClass('text-center');
+    }
+    for (const value of ['1234', 'Cambio completo', 'EATON', 'Oficina Central', 'Marina Alves']) {
+      expect(screen.getByText(value)).toHaveClass('text-center');
+    }
 
     fireEvent.click(screen.getByRole('tab', { name: 'Devoluções' }));
 
@@ -289,6 +295,8 @@ describe('ProdutosPage compacta', () => {
     expect(screen.getByText('R$ 500,00')).toBeInTheDocument();
     expect(screen.queryByText('-R$ 500,00')).not.toBeInTheDocument();
     expect(screen.getByText('Paulo Lima')).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: 'Valor devolvido' })).toHaveClass('text-center');
+    expect(screen.getByText('R$ 500,00')).toHaveClass('text-center');
   });
 
   it('mostra Resumo NF como tabela compacta diretamente na viewport e preserva a busca', () => {

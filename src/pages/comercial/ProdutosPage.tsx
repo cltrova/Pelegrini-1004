@@ -447,35 +447,35 @@ export default function ProdutosPage() {
                   <caption className="sr-only">Resumo de vendas por nota fiscal</caption>
                   <thead className="sticky top-0 z-10 bg-muted">
                     <tr className="text-left text-[11px] text-muted-foreground">
-                      <th className="px-2 py-2">Data</th>
-                      <th className="px-2 py-2">NF</th>
-                      <th className="px-2 py-2">Produto</th>
-                      <th className="px-2 py-2">Marca</th>
-                      <th className="px-2 py-2">Cliente</th>
-                      <th className="px-2 py-2 text-right">{resumoMode === 'receitas' ? 'Receita' : 'Valor devolvido'}</th>
+                      <th className="px-2 py-2 text-center">Data</th>
+                      <th className="px-2 py-2 text-center">NF</th>
+                      <th className="px-2 py-2 text-center">Produto</th>
+                      <th className="px-2 py-2 text-center">Marca</th>
+                      <th className="px-2 py-2 text-center">Cliente</th>
+                      <th className="px-2 py-2 text-center">{resumoMode === 'receitas' ? 'Receita' : 'Valor devolvido'}</th>
                       {resumoMode === 'receitas' && <>
-                        <th className="px-2 py-2 text-right">Custo</th>
-                        <th className="px-2 py-2 text-right">Lucro</th>
-                        <th className="px-2 py-2 text-right">% Margem</th>
+                        <th className="px-2 py-2 text-center">Custo</th>
+                        <th className="px-2 py-2 text-center">Lucro</th>
+                        <th className="px-2 py-2 text-center">% Margem</th>
                       </>}
-                      <th className="px-2 py-2">Vendedor</th>
+                      <th className="px-2 py-2 text-center">Vendedor</th>
                     </tr>
                   </thead>
                   <tbody>
                     {resumoFiltrado.map((r, i) => (
                       <tr key={i} className="border-t border-border hover:bg-muted/40">
-                        <td className="px-2 py-1.5 tabular-nums">{r.data ? new Date(r.data).toLocaleDateString('pt-BR') : '-'}</td>
-                        <td className="px-2 py-1.5 tabular-nums">{r.num_nf || '-'}</td>
-                        <td className="px-2 py-1.5">{r.descricao}</td>
-                        <td className="px-2 py-1.5 text-muted-foreground">{r.marca || '-'}</td>
-                        <td className="px-2 py-1.5 truncate max-w-[200px]">{r.cliente_razao || '-'}</td>
-                        <td className={cn("px-2 py-1.5 text-right tabular-nums", resumoMode === 'devolucoes' && 'font-medium text-destructive')}>{formatCurrency(resumoMode === 'devolucoes' ? Math.abs(r.receita) : r.receita)}</td>
+                        <td className="px-2 py-1.5 text-center tabular-nums">{r.data ? new Date(r.data).toLocaleDateString('pt-BR') : '-'}</td>
+                        <td className="px-2 py-1.5 text-center tabular-nums">{r.num_nf || '-'}</td>
+                        <td className="px-2 py-1.5 text-center">{r.descricao}</td>
+                        <td className="px-2 py-1.5 text-center text-muted-foreground">{r.marca || '-'}</td>
+                        <td className="max-w-[200px] truncate px-2 py-1.5 text-center">{r.cliente_razao || '-'}</td>
+                        <td className={cn("px-2 py-1.5 text-center tabular-nums", resumoMode === 'devolucoes' && 'font-medium text-destructive')}>{formatCurrency(resumoMode === 'devolucoes' ? Math.abs(r.receita) : r.receita)}</td>
                         {resumoMode === 'receitas' && <>
-                          <td className="px-2 py-1.5 text-right tabular-nums text-muted-foreground">{formatCurrency(r.custo)}</td>
-                          <td className={cn("px-2 py-1.5 text-right tabular-nums", r.lucro >= 0 ? 'text-success' : 'text-destructive')}>{formatCurrency(r.lucro)}</td>
-                          <td className="px-2 py-1.5 text-right tabular-nums">{r.margem.toFixed(1)}%</td>
+                          <td className="px-2 py-1.5 text-center tabular-nums text-muted-foreground">{formatCurrency(r.custo)}</td>
+                          <td className={cn("px-2 py-1.5 text-center tabular-nums", r.lucro >= 0 ? 'text-success' : 'text-destructive')}>{formatCurrency(r.lucro)}</td>
+                          <td className="px-2 py-1.5 text-center tabular-nums">{r.margem.toFixed(1)}%</td>
                         </>}
-                        <td className="px-2 py-1.5 text-muted-foreground">{r.vendedor_nome || r.nome_interno || r.nome_externo || '-'}</td>
+                        <td className="px-2 py-1.5 text-center text-muted-foreground">{r.vendedor_nome || r.nome_interno || r.nome_externo || '-'}</td>
                       </tr>
                     ))}
                   </tbody>
