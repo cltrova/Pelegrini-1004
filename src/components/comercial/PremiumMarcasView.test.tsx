@@ -141,7 +141,11 @@ describe('PremiumMarcasView embutida', () => {
   it('identifica visualmente marcas com somente devolucoes', () => {
     render(
       <PremiumMarcasView
-        porMarca={[...marcas, marcaSomenteDevolucao]}
+        porMarca={[
+          ...marcas,
+          marcaSomenteDevolucao,
+          { ...marcaSomenteDevolucao, marca: 'YMAX', margem: 0, somenteDevolucao: undefined },
+        ]}
         selectedMarca={null}
         onSelectMarca={vi.fn()}
         showInsights={false}
@@ -149,8 +153,9 @@ describe('PremiumMarcasView embutida', () => {
       />,
     );
 
-    expect(screen.getAllByText('Somente devoluções')).toHaveLength(2);
-    expect(screen.getAllByLabelText('Somente devoluções no período')).toHaveLength(2);
+    expect(screen.getAllByText('Somente devoluções')).toHaveLength(4);
+    expect(screen.getAllByLabelText('Somente devoluções no período')).toHaveLength(4);
     expect(screen.getByRole('row', { name: /RETROVEX/i })).toHaveClass('border-l-2');
+    expect(screen.getByRole('row', { name: /YMAX/i })).toHaveClass('border-l-2');
   });
 });

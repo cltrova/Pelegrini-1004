@@ -60,7 +60,7 @@ function buildFallbackInsights(marcas: MarcaAgg[], selectedMarca: string | null)
         title: 'Rentabilidade',
         marca: foco.marca,
         value: foco.margem == null ? '—' : `${foco.margem.toFixed(1)}% margem`,
-        insight: foco.somenteDevolucao
+        insight: isMarcaSomenteDevolucao(foco)
           ? 'Sem venda no período; os valores representam somente devoluções.'
           : deltaMargem >= 0
           ? `Acima da média do portfólio (+${deltaMargem.toFixed(1)} p.p.). Mantenha política de preço.`
@@ -162,6 +162,10 @@ function lucroBg(margem: number | null) {
   if (margem >= 25) return 'bg-success/15 text-success border-success/30';
   if (margem >= 10) return 'bg-warning/15 text-warning border-warning/30';
   return 'bg-destructive/15 text-destructive border-destructive/30';
+}
+
+function isMarcaSomenteDevolucao(marca: MarcaAgg): boolean {
+  return !!marca.somenteDevolucao || (marca.faturamento < 0 && marca.margem === 0);
 }
 
 export function PremiumMarcasView({
@@ -379,6 +383,7 @@ export function PremiumMarcasView({
                 {porMarca.map((m, i) => {
                   const isSelected = selectedMarca === m.marca;
                   const isDimmed = selectedMarca && !isSelected;
+                  const somenteDevolucao = isMarcaSomenteDevolucao(m);
                   const trend = tendencia(m);
                   const pctMax = maxReceita > 0 ? (m.faturamento / maxReceita) * 100 : 0;
                   return (
@@ -398,7 +403,7 @@ export function PremiumMarcasView({
                         "border-t border-border/40 cursor-pointer transition-colors duration-150 group",
                         isSelected
                           ? 'bg-primary/10 hover:bg-primary/15'
-                          : m.somenteDevolucao
+                          : somenteDevolucao
                             ? 'border-l-2 border-l-destructive/60 bg-destructive/[0.04] hover:bg-destructive/10'
                             : 'hover:bg-muted/50',
                         isDimmed && 'opacity-50'
@@ -414,10 +419,10 @@ export function PremiumMarcasView({
                       {/* Marca */}
                       <td className="commercial-products-primary-column px-3 py-2.5 text-left">
                         <div className="flex items-center justify-start">
-                          <span className={cn("font-medium truncate", isSelected && 'text-primary font-bold')} title={m.somenteDevolucao ? 'Somente devoluções no período' : undefined}>
+                          <span className={cn("font-medium truncate", isSelected && 'text-primary font-bold')} title={somenteDevolucao ? 'Somente devoluções no período' : undefined}>
                             {m.marca}
                           </span>
-                          {m.somenteDevolucao && (
+                          {somenteDevolucao && (
                             <Badge
                               variant="outline"
                               title="Não houve vendas desta marca no período"
@@ -441,7 +446,8 @@ export function PremiumMarcasView({
                         <div className="flex items-center justify-between gap-2 mb-1">
                           <span className={cn(
                             "font-semibold tabular-nums text-sm",
-                            isSelected && 'text-primary'
+                            isSelected && 'text-primary',
+                            somenteDevolucao && 'text-destructive'
                           )}>
                             {formatCurrency(m.faturamento)}
                           </span>
@@ -461,7 +467,7 @@ export function PremiumMarcasView({
                           "text-xs tabular-nums",
                           isSelected ? 'text-primary font-semibold' : 'text-muted-foreground'
                         )}>
-                          {m.somenteDevolucao ? '—' : `${m.participacao.toFixed(1)}%`}
+                          {somenteDevolucao ? '—' : `${m.participacao.toFixed(1)}%`}
                         </span>
                       </td>
                       {/* Lucro */}
@@ -473,7 +479,7 @@ export function PremiumMarcasView({
                       {/* Margem badge */}
                       <td className="px-3 py-2.5 text-right">
                         <Badge variant="outline" className={cn("h-5 text-[10px] tabular-nums px-2", lucroBg(m.margem))}>
-                          {m.margem == null ? '—' : `${m.margem.toFixed(1)}%`}
+                          {somenteDevolucao || m.margem == null ? '—' : `${m.margem.toFixed(1)}%`}
                         </Badge>
                       </td>
                       {/* Tendência */}
@@ -494,6 +500,7 @@ export function PremiumMarcasView({
             {porMarca.map((m, i) => {
               const isSelected = selectedMarca === m.marca;
               const isDimmed = selectedMarca && !isSelected;
+              const somenteDevolucao = isMarcaSomenteDevolucao(m);
               const trend = tendencia(m);
               const pctMax = maxReceita > 0 ? (m.faturamento / maxReceita) * 100 : 0;
               return (
@@ -507,7 +514,7 @@ export function PremiumMarcasView({
                     "w-full p-3 rounded-lg border text-left transition-colors cursor-pointer",
                     isSelected
                       ? 'border-primary/60 bg-primary/10'
-                      : m.somenteDevolucao
+                      : somenteDevolucao
                         ? 'border-destructive/30 bg-destructive/[0.04] hover:border-destructive/60'
                         : 'border-border/60 bg-card hover:border-border',
                     isDimmed && 'opacity-50'
@@ -521,7 +528,7 @@ export function PremiumMarcasView({
                         {i + 1}
                       </span>
                       <span className="font-semibold truncate">{m.marca}</span>
-                      {m.somenteDevolucao && (
+                      {somenteDevolucao && (
                         <Badge
                           variant="outline"
                           title="Não houve vendas desta marca no período"
@@ -543,7 +550,7 @@ export function PremiumMarcasView({
                     </div>
                     <div>
                       <div className="text-[10px] text-muted-foreground uppercase">Share</div>
-                      <div className="font-semibold tabular-nums">{m.somenteDevolucao ? '—' : `${m.participacao.toFixed(1)}%`}</div>
+                      <div className="font-semibold tabular-nums">{somenteDevolucao ? '—' : `${m.participacao.toFixed(1)}%`}</div>
                     </div>
                     <div>
                       <div className="text-[10px] text-muted-foreground uppercase">Lucro</div>
@@ -554,7 +561,7 @@ export function PremiumMarcasView({
                     <div>
                       <div className="text-[10px] text-muted-foreground uppercase">Margem</div>
                       <Badge variant="outline" className={cn("h-5 text-[10px] tabular-nums px-1.5", lucroBg(m.margem))}>
-                        {m.margem == null ? '—' : `${m.margem.toFixed(1)}%`}
+                        {somenteDevolucao || m.margem == null ? '—' : `${m.margem.toFixed(1)}%`}
                       </Badge>
                     </div>
                   </div>
