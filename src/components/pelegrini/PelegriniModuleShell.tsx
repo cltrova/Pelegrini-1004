@@ -54,8 +54,8 @@ export function PelegriniModuleShell({
             fallback={(
               <LoadingState
                 message="Carregando conteúdo do módulo"
-                variant="content"
-                className="min-h-0 flex-1"
+                variant="screen"
+                className="flex-1"
               />
             )}
           >

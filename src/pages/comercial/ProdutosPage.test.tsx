@@ -346,7 +346,7 @@ describe('ProdutosPage compacta', () => {
     expect(document.querySelector('.premium-card')).not.toBeInTheDocument();
   });
 
-  it('mantem o carregamento dentro do shell compacto', () => {
+  it('usa o carregamento padrao de tela inteira', () => {
     vi.mocked(useComercialProdutos).mockReturnValue({
       topProdutos: [], porMarca: [], porCategoria: [], produtosSemGiro: [], resumoVendas: [],
       hasSource: true, isLoading: true,
@@ -354,9 +354,11 @@ describe('ProdutosPage compacta', () => {
 
     renderPage();
 
-    expect(screen.getByRole('main').querySelector('.comercial-compact-page')).toBeInTheDocument();
     const status = screen.getByRole('status', { name: 'Carregando produtos' });
     expect(status).toBeInTheDocument();
+    expect(status).toHaveClass('min-h-screen', 'bg-background');
+    expect(screen.getByRole('main')).toBeInTheDocument();
+    expect(screen.getByRole('main').querySelector('.comercial-compact-page')).not.toBeInTheDocument();
     expect(screen.queryByText('Carregando produtos...')).not.toBeInTheDocument();
     expect(screen.queryByText('Carregando dados')).not.toBeInTheDocument();
     expect(within(status).getByTestId('loading-indicator')).toBeInTheDocument();

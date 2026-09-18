@@ -111,7 +111,10 @@ export function MarcasViewLegacy({ porMarca, selectedMarca, onSelectMarca }: Pro
                     )}>
                       {formatCurrency(m.lucro)}
                     </TableCell>
-                    <TableCell className="text-right tabular-nums">{m.margem.toFixed(1)}%</TableCell>
+                    <TableCell className="text-right tabular-nums">
+                      {m.margem == null ? '—' : `${m.margem.toFixed(1)}%`}
+                      {m.somenteDevolucao && <Badge variant="outline" className="ml-2 border-destructive/40 text-[10px] text-destructive">Somente devoluções</Badge>}
+                    </TableCell>
                     <TableCell className="text-right tabular-nums">{formatNumber(m.quantidade)}</TableCell>
                     <TableCell className="text-right tabular-nums">{formatNumber(m.produtos)}</TableCell>
                     <TableCell className="text-right tabular-nums text-muted-foreground">
