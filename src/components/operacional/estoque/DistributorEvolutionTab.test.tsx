@@ -100,6 +100,8 @@ describe('DistributorEvolutionTab', () => {
     expect(screen.getByTestId('sales-purchases-chart')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: /Expandir ZF/i }));
     expect(screen.getByText('ZF Pesado')).toBeInTheDocument();
+    const groupRow = screen.getByText('ZF Pesado').closest('tr');
+    expect(groupRow?.querySelector('.text-emerald-500, .text-red-500')).toBeTruthy();
 
     const table = screen.getByRole('table', { name: 'Comparativo mensal dos distribuidores' });
     expect(table).toHaveClass('w-full', 'table-fixed');
