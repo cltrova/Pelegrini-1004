@@ -397,7 +397,18 @@ function getCustoAssinado(item: ProdutoItem): number {
 }
 
 export function aggregateProdutosPorMarca(produtos: ProdutoItem[]): MarcaAgg[] {
-  const map = new Map<string, MarcaAgg & { _set: Set<string>; _hasSale: boolean; _hasReturn: boolean }>();
+  const map = new Map<string, MarcaAgg & {
+    _saleFaturamento: number;
+    _saleCusto: number;
+    _saleQuantidade: number;
+    _saleSet: Set<string>;
+    _returnFaturamento: number;
+    _returnCusto: number;
+    _returnQuantidade: number;
+    _returnSet: Set<string>;
+    _hasSale: boolean;
+    _hasReturn: boolean;
+  }>();
 
   for (const item of produtos) {
     const key = (item.marca || 'SEM MARCA').toString().trim().toUpperCase();
@@ -410,29 +421,52 @@ export function aggregateProdutosPorMarca(produtos: ProdutoItem[]): MarcaAgg[] {
       quantidade: 0,
       produtos: 0,
       participacao: 0,
-      _set: new Set<string>(),
+      _saleFaturamento: 0,
+      _saleCusto: 0,
+      _saleQuantidade: 0,
+      _saleSet: new Set<string>(),
+      _returnFaturamento: 0,
+      _returnCusto: 0,
+      _returnQuantidade: 0,
+      _returnSet: new Set<string>(),
       _hasSale: false,
       _hasReturn: false,
     };
 
-    current.faturamento += item.valor_total;
-    current.custo += getCustoAssinado(item);
-    current.quantidade += item.quantidade;
-    current._set.add(String(item.cod_produto));
-    if (item.tipo !== 'DEVOLUCAO' && item.valor_total > 0) current._hasSale = true;
-    if (item.tipo === 'DEVOLUCAO' && item.valor_total < 0) current._hasReturn = true;
+    const isSale = item.tipo !== 'DEVOLUCAO' && item.valor_total > 0;
+    const isReturn = item.tipo === 'DEVOLUCAO' && item.valor_total < 0;
+    if (isSale) {
+      current._saleFaturamento += item.valor_total;
+      current._saleCusto += Math.abs(item.valor_custo || 0);
+      current._saleQuantidade += Math.abs(item.quantidade);
+      current._saleSet.add(String(item.cod_produto));
+      current._hasSale = true;
+    } else if (isReturn) {
+      current._hasReturn = true;
+      current._returnFaturamento += item.valor_total;
+      current._returnCusto += getCustoAssinado(item);
+      current._returnQuantidade += item.quantidade;
+      current._returnSet.add(String(item.cod_produto));
+    }
     map.set(key, current);
   }
 
   const marcas = Array.from(map.values())
     .filter(({ _hasSale, _hasReturn }) => _hasSale || _hasReturn)
-    .map(({ _set, _hasSale, _hasReturn, ...rest }) => {
-      const lucro = rest.faturamento - rest.custo;
+    .map(({ _saleFaturamento, _saleCusto, _saleQuantidade, _saleSet, _returnFaturamento, _returnCusto, _returnQuantidade, _returnSet, _hasSale, _hasReturn, ...rest }) => {
+      const faturamento = _hasSale ? _saleFaturamento : _returnFaturamento;
+      const custo = _hasSale ? _saleCusto : _returnCusto;
+      const quantidade = _hasSale ? _saleQuantidade : _returnQuantidade;
+      const produtos = (_hasSale ? _saleSet : _returnSet).size;
+      const lucro = faturamento - custo;
       return {
         ...rest,
-        produtos: _set.size,
+        faturamento,
+        custo,
+        quantidade,
+        produtos,
         lucro,
-        margem: _hasSale && rest.faturamento > 0 ? (lucro / rest.faturamento) * 100 : null,
+        margem: _hasSale && faturamento > 0 ? (lucro / faturamento) * 100 : null,
         somenteDevolucao: !_hasSale && _hasReturn,
       };
     });

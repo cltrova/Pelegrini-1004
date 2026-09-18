@@ -37,7 +37,21 @@ describe('aggregateProdutosPorMarca', () => {
       participacao: 0,
     });
     expect(marcas[1].somenteDevolucao).toBe(false);
-    expect(marcas[1].margem).toBeCloseTo(37.5);
+    expect(marcas[1].margem).toBeCloseTo(40);
     expect(marcas[1].participacao).toBeGreaterThan(0);
+  });
+
+  it('mantém a receita da marca alinhada às notas fiscais quando há venda e devolução', () => {
+    const [marca] = aggregateProdutosPorMarca([
+      item({ marca: 'ORLI', valor_total: 130, valor_custo: 74.59 }),
+      item({ marca: 'ORLI', tipo: 'DEVOLUCAO', quantidade: -1, valor_total: -130, valor_custo: 74.59 }),
+    ]);
+
+    expect(marca.faturamento).toBe(130);
+    expect(marca.custo).toBe(74.59);
+    expect(marca.lucro).toBeCloseTo(55.41, 2);
+    expect(marca.quantidade).toBe(1);
+    expect(marca.margem).toBeCloseTo(42.623, 2);
+    expect(marca.somenteDevolucao).toBe(false);
   });
 });
