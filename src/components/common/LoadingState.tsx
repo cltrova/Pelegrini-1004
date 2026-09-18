@@ -23,7 +23,7 @@ const indicatorSizes = {
 
 const loadingStateVariants: Record<LoadingVariant, string> = {
   screen: 'flex min-h-screen w-full items-center justify-center bg-background',
-  content: 'flex min-h-64 w-full items-center justify-center bg-background',
+  content: 'flex min-h-64 w-full flex-1 items-center justify-center bg-background',
   inline: 'inline-flex items-center justify-center',
 };
 

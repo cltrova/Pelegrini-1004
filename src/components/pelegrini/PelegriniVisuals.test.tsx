@@ -327,7 +327,7 @@ describe('Pelegrini visual components', () => {
 
   it.each([
     ['screen', ['min-h-screen'], ['min-h-64', 'p-8']],
-    ['content', ['min-h-64', 'w-full'], ['min-h-screen']],
+    ['content', ['min-h-64', 'w-full', 'flex-1'], ['min-h-screen']],
     ['inline', ['inline-flex'], ['min-h-screen', 'min-h-64', 'p-8']],
   ] as const)('applies the %s loading layout', (variant, expectedClasses, absentClasses) => {
     render(<LoadingState variant={variant} />);
