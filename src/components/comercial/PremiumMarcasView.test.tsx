@@ -22,6 +22,18 @@ const marcas = [
   },
 ];
 
+const marcaSomenteDevolucao = {
+  marca: 'RETROVEX',
+  faturamento: -34,
+  custo: -18,
+  lucro: -16,
+  margem: null,
+  quantidade: -1,
+  produtos: 1,
+  participacao: 0,
+  somenteDevolucao: true,
+};
+
 describe('PremiumMarcasView embutida', () => {
   it('nao monta insights nem dispara IA quando desativada', () => {
     const { container } = render(
@@ -124,5 +136,21 @@ describe('PremiumMarcasView embutida', () => {
 
     expect(await screen.findByRole('status', { name: 'Carregando análises por marca' })).toBeInTheDocument();
     expect(screen.queryByText('Líder receita')).not.toBeInTheDocument();
+  });
+
+  it('identifica visualmente marcas com somente devolucoes', () => {
+    render(
+      <PremiumMarcasView
+        porMarca={[...marcas, marcaSomenteDevolucao]}
+        selectedMarca={null}
+        onSelectMarca={vi.fn()}
+        showInsights={false}
+        embedded
+      />,
+    );
+
+    expect(screen.getAllByText('Somente devoluções')).toHaveLength(2);
+    expect(screen.getAllByLabelText('Somente devoluções no período')).toHaveLength(2);
+    expect(screen.getByRole('row', { name: /RETROVEX/i })).toHaveClass('border-l-2');
   });
 });

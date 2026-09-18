@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import {
   Trophy, AlertTriangle, Crown,
   ArrowUpRight, ArrowDownRight, Minus,
-  Brain, RefreshCw, Zap, ShieldAlert,
+  Brain, RefreshCw, Zap, ShieldAlert, RotateCcw,
 } from 'lucide-react';
 import { formatCurrency, formatNumber } from '@/utils/formatters';
 import { cn } from '@/lib/utils';
@@ -398,7 +398,9 @@ export function PremiumMarcasView({
                         "border-t border-border/40 cursor-pointer transition-colors duration-150 group",
                         isSelected
                           ? 'bg-primary/10 hover:bg-primary/15'
-                          : 'hover:bg-muted/50',
+                          : m.somenteDevolucao
+                            ? 'border-l-2 border-l-destructive/60 bg-destructive/[0.04] hover:bg-destructive/10'
+                            : 'hover:bg-muted/50',
                         isDimmed && 'opacity-50'
                       )}
                     >
@@ -415,7 +417,17 @@ export function PremiumMarcasView({
                           <span className={cn("font-medium truncate", isSelected && 'text-primary font-bold')} title={m.somenteDevolucao ? 'Somente devoluções no período' : undefined}>
                             {m.marca}
                           </span>
-                          {m.somenteDevolucao && <Badge variant="outline" className="ml-2 shrink-0 border-destructive/40 bg-destructive/10 text-[9px] text-destructive">Somente devoluções</Badge>}
+                          {m.somenteDevolucao && (
+                            <Badge
+                              variant="outline"
+                              title="Não houve vendas desta marca no período"
+                              aria-label="Somente devoluções no período"
+                              className="ml-2 inline-flex shrink-0 items-center gap-1 border-destructive/40 bg-destructive/10 text-[9px] text-destructive"
+                            >
+                              <RotateCcw className="h-3 w-3" aria-hidden="true" />
+                              Somente devoluções
+                            </Badge>
+                          )}
                         </div>
                       </td>
                       <td className="px-3 py-2.5 text-right tabular-nums text-xs text-foreground/80 dark:text-muted-foreground">
@@ -495,7 +507,9 @@ export function PremiumMarcasView({
                     "w-full p-3 rounded-lg border text-left transition-colors cursor-pointer",
                     isSelected
                       ? 'border-primary/60 bg-primary/10'
-                      : 'border-border/60 bg-card hover:border-border',
+                      : m.somenteDevolucao
+                        ? 'border-destructive/30 bg-destructive/[0.04] hover:border-destructive/60'
+                        : 'border-border/60 bg-card hover:border-border',
                     isDimmed && 'opacity-50'
                   )}
                 >
@@ -507,7 +521,17 @@ export function PremiumMarcasView({
                         {i + 1}
                       </span>
                       <span className="font-semibold truncate">{m.marca}</span>
-                      {m.somenteDevolucao && <Badge variant="outline" className="shrink-0 border-destructive/40 bg-destructive/10 text-[9px] text-destructive">Somente devoluções</Badge>}
+                      {m.somenteDevolucao && (
+                        <Badge
+                          variant="outline"
+                          title="Não houve vendas desta marca no período"
+                          aria-label="Somente devoluções no período"
+                          className="inline-flex shrink-0 items-center gap-1 border-destructive/40 bg-destructive/10 text-[9px] text-destructive"
+                        >
+                          <RotateCcw className="h-3 w-3" aria-hidden="true" />
+                          Somente devoluções
+                        </Badge>
+                      )}
                     </div>
                     {trend === 'up' && <ArrowUpRight className="h-4 w-4 text-success shrink-0" />}
                     {trend === 'down' && <ArrowDownRight className="h-4 w-4 text-destructive shrink-0" />}
