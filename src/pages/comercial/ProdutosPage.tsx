@@ -103,15 +103,74 @@ export default function ProdutosPage() {
     [selectedMarca]
   );
 
+  const normalizedSearch = useMemo(
+    () => searchTerm
+      .trim()
+      .toLocaleLowerCase('pt-BR')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, ''),
+    [searchTerm],
+  );
+  const matchesSearch = useCallback(
+    (...values: unknown[]) => !normalizedSearch || values.some((value) => String(value ?? '')
+      .toLocaleLowerCase('pt-BR')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .includes(normalizedSearch)),
+    [normalizedSearch],
+  );
+
+  // A busca pode começar por produto, marca, cliente ou NF. Quando o termo
+  // vem de cliente/NF, usamos as linhas da nota para descobrir as marcas e
+  // produtos relacionados antes de filtrar as agregações exibidas nas abas.
+  const matchingMarcaNames = useMemo(() => {
+    if (!normalizedSearch) return null;
+    return new Set(
+      resumoVendas
+        .filter((linha) => matchesSearch(
+          linha.marca,
+          linha.descricao,
+          linha.cliente_razao,
+          linha.num_nf,
+          linha.cod_produto,
+        ))
+        .map((linha) => (linha.marca || '').trim().toLocaleLowerCase('pt-BR'))
+        .filter(Boolean),
+    );
+  }, [matchesSearch, normalizedSearch, resumoVendas]);
+
+  const porMarcaFiltrada = useMemo(
+    () => porMarca.filter((marca) =>
+      matchMarca(marca.marca) && (
+        !normalizedSearch
+        || matchesSearch(marca.marca)
+        || matchingMarcaNames?.has((marca.marca || '').trim().toLocaleLowerCase('pt-BR'))
+      )),
+    [matchesSearch, matchingMarcaNames, matchMarca, normalizedSearch, porMarca],
+  );
+
+  const porCategoriaFiltrada = useMemo(
+    () => porCategoria.filter((categoria) => matchesSearch(categoria.chave, (categoria as { categoria?: string }).categoria)),
+    [matchesSearch, porCategoria],
+  );
+
+  const produtosSemGiroFiltrados = useMemo(
+    () => produtosSemGiro.filter((produto) => matchMarca(produto.marca) && matchesSearch(
+      produto.descricao,
+      produto.marca,
+      produto.cod_produto,
+    )),
+    [matchesSearch, matchMarca, produtosSemGiro],
+  );
+
   const topFiltrado = useMemo(
     () => topProdutos.filter(p =>
       matchMarca(p.marca) && (
-        !searchTerm ||
-        p.descricao.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        String(p.cod_produto).includes(searchTerm)
+        matchesSearch(p.descricao, p.marca, p.cod_produto)
+        || matchingMarcaNames?.has((p.marca || '').trim().toLocaleLowerCase('pt-BR'))
       )
     ),
-    [topProdutos, searchTerm, matchMarca]
+    [matchingMarcaNames, matchMarca, matchesSearch, topProdutos]
   );
 
   const resumoReceitas = useMemo(
@@ -124,33 +183,23 @@ export default function ProdutosPage() {
       .filter(r => r.tipo === (resumoMode === 'receitas' ? 'PEDIDO' : 'DEVOLUCAO'))
       .filter(r =>
         matchMarca(r.marca) && (
-          !searchTerm ||
-          r.descricao.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          (r.cliente_razao || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-          (r.marca || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-          (r.vendedor_nome || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-          String(r.num_nf || '').includes(searchTerm)
+          matchesSearch(r.descricao, r.cliente_razao, r.marca, r.vendedor_nome, r.num_nf, r.cod_produto)
         )
       )
       .slice(0, 500),
-    [resumoVendas, resumoMode, searchTerm, matchMarca]
+    [matchesSearch, matchMarca, resumoMode, resumoVendas]
   );
 
   // Top KPIs da página — reativos a selectedMarca
   const marcasFiltradas = useMemo(
-    () => selectedMarca
-      ? porMarca.filter(m => (m.marca || '').toUpperCase().trim() === selectedMarca.toUpperCase().trim())
-      : porMarca,
-    [porMarca, selectedMarca]
+    () => porMarcaFiltrada,
+    [porMarcaFiltrada]
   );
   const totalSkusGeral = topProdutos.length;
 
   const totalReceita = useMemo(() => marcasFiltradas.reduce((a, m) => a + m.faturamento, 0), [marcasFiltradas]);
   const totalQtd = useMemo(() => marcasFiltradas.reduce((a, m) => a + m.quantidade, 0), [marcasFiltradas]);
-  const totalProdutos = useMemo(
-    () => selectedMarca ? topProdutos.filter(p => matchMarca(p.marca)).length : topProdutos.length,
-    [topProdutos, selectedMarca, matchMarca]
-  );
+  const totalProdutos = useMemo(() => topFiltrado.length, [topFiltrado]);
 
   const isFiltered = !!selectedMarca;
 
@@ -225,7 +274,7 @@ export default function ProdutosPage() {
           },
           {
             label: isFiltered ? 'Marca selecionada' : 'Marcas ativas',
-            value: isFiltered ? `1 / ${porMarca.length}` : formatNumber(porMarca.length, 0),
+            value: isFiltered ? `1 / ${porMarca.length}` : formatNumber(porMarcaFiltrada.length, 0),
             tone: 'success',
             tooltip: 'Quantidade de marcas com venda no período.',
           },
@@ -255,7 +304,7 @@ export default function ProdutosPage() {
             <TabsTrigger value="top">Top Produtos</TabsTrigger>
             <TabsTrigger value="categoria">Categorias</TabsTrigger>
             <TabsTrigger value="sem-giro">Sem Giro
-              {produtosSemGiro.length > 0 && <Badge variant="secondary" className="ml-1 h-4 text-[10px] px-1.5">{produtosSemGiro.length}</Badge>}
+              {produtosSemGiroFiltrados.length > 0 && <Badge variant="secondary" className="ml-1 h-4 text-[10px] px-1.5">{produtosSemGiroFiltrados.length}</Badge>}
             </TabsTrigger>
             <TabsTrigger value="resumo">Resumo NF</TabsTrigger>
           </TabsList>
@@ -305,7 +354,7 @@ export default function ProdutosPage() {
           >
           {isLayoutPremium ? (
             <PremiumMarcasView
-              porMarca={porMarca}
+              porMarca={porMarcaFiltrada}
               selectedMarca={selectedMarca}
               onSelectMarca={setSelectedMarca}
               periodoLabel={[appliedFilters.anos?.join('/'), appliedFilters.meses?.join('/')].filter(Boolean).join(' • ')}
@@ -314,7 +363,7 @@ export default function ProdutosPage() {
             />
           ) : (
             <MarcasViewLegacy
-              porMarca={porMarca}
+              porMarca={porMarcaFiltrada}
               selectedMarca={selectedMarca}
               onSelectMarca={setSelectedMarca}
             />
@@ -355,7 +404,7 @@ export default function ProdutosPage() {
           >
           {isLayoutPremium ? (
             <PremiumCategoriasView
-              porCategoria={porCategoria}
+              porCategoria={porCategoriaFiltrada}
               selectedCategoria={selectedCategoria}
               onSelectCategoria={setSelectedCategoria}
               periodoLabel={[appliedFilters.anos?.join('/'), appliedFilters.meses?.join('/')].filter(Boolean).join(' • ')}
@@ -364,7 +413,7 @@ export default function ProdutosPage() {
             />
           ) : (
             <CategoriasViewLegacy
-              porCategoria={porCategoria}
+              porCategoria={porCategoriaFiltrada}
               selectedCategoria={selectedCategoria}
               onSelectCategoria={setSelectedCategoria}
             />
@@ -385,7 +434,7 @@ export default function ProdutosPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {produtosSemGiro.slice(0, 300).map(p => (
+                      {produtosSemGiroFiltrados.slice(0, 300).map(p => (
                         <tr key={String(p.cod_produto)} className="border-t border-border hover:bg-muted/40">
                           <td className="px-3 py-2 text-left">
                             <div className="font-medium leading-tight">{p.descricao}</div>
@@ -411,7 +460,7 @@ export default function ProdutosPage() {
                       ))}
                     </tbody>
             </table>
-            {produtosSemGiro.length === 0 && (
+            {produtosSemGiroFiltrados.length === 0 && (
               <p className="p-8 text-center text-sm text-muted-foreground">Todos os produtos movimentaram no período.</p>
             )}
           </ComercialDataViewport>

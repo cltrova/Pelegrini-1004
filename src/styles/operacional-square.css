@@ -53,15 +53,6 @@
   pointer-events: none;
 }
 
-[data-module-shell='operacional'] .sidebar-item-index {
-  width: 1.5rem;
-  flex: 0 0 1.5rem;
-  color: hsl(var(--sidebar-muted));
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  font-size: 0.625rem;
-  font-variant-numeric: tabular-nums;
-}
-
 [data-module-shell='operacional'] :where(.operational-workspace-header, .operational-toolbar, .operational-data-viewport, .operational-metric-strip, .pelegrini-data-panel, .pelegrini-kpi-card, .pelegrini-chart-frame, .bg-card) {
   border-radius: var(--operational-panel-radius) !important;
   box-shadow: none !important;
@@ -176,9 +167,6 @@
     box-shadow: none;
   }
 
-  [data-module-shell='operacional'] .pelegrini-sidebar-collapsible:not(:hover):not(:focus-within) .sidebar-item-index {
-    display: none;
-  }
 }
 
 @media (max-width: 767px) {

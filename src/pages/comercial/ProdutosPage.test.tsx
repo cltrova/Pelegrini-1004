@@ -47,14 +47,19 @@ vi.mock('@/contexts/FilialSelecionadaContext', () => ({
 vi.mock('@/components/comercial/PremiumMarcasView', () => ({
   PremiumMarcasView: ({
     onSelectMarca,
+    porMarca: marcas,
     showInsights,
     embedded,
   }: {
     onSelectMarca: (marca: string) => void;
+    porMarca: Array<{ marca: string }>;
     showInsights?: boolean;
     embedded?: boolean;
   }) => (
-    <button type="button" data-show-insights={String(showInsights)} data-embedded={String(embedded)} onClick={() => onSelectMarca('EATON')}>Selecionar EATON</button>
+    <div>
+      <button type="button" data-show-insights={String(showInsights)} data-embedded={String(embedded)} onClick={() => onSelectMarca('EATON')}>Selecionar EATON</button>
+      {marcas.map((marca) => <span key={marca.marca}>{marca.marca}</span>)}
+    </div>
   ),
 }));
 
@@ -218,9 +223,24 @@ describe('ProdutosPage compacta', () => {
     expect(screen.getByText('R$ 100.000,00')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Selecionar EATON' }));
 
-    expect(screen.getByText('EATON')).toBeInTheDocument();
+    expect(screen.getAllByText('EATON').length).toBeGreaterThan(0);
     expect(screen.getByText('R$ 80.000,00')).toBeInTheDocument();
     expect(screen.getByText('1 / 2')).toBeInTheDocument();
+  });
+
+  it('aplica a busca na aba Marcas e aceita marca, cliente ou NF', () => {
+    renderPage();
+    const search = screen.getByRole('searchbox', { name: 'Buscar produtos' });
+
+    expect(screen.getByText('ZF')).toBeInTheDocument();
+    fireEvent.change(search, { target: { value: 'Oficina' } });
+
+    expect(screen.getAllByText('EATON').length).toBeGreaterThan(0);
+    expect(screen.queryByText('ZF')).not.toBeInTheDocument();
+
+    fireEvent.change(search, { target: { value: '5678' } });
+    expect(screen.getAllByText('EATON').length).toBeGreaterThan(0);
+    expect(screen.queryByText('ZF')).not.toBeInTheDocument();
   });
 
   it('mantem abas compactas rolaveis e somente o painel ativo no layout', () => {

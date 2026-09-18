@@ -4,10 +4,10 @@ import { join } from 'node:path';
 import { buildOperacionalMenuItems } from './operacionalSidebarItems';
 
 describe('buildOperacionalMenuItems', () => {
-  it('requests indexed navigation for the operational sidebar', () => {
+  it('does not request numeric indexes for the operational sidebar', () => {
     const source = readFileSync(join(process.cwd(), 'src', 'components', 'layout', 'OperacionalSidebar.tsx'), 'utf8');
 
-    expect(source).toMatch(/<PelegriniModuleSidebar\s+indexed(?:\s|\/?>)/);
+    expect(source).not.toMatch(/<PelegriniModuleSidebar\s+indexed(?:\s|\/?>)/);
   });
 
   it('adds Distribuidores as a standalone sidebar destination for Casa da Transmissao', () => {

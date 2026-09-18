@@ -156,7 +156,6 @@ describe('commercial sidebar menu access', () => {
     mockCompany('1004');
     render(createElement(MemoryRouter, { initialEntries: ['/comercial/dashboard'], future: { v7_startTransition: true, v7_relativeSplatPath: true } }, createElement(ComercialSidebar)));
 
-    expect(screen.getByRole('complementary')).toHaveAttribute('data-navigation-style', 'default');
     expect(screen.queryByText('01')).not.toBeInTheDocument();
   });
 

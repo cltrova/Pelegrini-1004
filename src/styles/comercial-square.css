@@ -176,15 +176,6 @@
   pointer-events: none;
 }
 
-[data-module-shell='comercial'] .sidebar-item-index {
-  width: 1.5rem;
-  flex: 0 0 1.5rem;
-  color: hsl(var(--sidebar-muted));
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  font-size: 0.625rem;
-  font-variant-numeric: tabular-nums;
-}
-
 [data-module-shell='comercial'] header.safe-area-top,
 [data-module-shell='comercial'] .commercial-mobile-navigation {
   background: hsl(var(--card));
@@ -247,9 +238,6 @@
     box-shadow: none;
   }
 
-  [data-module-shell='comercial'] .pelegrini-sidebar-collapsible:not(:hover):not(:focus-within) .sidebar-item-index {
-    display: none;
-  }
 }
 
 @media (prefers-reduced-motion: reduce) {
