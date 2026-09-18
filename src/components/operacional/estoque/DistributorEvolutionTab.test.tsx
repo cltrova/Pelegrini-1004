@@ -49,6 +49,7 @@ vi.mock('recharts', () => ({
     <svg data-series={JSON.stringify(data)} data-testid="sales-purchases-chart">{children}</svg>
   ),
   CartesianGrid: () => null,
+  LabelList: () => null,
   Legend: () => null,
   Line: () => null,
   ResponsiveContainer: ({ children }: { children: ReactNode }) => <div>{children}</div>,

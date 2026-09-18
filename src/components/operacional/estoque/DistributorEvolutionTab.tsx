@@ -3,7 +3,7 @@ import {
   CalendarRange, ChevronDown, ChevronRight, Download, Filter, RefreshCw,
 } from 'lucide-react';
 import {
-  Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis,
+  Area, AreaChart, CartesianGrid, LabelList, ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from 'recharts';
 
 import { ErrorState } from '@/components/common/ErrorState';
@@ -318,8 +318,8 @@ export function DistributorEvolutionTab({ active }: { active: boolean }) {
                 <XAxis dataKey="mes" fontSize={10} tickLine={false} />
                 <YAxis fontSize={10} tickFormatter={(value) => `${Math.round(value / 1000)}k`} tickLine={false} width={44} />
                 <Tooltip formatter={(value: number, name: string) => [money.format(value), name === 'vendas' ? 'Vendas' : 'Compras']} />
-                {showSales && <Area activeDot={{ r: 4 }} dataKey="vendas" dot={false} fill="url(#distributor-sales-fill)" name="Vendas" stroke="#0ea5e9" strokeWidth={2} type="monotone" />}
-                {!isPreview && showPurchases && <Area activeDot={{ r: 4 }} connectNulls={false} dataKey="compras" dot={false} fill="url(#distributor-purchases-fill)" name="Compras" stroke="#10b981" strokeWidth={2} type="monotone" />}
+                {showSales && <Area activeDot={{ r: 4 }} dataKey="vendas" dot={false} fill="url(#distributor-sales-fill)" name="Vendas" stroke="#0ea5e9" strokeWidth={2} type="monotone"><LabelList dataKey="vendas" fill="#38bdf8" formatter={(value: number) => compactMoney.format(value)} position="top" /></Area>}
+                {!isPreview && showPurchases && <Area activeDot={{ r: 4 }} connectNulls={false} dataKey="compras" dot={false} fill="url(#distributor-purchases-fill)" name="Compras" stroke="#10b981" strokeWidth={2} type="monotone"><LabelList dataKey="compras" fill="#34d399" formatter={(value: number) => compactMoney.format(value)} position="top" /></Area>}
               </AreaChart>
             </ResponsiveContainer>
           </div>
