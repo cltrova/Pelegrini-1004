@@ -154,11 +154,7 @@ export default function ProdutosPage() {
 
   const isFiltered = !!selectedMarca;
 
-  if (showBlockingLoading) {
-    return <LoadingState message="Carregando produtos" variant="screen" />;
-  }
-
-  if (blockingError) {
+  if (showBlockingLoading || blockingError) {
     return (
       <ComercialCompactPage
         as="div"
@@ -169,7 +165,9 @@ export default function ProdutosPage() {
           className="commercial-detail-panel flex min-h-0 flex-1 items-center justify-center"
           aria-label={showBlockingLoading ? 'Carregando produtos' : 'Falha ao carregar produtos'}
         >
-          <ErrorState message="Erro ao carregar produtos" />
+          {showBlockingLoading
+            ? <LoadingState message="Carregando produtos" variant="content" surface={false} />
+            : <ErrorState message="Erro ao carregar produtos" />}
         </section>
       </ComercialCompactPage>
     );

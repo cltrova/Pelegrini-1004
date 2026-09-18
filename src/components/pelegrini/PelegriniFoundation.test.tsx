@@ -116,7 +116,7 @@ describe('Pelegrini visual foundation', () => {
     );
 
     expect(screen.getByText('Menu persistente')).toBeInTheDocument();
-    expect(screen.getByRole('status', { name: 'Carregando conteúdo do módulo' })).toHaveClass('flex-1', 'min-h-screen');
+    expect(screen.getByRole('status', { name: 'Carregando conteúdo do módulo' })).toHaveClass('flex-1', 'min-h-0');
     expect(screen.queryByText('Carregamento global')).not.toBeInTheDocument();
   });
 

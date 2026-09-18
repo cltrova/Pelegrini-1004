@@ -121,11 +121,10 @@ export interface MarcaAgg {
   faturamento: number;
   custo: number;
   lucro: number;
-  margem: number | null;
+  margem: number;
   quantidade: number;
   produtos: number;
   participacao: number;
-  somenteDevolucao?: boolean;
 }
 
 // Linha do "Resumo de Vendas" detalhado

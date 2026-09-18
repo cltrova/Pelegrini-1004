@@ -397,7 +397,7 @@ function getCustoAssinado(item: ProdutoItem): number {
 }
 
 export function aggregateProdutosPorMarca(produtos: ProdutoItem[]): MarcaAgg[] {
-  const map = new Map<string, MarcaAgg & { _set: Set<string>; _hasSale: boolean; _hasReturn: boolean }>();
+  const map = new Map<string, MarcaAgg & { _set: Set<string>; _hasSale: boolean }>();
 
   for (const item of produtos) {
     const key = (item.marca || 'SEM MARCA').toString().trim().toUpperCase();
@@ -412,38 +412,34 @@ export function aggregateProdutosPorMarca(produtos: ProdutoItem[]): MarcaAgg[] {
       participacao: 0,
       _set: new Set<string>(),
       _hasSale: false,
-      _hasReturn: false,
     };
 
     current.faturamento += item.valor_total;
     current.custo += getCustoAssinado(item);
     current.quantidade += item.quantidade;
     current._set.add(String(item.cod_produto));
+    // A aba Marcas representa vendas. Devolucoes isoladas (inclusive linhas
+    // zeradas que o ERP retorna junto) ficam disponiveis somente em Devolucoes.
     if (item.tipo !== 'DEVOLUCAO' && item.valor_total > 0) current._hasSale = true;
-    if (item.tipo === 'DEVOLUCAO' && item.valor_total < 0) current._hasReturn = true;
     map.set(key, current);
   }
 
   const marcas = Array.from(map.values())
-    .filter(({ _hasSale, _hasReturn }) => _hasSale || _hasReturn)
-    .map(({ _set, _hasSale, _hasReturn, ...rest }) => {
+    .filter(({ _hasSale, faturamento }) => _hasSale && faturamento > 0)
+    .map(({ _set, _hasSale, ...rest }) => {
     const lucro = rest.faturamento - rest.custo;
     return {
       ...rest,
       produtos: _set.size,
       lucro,
-      margem: _hasSale && rest.faturamento > 0 ? (lucro / rest.faturamento) * 100 : null,
-      somenteDevolucao: !_hasSale && _hasReturn,
+      margem: rest.faturamento > 0 ? (lucro / rest.faturamento) * 100 : 0,
     };
   });
-  marcas.sort((a, b) => {
-    if (!!a.somenteDevolucao !== !!b.somenteDevolucao) return a.somenteDevolucao ? 1 : -1;
-    return b.faturamento - a.faturamento;
-  });
+  marcas.sort((a, b) => b.faturamento - a.faturamento);
 
   const total = marcas.reduce((acc, marca) => acc + Math.max(0, marca.faturamento), 0);
   marcas.forEach((marca) => {
-    marca.participacao = !marca.somenteDevolucao && total > 0 ? (marca.faturamento / total) * 100 : 0;
+    marca.participacao = total > 0 ? (marca.faturamento / total) * 100 : 0;
   });
   return marcas;
 }
