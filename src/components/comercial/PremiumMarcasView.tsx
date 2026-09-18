@@ -44,7 +44,7 @@ function buildFallbackInsights(marcas: MarcaAgg[], selectedMarca: string | null)
     if (!foco) return [];
     const posicao = ordered.findIndex(m => (m.marca || '').toUpperCase().trim() === norm) + 1;
     const ticket = foco.produtos > 0 ? foco.faturamento / foco.produtos : 0;
-    const deltaMargem = foco.margem - margemPortfolio;
+    const deltaMargem = (foco.margem ?? 0) - margemPortfolio;
 
     return [
       {
@@ -59,8 +59,10 @@ function buildFallbackInsights(marcas: MarcaAgg[], selectedMarca: string | null)
       {
         title: 'Rentabilidade',
         marca: foco.marca,
-        value: `${foco.margem.toFixed(1)}% margem`,
-        insight: deltaMargem >= 0
+        value: foco.margem == null ? '—' : `${foco.margem.toFixed(1)}% margem`,
+        insight: foco.somenteDevolucao
+          ? 'Sem venda no período; os valores representam somente devoluções.'
+          : deltaMargem >= 0
           ? `Acima da média do portfólio (+${deltaMargem.toFixed(1)} p.p.). Mantenha política de preço.`
           : `Abaixo da média do portfólio (${deltaMargem.toFixed(1)} p.p.). Revise custo, desconto ou mix.`,
         type: deltaMargem >= 5 ? 'oportunidade' : deltaMargem < -5 ? 'risco' : 'alerta',
@@ -87,9 +89,9 @@ function buildFallbackInsights(marcas: MarcaAgg[], selectedMarca: string | null)
   // ===== Caso 2: visão geral =====
   const leader = ordered[0];
   if (!leader) return [];
-  const profitable = [...marcas].filter(m => m.faturamento > 0).sort((a, b) => b.margem - a.margem)[0] || leader;
-  const lowMargin = [...marcas].filter(m => m.faturamento > 0).sort((a, b) => a.margem - b.margem)[0] || leader;
-  const hidden = [...marcas].filter(m => m.faturamento > 0 && m.margem >= 20).sort((a, b) => a.faturamento - b.faturamento)[0] || profitable;
+  const profitable = [...marcas].filter(m => m.faturamento > 0 && m.margem != null).sort((a, b) => (b.margem ?? 0) - (a.margem ?? 0))[0] || leader;
+  const lowMargin = [...marcas].filter(m => m.faturamento > 0 && m.margem != null).sort((a, b) => (a.margem ?? 0) - (b.margem ?? 0))[0] || leader;
+  const hidden = [...marcas].filter(m => m.faturamento > 0 && (m.margem ?? 0) >= 20).sort((a, b) => a.faturamento - b.faturamento)[0] || profitable;
 
   return [
     {
@@ -102,16 +104,16 @@ function buildFallbackInsights(marcas: MarcaAgg[], selectedMarca: string | null)
     {
       title: 'Melhor margem',
       marca: profitable.marca,
-      value: `${profitable.margem.toFixed(1)}% margem`,
+      value: profitable.margem == null ? '—' : `${profitable.margem.toFixed(1)}% margem`,
       insight: 'Priorize ações comerciais onde margem e volume sustentam ganho.',
       type: 'oportunidade',
     },
     {
       title: 'Atenção margem',
       marca: lowMargin.marca,
-      value: `${lowMargin.margem.toFixed(1)}% margem`,
+      value: lowMargin.margem == null ? '—' : `${lowMargin.margem.toFixed(1)}% margem`,
       insight: 'Revise preço, desconto ou custo antes de ampliar campanhas.',
-      type: lowMargin.margem < 10 ? 'risco' : 'alerta',
+      type: (lowMargin.margem ?? 0) < 10 ? 'risco' : 'alerta',
     },
     {
       title: 'Potencial oculto',
@@ -148,13 +150,15 @@ const TYPE_STYLES: Record<AIInsight['type'], {
   },
 };
 
-function lucroColor(margem: number) {
+function lucroColor(margem: number | null) {
+  if (margem == null) return 'text-destructive';
   if (margem >= 25) return 'text-success';
   if (margem >= 10) return 'text-warning';
   return 'text-destructive';
 }
 
-function lucroBg(margem: number) {
+function lucroBg(margem: number | null) {
+  if (margem == null) return 'bg-destructive/15 text-destructive border-destructive/30';
   if (margem >= 25) return 'bg-success/15 text-success border-success/30';
   if (margem >= 10) return 'bg-warning/15 text-warning border-warning/30';
   return 'bg-destructive/15 text-destructive border-destructive/30';
@@ -255,6 +259,7 @@ export function PremiumMarcasView({
 
   // Tendência simulada por margem (placeholder visual)
   const tendencia = (m: MarcaAgg): 'up' | 'down' | 'flat' => {
+    if (m.margem == null) return 'down';
     if (m.margem >= 20) return 'up';
     if (m.margem < 5) return 'down';
     return 'flat';
@@ -407,9 +412,10 @@ export function PremiumMarcasView({
                       {/* Marca */}
                       <td className="commercial-products-primary-column px-3 py-2.5 text-left">
                         <div className="flex items-center justify-start">
-                          <span className={cn("font-medium truncate", isSelected && 'text-primary font-bold')}>
+                          <span className={cn("font-medium truncate", isSelected && 'text-primary font-bold')} title={m.somenteDevolucao ? 'Somente devoluções no período' : undefined}>
                             {m.marca}
                           </span>
+                          {m.somenteDevolucao && <Badge variant="outline" className="ml-2 shrink-0 border-destructive/40 bg-destructive/10 text-[9px] text-destructive">Somente devoluções</Badge>}
                         </div>
                       </td>
                       <td className="px-3 py-2.5 text-right tabular-nums text-xs text-foreground/80 dark:text-muted-foreground">
@@ -443,7 +449,7 @@ export function PremiumMarcasView({
                           "text-xs tabular-nums",
                           isSelected ? 'text-primary font-semibold' : 'text-muted-foreground'
                         )}>
-                          {m.participacao.toFixed(1)}%
+                          {m.somenteDevolucao ? '—' : `${m.participacao.toFixed(1)}%`}
                         </span>
                       </td>
                       {/* Lucro */}
@@ -455,7 +461,7 @@ export function PremiumMarcasView({
                       {/* Margem badge */}
                       <td className="px-3 py-2.5 text-right">
                         <Badge variant="outline" className={cn("h-5 text-[10px] tabular-nums px-2", lucroBg(m.margem))}>
-                          {m.margem.toFixed(1)}%
+                          {m.margem == null ? '—' : `${m.margem.toFixed(1)}%`}
                         </Badge>
                       </td>
                       {/* Tendência */}
@@ -501,6 +507,7 @@ export function PremiumMarcasView({
                         {i + 1}
                       </span>
                       <span className="font-semibold truncate">{m.marca}</span>
+                      {m.somenteDevolucao && <Badge variant="outline" className="shrink-0 border-destructive/40 bg-destructive/10 text-[9px] text-destructive">Somente devoluções</Badge>}
                     </div>
                     {trend === 'up' && <ArrowUpRight className="h-4 w-4 text-success shrink-0" />}
                     {trend === 'down' && <ArrowDownRight className="h-4 w-4 text-destructive shrink-0" />}
@@ -512,7 +519,7 @@ export function PremiumMarcasView({
                     </div>
                     <div>
                       <div className="text-[10px] text-muted-foreground uppercase">Share</div>
-                      <div className="font-semibold tabular-nums">{m.participacao.toFixed(1)}%</div>
+                      <div className="font-semibold tabular-nums">{m.somenteDevolucao ? '—' : `${m.participacao.toFixed(1)}%`}</div>
                     </div>
                     <div>
                       <div className="text-[10px] text-muted-foreground uppercase">Lucro</div>
@@ -523,7 +530,7 @@ export function PremiumMarcasView({
                     <div>
                       <div className="text-[10px] text-muted-foreground uppercase">Margem</div>
                       <Badge variant="outline" className={cn("h-5 text-[10px] tabular-nums px-1.5", lucroBg(m.margem))}>
-                        {m.margem.toFixed(1)}%
+                        {m.margem == null ? '—' : `${m.margem.toFixed(1)}%`}
                       </Badge>
                     </div>
                   </div>
