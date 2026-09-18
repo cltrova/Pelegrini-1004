@@ -116,6 +116,24 @@ describe('DistributorEvolutionTab', () => {
     expect(screen.getByText('Margem de venda')).toBeInTheDocument();
   });
 
+  it('colore variacoes negativas em vermelho e positivas em verde', () => {
+    queryState.data = [
+      { ...queryState.data[0], valor_vendas: 40 },
+      { ...queryState.data[1], valor_vendas: 30 },
+    ];
+    render(<DistributorEvolutionTab active />);
+
+    const table = screen.getByRole('table', { name: 'Comparativo mensal dos distribuidores' });
+    const july = within(table).getByRole('button', { name: /ZF em julho de 2026/i });
+    const august = within(table).getByRole('button', { name: /ZF em agosto de 2026/i });
+
+    expect(within(july).getByText('sem base')).toHaveClass('text-muted-foreground');
+    expect(within(august).getByText('+20%')).toHaveClass('text-emerald-500');
+
+    fireEvent.click(screen.getAllByRole('button', { name: 'Vendas' })[0]);
+    expect(within(august).getByText('-25%')).toHaveClass('text-red-500');
+  });
+
   it('explica quando o endpoint ainda nao esta publicado', () => {
     queryState.data = [];
     queryState.error = new Error('O endpoint de evolução de distribuidores ainda não está disponível na API.');
