@@ -309,7 +309,7 @@ export function DistributorEvolutionTab({ active }: { active: boolean }) {
           {isPreview && <p className="mb-1 text-[11px] text-amber-600 dark:text-amber-400">Compras aguardando fonte oficial.</p>}
           <div className="min-h-[12rem] flex-1">
             <ResponsiveContainer height="100%" width="100%">
-              <AreaChart data={salesPurchasesData} margin={{ left: 0, right: 12, top: 8, bottom: 0 }}>
+              <AreaChart data={salesPurchasesData} margin={{ left: 0, right: 12, top: 22, bottom: 0 }}>
                 <defs>
                   <linearGradient id="distributor-sales-fill" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stopColor="#0ea5e9" stopOpacity={0.28} /><stop offset="100%" stopColor="#0ea5e9" stopOpacity={0.01} /></linearGradient>
                   <linearGradient id="distributor-purchases-fill" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stopColor="#10b981" stopOpacity={0.22} /><stop offset="100%" stopColor="#10b981" stopOpacity={0.01} /></linearGradient>
@@ -318,8 +318,8 @@ export function DistributorEvolutionTab({ active }: { active: boolean }) {
                 <XAxis dataKey="mes" fontSize={10} tickLine={false} />
                 <YAxis fontSize={10} tickFormatter={(value) => `${Math.round(value / 1000)}k`} tickLine={false} width={44} />
                 <Tooltip formatter={(value: number, name: string) => [money.format(value), name === 'vendas' ? 'Vendas' : 'Compras']} />
-                {showSales && <Area activeDot={{ r: 4 }} dataKey="vendas" dot={false} fill="url(#distributor-sales-fill)" name="Vendas" stroke="#0ea5e9" strokeWidth={2} type="monotone"><LabelList dataKey="vendas" fill="#38bdf8" formatter={(value: number) => compactMoney.format(value)} position="top" /></Area>}
-                {!isPreview && showPurchases && <Area activeDot={{ r: 4 }} connectNulls={false} dataKey="compras" dot={false} fill="url(#distributor-purchases-fill)" name="Compras" stroke="#10b981" strokeWidth={2} type="monotone"><LabelList dataKey="compras" fill="#34d399" formatter={(value: number) => compactMoney.format(value)} position="top" /></Area>}
+                {showSales && <Area activeDot={{ r: 4 }} dataKey="vendas" dot={false} fill="url(#distributor-sales-fill)" name="Vendas" stroke="#0ea5e9" strokeWidth={2} type="monotone"><LabelList dataKey="vendas" fill="#38bdf8" fontSize={10} fontWeight={600} formatter={(value: number) => compactMoney.format(value)} offset={6} position="top" /></Area>}
+                {!isPreview && showPurchases && <Area activeDot={{ r: 4 }} connectNulls={false} dataKey="compras" dot={false} fill="url(#distributor-purchases-fill)" name="Compras" stroke="#10b981" strokeWidth={2} type="monotone"><LabelList dataKey="compras" fill="#34d399" fontSize={10} fontWeight={600} formatter={(value: number) => compactMoney.format(value)} offset={6} position="top" /></Area>}
               </AreaChart>
             </ResponsiveContainer>
           </div>
