@@ -19,6 +19,7 @@ export function filtrarEstoqueCasaChevrolet10041<T extends Record<string, unknow
   if (activeCode !== '1004' && activeCode !== '10041') return rows;
 
   return rows.filter((row) => {
+    if (isForcaPEstoque(row)) return false;
     const codBi = String(row.cod_empresa_bi ?? row.CodEmpresa_bi ?? '').trim();
     const companyName = normalizeText(row.empresa ?? row.Empresa);
     const identifiedAsChevrolet = codBi === '10041' || companyName.includes('CHEVROLET');
@@ -30,4 +31,10 @@ export function filtrarEstoqueCasaChevrolet10041<T extends Record<string, unknow
 
     return !identifiedAsChevrolet;
   });
+}
+
+export function isForcaPEstoque(row: Record<string, unknown>): boolean {
+  const code = row.cod_empresa ?? row.CodEmpresa ?? row.CodEmpresaEstoque ?? row.empresa_estoque;
+  const name = normalizeText(row.empresa ?? row.Empresa ?? row.nome_empresa);
+  return Number(code) === 80 || /FORCA\s*P(?:[^A-Z]|$)/.test(name);
 }

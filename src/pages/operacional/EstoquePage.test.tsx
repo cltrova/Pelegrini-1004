@@ -21,7 +21,7 @@ vi.mock('@/hooks/useEstoqueData', () => ({
   useEstoqueData: () => testState.hookResult,
 }));
 
-import EstoquePage from './EstoquePage';
+import { EstoqueProdutosPage as EstoquePage } from './EstoquePage';
 
 const estoqueAssistantModulePromise = import('@/components/operacional/EstoqueAssistantTab');
 

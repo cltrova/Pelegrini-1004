@@ -5,7 +5,7 @@ import type { Empresa } from '@/hooks/useEmpresaConfig';
 import { supabase } from '@/integrations/supabase/client';
 import { buildApiProxyUrl } from '@/utils/apiEndpointResolver';
 import { EstoqueRecord, GiroRecord, type StockSourceState } from '@/types/estoque';
-import { filtrarEstoqueCasaChevrolet10041, isAgraleEstoque10041 } from '@/utils/estoque10041';
+import { filtrarEstoqueCasaChevrolet10041, isAgraleEstoque10041, isForcaPEstoque } from '@/utils/estoque10041';
 import { useFilialSelecionada } from '@/contexts/FilialSelecionadaContext';
 import { resolveCodEmpresaBiParam } from '@/utils/filialEndpoint';
 
@@ -172,6 +172,7 @@ function normalizeBranchText(value: unknown): string {
 }
 
 function isGiroRowFromActiveBranch(row: GiroRecord, codEmpresaAtiva?: string | null): boolean {
+  if (isForcaPEstoque(row as unknown as Record<string, unknown>)) return false;
   const activeCode = String(codEmpresaAtiva ?? '').trim();
   const rowCode = String(row.cod_empresa_bi ?? '').trim();
   const isChevrolet = normalizeBranchText(row.empresa).includes('CHEVROLET');

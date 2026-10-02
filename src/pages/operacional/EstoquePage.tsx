@@ -19,6 +19,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { useFilialSelecionada } from '@/contexts/FilialSelecionadaContext';
+import { useEmpresaAtiva } from '@/hooks/useEmpresaAtiva';
+import { resolveCodEmpresaBiParam } from '@/utils/filialEndpoint';
+import { EstoqueAtualPage } from './EstoqueAtualPage';
 import { useEstoqueData } from '@/hooks/useEstoqueData';
 import type { EstoqueRecord, GiroFiltersState, GiroStatus, ViewMode } from '@/types/estoque';
 import type { StockQuickFilter } from '@/components/operacional/estoque/estoqueIntelligence';
@@ -81,7 +84,7 @@ interface EstoquePageProps {
   initialTab?: EstoqueTab;
 }
 
-export default function EstoquePage({ initialTab = 'overview' }: EstoquePageProps) {
+export function EstoqueProdutosPage({ initialTab = 'overview', onOpenCurrent }: EstoquePageProps & { onOpenCurrent?: () => void }) {
   const { activeCompanyCode, consolidadoData, detalhadoData, giroData, isLoading, isInitialLoading, empresa, sourceErrors, sourceStatus, sourceLastUpdated, lastSuccessfulUpdate, partialSources, recoveredSources, recoveryStatus, isFetching, refetch } = useEstoqueData();
   const { codEmpresaContexto, filialAtiva } = useFilialSelecionada();
   const [activeTab, setActiveTab] = useState<EstoqueTab>(initialTab);
@@ -286,8 +289,9 @@ export default function EstoquePage({ initialTab = 'overview' }: EstoquePageProp
             ariaLabel="Visões do estoque"
             className="estoque-tabs min-w-0 flex-1"
             value={activeTab}
-            onValueChange={setActiveTab}
+            onValueChange={value => { if (value === 'atual') onOpenCurrent?.(); else setActiveTab(value as EstoqueTab); }}
             items={[
+              ...(onOpenCurrent ? [{ value: 'atual', label: 'Estoque atual' }] : []),
               { value: 'overview', label: 'Visão geral' },
               { value: 'central', label: 'Central de Estoque' },
               { value: 'giro', label: 'Giro de Estoque' },
@@ -444,4 +448,19 @@ export default function EstoquePage({ initialTab = 'overview' }: EstoquePageProp
       </Tabs>
     </EstoqueWorkspace>
   );
+}
+
+export default function EstoquePage(props: EstoquePageProps) {
+  const { empresa, isLoading } = useEmpresaAtiva();
+  const { filialAtiva } = useFilialSelecionada();
+  const companyCode = resolveCodEmpresaBiParam(empresa, filialAtiva);
+  const [productsBranch, setProductsBranch] = useState<string | undefined>();
+  const currentBranch = `${companyCode}:${filialAtiva ?? ''}`;
+  const isCT = companyCode === '1004' && filialAtiva !== 'chevrolet';
+  const showCurrent = isCT && props.initialTab === undefined && productsBranch !== currentBranch;
+  if (isLoading && !empresa) return <LoadingState message="Carregando configuração do estoque" />;
+  if (showCurrent && empresa?.modulo_operacional) {
+    return <EstoqueAtualPage empresa={empresa} onOpenProducts={() => setProductsBranch(currentBranch)} />;
+  }
+  return <EstoqueProdutosPage {...props} onOpenCurrent={isCT ? () => setProductsBranch(undefined) : undefined} />;
 }

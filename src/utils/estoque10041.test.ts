@@ -35,3 +35,16 @@ describe('filtrarEstoqueCasaChevrolet10041', () => {
     expect(isAgraleEstoque10041({ marca: 'CHEVROLET' })).toBe(false);
   });
 });
+
+// Forca P nunca participa das fontes de estoque usadas pela interface.
+describe('exclusao Forca P do estoque', () => {
+  it.each(['1004', '10041'])('remove codigo 80 e nomes Forca P antes dos totais em %s', code => {
+    const rows = [
+      { cod_empresa_bi: Number(code), cod_empresa: 1, empresa: 'CASA DA TRANSMISSAO', produto: 'Permitido' },
+      { cod_empresa_bi: Number(code), cod_empresa: 80, empresa: 'Outra', produto: 'Bloqueado codigo' },
+      { cod_empresa_bi: Number(code), cod_empresa: 3, empresa: 'Força P. LTDA', produto: 'Bloqueado nome' },
+      { CodEmpresa_bi: Number(code), CodEmpresa: '000080', produto: 'Bloqueado variante' },
+    ];
+    expect(filtrarEstoqueCasaChevrolet10041(rows, code).map(row => row.produto)).toEqual(['Permitido']);
+  });
+});
