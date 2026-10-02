@@ -21,6 +21,7 @@ describe('pelegriniHome config', () => {
       'Comercial',
       'Operacional',
       'Financeiro',
+      'E-Commerce',
     ]);
   });
 
@@ -41,6 +42,12 @@ describe('pelegriniHome config', () => {
         expect.objectContaining({ title: 'Comercial', path: '/comercial/dashboard', moduloKey: 'comercial' }),
         expect.objectContaining({ title: 'Operacional', path: '/operacional/estoque', moduloKey: 'operacional' }),
         expect.objectContaining({ title: 'Financeiro', path: '/financeiro', moduloKey: 'financeiro' }),
+        expect.objectContaining({
+          title: 'E-Commerce',
+          path: '/ecommerce',
+          moduloKey: 'ecommerce',
+          branchOnly: 'chevrolet',
+        }),
       ]),
     );
   });
@@ -55,6 +62,11 @@ describe('pelegriniHome config', () => {
       path: '/whatsapp',
       hidden: true,
     });
+  });
+
+  it('exposes E-Commerce only for the Casa do Chevrolet branch', () => {
+    expect(getPelegriniVisibleModules('chevrolet').map((module) => module.title)).toContain('E-Commerce');
+    expect(getPelegriniVisibleModules('transmissao').map((module) => module.title)).not.toContain('E-Commerce');
   });
 
   it('defines a configuration entry for endpoint setup', () => {

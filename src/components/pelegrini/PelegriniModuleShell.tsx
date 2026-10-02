@@ -10,7 +10,7 @@ interface PelegriniModuleShellProps {
   sidebar: ReactNode;
   className?: string;
   variant?: 'sidebar' | 'header';
-  moduleKey?: PelegriniModuleKey;
+  moduleKey?: PelegriniModuleKey | 'ecommerce';
 }
 
 export function PelegriniModuleShell({

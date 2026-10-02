@@ -75,4 +75,15 @@ describe('pelegriniTheme', () => {
     expect(cchComercial.kpiPrefix).toBe('Pedidos originais');
     expect(cchComercial.chartLabel).toContain('Chevrolet');
   });
+
+  it('provides E-Commerce visual metadata for the Chevrolet theme', () => {
+    const ecommerce = getPelegriniModuleVisual('ecommerce', 'chevrolet');
+
+    expect(ecommerce).toMatchObject({
+      moduleKey: 'ecommerce',
+      themeKey: 'chevrolet',
+      kpiPrefix: 'Marketplace Chevrolet',
+    });
+    expect(ecommerce.actionLabel).toContain('Mercado Livre');
+  });
 });

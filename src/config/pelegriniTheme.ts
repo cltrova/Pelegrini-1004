@@ -202,18 +202,21 @@ const moduleVisuals: Record<PelegriniThemeKey, Record<PelegriniModuleKey, Pelegr
     comercial: { moduleKey: 'comercial', themeKey: 'pelegrini', kpiPrefix: 'Pedidos consolidados', chartLabel: 'Venda por filial', tableLabel: 'Carteira de clientes', actionLabel: 'Analisar venda' },
     operacional: { moduleKey: 'operacional', themeKey: 'pelegrini', kpiPrefix: 'Estoque conectado', chartLabel: 'Giro por filial', tableLabel: 'Disponibilidade', actionLabel: 'Ver estoque' },
     financeiro: { moduleKey: 'financeiro', themeKey: 'pelegrini', kpiPrefix: 'Resultado consolidado', chartLabel: 'Caixa e DRE', tableLabel: 'Leitura financeira', actionLabel: 'Analisar resultado' },
+    ecommerce: { moduleKey: 'ecommerce', themeKey: 'pelegrini', kpiPrefix: 'Marketplace integrado', chartLabel: 'Anuncios e pedidos', tableLabel: 'Operacao de marketplace', actionLabel: 'Preparar Mercado Livre' },
   },
   transmissao: {
     whatsapp: { moduleKey: 'whatsapp', themeKey: 'transmissao', kpiPrefix: 'Atendimento tecnico', chartLabel: 'Demanda por aplicacao pesada', tableLabel: 'Fila de orcamentos tecnicos', actionLabel: 'Responder tecnico' },
     comercial: { moduleKey: 'comercial', themeKey: 'transmissao', kpiPrefix: 'Pedidos tecnicos', chartLabel: 'Curva de cambio e diferencial', tableLabel: 'Pecas por codigo e marca', actionLabel: 'Priorizar aplicacao' },
     operacional: { moduleKey: 'operacional', themeKey: 'transmissao', kpiPrefix: 'Giro tecnico', chartLabel: 'Estoque de cambio, diferencial e motor', tableLabel: 'Aplicacoes criticas', actionLabel: 'Ver disponibilidade' },
     financeiro: { moduleKey: 'financeiro', themeKey: 'transmissao', kpiPrefix: 'Margem tecnica', chartLabel: 'Resultado de pecas pesadas', tableLabel: 'Centro de custo tecnico', actionLabel: 'Ler margem' },
+    ecommerce: { moduleKey: 'ecommerce', themeKey: 'transmissao', kpiPrefix: 'Marketplace indisponivel', chartLabel: 'Operacao exclusiva Chevrolet', tableLabel: 'Marketplace nao aplicavel', actionLabel: 'Ver filial Chevrolet' },
   },
   chevrolet: {
     whatsapp: { moduleKey: 'whatsapp', themeKey: 'chevrolet', kpiPrefix: 'Atendimento original', chartLabel: 'Pedidos Chevrolet no WhatsApp', tableLabel: 'Fila de balcao original', actionLabel: 'Responder cliente' },
     comercial: { moduleKey: 'comercial', themeKey: 'chevrolet', kpiPrefix: 'Pedidos originais', chartLabel: 'Curva de pecas Chevrolet', tableLabel: 'Clientes, oficinas e frotistas', actionLabel: 'Acelerar pedido' },
     operacional: { moduleKey: 'operacional', themeKey: 'chevrolet', kpiPrefix: 'Estoque original', chartLabel: 'Disponibilidade Chevrolet', tableLabel: 'Pecas com procedencia', actionLabel: 'Separar item' },
     financeiro: { moduleKey: 'financeiro', themeKey: 'chevrolet', kpiPrefix: 'Resultado original', chartLabel: 'Receita de pecas Chevrolet', tableLabel: 'Recebiveis do balcao', actionLabel: 'Ver caixa' },
+    ecommerce: { moduleKey: 'ecommerce', themeKey: 'chevrolet', kpiPrefix: 'Marketplace Chevrolet', chartLabel: 'Anuncios e pedidos Mercado Livre', tableLabel: 'Operacao de marketplace', actionLabel: 'Preparar Mercado Livre' },
   },
 };
 

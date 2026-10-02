@@ -12,9 +12,11 @@ import { FinanceiroLayout } from "@/components/layout/FinanceiroLayout";
 import { ComercialLayout } from "@/components/layout/ComercialLayout";
 import { WhatsappLayout } from "@/components/layout/WhatsappLayout";
 import { OperacionalLayout } from "@/components/layout/OperacionalLayout";
+import { EcommerceLayout } from "@/components/layout/EcommerceLayout";
 import { AppErrorBoundary } from "@/components/common/AppErrorBoundary";
 import { LoadingState } from "@/components/common/LoadingState";
 import { RequireModule } from "@/components/auth/RequireModule";
+import { RequireEcommerceBranch } from "@/components/auth/RequireEcommerceBranch";
 import { RequireRole } from "@/components/auth/RequireRole";
 import { ForceChangePassword } from "@/components/auth/ForceChangePassword";
 import { useAuth } from "@/contexts/AuthContext";
@@ -43,6 +45,10 @@ const ConfiguracoesPage = lazy(() => import('./pages/ConfiguracoesPage'));
 const UsuariosPage = lazy(() => import('./pages/configuracoes/UsuariosPage'));
 const EmpresasPage = lazy(() => import('./pages/configuracoes/EmpresasPage'));
 const EstoqueAssistantSettingsPage = lazy(() => import('./pages/configuracoes/EstoqueAssistantSettingsPage'));
+const EcommerceOverviewPage = lazy(() => import('./pages/ecommerce/EcommerceOverviewPage'));
+const EcommerceListingsPage = lazy(() => import('./pages/ecommerce/EcommerceListingsPage'));
+const EcommerceOrdersPage = lazy(() => import('./pages/ecommerce/EcommerceOrdersPage'));
+const EcommerceIntegrationPage = lazy(() => import('./pages/ecommerce/EcommerceIntegrationPage'));
 import HomePage from "./pages/HomePage";
 import NotFound from "./pages/NotFound";
 import { PelegriniLoginPage } from "./pages/auth/PelegriniLoginPage";
@@ -161,6 +167,18 @@ const App = () => (
               <Route path="/" element={<HomePage />} />
 
               <Route path="/mobile" element={<Navigate to="/comercial/dashboard" replace />} />
+
+              {/* E-Commerce - exclusivo da filial Casa do Chevrolet */}
+              <Route path="/ecommerce" element={
+                <RequireEcommerceBranch>
+                  <EcommerceLayout />
+                </RequireEcommerceBranch>
+              }>
+                <Route index element={<EcommerceOverviewPage />} />
+                <Route path="anuncios" element={<EcommerceListingsPage />} />
+                <Route path="pedidos" element={<EcommerceOrdersPage />} />
+                <Route path="integracao" element={<EcommerceIntegrationPage />} />
+              </Route>
 
               
               {/* Módulo Financeiro - cada rota protegida pelo seu módulo específico */}

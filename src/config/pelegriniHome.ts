@@ -1,13 +1,17 @@
 import type { UserModuleKey } from '@/hooks/useUserModulePermissions';
 import { getFilialAccessState, type FilialAccessInput } from '@/utils/filialAccess';
 
+export type PelegriniHomeBranch = 'transmissao' | 'chevrolet';
+
 export interface PelegriniHomeModule {
-  title: 'WhatsApp' | 'Comercial' | 'Operacional' | 'Financeiro';
+  title: 'WhatsApp' | 'Comercial' | 'Operacional' | 'Financeiro' | 'E-Commerce';
   description: string;
   path: string;
   features: string[];
-  moduloKey: UserModuleKey;
-  accent: 'emerald' | 'purple' | 'orange' | 'blue';
+  moduloKey: UserModuleKey | 'ecommerce';
+  accent: 'emerald' | 'purple' | 'orange' | 'blue' | 'cyan';
+  branchOnly?: PelegriniHomeBranch;
+  permissionKey?: UserModuleKey;
   hidden?: boolean;
 }
 
@@ -54,10 +58,22 @@ export const pelegriniModules: PelegriniHomeModule[] = [
     moduloKey: 'financeiro',
     accent: 'blue',
   },
+  {
+    title: 'E-Commerce',
+    description: 'Preparacao para anuncios, pedidos e integracao com o Mercado Livre na Casa do Chevrolet.',
+    path: '/ecommerce',
+    features: ['Anuncios', 'Pedidos', 'Integracao'],
+    moduloKey: 'ecommerce',
+    permissionKey: 'comercial',
+    accent: 'cyan',
+    branchOnly: 'chevrolet',
+  },
 ];
 
-export function getPelegriniVisibleModules(): PelegriniHomeModule[] {
-  return pelegriniModules.filter((module) => !module.hidden);
+export function getPelegriniVisibleModules(branch?: PelegriniHomeBranch): PelegriniHomeModule[] {
+  return pelegriniModules.filter((module) => (
+    !module.hidden && (!module.branchOnly || module.branchOnly === branch)
+  ));
 }
 
 export const pelegriniAdminEntry = {

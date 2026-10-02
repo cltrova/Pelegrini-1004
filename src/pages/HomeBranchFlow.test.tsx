@@ -124,6 +124,20 @@ describe('Home branch flow', () => {
     expect(screen.getByRole('button', { name: /Comercial/i })).toBeInTheDocument();
   });
 
+  it('shows E-Commerce for Chevrolet and keeps it hidden for Transmissao', () => {
+    testState.filialAtiva = 'chevrolet';
+    renderHome(<HomePage />);
+
+    expect(screen.getByRole('button', { name: /E-Commerce/i })).toBeInTheDocument();
+  });
+
+  it('does not show E-Commerce in the Transmissao branch', () => {
+    testState.filialAtiva = 'transmissao';
+    renderHome(<HomePage />);
+
+    expect(screen.queryByRole('button', { name: /E-Commerce/i })).not.toBeInTheDocument();
+  });
+
   it('keeps the module header text-free and uses the full transmission logo in both themes', () => {
     testState.filialAtiva = 'transmissao';
     renderHome(<HomePage />);

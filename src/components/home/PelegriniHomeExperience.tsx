@@ -10,6 +10,7 @@ import {
   Settings,
   ShieldCheck,
   ShoppingCart,
+  Store,
   TrendingUp,
   Truck,
 } from 'lucide-react';
@@ -43,13 +44,8 @@ const moduleIcons: Record<PelegriniHomeModule['accent'], ModuleItem['icon']> = {
   purple: ShoppingCart,
   orange: Truck,
   blue: TrendingUp,
+  cyan: Store,
 };
-
-const modules: ModuleItem[] = getPelegriniVisibleModules().map((module) => ({
-  ...module,
-  icon: moduleIcons[module.accent],
-  disabled: false,
-}));
 
 const branchPresentation: Record<HomeBranch, {
   name: string;
@@ -157,9 +153,14 @@ export function PelegriniHomeExperience({ mobile = false }: PelegriniHomeExperie
     filialPadrao: profile?.filial_id,
   }), [codEmpresaParaFilial, isMaster, profile?.filial_id, profile?.filiais_permitidas]);
 
-  const visibleModules = modules.filter((module) => (
-    !isAuthenticated || isMaster || module.disabled || (hasModulo(module.moduloKey) && hasUserModuleAccess(module.moduloKey))
-  ));
+  const visibleModules = getPelegriniVisibleModules(selectedBranch ?? undefined)
+    .map((module) => ({ ...module, icon: moduleIcons[module.accent], disabled: false }))
+    .filter((module) => {
+      const permissionKey = module.permissionKey ?? module.moduloKey;
+      return !isAuthenticated || isMaster || module.disabled || (
+        permissionKey !== 'ecommerce' && hasModulo(permissionKey) && hasUserModuleAccess(permissionKey)
+      );
+    });
 
   useEffect(() => {
     if (isAuthenticated && isVendedor) navigate('/whatsapp');
@@ -225,8 +226,9 @@ export function PelegriniHomeExperience({ mobile = false }: PelegriniHomeExperie
   };
 
   const handleModuleClick = (module: ModuleItem) => {
-    const hasEmpresaAccess = module.moduloKey ? hasModulo(module.moduloKey) : true;
-    const hasUserAccess = hasUserModuleAccess(module.moduloKey);
+    const permissionKey = module.permissionKey ?? module.moduloKey;
+    const hasEmpresaAccess = permissionKey !== 'ecommerce' && hasModulo(permissionKey);
+    const hasUserAccess = permissionKey !== 'ecommerce' && hasUserModuleAccess(permissionKey);
     const hasFullAccess = isMaster || (hasEmpresaAccess && hasUserAccess);
     if (!isAuthenticated || !hasFullAccess) {
       setSelectedModuleForDetails(module);

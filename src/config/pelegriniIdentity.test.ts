@@ -25,10 +25,20 @@ describe('pelegriniIdentity', () => {
       getPelegriniModuleIdentity('comercial'),
       getPelegriniModuleIdentity('operacional'),
       getPelegriniModuleIdentity('financeiro'),
+      getPelegriniModuleIdentity('ecommerce'),
     ].map((item) => JSON.stringify(item)).join(' ');
 
     FORBIDDEN_TEMPLATE_TERMS.forEach((term) => {
       expect(text.toLowerCase()).not.toContain(term.toLowerCase());
     });
+  });
+
+  it('describes E-Commerce as preparation for marketplace operations', () => {
+    expect(getPelegriniModuleIdentity('ecommerce')).toMatchObject({
+      key: 'ecommerce',
+      title: 'E-Commerce',
+      operationalLabel: 'Marketplace e integracao',
+    });
+    expect(getPelegriniModuleIdentity('ecommerce').description.toLowerCase()).toContain('mercado livre');
   });
 });

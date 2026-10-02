@@ -2,7 +2,7 @@ import type { PelegriniThemeKey } from './pelegriniTheme';
 
 export const FORBIDDEN_TEMPLATE_TERMS = ['Powered by React', 'BI Reports', 'Lovable'];
 
-export type PelegriniModuleKey = 'whatsapp' | 'comercial' | 'operacional' | 'financeiro';
+export type PelegriniModuleKey = 'whatsapp' | 'comercial' | 'operacional' | 'financeiro' | 'ecommerce';
 
 export interface PelegriniIdentity {
   themeKey: PelegriniThemeKey;
@@ -93,6 +93,14 @@ const modules: Record<PelegriniModuleKey, PelegriniModuleIdentity> = {
     description: 'Resumo, DRE, duplicatas e cobranca em leitura executiva.',
     metricLabel: 'Caixa e DRE',
     tags: ['Resumo', 'DRE', 'Cobranca'],
+  },
+  ecommerce: {
+    key: 'ecommerce',
+    title: 'E-Commerce',
+    operationalLabel: 'Marketplace e integracao',
+    description: 'Preparacao para anuncios, pedidos e integracao com o Mercado Livre.',
+    metricLabel: 'Anuncios e pedidos',
+    tags: ['Mercado Livre', 'Anuncios', 'Pedidos'],
   },
 };
 
