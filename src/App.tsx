@@ -177,7 +177,7 @@ const App = () => (
                 <Route index element={<EcommerceOverviewPage />} />
                 <Route path="anuncios" element={<EcommerceListingsPage />} />
                 <Route path="pedidos" element={<EcommerceOrdersPage />} />
-                <Route path="integracao" element={<EcommerceIntegrationPage />} />
+                <Route path="configuracoes" element={<EcommerceIntegrationPage />} />
               </Route>
 
               

@@ -73,7 +73,8 @@ describe('EcommerceIntegrationPage', () => {
   it('presents the disconnected and backend-not-configured state', () => {
     render(<EcommerceIntegrationPage />);
 
-    expect(screen.getByRole('heading', { name: 'Integração Mercado Livre' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Configurações' })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'Mercado Livre' })).toBeInTheDocument();
     expect(screen.getByText('Integração não configurada')).toBeInTheDocument();
     expect(screen.getByText(/backend OAuth ainda não está disponível/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Conectar Mercado Livre' })).toBeDisabled();

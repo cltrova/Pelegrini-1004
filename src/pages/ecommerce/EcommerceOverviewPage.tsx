@@ -84,7 +84,7 @@ export default function EcommerceOverviewPage() {
         />
         <div className="flex justify-center">
           <Button asChild>
-            <Link to="/ecommerce/integracao">
+            <Link to="/ecommerce/configuracoes">
               Configurar integração
               <ArrowRight />
             </Link>
@@ -106,7 +106,7 @@ export default function EcommerceOverviewPage() {
         metadata={connection?.connection.accountName ?? 'Mercado Livre'}
         actions={
           <Button asChild variant="outline" size="sm">
-            <Link to="/ecommerce/integracao">
+            <Link to="/ecommerce/configuracoes">
               <Link2 />
               Integração
             </Link>

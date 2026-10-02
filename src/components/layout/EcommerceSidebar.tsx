@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ChartNoAxesCombined, Link2, Megaphone, ShoppingCart } from 'lucide-react';
+import { ChartNoAxesCombined, Megaphone, Settings, ShoppingCart } from 'lucide-react';
 import { useFilialSelecionada } from '@/contexts/FilialSelecionadaContext';
 import { resolvePelegriniTheme } from '@/config/pelegriniTheme';
 import {
@@ -11,7 +11,7 @@ const ecommerceMenuItems: PelegriniSidebarItem[] = [
   { label: 'Visão geral', path: '/ecommerce', icon: ChartNoAxesCombined },
   { label: 'Anúncios', path: '/ecommerce/anuncios', icon: Megaphone },
   { label: 'Pedidos', path: '/ecommerce/pedidos', icon: ShoppingCart },
-  { label: 'Integração Mercado Livre', path: '/ecommerce/integracao', icon: Link2 },
+  { label: 'Configurações', path: '/ecommerce/configuracoes', icon: Settings },
 ];
 
 export function EcommerceSidebar() {

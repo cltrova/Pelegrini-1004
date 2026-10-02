@@ -37,7 +37,7 @@ describe('EcommerceLayout', () => {
     expect(screen.getByRole('link', { name: 'Visão geral' })).toHaveAttribute('href', '/ecommerce');
     expect(screen.getByRole('link', { name: 'Anúncios' })).toHaveAttribute('href', '/ecommerce/anuncios');
     expect(screen.getByRole('link', { name: 'Pedidos' })).toHaveAttribute('href', '/ecommerce/pedidos');
-    expect(screen.getByRole('link', { name: 'Integração Mercado Livre' })).toHaveAttribute('href', '/ecommerce/integracao');
+    expect(screen.getByRole('link', { name: 'Configurações' })).toHaveAttribute('href', '/ecommerce/configuracoes');
     expect(screen.getByTestId('ecommerce-route-outlet')).toBeInTheDocument();
   });
 });

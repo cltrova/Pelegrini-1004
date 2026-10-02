@@ -2,6 +2,7 @@ import { AlertCircle, CheckCircle2, CircleOff, ExternalLink, Link2, RefreshCw } 
 import { useFilialSelecionada } from '@/contexts/FilialSelecionadaContext';
 import { useEcommerceData } from '@/hooks/useEcommerceData';
 import { LoadingState } from '@/components/common/LoadingState';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import type { MercadoLivreConnectionStatus } from '@/modules/ecommerce/ecommerceTypes';
 
 const unavailableActionsMessage =
@@ -60,15 +61,15 @@ export function EcommerceIntegrationPage() {
   }
 
   return (
-    <main className="mx-auto flex w-full max-w-6xl flex-col gap-6 p-4 sm:p-6" aria-labelledby="ecommerce-integration-title">
+    <main className="mx-auto flex w-full max-w-6xl flex-col gap-6 p-4 sm:p-6" aria-labelledby="ecommerce-settings-title">
       <header className="flex flex-col gap-2 border-b border-border pb-5 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <p className="text-sm font-medium uppercase tracking-[0.14em] text-muted-foreground">E-Commerce</p>
-          <h1 id="ecommerce-integration-title" className="mt-1 text-2xl font-semibold tracking-tight">
-            Integração Mercado Livre
+          <h1 id="ecommerce-settings-title" className="mt-1 text-2xl font-semibold tracking-tight">
+            Configurações
           </h1>
           <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-            Prepare a conexão da Casa do Chevrolet com o Mercado Livre sem expor credenciais no navegador.
+            Gerencie as integrações disponíveis para a Casa do Chevrolet.
           </p>
         </div>
         <span className="inline-flex w-fit items-center gap-2 rounded-full border border-border px-3 py-1.5 text-sm text-muted-foreground">
@@ -77,6 +78,11 @@ export function EcommerceIntegrationPage() {
         </span>
       </header>
 
+      <Tabs defaultValue="mercado-livre" className="w-full">
+        <TabsList aria-label="Configurações do E-Commerce">
+          <TabsTrigger value="mercado-livre">Mercado Livre</TabsTrigger>
+        </TabsList>
+        <TabsContent value="mercado-livre" className="mt-5 space-y-6">
       {hasError ? (
         <section className="rounded-lg border border-destructive/40 bg-destructive/5 p-5" role="alert">
           <div className="flex items-start gap-3">
@@ -178,6 +184,8 @@ export function EcommerceIntegrationPage() {
           O fluxo OAuth, os tokens e as chamadas ao Mercado Livre devem ser implementados no backend. Esta tela não solicita, armazena ou envia credenciais.
         </p>
       </section>
+        </TabsContent>
+      </Tabs>
     </main>
   );
 }

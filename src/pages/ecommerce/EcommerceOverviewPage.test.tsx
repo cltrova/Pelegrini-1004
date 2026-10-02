@@ -88,7 +88,7 @@ describe('EcommerceOverviewPage', () => {
     renderPage();
 
     expect(screen.getByText('Mercado Livre não conectado')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Configurar integração' })).toHaveAttribute('href', '/ecommerce/integracao');
+    expect(screen.getByRole('link', { name: 'Configurar integração' })).toHaveAttribute('href', '/ecommerce/configuracoes');
   });
 
   it('shows the error state and exposes retry', () => {
