@@ -308,6 +308,9 @@ export function useEstoqueData(periodMonths = 3) {
 
   const giroQuery = useQuery({
     queryKey: isCT ? ['estoque-giro-v2', estoqueCompanyCode, period] : ['estoque-giro', estoqueCompanyCode],
+    placeholderData: (previousData, previousQuery) => isCT
+      && previousQuery?.queryKey[0] === 'estoque-giro-v2'
+      && previousQuery.queryKey[1] === estoqueCompanyCode ? previousData : undefined,
     queryFn: async () => isCT ? fetchFromEndpoint(empresa!, `/operacional/estoque/analise/movimentos?cod_empresa_bi=1004&data_ini=${period.data_ini}&data_fim=${period.data_fim}`) : fetchEstoqueSource(empresa!, 'giro', estoqueCompanyCode),
     enabled: !!empresa && !!empresa.modulo_operacional,
     staleTime: 5 * 60 * 1000,

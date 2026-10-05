@@ -48,6 +48,33 @@ describe('useEstoqueData integration', () => {
     expect(calls.some(url=>url.includes('2000-01-01') || url.includes('/consolidado'))).toBe(false);
   });
 
+  it('preserva movimentos e a tela durante a troca de periodo na mesma CT', async () => {
+    context.filial = 'transmissao';
+    let release!: () => void;
+    const gate = new Promise<void>(resolve => { release = resolve; });
+    let movements = 0;
+    const row = { ...giroFixture[0], cod_empresa_bi: 1004, cod_empresa: 1 };
+    vi.stubGlobal('fetch', vi.fn(async (url: string) => {
+      if (!url.includes('/movimentos')) return json([]);
+      movements += 1;
+      if (movements === 2) await gate;
+      return json([row]);
+    }));
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } });
+    const { result, rerender } = renderHook(({ months }) => useEstoqueData(months), {
+      initialProps: { months: 3 },
+      wrapper: ({ children }: PropsWithChildren) => <QueryClientProvider client={client}>{children}</QueryClientProvider>,
+    });
+    await waitFor(() => expect(result.current.giroData).toHaveLength(1));
+    rerender({ months: 6 });
+    await waitFor(() => expect(movements).toBe(2));
+    expect(result.current.sourceStatus.giro).toBe('fetching');
+    expect(result.current.giroData).toHaveLength(1);
+    expect(result.current.isInitialLoading).toBe(false);
+    release();
+    await waitFor(() => expect(result.current.sourceStatus.giro).toBe('ready'));
+  });
+
   it('erro na fonte CT nao vira estoque reconstruido pelo giro', async () => {
     context.filial = 'transmissao';
     const calls: string[]=[];
