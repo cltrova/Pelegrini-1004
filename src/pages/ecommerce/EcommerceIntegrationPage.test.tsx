@@ -114,7 +114,7 @@ describe('EcommerceIntegrationPage', () => {
     expect(screen.getByRole('button', { name: 'Reconectar Mercado Livre' })).toBeDisabled();
     expect(screen.getByRole('button', { name: 'Desconectar Mercado Livre' })).toBeDisabled();
 
-    expect(screen.getByText(/ações ficam disponíveis quando o backend/i)).toBeInTheDocument();
+    expect(screen.getByText(/credenciais da aplicação Mercado Livre no servidor/i)).toBeInTheDocument();
   });
 
   it('shows synchronization progress while an existing connection is refreshing', () => {
@@ -157,6 +157,31 @@ describe('EcommerceIntegrationPage', () => {
 
     expect(screen.getByText('Não foi possível carregar a integração')).toBeInTheDocument();
     expect(screen.getByText(/OAuth indisponível/i)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Conectar Mercado Livre' })).toBeDisabled();
+  });
+
+  it('enables connection only when the backend confirms it is configured', () => {
+    mocks.data = ecommerceState({
+      connection: queryResult({
+        data: {
+          state: 'disconnected',
+          connection: { status: 'disconnected', lastSyncAt: null },
+          integration: {
+            provider: 'mercado_livre',
+            configured: true,
+            clientIdConfigured: true,
+            redirectUri: 'https://ml-api.pelegrini.t2a.ia.br/api/mercadolivre/oauth/callback',
+            scopes: [],
+            canConnect: true,
+            canDisconnect: false,
+          },
+        },
+      }),
+    });
+
+    render(<EcommerceIntegrationPage />);
+
+    expect(screen.getByRole('button', { name: 'Conectar Mercado Livre' })).toBeEnabled();
+    expect(screen.getByDisplayValue('https://ml-api.pelegrini.t2a.ia.br/api/mercadolivre/oauth/callback'))
+      .toHaveAttribute('readonly');
   });
 });

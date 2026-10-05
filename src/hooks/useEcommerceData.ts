@@ -37,6 +37,7 @@ export interface EcommerceDataQueries {
   overview: UseQueryResult<EcommerceOverviewResponse>;
   listings: UseQueryResult<EcommerceListingsResponse>;
   orders: UseQueryResult<EcommerceOrdersResponse>;
+  startOAuth(): ReturnType<EcommerceService['startOAuth']>;
   queryKeys: {
     connection: readonly unknown[];
     overview: readonly unknown[];
@@ -102,6 +103,7 @@ export function useEcommerceData(options: UseEcommerceDataOptions): EcommerceDat
     overview,
     listings,
     orders,
+    startOAuth: () => service.startOAuth(context),
     queryKeys: {
       connection: connectionKey,
       overview: overviewKey,

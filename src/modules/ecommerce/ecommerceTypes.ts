@@ -47,6 +47,10 @@ export interface EcommerceConnectionResponse {
   integration: EcommerceIntegrationMetadata;
 }
 
+export interface EcommerceOAuthStartResponse {
+  authorizationUrl: string;
+}
+
 export type EcommerceListingStatus = 'active' | 'paused' | 'closed' | 'unknown';
 
 export interface EcommerceListingRow {

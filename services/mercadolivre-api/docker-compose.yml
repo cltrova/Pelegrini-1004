@@ -1,0 +1,38 @@
+name: pelegrini-mercadolivre-api
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      PORT: "3000"
+      SQLITE_PATH: /data/mercadolivre.sqlite
+    expose:
+      - "3000"
+    volumes:
+      - mercadolivre_data:/data
+    networks:
+      - pelegrini_meli
+    mem_limit: 256m
+    cpus: 0.50
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - fetch('http://127.0.0.1:3000/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+networks:
+  pelegrini_meli:
+    driver: bridge
+
+volumes:
+  mercadolivre_data:

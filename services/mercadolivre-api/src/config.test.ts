@@ -23,4 +23,12 @@ describe('loadConfig', () => {
     expect(() => loadConfig({ PUBLIC_APP_ORIGIN: 'http://pelegrini.test' }))
       .toThrow('PUBLIC_APP_ORIGIN must be an HTTPS origin');
   });
+
+  it('enables PKCE only when explicitly requested', () => {
+    expect(loadConfig({ PUBLIC_APP_ORIGIN: 'https://pelegrini.t2a.ia.br' }).meliPkceEnabled).toBe(false);
+    expect(loadConfig({
+      PUBLIC_APP_ORIGIN: 'https://pelegrini.t2a.ia.br',
+      MELI_PKCE_ENABLED: 'true',
+    }).meliPkceEnabled).toBe(true);
+  });
 });

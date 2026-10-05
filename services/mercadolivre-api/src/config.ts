@@ -45,6 +45,7 @@ export function loadConfig(env: Environment = process.env): ApiConfig {
     meliClientId: env.MELI_CLIENT_ID?.trim() ?? '',
     meliClientSecret: env.MELI_CLIENT_SECRET?.trim() ?? '',
     meliTokenEncryptionKey,
+    meliPkceEnabled: env.MELI_PKCE_ENABLED === 'true',
     sqlitePath: env.SQLITE_PATH?.trim() || '/data/mercadolivre.sqlite',
   };
 }

@@ -1,12 +1,12 @@
 import { AlertCircle, CheckCircle2, CircleOff, ExternalLink, Link2, RefreshCw } from 'lucide-react';
+import { useState } from 'react';
 import { useFilialSelecionada } from '@/contexts/FilialSelecionadaContext';
 import { useEcommerceData } from '@/hooks/useEcommerceData';
 import { LoadingState } from '@/components/common/LoadingState';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import type { MercadoLivreConnectionStatus } from '@/modules/ecommerce/ecommerceTypes';
 
-const unavailableActionsMessage =
-  'As ações ficam disponíveis quando o backend OAuth do Mercado Livre estiver configurado.';
+const unavailableActionsMessage = 'Cadastre as credenciais da aplicação Mercado Livre no servidor para habilitar a conexão.';
 
 function formatDate(value: string | null | undefined) {
   if (!value) return 'Ainda não sincronizado';
@@ -52,9 +52,24 @@ export function EcommerceIntegrationPage() {
   const hasError = data.state === 'error' || connectionQuery.isError;
   const isConnected = connection?.status === 'connected';
   const actionLabel = isConnected ? 'Reconectar Mercado Livre' : 'Conectar Mercado Livre';
+  const [isConnecting, setIsConnecting] = useState(false);
+  const [connectError, setConnectError] = useState<string | null>(null);
   const errorMessage = connectionQuery.error instanceof Error
     ? connectionQuery.error.message
     : connection?.message ?? 'Tente novamente mais tarde.';
+
+  async function handleConnect() {
+    if (!integration?.canConnect || isConnecting) return;
+    setIsConnecting(true);
+    setConnectError(null);
+    try {
+      const { authorizationUrl } = await data.startOAuth();
+      window.location.assign(authorizationUrl);
+    } catch (error) {
+      setConnectError(error instanceof Error ? error.message : 'Não foi possível iniciar a conexão.');
+      setIsConnecting(false);
+    }
+  }
 
   if (isInitialLoading) {
     return <LoadingState message="Carregando integração do Mercado Livre" variant="content" />;
@@ -74,7 +89,7 @@ export function EcommerceIntegrationPage() {
         </div>
         <span className="inline-flex w-fit items-center gap-2 rounded-full border border-border px-3 py-1.5 text-sm text-muted-foreground">
           <Link2 className="h-4 w-4" aria-hidden="true" />
-          Somente frontend
+          API protegida
         </span>
       </header>
 
@@ -128,12 +143,15 @@ export function EcommerceIntegrationPage() {
             <div className="mt-6 flex flex-wrap gap-3">
               <button
                 type="button"
-                disabled
+                disabled={!integration?.canConnect || isConnecting}
+                onClick={handleConnect}
                 aria-describedby="ecommerce-actions-note"
-                className="inline-flex min-h-10 items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground opacity-60"
+                className="inline-flex min-h-10 items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:cursor-not-allowed disabled:opacity-60"
               >
-                <ExternalLink className="h-4 w-4" aria-hidden="true" />
-                {actionLabel}
+                {isConnecting
+                  ? <RefreshCw className="h-4 w-4 animate-spin" aria-hidden="true" />
+                  : <ExternalLink className="h-4 w-4" aria-hidden="true" />}
+                {isConnecting ? 'Conectando...' : actionLabel}
               </button>
               {isConnected && (
                 <button
@@ -147,8 +165,11 @@ export function EcommerceIntegrationPage() {
               )}
             </div>
             <p id="ecommerce-actions-note" className="mt-3 text-sm text-muted-foreground">
-              {integration?.message ?? unavailableActionsMessage} {unavailableActionsMessage}
+              {integration?.message ?? (integration?.canConnect
+                ? 'A autorização será feita com segurança no Mercado Livre.'
+                : unavailableActionsMessage)}
             </p>
+            {connectError && <p className="mt-2 text-sm text-destructive" role="alert">{connectError}</p>}
           </div>
 
           <div className="rounded-lg border border-border bg-card p-5">
@@ -181,7 +202,7 @@ export function EcommerceIntegrationPage() {
       <section className="rounded-lg border border-border bg-muted/20 p-5">
         <h2 className="font-semibold">Próxima etapa</h2>
         <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">
-          O fluxo OAuth, os tokens e as chamadas ao Mercado Livre devem ser implementados no backend. Esta tela não solicita, armazena ou envia credenciais.
+          A autorização e os tokens ficam no servidor da Pelegrini. Esta tela não solicita nem armazena credenciais do Mercado Livre.
         </p>
       </section>
         </TabsContent>
