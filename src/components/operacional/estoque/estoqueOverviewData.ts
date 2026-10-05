@@ -1,3 +1,4 @@
+import { isForcaPEstoque } from '@/utils/estoque10041';
 import type { EstoqueRecord, GiroProductSummary, GiroRecord, GiroStatus } from '@/types/estoque';
 
 export type OverviewMetric = 'value' | 'quantity' | 'percent';
@@ -11,6 +12,7 @@ export interface OverviewMonth {
   compras: number;
   vendas: number;
   valor: number;
+  valor_compras: number;
 }
 
 export interface OverviewDistribution {
@@ -56,14 +58,16 @@ export function buildStockOverviewProducts(
   activeCompanyCode?: string | number | null,
   now = new Date(),
 ): OverviewProduct[] {
-  const stockByCode = new Map(stock.map((row) => [String(row.cod_produto), row]));
+  const allowed = (row: EstoqueRecord | GiroRecord) => !isForcaPEstoque(row as unknown as Record<string, unknown>)
+    && (!activeCompanyCode || String(row.cod_empresa_bi) === String(activeCompanyCode));
+  const stockByCode = new Map(stock.filter(allowed).map((row) => [overviewProductKey(row), row]));
   const movementByCode = new Map<string, GiroRecord[]>();
-  const cutoff = Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - months, 1);
+  const cutoff = Date.UTC(now.getFullYear(), now.getMonth() - months + 1, 1);
   movement.forEach((row) => {
     const time = Date.parse(row.data_movimento);
     if (!Number.isFinite(time) || time < cutoff) return;
-    if (activeCompanyCode && String(row.cod_empresa_bi) !== String(activeCompanyCode)) return;
-    const key = String(row.cod_produto);
+    if (!allowed(row) || time > now.getTime()) return;
+    const key = overviewProductKey(row);
     movementByCode.set(key, [...(movementByCode.get(key) ?? []), row]);
   });
 
@@ -117,7 +121,11 @@ function distribution(products: OverviewProduct[], field: 'marca' | 'grupo' | 'e
   }));
 }
 
-export function buildStockOverviewSummary(products: OverviewProduct[], movement: GiroRecord[], months: number): StockOverviewSummary {
+export function overviewProductKey(row: { cod_empresa_bi?: number; cod_empresa?: number; cod_produto: number }): string {
+  return `${row.cod_empresa_bi}:${row.cod_empresa}:${row.cod_produto}`;
+}
+
+export function buildStockOverviewSummary(products: OverviewProduct[], movement: GiroRecord[], months: number, now = new Date()): StockOverviewSummary {
   const totalValue = products.reduce((sum, product) => sum + product.valor_estoque, 0);
   const excessProducts = products.filter((product) => product.status === 'excesso' && product.quantidade_estoque > 0);
   const idleProducts = products.filter((product) => product.quantidade_estoque > 0 && (product.dias_sem_venda === null || product.dias_sem_venda > 90));
@@ -126,15 +134,22 @@ export function buildStockOverviewSummary(products: OverviewProduct[], movement:
     const matching = products.filter((product) => product.status === key);
     return { name: statusLabel[key], value: matching.length, quantity: matching.reduce((sum, product) => sum + product.quantidade_estoque, 0), percent: products.length ? matching.length / products.length * 100 : 0 };
   }).filter((item) => item.value > 0);
+  const productKeys = new Set(products.map(overviewProductKey));
+  const cutoff = Date.UTC(now.getFullYear(), now.getMonth() - months + 1, 1);
+  const filteredMovement = movement.filter(row => productKeys.has(overviewProductKey(row))
+    && Date.parse(row.data_movimento) >= cutoff && Date.parse(row.data_movimento) <= now.getTime());
   const monthMap = new Map<string, OverviewMonth>();
-  movement.forEach((row) => {
-    const key = row.data_movimento.slice(0, 7);
-    const item = monthMap.get(key) ?? { mes: `${key.slice(5)}/${key.slice(2, 4)}`, compras: 0, vendas: 0, valor: 0 };
-    if (row.tipo_movimento === 'Venda') item.vendas += Number(row.quantidade_movimentada || 0);
-    if (row.tipo_movimento === 'Compra') item.compras += Number(row.quantidade_movimentada || 0);
-    monthMap.set(key, item);
+  for (let offset = months - 1; offset >= 0; offset--) {
+    const key = new Date(Date.UTC(now.getFullYear(),now.getMonth()-offset,1)).toISOString().slice(0,7);
+    monthMap.set(key, { mes: `${key.slice(5)}/${key.slice(2,4)}`, compras:0, vendas:0, valor:0, valor_compras:0 });
+  }
+  filteredMovement.forEach((row) => {
+    const item = monthMap.get(row.data_movimento.slice(0,7));
+    if (!item) return;
+    if (row.tipo_movimento === 'Venda') { item.vendas += Number(row.quantidade_movimentada || 0); item.valor += Number(row.valor_venda || 0); }
+    if (row.tipo_movimento === 'Compra') { item.compras += Number(row.quantidade_movimentada || 0); item.valor_compras += Number(row.valor_venda || 0); }
   });
-  const monthsData = [...monthMap.entries()].sort(([a], [b]) => a.localeCompare(b)).slice(-Math.max(months, 1)).map(([key, item]) => ({ ...item, valor: products.reduce((sum, product) => sum + (product.valor_estoque * (key === new Date().toISOString().slice(0, 7) ? 1 : 0)), 0) }));
+  const monthsData = [...monthMap.values()];
   return {
     totalProducts: products.length,
     withStock: products.filter((product) => product.quantidade_estoque > 0).length,
@@ -147,7 +162,7 @@ export function buildStockOverviewSummary(products: OverviewProduct[], movement:
     excessValue: excessProducts.reduce((sum, product) => sum + product.valor_estoque, 0),
     averageCoverage: coverage.length ? coverage.reduce((sum, value) => sum + value, 0) / coverage.length : null,
     sales: products.reduce((sum, product) => sum + product.total_vendas, 0),
-    movements: movement.reduce((sum, row) => sum + Number(row.quantidade_movimentada || 0), 0),
+    movements: filteredMovement.reduce((sum, row) => sum + Number(row.quantidade_movimentada || 0), 0),
     noSale: products.filter((product) => product.total_vendas === 0).length,
     months: monthsData,
     status,

@@ -30,6 +30,36 @@ beforeEach(() => { context.filial = 'chevrolet'; });
 afterEach(() => { vi.unstubAllGlobals(); });
 
 describe('useEstoqueData integration', () => {
+  it('consulta CT por mes e refaz a fonte quando muda o periodo, sem recuperar estoque pelo giro', async () => {
+    context.filial = 'transmissao';
+    const calls: string[] = [];
+    vi.stubGlobal('fetch', vi.fn(async (url: string) => { calls.push(url); return json([]); }));
+    const client = new QueryClient({ defaultOptions:{queries:{retry:false,gcTime:0}} });
+    const {result,rerender} = renderHook(({months}) => useEstoqueData(months), {
+      initialProps:{months:3}, wrapper:({children}:PropsWithChildren) => <QueryClientProvider client={client}>{children}</QueryClientProvider>
+    });
+    await waitFor(() => expect(result.current.isInitialLoading).toBe(false));
+    expect(calls.filter(url=>url.includes('/analise/produtos'))).toHaveLength(1);
+    expect(calls.some(url=>url.includes('/analise/movimentos'))).toBe(true);
+    const first=calls.find(url=>url.includes('/movimentos'))!;
+    rerender({months:12});
+    await waitFor(() => expect(calls.filter(url=>url.includes('/movimentos'))).toHaveLength(2));
+    expect(new URL(calls.filter(url=>url.includes('/movimentos'))[1]).searchParams.get('data_ini')).not.toEqual(new URL(first).searchParams.get('data_ini'));
+    expect(calls.some(url=>url.includes('2000-01-01') || url.includes('/consolidado'))).toBe(false);
+  });
+
+  it('erro na fonte CT nao vira estoque reconstruido pelo giro', async () => {
+    context.filial = 'transmissao';
+    const calls: string[]=[];
+    vi.stubGlobal('fetch', vi.fn(async (url:string)=>{calls.push(url);return json({},503);}));
+    const {result}=renderStock();
+    await waitFor(()=>expect(result.current.isInitialLoading).toBe(false));
+    expect(result.current.sourceStatus.consolidado).toBe('error');
+    expect(result.current.consolidadoData).toEqual([]);
+    expect(result.current.partialSources.consolidado).toBe(false);
+    expect(calls.some(url=>url.includes('2000-01-01'))).toBe(false);
+  });
+
   it('reports every successful source as ready and exposes the latest successful update', async () => {
     vi.stubGlobal('fetch', vi.fn(async (url: string) => json(url.includes('/giro')
       ? [{ ...giroFixture[0], cod_empresa_bi: 10041, empresa: 'CASA DO CHEVROLET' }]

@@ -55,6 +55,8 @@ function exportToExcel(data: EstoqueRecord[]) {
 
 const PERIODO_MESES_OPTIONS = [
   { value: 3, label: '3 meses' },
+  { value: 6, label: '6 meses' },
+  { value: 12, label: '12 meses' },
 ];
 const STATUS_OPTIONS = [
   { key: 'atendendo' as GiroStatus, label: '🟢 Atendendo' },
@@ -85,12 +87,15 @@ interface EstoquePageProps {
 }
 
 export function EstoqueProdutosPage({ initialTab = 'overview', onOpenCurrent }: EstoquePageProps & { onOpenCurrent?: () => void }) {
-  const { activeCompanyCode, consolidadoData, detalhadoData, giroData, isLoading, isInitialLoading, empresa, sourceErrors, sourceStatus, sourceLastUpdated, lastSuccessfulUpdate, partialSources, recoveredSources, recoveryStatus, isFetching, refetch } = useEstoqueData();
-  const { codEmpresaContexto, filialAtiva } = useFilialSelecionada();
+  const [overviewMonths, setOverviewMonths] = useState(3);
+  const [giroFilters, setGiroFilters] = useState<GiroFiltersState>(DEFAULT_GIRO_FILTERS);
   const [activeTab, setActiveTab] = useState<EstoqueTab>(initialTab);
+  const { activeCompanyCode, consolidadoData, detalhadoData, giroData, isLoading, isInitialLoading, empresa, sourceErrors, sourceStatus, sourceLastUpdated, lastSuccessfulUpdate, partialSources, recoveredSources, recoveryStatus, isFetching, refetch } = useEstoqueData(activeTab === 'giro' ? giroFilters.periodoMeses : overviewMonths);
+  const { codEmpresaContexto, filialAtiva } = useFilialSelecionada();
+
   const [requestedQuickFilter, setRequestedQuickFilter] = useState<StockQuickFilter | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>('consolidado');
-  const [giroFilters, setGiroFilters] = useState<GiroFiltersState>(DEFAULT_GIRO_FILTERS);
+
   const [pendingGiro, setPendingGiro] = useState<GiroFiltersState>(DEFAULT_GIRO_FILTERS);
   const [requestedProductCode, setRequestedProductCode] = useState<string | null>(null);
   const [sourceNoticeDismissed, setSourceNoticeDismissed] = useState(false);
@@ -209,6 +214,7 @@ export function EstoqueProdutosPage({ initialTab = 'overview', onOpenCurrent }: 
   }, [sourceNoticeFingerprint]);
 
   useEffect(() => {
+    setOverviewMonths(3);
     setGiroFilters(DEFAULT_GIRO_FILTERS);
     setPendingGiro(DEFAULT_GIRO_FILTERS);
     setRequestedProductCode(null);
@@ -381,6 +387,8 @@ export function EstoqueProdutosPage({ initialTab = 'overview', onOpenCurrent }: 
             <LazyEstoqueOverview
               activeCompanyCode={activeCompanyCode}
               isFetching={isFetching}
+              months={overviewMonths}
+              onPeriodChange={setOverviewMonths}
               movementData={giroData}
               onOpenCentral={openCentralFromOverview}
               onRefresh={() => { void refetch(); }}
@@ -420,7 +428,7 @@ export function EstoqueProdutosPage({ initialTab = 'overview', onOpenCurrent }: 
                   pendingCount={pendingGiroCount}
                 >
               <FilterDropdownChip label="Período" displayValue={`${pendingGiro.periodoMeses} meses`} isActive={false} onClear={() => setPendingGiro(filters => ({ ...filters, periodoMeses: 3 }))}>
-                <SingleSelectOptions options={PERIODO_MESES_OPTIONS} selected={pendingGiro.periodoMeses} onChange={(value) => setPendingGiro(filters => ({ ...filters, periodoMeses: Number(value) }))} />
+                <SingleSelectOptions options={activeCompanyCode === '1004' ? PERIODO_MESES_OPTIONS : PERIODO_MESES_OPTIONS.slice(0,1)} selected={pendingGiro.periodoMeses} onChange={(value) => setPendingGiro(filters => ({ ...filters, periodoMeses: Number(value) }))} />
               </FilterDropdownChip>
               <FilterDropdownChip label="Status" displayValue={pendingGiro.statusFilter.length > 0 ? pendingGiro.statusFilter.map(status => GIRO_STATUS_LABELS[status]).join(', ') : 'Todos'} isActive={pendingGiro.statusFilter.length > 0} onClear={() => setPendingGiro(filters => ({ ...filters, statusFilter: [] }))}>
                 <MultiSelectOptions options={STATUS_OPTIONS.map(option => option.label)} selected={pendingGiro.statusFilter.map(status => STATUS_OPTIONS.find(option => option.key === status)?.label || '')} onChange={(labels) => { const statuses = labels.map(label => STATUS_OPTIONS.find(option => option.label === label)?.key).filter(Boolean) as GiroStatus[]; setPendingGiro(filters => ({ ...filters, statusFilter: statuses })); }} allLabel="Todos" />

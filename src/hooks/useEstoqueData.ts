@@ -11,6 +11,12 @@ import { resolveCodEmpresaBiParam } from '@/utils/filialEndpoint';
 
 type EstoqueApiRow = Record<string, unknown>;
 
+export function getEstoqueAnalysisPeriod(months: number, now = new Date()) {
+  const start = new Date(now.getFullYear(), now.getMonth() - Math.max(1,months) + 1, 1);
+  const fmt = (d: Date) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  return { data_ini: fmt(start), data_fim: fmt(now) };
+}
+
 const ESTOQUE_RECOVERY_START = '2000-01-01';
 
 type StockQueryState = {
@@ -276,30 +282,33 @@ export function buildOperationalEstoqueFallbackFromGiro(
   });
 }
 
-export function useEstoqueData() {
+export function useEstoqueData(periodMonths = 3) {
   const { empresa, codEmpresaAtiva, isLoading: isLoadingEmpresa } = useEmpresaAtiva();
   const { filialAtiva } = useFilialSelecionada();
   const estoqueCompanyCode = resolveCodEmpresaBiParam(empresa, filialAtiva) || codEmpresaAtiva;
 
+  const isCT = String(estoqueCompanyCode) === '1004';
+  const period = getEstoqueAnalysisPeriod(periodMonths);
+  const currentCT = () => fetchFromEndpoint(empresa!, '/operacional/estoque/analise/produtos?cod_empresa_bi=1004');
   const consolidadoQuery = useQuery({
-    queryKey: ['estoque-consolidado', estoqueCompanyCode],
-    queryFn: async () => fetchEstoqueSource(empresa!, 'consolidado', estoqueCompanyCode),
+    queryKey: [isCT ? 'estoque-produtos-ct-v2' : 'estoque-consolidado', estoqueCompanyCode],
+    queryFn: async () => isCT ? currentCT() : fetchEstoqueSource(empresa!, 'consolidado', estoqueCompanyCode),
     enabled: !!empresa && !!empresa.modulo_operacional,
     staleTime: 5 * 60 * 1000,
     retry: false,
   });
 
   const detalhadoQuery = useQuery({
-    queryKey: ['estoque-detalhado', estoqueCompanyCode],
-    queryFn: async () => fetchEstoqueSource(empresa!, 'detalhado', estoqueCompanyCode),
+    queryKey: [isCT ? 'estoque-produtos-ct-v2' : 'estoque-detalhado', estoqueCompanyCode],
+    queryFn: async () => isCT ? currentCT() : fetchEstoqueSource(empresa!, 'detalhado', estoqueCompanyCode),
     enabled: !!empresa && !!empresa.modulo_operacional,
     staleTime: 5 * 60 * 1000,
     retry: false,
   });
 
   const giroQuery = useQuery({
-    queryKey: ['estoque-giro', estoqueCompanyCode],
-    queryFn: async () => fetchEstoqueSource(empresa!, 'giro', estoqueCompanyCode),
+    queryKey: isCT ? ['estoque-giro-v2', estoqueCompanyCode, period] : ['estoque-giro', estoqueCompanyCode],
+    queryFn: async () => isCT ? fetchFromEndpoint(empresa!, `/operacional/estoque/analise/movimentos?cod_empresa_bi=1004&data_ini=${period.data_ini}&data_fim=${period.data_fim}`) : fetchEstoqueSource(empresa!, 'giro', estoqueCompanyCode),
     enabled: !!empresa && !!empresa.modulo_operacional,
     staleTime: 5 * 60 * 1000,
     retry: false,
@@ -310,6 +319,7 @@ export function useEstoqueData() {
     queryFn: async () => fetchEstoqueRecoverySource(empresa!, estoqueCompanyCode),
     enabled: !!empresa
       && !!empresa.modulo_operacional
+      && !isCT
       && (consolidadoQuery.isError || detalhadoQuery.isError),
     staleTime: 30 * 60 * 1000,
     retry: false,
@@ -342,13 +352,13 @@ export function useEstoqueData() {
     recentStart,
   ), [estoqueCompanyCode, recentStart, recoveryRows]);
   const recoveredSources = useMemo(() => ({
-    consolidado: consolidadoQuery.isError && !estoqueConsolidadoPrincipal.length && estoqueRecuperado.length > 0,
-    detalhado: detalhadoQuery.isError && !estoqueDetalhadoPrincipal.length && estoqueRecuperado.length > 0,
-  }), [consolidadoQuery.isError, detalhadoQuery.isError, estoqueConsolidadoPrincipal.length, estoqueDetalhadoPrincipal.length, estoqueRecuperado.length]);
+    consolidado: !isCT && consolidadoQuery.isError && !estoqueConsolidadoPrincipal.length && estoqueRecuperado.length > 0,
+    detalhado: !isCT && detalhadoQuery.isError && !estoqueDetalhadoPrincipal.length && estoqueRecuperado.length > 0,
+  }), [isCT, consolidadoQuery.isError, detalhadoQuery.isError, estoqueConsolidadoPrincipal.length, estoqueDetalhadoPrincipal.length, estoqueRecuperado.length]);
   const partialSources = useMemo(() => ({
-    consolidado: consolidadoQuery.isError && !estoqueConsolidadoPrincipal.length && !recoveredSources.consolidado && estoqueFallback.length > 0,
-    detalhado: detalhadoQuery.isError && !estoqueDetalhadoPrincipal.length && !recoveredSources.detalhado && estoqueFallback.length > 0,
-  }), [consolidadoQuery.isError, detalhadoQuery.isError, estoqueConsolidadoPrincipal.length, estoqueDetalhadoPrincipal.length, estoqueFallback.length, recoveredSources]);
+    consolidado: !isCT && consolidadoQuery.isError && !estoqueConsolidadoPrincipal.length && !recoveredSources.consolidado && estoqueFallback.length > 0,
+    detalhado: !isCT && detalhadoQuery.isError && !estoqueDetalhadoPrincipal.length && !recoveredSources.detalhado && estoqueFallback.length > 0,
+  }), [isCT, consolidadoQuery.isError, detalhadoQuery.isError, estoqueConsolidadoPrincipal.length, estoqueDetalhadoPrincipal.length, estoqueFallback.length, recoveredSources]);
   const consolidadoData = useMemo(() => recoveredSources.consolidado
     ? estoqueRecuperado
     : partialSources.consolidado ? estoqueFallback : estoqueConsolidadoPrincipal, [estoqueConsolidadoPrincipal, estoqueFallback, estoqueRecuperado, partialSources, recoveredSources]);
@@ -419,7 +429,7 @@ export function useEstoqueData() {
       consolidadoQuery.refetch(),
       detalhadoQuery.refetch(),
       giroQuery.refetch(),
-      recoveryQuery.refetch(),
+      ...(isCT ? [] : [recoveryQuery.refetch()]),
     ]),
     empresa,
     isMasterDemo: false,
