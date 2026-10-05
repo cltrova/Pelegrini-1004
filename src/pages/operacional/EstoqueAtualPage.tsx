@@ -48,7 +48,7 @@ export function EstoqueAtualPage({empresa, onOpenProducts}: {empresa: Empresa; o
   ] as const : [];
 
   return <EstoqueWorkspace aria-label="Estoque atual da Casa da Transmissão" className="bg-background">
-    <header className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-b p-4 max-md:pl-14">
+    <header className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-b px-4 py-4 max-md:pl-14">
       <div>
         <h1 className="text-lg font-semibold">Estoque atual</h1>
         <p className="text-sm text-muted-foreground">Casa da Transmissão · Estoque por grupo</p>
