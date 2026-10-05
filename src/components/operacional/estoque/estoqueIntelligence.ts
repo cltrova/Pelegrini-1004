@@ -380,9 +380,9 @@ export function sortStockInsights(insights: StockProductInsight[], mode: StockSo
     const textValue = (value: unknown) => String(value ?? '');
     const numericValue = (value: unknown) => Number(value ?? 0);
     const values: Record<StockSortKey, string | number> = {
-      product: a.produto.localeCompare(b.produto, 'pt-BR'),
-      brand: a.marca.localeCompare(b.marca, 'pt-BR'),
-      group: a.grupo.localeCompare(b.grupo, 'pt-BR'),
+      product: textValue(a.produto).localeCompare(textValue(b.produto), 'pt-BR'),
+      brand: textValue(a.marca).localeCompare(textValue(b.marca), 'pt-BR'),
+      group: textValue(a.grupo).localeCompare(textValue(b.grupo), 'pt-BR'),
       quantity: a.quantidade_estoque - b.quantidade_estoque,
       value: a.valor_estoque - b.valor_estoque,
       'last-movement': textValue(a.lastMovementDate).localeCompare(textValue(b.lastMovementDate)),

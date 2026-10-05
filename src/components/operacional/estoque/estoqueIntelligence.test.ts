@@ -19,6 +19,14 @@ import {
 } from './estoqueFixtures';
 
 describe('stock intelligence', () => {
+  it('ordena produtos com grupo nulo retornado pelo banco', () => {
+    const rows = buildStockInsights(estoqueFixtureComTresItens, giroFixture, NOW);
+    rows[0] = { ...rows[0], grupo: null as unknown as string };
+    rows[1] = { ...rows[1], grupo: null as unknown as string };
+    expect(() => sortStockInsights(rows, 'product-asc')).not.toThrow();
+    expect(sortStockInsights(rows, 'group-asc')[0].grupo).toBeNull();
+  });
+
   it('consolida registros duplicados por produto somando quantidade e valor e preservando as datas mais recentes', () => {
     const rows = [
       estoqueFixture[0],
