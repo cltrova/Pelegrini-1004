@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useEmpresaAtiva } from '@/hooks/useEmpresaAtiva';
 import { useFilialSelecionada } from '@/contexts/FilialSelecionadaContext';
 import { buildApiProxyUrl } from '@/utils/apiEndpointResolver';
-import { resolveCodEmpresaBiParam } from '@/utils/filialEndpoint';
+import { resolveCotacoesFilial } from '@/utils/cotacoesFilial';
 import { vendedorForcaP1004 } from '@/utils/vendedores1004';
 import { CotacaoInvalidaError, normalizarCotacao } from '@/utils/cotacoesComerciais';
 import type { Empresa } from '@/hooks/useEmpresaConfig';
@@ -198,10 +198,9 @@ export async function fetchCotacoes(
 function useCotacoes(origem: CotacaoOrigem, filtros: CotacoesConsultaFiltros | null) {
   const { empresa, codEmpresaAtiva, isLoading: isLoadingEmpresa } = useEmpresaAtiva();
   const { filialAtiva } = useFilialSelecionada();
-  const codEmpresaBi = String(
-    resolveCodEmpresaBiParam(empresa, filialAtiva) ?? codEmpresaAtiva ?? empresa?.cod_empresa_bi ?? '',
-  ).trim();
-  const hasCotacoes = isCotacoesPelegrini(codEmpresaBi);
+  const filial = resolveCotacoesFilial(codEmpresaAtiva ?? empresa?.cod_empresa_bi, filialAtiva);
+  const codEmpresaBi = filial?.codigoEmpresaBi ?? '';
+  const hasCotacoes = filial !== null;
   const configuredPath = origem === 'abertas'
     ? empresa?.endpoint_path_comercial_cotacoes_abertas_ch
     : empresa?.endpoint_path_comercial_vendas_perdidas_ch;

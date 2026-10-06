@@ -10,6 +10,7 @@ import {
   CotacoesEndpointError,
   fetchCotacoes,
   useCotacoesAbertas,
+  useVendasPerdidas,
 } from './useCotacoesComerciais';
 
 vi.mock('@/hooks/useEmpresaAtiva', () => ({
@@ -77,6 +78,90 @@ describe('consultas de cotacoes comerciais', () => {
     vi.restoreAllMocks();
     mockEmpresaAtiva();
     vi.mocked(useFilialSelecionada).mockReturnValue({ filialAtiva: 'transmissao' } as never);
+  });
+
+  it.each([
+    ['transmissao', useCotacoesAbertas, '/comercial/cotacoes-abertas', '1004'],
+    ['chevrolet', useVendasPerdidas, '/comercial/vendas-perdidas', '10041'],
+  ] as const)('consulta %s com o codigo da filial ativa', async (filial, useCotacoes, path, codigo) => {
+    vi.mocked(useFilialSelecionada).mockReturnValue({ filialAtiva: filial } as never);
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify({ dados: [] }), { status: 200 }),
+    );
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const { result, unmount } = renderHook(() => useCotacoes(filtros), {
+      wrapper: queryWrapper(queryClient),
+    });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    const requestUrl = new URL(String(fetchMock.mock.calls[0]?.[0]), 'http://localhost');
+    const apiPath = new URL(requestUrl.searchParams.get('path') ?? '', 'http://localhost');
+    expect(requestUrl.searchParams.get('path')).toContain(path);
+    expect(apiPath.searchParams.get('cod_empresa_bi')).toBe(codigo);
+
+    unmount();
+    queryClient.clear();
+  });
+
+  it('consulta Chevrolet na empresa isolada 10041', async () => {
+    mockEmpresaAtiva({ cod_empresa_bi: '10041' });
+    vi.mocked(useFilialSelecionada).mockReturnValue({ filialAtiva: 'chevrolet' } as never);
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify({ dados: [] }), { status: 200 }),
+    );
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const { result, unmount } = renderHook(() => useCotacoesAbertas(filtros), {
+      wrapper: queryWrapper(queryClient),
+    });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    const requestUrl = new URL(String(fetchMock.mock.calls[0]?.[0]), 'http://localhost');
+    expect(new URL(requestUrl.searchParams.get('path') ?? '', 'http://localhost').searchParams.get('cod_empresa_bi'))
+      .toBe('10041');
+
+    unmount();
+    queryClient.clear();
+  });
+
+  it.each([useCotacoesAbertas, useVendasPerdidas])(
+    'desabilita a consulta na empresa 1004 sem filial ativa', async (useCotacoes) => {
+      vi.mocked(useFilialSelecionada).mockReturnValue({ filialAtiva: null } as never);
+      const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+        new Response(JSON.stringify({ dados: [] }), { status: 200 }),
+      );
+      const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+      const { result, unmount } = renderHook(() => useCotacoes(filtros), {
+        wrapper: queryWrapper(queryClient),
+      });
+
+      await waitFor(() => expect(result.current.fetchStatus).toBe('idle'));
+      expect(result.current.isPending).toBe(true);
+      expect(fetchMock).not.toHaveBeenCalled();
+
+      unmount();
+      queryClient.clear();
+    },
+  );
+
+  it('usa entradas de cache diferentes ao alternar entre Transmissao e Chevrolet', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify({ dados: [] }), { status: 200 }),
+    );
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const { result, rerender, unmount } = renderHook(() => useCotacoesAbertas(filtros), {
+      wrapper: queryWrapper(queryClient),
+    });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    vi.mocked(useFilialSelecionada).mockReturnValue({ filialAtiva: 'chevrolet' } as never);
+    rerender();
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
+    const keys = queryClient.getQueryCache().getAll().map((query) => query.queryKey);
+    expect(keys).toHaveLength(2);
+    expect(keys[0]).not.toEqual(keys[1]);
+
+    unmount();
+    queryClient.clear();
   });
 
   it('consulta a empresa 10041 quando a filial Chevrolet esta ativa dentro da 1004', async () => {
