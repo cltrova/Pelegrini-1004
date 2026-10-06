@@ -159,6 +159,21 @@ describe('exportCotacoesExcel', () => {
     );
   });
 
+  it('includes the active filial BI code in the open-quotes filename', () => {
+    exportCotacoesExcel({
+      mode: 'abertas',
+      rows: [{ ...row, dataValidade: '2026-08-15', status: 'aberta' }],
+      dataIni: '2026-08-01',
+      dataFim: '2026-08-31',
+      codigoEmpresaBi: '1004',
+    });
+
+    expect(xlsxMock.writeFile).toHaveBeenCalledWith(
+      expect.anything(),
+      '1004-cotacoes-abertas-2026-08-01-2026-08-31.xlsx',
+    );
+  });
+
   it('leaves an absent quotation date blank in the worksheet', () => {
     exportCotacoesExcel({
       mode: 'abertas',

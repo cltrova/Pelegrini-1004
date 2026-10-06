@@ -8,6 +8,8 @@ import { CotacoesKpis } from '@/components/comercial/cotacoes/CotacoesKpis';
 import { CotacoesTable } from '@/components/comercial/cotacoes/CotacoesTable';
 import { MotivoPerdaDialog } from '@/components/comercial/cotacoes/MotivoPerdaDialog';
 import { useCotacoesAbertas, useVendasPerdidas } from '@/hooks/useCotacoesComerciais';
+import { useEmpresaAtiva } from '@/hooks/useEmpresaAtiva';
+import { useFilialSelecionada } from '@/contexts/FilialSelecionadaContext';
 import {
   useMotivosPerda10041,
   useSalvarMotivoPerda10041,
@@ -21,6 +23,9 @@ vi.mock('@/hooks/useCotacoesComerciais', () => ({
   useCotacoesAbertas: vi.fn(),
   useVendasPerdidas: vi.fn(),
 }));
+
+vi.mock('@/hooks/useEmpresaAtiva', () => ({ useEmpresaAtiva: vi.fn() }));
+vi.mock('@/contexts/FilialSelecionadaContext', () => ({ useFilialSelecionada: vi.fn() }));
 
 vi.mock('@/hooks/useMotivosPerda', async (importOriginal) => {
   const original = await importOriginal<typeof import('@/hooks/useMotivosPerda')>();
@@ -477,11 +482,104 @@ describe('open quotes page', () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date(2026, 7, 25));
     vi.clearAllMocks();
+    vi.mocked(useEmpresaAtiva).mockReturnValue({ codEmpresaAtiva: '1004', isLoading: false } as never);
+    vi.mocked(useFilialSelecionada).mockReturnValue({ filialAtiva: 'transmissao' } as never);
     mockOpenQuotesQuery();
   });
 
   afterEach(() => {
     vi.useRealTimers();
+  });
+
+  it.each([
+    ['transmissao', 'Casa da Transmissão', '1004'],
+    ['chevrolet', 'Casa do Chevrolet', '10041'],
+  ])('shows the %s branch identity in the compact header', async (filial, name, code) => {
+    vi.mocked(useFilialSelecionada).mockReturnValue({ filialAtiva: filial } as never);
+
+    await renderCotacoesAbertasPage(false);
+
+    const header = screen.getByRole('banner');
+    expect(within(header).getByText(name)).toBeInTheDocument();
+    expect(within(header).getByText(`BI ${code}`)).toBeInTheDocument();
+    expect(within(header).getByRole('img')).toHaveAttribute('src', expect.stringContaining(filial));
+  });
+
+  it('shows selection needed without stale quotes when company 1004 has no filial', async () => {
+    const view = await renderCotacoesAbertasPage();
+    expect(screen.getByRole('table')).toHaveTextContent('9101');
+
+    vi.mocked(useFilialSelecionada).mockReturnValue({ filialAtiva: null } as never);
+    const { default: Page } = await import('./CotacoesAbertasPage');
+    view.rerender(<Page />);
+
+    expect(screen.getByRole('main')).toBeInTheDocument();
+    expect(within(screen.getByTestId('comercial-data-viewport')).getByRole('heading', { name: 'Selecione uma filial' })).toBeInTheDocument();
+    expect(screen.queryByRole('table')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Indicadores comerciais')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /exportar/i })).toBeDisabled();
+  });
+
+  it('clears resolved rows during a filial switch and fills the retained viewport with loading', async () => {
+    const view = await renderCotacoesAbertasPage();
+    expect(screen.getByRole('table')).toHaveTextContent('9101');
+
+    vi.mocked(useFilialSelecionada).mockReturnValue({ filialAtiva: 'chevrolet' } as never);
+    mockOpenQuotesQuery({ data: openRows, isLoading: true, isFetching: true, isPlaceholderData: true });
+    const { default: Page } = await import('./CotacoesAbertasPage');
+    view.rerender(<Page />);
+
+    expect(screen.getByRole('main')).toBeInTheDocument();
+    expect(screen.getByLabelText('Filtros de cotacoes')).toBeInTheDocument();
+    const viewport = screen.getByTestId('comercial-data-viewport');
+    const loading = within(viewport).getByLabelText('Carregando cotacoes abertas');
+    expect(viewport).toHaveClass('flex', 'flex-col');
+    expect(loading).toHaveClass('flex-1', 'items-center', 'justify-center');
+    expect(screen.queryByRole('table')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Indicadores comerciais')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /exportar/i })).toBeDisabled();
+  });
+
+  it('keeps a selected quote closed after switching branches away and back', async () => {
+    const view = await renderCotacoesAbertasPage();
+    fireEvent.click(within(screen.getByRole('table')).getAllByRole('button', { name: 'Ver detalhes da cotação' })[0]);
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+
+    const { default: Page } = await import('./CotacoesAbertasPage');
+    vi.mocked(useFilialSelecionada).mockReturnValue({ filialAtiva: 'chevrolet' } as never);
+    view.rerender(<Page />);
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+
+    vi.mocked(useFilialSelecionada).mockReturnValue({ filialAtiva: 'transmissao' } as never);
+    view.rerender(<Page />);
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
+  it('passes the Chevrolet BI code when exporting its quotes', async () => {
+    vi.mocked(useFilialSelecionada).mockReturnValue({ filialAtiva: 'chevrolet' } as never);
+    await renderCotacoesAbertasPage();
+
+    fireEvent.click(screen.getByRole('button', { name: /exportar/i }));
+    expect(vi.mocked(exportCotacoesExcel).mock.calls.at(-1)?.[0]).toMatchObject({
+      mode: 'abertas',
+      codigoEmpresaBi: '10041',
+    });
+  });
+
+  it('refreshes the current branch without resetting the applied period or filters', async () => {
+    const refetch = vi.fn();
+    mockOpenQuotesQuery({ refetch });
+    await renderCotacoesAbertasPage();
+    fireEvent.change(screen.getByLabelText('Data inicial'), { target: { value: '2026-08-10' } });
+    fireEvent.change(screen.getByLabelText('Buscar cotacoes'), { target: { value: 'oficina' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Aplicar' }));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Atualizar dados da filial' }));
+
+    expect(refetch).toHaveBeenCalledTimes(1);
+    expect(screen.getByLabelText('Data inicial')).toHaveValue('2026-08-10');
+    expect(screen.getByLabelText('Buscar cotacoes')).toHaveValue('oficina');
+    expect(screen.getByRole('table')).toHaveTextContent('9101');
   });
 
   it('uses the compact operational desk after the operator applies the search', async () => {
@@ -552,6 +650,7 @@ describe('open quotes page', () => {
 
     expect(exportCotacoesExcel).toHaveBeenCalledWith({
       mode: 'abertas',
+      codigoEmpresaBi: '1004',
       rows: [openRows[0]],
       dataIni: '2026-08-01',
       dataFim: '2026-08-25',

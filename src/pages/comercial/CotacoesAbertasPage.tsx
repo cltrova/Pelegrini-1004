@@ -1,8 +1,9 @@
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { CircleAlert, Download, RefreshCw } from 'lucide-react';
 import { EmptyState } from '@/components/common/EmptyState';
 import { ErrorState } from '@/components/common/ErrorState';
 import { CotacaoDetailDrawer } from '@/components/comercial/cotacoes/CotacaoDetailDrawer';
+import { CotacoesBranchContext } from '@/components/comercial/cotacoes/CotacoesBranchContext';
 import { CotacoesFilters, type CotacoesFilterOption } from '@/components/comercial/cotacoes/CotacoesFilters';
 import { CotacoesGestorPanel } from '@/components/comercial/cotacoes/CotacoesGestorPanel';
 import { CotacoesKpis } from '@/components/comercial/cotacoes/CotacoesKpis';
@@ -15,9 +16,12 @@ import {
 import { Button } from '@/components/ui/button';
 import { LoadingState } from '@/components/common/LoadingState';
 import { useCotacoesAbertas } from '@/hooks/useCotacoesComerciais';
+import { useEmpresaAtiva } from '@/hooks/useEmpresaAtiva';
+import { useFilialSelecionada } from '@/contexts/FilialSelecionadaContext';
 import type { CotacaoComercial, CotacoesFiltros } from '@/types/cotacoesComerciais';
 import { calcularCotacoesKpis, filtrarCotacoes } from '@/utils/cotacoesComerciais';
 import { exportCotacoesExcel } from '@/utils/cotacoesExcel';
+import { resolveCotacoesFilial } from '@/utils/cotacoesFilial';
 
 interface PeriodoCotacoes {
   dataIni: string;
@@ -25,6 +29,7 @@ interface PeriodoCotacoes {
 }
 
 interface ResolvedOpenQuotesView {
+  codigoEmpresaBi: string;
   rows: readonly CotacaoComercial[];
   filters: CotacoesFiltros;
   period: PeriodoCotacoes;
@@ -83,19 +88,29 @@ function getFilterOptions(rows: readonly CotacaoComercial[], field: 'vendedor' |
 
 function CotacoesLoading() {
   return (
-    <section aria-label="Carregando cotacoes abertas" className="flex min-h-64 items-center justify-center" aria-busy="true">
+    <section aria-label="Carregando cotacoes abertas" className="flex min-h-0 flex-1 items-center justify-center" aria-busy="true">
       <LoadingState message="Carregando cotações abertas" variant="content" surface={false} />
     </section>
   );
 }
 
 export default function CotacoesAbertasPage() {
+  const { codEmpresaAtiva, isLoading: isLoadingEmpresa } = useEmpresaAtiva();
+  const { filialAtiva } = useFilialSelecionada();
+  const filial = resolveCotacoesFilial(codEmpresaAtiva, filialAtiva);
+  const codigoEmpresaBi = filial?.codigoEmpresaBi ?? null;
   const [pendingPeriod, setPendingPeriod] = useState(createCurrentMonthPeriod);
   const [appliedPeriod, setAppliedPeriod] = useState<PeriodoCotacoes | null>(null);
   const [pendingFilters, setPendingFilters] = useState<CotacoesFiltros>(createEmptyFilters);
   const [appliedFilters, setAppliedFilters] = useState<CotacoesFiltros>(createEmptyFilters);
   const [selectedQuote, setSelectedQuote] = useState<CotacaoComercial | null>(null);
+  const selectedQuoteBranchRef = useRef<string | null>(null);
   const resolvedViewRef = useRef<ResolvedOpenQuotesView | null>(null);
+
+  useEffect(() => {
+    setSelectedQuote(null);
+    selectedQuoteBranchRef.current = null;
+  }, [codigoEmpresaBi]);
 
   const consulta = useMemo(() => appliedPeriod ? ({
     dataIni: appliedPeriod.dataIni,
@@ -103,8 +118,13 @@ export default function CotacoesAbertasPage() {
     codVendedor: queryFilterValue(appliedFilters.vendedores),
     codCliente: queryFilterValue(appliedFilters.clientes),
   }) : null, [appliedFilters.clientes, appliedFilters.vendedores, appliedPeriod]);
-  const { data, isLoading, isFetching, isPlaceholderData, isError, error, refetch } = useCotacoesAbertas(consulta);
-  const hasSuccessfulResponse = consulta !== null
+  const { data, isLoading, isFetching, isPlaceholderData, isError, error, refetch } = useCotacoesAbertas(filial ? consulta : null);
+  if (resolvedViewRef.current?.codigoEmpresaBi !== codigoEmpresaBi) {
+    resolvedViewRef.current = null;
+  }
+  const hasSuccessfulResponse = filial !== null
+    && !isLoadingEmpresa
+    && consulta !== null
     && appliedPeriod !== null
     && data !== undefined
     && !isLoading
@@ -112,14 +132,16 @@ export default function CotacoesAbertasPage() {
     && !isError;
   if (hasSuccessfulResponse) {
     resolvedViewRef.current = {
+      codigoEmpresaBi: filial.codigoEmpresaBi,
       rows: data,
       filters: appliedFilters,
       period: appliedPeriod,
     };
   }
-  const resolvedView = consulta ? resolvedViewRef.current : null;
+  const resolvedView = filial && consulta ? resolvedViewRef.current : null;
   const hasResolvedRows = resolvedView !== null;
-  const showInitialLoading = consulta !== null && !hasResolvedRows && (isLoading || isFetching || isPlaceholderData);
+  const showInitialLoading = filial !== null && consulta !== null && !hasResolvedRows
+    && (isLoadingEmpresa || isLoading || isFetching || isPlaceholderData);
   const isRefreshing = consulta !== null && hasResolvedRows && (isLoading || isFetching || isPlaceholderData);
   const showBlockingError = consulta !== null && isError && !hasResolvedRows;
   const showRefreshError = consulta !== null && isError && hasResolvedRows;
@@ -168,18 +190,34 @@ export default function CotacoesAbertasPage() {
       rows: filteredRows,
       dataIni: resolvedView.period.dataIni,
       dataFim: resolvedView.period.dataFim,
+      codigoEmpresaBi: resolvedView.codigoEmpresaBi,
     });
   };
+
+  const selectQuote = (quote: CotacaoComercial) => {
+    selectedQuoteBranchRef.current = codigoEmpresaBi;
+    setSelectedQuote(quote);
+  };
+  const visibleSelectedQuote = selectedQuoteBranchRef.current === codigoEmpresaBi ? selectedQuote : null;
 
   return (
     <ComercialCompactPage className="commercial-quotes">
       <ComercialCommandBar
         title="Cotacoes abertas"
         actions={(
-          <Button type="button" variant="outline" size="sm" onClick={exportCurrentRows} disabled={!consulta || showInitialLoading || showBlockingError || filteredRows.length === 0}>
-          <Download aria-hidden="true" className="h-4 w-4" />
-          Exportar Excel
-          </Button>
+          <>
+            {filial && (
+              <CotacoesBranchContext
+                context={filial}
+                isRefreshing={isRefreshing}
+                onRefresh={consulta ? () => void refetch() : undefined}
+              />
+            )}
+            <Button type="button" variant="outline" size="sm" onClick={exportCurrentRows} disabled={!filial || !consulta || showInitialLoading || showBlockingError || filteredRows.length === 0}>
+              <Download aria-hidden="true" className="h-4 w-4" />
+              Exportar Excel
+            </Button>
+          </>
         )}
       />
 
@@ -218,7 +256,7 @@ export default function CotacoesAbertasPage() {
         isApplying={showInitialLoading || isRefreshing}
       />
 
-      {showRefreshError && (
+      {filial && showRefreshError && (
         <div role="alert" className="flex items-center gap-3 border border-destructive/35 bg-destructive/5 px-3 py-2 text-sm text-destructive">
           <CircleAlert aria-hidden="true" className="h-4 w-4 shrink-0" />
           <span className="min-w-0 flex-1">Não foi possível atualizar as cotações. {error instanceof Error ? error.message : 'Tente novamente.'}</span>
@@ -229,15 +267,21 @@ export default function CotacoesAbertasPage() {
         </div>
       )}
 
-      {consulta && !showInitialLoading && !showBlockingError && (
+      {filial && consulta && !showInitialLoading && !showBlockingError && (
         <>
           <CotacoesKpis mode="abertas" kpis={kpis} />
-          <CotacoesGestorPanel mode="abertas" rows={filteredRows} motivos={emptyMotivos} onSelectCotacao={setSelectedQuote} />
+          <CotacoesGestorPanel mode="abertas" rows={filteredRows} motivos={emptyMotivos} onSelectCotacao={selectQuote} />
         </>
       )}
 
-      <ComercialDataViewport className="commercial-table-frame">
-        {!consulta ? (
+      <ComercialDataViewport className={showInitialLoading ? 'commercial-table-frame flex flex-col' : 'commercial-table-frame'}>
+        {!filial && !isLoadingEmpresa ? (
+          <EmptyState
+            title="Selecione uma filial"
+            message="Selecione uma filial para consultar as cotacoes abertas."
+            className="min-h-72 border border-border px-4"
+          />
+        ) : !consulta ? (
           <EmptyState
             title="Consulta ainda não realizada"
             message="Aplique os filtros para consultar as cotacoes abertas."
@@ -254,17 +298,17 @@ export default function CotacoesAbertasPage() {
         ) : showInitialLoading ? (
           <CotacoesLoading />
         ) : (
-          <CotacoesTable mode="abertas" rows={filteredRows} motivos={emptyMotivos} onSelectCotacao={setSelectedQuote} />
+          <CotacoesTable mode="abertas" rows={filteredRows} motivos={emptyMotivos} onSelectCotacao={selectQuote} />
         )}
       </ComercialDataViewport>
 
       <CotacaoDetailDrawer
-        open={selectedQuote !== null}
+        open={visibleSelectedQuote !== null}
         onOpenChange={(open) => {
           if (!open) setSelectedQuote(null);
         }}
         mode="abertas"
-        cotacao={selectedQuote}
+        cotacao={visibleSelectedQuote}
         motivos={emptyMotivos}
       />
     </ComercialCompactPage>

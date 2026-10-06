@@ -38,6 +38,7 @@ export interface CotacoesWorkbookInput {
 export interface ExportCotacoesExcelInput extends CotacoesWorkbookInput {
   dataIni: string;
   dataFim: string;
+  codigoEmpresaBi?: string;
 }
 
 const DATE_FORMAT = 'dd/mm/yyyy';
@@ -161,8 +162,9 @@ export function buildCotacoesWorkbook(input: CotacoesWorkbookInput): XLSX.WorkBo
 
 export function exportCotacoesExcel(input: ExportCotacoesExcelInput): void {
   const workbook = buildCotacoesWorkbook(input);
+  const codigoEmpresaBi = String(input.codigoEmpresaBi ?? '10041').replace(/[^0-9]/g, '') || '10041';
   const filePrefix = input.mode === 'abertas'
-    ? '10041-cotacoes-abertas'
-    : '10041-vendas-perdidas';
+    ? `${codigoEmpresaBi}-cotacoes-abertas`
+    : `${codigoEmpresaBi}-vendas-perdidas`;
   XLSX.writeFile(workbook, `${filePrefix}-${input.dataIni}-${input.dataFim}.xlsx`);
 }
