@@ -202,10 +202,6 @@ export function EstoqueCommandCenter({
                   </div>
                 </SheetContent>
               </Sheet>
-              <Button aria-label="Exportar visao atual" className="h-8 gap-1.5 px-2.5 text-xs" onClick={() => onExport(filtered)} type="button" variant="outline">
-                <Download aria-hidden="true" className="h-3.5 w-3.5" />
-                <span className="hidden xl:inline">Exportar</span>
-              </Button>
               <StockColumnPicker
                 branchKey={branchKey}
                 onVisibleColumnsChange={handleVisibleColumnsChange}
@@ -269,6 +265,7 @@ export function EstoqueCommandCenter({
       <EstoqueDataViewport>
         {sourceNotice ? <div className="shrink-0">{sourceNotice}</div> : null}
         <div aria-label="Contagem e ordenacao dos produtos" className="sr-only shrink-0" role="group" />
+        {filtered.length > 0 && <div className="flex shrink-0 justify-end border-b border-border px-3 py-2"><Button aria-label="Baixar lista de produtos" disabled={!filtered.length} className="h-8 gap-1.5 px-2.5 text-xs" onClick={() => onExport(filtered)} type="button" variant="outline"><Download aria-hidden="true" className="h-3.5 w-3.5" />Baixar lista</Button></div>}
         <EstoqueProductsTable
           branchKey={branchKey}
           onSelectProduct={selectProduct}

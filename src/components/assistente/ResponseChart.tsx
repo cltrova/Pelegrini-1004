@@ -1,4 +1,4 @@
-import { useMemo, useRef, useCallback } from 'react';
+import { useMemo } from 'react';
 import { 
   BarChart, 
   Bar, 
@@ -13,11 +13,7 @@ import {
   Legend
 } from 'recharts';
 import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { formatCurrency } from '@/utils/formatters';
-import { Download } from 'lucide-react';
-import { toPng } from 'html-to-image';
-import { toast } from 'sonner';
 
 interface ChartData {
   name: string;
@@ -59,32 +55,6 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 };
 
 export function ResponseChart({ data, type, title }: ResponseChartProps) {
-  const chartRef = useRef<HTMLDivElement>(null);
-
-  const handleExportPng = useCallback(async () => {
-    if (!chartRef.current) return;
-    
-    try {
-      const dataUrl = await toPng(chartRef.current, {
-        backgroundColor: '#1a1a2e',
-        pixelRatio: 2,
-        style: {
-          padding: '16px',
-        }
-      });
-      
-      // Criar link de download
-      const link = document.createElement('a');
-      link.download = `grafico-financeiro-${Date.now()}.png`;
-      link.href = dataUrl;
-      link.click();
-      
-      toast.success('Gráfico exportado com sucesso!');
-    } catch (error) {
-      console.error('Erro ao exportar gráfico:', error);
-      toast.error('Erro ao exportar gráfico');
-    }
-  }, []);
   const chartData = useMemo(() => {
     return data.map((item, index) => ({
       ...item,
@@ -98,17 +68,8 @@ export function ResponseChart({ data, type, title }: ResponseChartProps) {
       <Card className="p-4 my-3 bg-card/50 relative group">
         <div className="flex items-center justify-between mb-3">
           {title && <h4 className="text-sm font-medium text-center flex-1">{title}</h4>}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
-            onClick={handleExportPng}
-            title="Exportar como PNG"
-          >
-            <Download className="h-4 w-4" />
-          </Button>
         </div>
-        <div ref={chartRef} className="h-[200px]">
+        <div className="h-[200px]">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie
@@ -141,17 +102,8 @@ export function ResponseChart({ data, type, title }: ResponseChartProps) {
     <Card className="p-4 my-3 bg-card/50 relative group">
       <div className="flex items-center justify-between mb-3">
         {title && <h4 className="text-sm font-medium flex-1">{title}</h4>}
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
-          onClick={handleExportPng}
-          title="Exportar como PNG"
-        >
-          <Download className="h-4 w-4" />
-        </Button>
       </div>
-      <div ref={chartRef} className="h-[180px]">
+      <div className="h-[180px]">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={chartData} layout="vertical" margin={{ left: 0, right: 10 }}>
             <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />

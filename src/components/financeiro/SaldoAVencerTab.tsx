@@ -694,9 +694,7 @@ export function SaldoAVencerTab({ filtros }: { filtros?: SaldoAVencerFiltros }) 
           <Button variant="ghost" size="sm" onClick={() => setClienteSel(null)}>
             <ArrowLeft className="mr-2 h-4 w-4" /> Voltar ao ranking
           </Button>
-          <Button variant="outline" size="sm" className="sm:ml-auto" onClick={exportDetalhe}>
-            <Download className="mr-2 h-4 w-4" /> Exportar
-          </Button>
+
         </div>
 
         <Card className="overflow-hidden border-border/60">
@@ -727,6 +725,7 @@ export function SaldoAVencerTab({ filtros }: { filtros?: SaldoAVencerFiltros }) 
                   Parcelas abertas agrupadas por mês de vencimento, com NF/pedido, parcela, original, recebido e saldo líquido.
                 </p>
               </div>
+              {detalhe.linhas.length > 0 && <Button variant="outline" size="sm" onClick={exportDetalhe}><Download className="mr-2 h-4 w-4" />Baixar lista</Button>}
               <Badge variant="outline" className="border-primary/30 bg-primary/10 text-primary">
                 {detalhe.linhas.length} vencimento(s)
               </Badge>
@@ -938,9 +937,7 @@ export function SaldoAVencerTab({ filtros }: { filtros?: SaldoAVencerFiltros }) 
             >
               Limpar
             </Button>
-            <Button variant="outline" size="sm" onClick={exportRanking}>
-              <Download className="mr-2 h-4 w-4" /> Exportar
-            </Button>
+
           </div>
           </div>
         </CardHeader>
@@ -976,6 +973,7 @@ export function SaldoAVencerTab({ filtros }: { filtros?: SaldoAVencerFiltros }) 
               Participacao <ArrowUpDown className="ml-1 h-3 w-3" />
             </Button>
           </div>
+          {filtrados.length > 0 && <div className="flex justify-end"><Button variant="outline" size="sm" onClick={exportRanking}><Download className="mr-2 h-4 w-4" />Baixar lista</Button></div>}
           <div className="financial-data-viewport overflow-x-auto rounded-xl border border-border/60 bg-background/35">
           <table className="w-full text-sm">
             <thead>

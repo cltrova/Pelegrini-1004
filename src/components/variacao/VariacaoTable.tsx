@@ -1,8 +1,6 @@
-import { Download } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { FluxoCaixaGrupo, FluxoCaixaTotais } from '@/types/variacao';
 import { formatCurrency } from '@/utils/formatters';
-import { Button } from '@/components/ui/button';
 
 interface VariacaoTableProps {
   data: FluxoCaixaGrupo[];
@@ -28,10 +26,7 @@ export function VariacaoTable({ data, totais, ano }: VariacaoTableProps) {
       {/* Header com ações */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-muted/30">
         <h3 className="font-semibold text-foreground">Demonstração dos Fluxos de Caixa</h3>
-        <Button variant="outline" size="sm">
-          <Download className="h-4 w-4 mr-2" />
-          Exportar
-        </Button>
+
       </div>
 
       <div className="financial-data-viewport max-w-full overflow-x-auto">

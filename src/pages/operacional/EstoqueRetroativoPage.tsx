@@ -374,9 +374,6 @@ export default function EstoqueRetroativoPage() {
           <SelectTrigger aria-label="Base de valor" className="h-8 w-44 shrink-0"><SelectValue /></SelectTrigger>
           <SelectContent><SelectItem value="venda">Preço de venda</SelectItem><SelectItem value="custo">Custo do fornecedor</SelectItem></SelectContent>
         </Select>
-        <Button className="h-8 shrink-0 gap-2 px-3" onClick={gerarExcel} size="sm" variant="outline">
-          <FileSpreadsheet className="h-4 w-4" /> Exportar
-        </Button>
       </EstoqueToolbar>
 
       {ultimaData && rows.length > 0 ? <EstoqueMetricStrip metrics={metrics} /> : null}
@@ -413,6 +410,7 @@ export default function EstoqueRetroativoPage() {
           </div>
         ) : (
           <>
+            <div className="flex shrink-0 justify-end border-b border-border px-3 py-2"><Button className="h-8 gap-2 px-3" disabled={loading} onClick={gerarExcel} size="sm" variant="outline"><FileSpreadsheet className="h-4 w-4" />Baixar lista</Button></div>
             <div className="min-h-0 flex-1 overflow-auto">
               <div className="divide-y md:hidden">
               {filtered.slice(0, 500).map((row, index) => (

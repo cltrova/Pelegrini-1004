@@ -261,7 +261,6 @@ export function DistributorEvolutionTab({ active }: { active: boolean }) {
       <span className="min-w-0 truncate text-[11px] text-muted-foreground">{filters.dataInicio.split('-').reverse().join('/')} a {filters.dataFim.split('-').reverse().join('/')} · {filters.marcas.length} marcas</span>
       <div className="ml-auto flex items-center gap-1">
         <Button aria-busy={isRefreshing || undefined} aria-label="Atualizar relatório" className="h-7 w-7" disabled={isRefreshing} onClick={() => void refreshReport()} size="icon" variant="ghost">{isRefreshing ? <LoadingIndicator size="sm" /> : <RefreshCw aria-hidden="true" className="h-3.5 w-3.5" />}</Button>
-        <Button aria-label="Exportar distribuidores para Excel" className="h-7 w-7" disabled={!rows.length || isPreview} onClick={() => void exportWorkbook(rows, filters)} size="icon" title={isPreview ? 'Disponível após a publicação do relatório oficial' : 'Exportar Excel'} variant="ghost"><Download className="h-3.5 w-3.5" /></Button>
       </div>
     </div>
 
@@ -271,6 +270,7 @@ export function DistributorEvolutionTab({ active }: { active: boolean }) {
       : <div className="flex min-h-0 flex-1 flex-col overflow-y-auto premium-scrollbar">
         {isPreview && <div className="border-b border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-foreground" role="status"><strong>Visualização provisória.</strong> Fonte: Produtos. Vendas e devoluções são reais; os demais indicadores aguardam o relatório oficial.</div>}
         <MetricStrip preview={isPreview} summary={evolution.summary} />
+        {!isPreview && rows.length > 0 && <div className="flex shrink-0 justify-end border-b border-border px-3 py-2"><Button onClick={() => void exportWorkbook(rows, filters)} size="sm" variant="outline"><Download className="mr-2 h-4 w-4" />Baixar tabelas</Button></div>}
         <section className="hidden min-w-0 shrink-0 border-b border-border/60 p-3 md:block">
             <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
               <h2 className="text-xs font-semibold">Comparativo mensal</h2>

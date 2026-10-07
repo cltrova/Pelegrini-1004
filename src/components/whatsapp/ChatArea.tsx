@@ -141,7 +141,6 @@ export function ChatArea({ conversationId, onBack, onOpenDetails, isMobile }: Ch
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem>Editar contato</DropdownMenuItem>
                   <DropdownMenuItem>Transferir conversa</DropdownMenuItem>
-                  <DropdownMenuItem>Exportar histórico</DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem className="text-destructive">
                     Encerrar conversa

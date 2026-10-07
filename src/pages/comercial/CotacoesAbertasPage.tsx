@@ -213,10 +213,6 @@ export default function CotacoesAbertasPage() {
                 onRefresh={consulta ? () => void refetch() : undefined}
               />
             )}
-            <Button type="button" variant="outline" size="sm" onClick={exportCurrentRows} disabled={!filial || !consulta || showInitialLoading || showBlockingError || filteredRows.length === 0}>
-              <Download aria-hidden="true" className="h-4 w-4" />
-              Exportar Excel
-            </Button>
           </>
         )}
       />
@@ -298,7 +294,10 @@ export default function CotacoesAbertasPage() {
         ) : showInitialLoading ? (
           <CotacoesLoading />
         ) : (
-          <CotacoesTable mode="abertas" rows={filteredRows} motivos={emptyMotivos} onSelectCotacao={selectQuote} />
+          <div className="min-w-0">
+            {filteredRows.length > 0 && <div aria-label="Download da lista" className="flex justify-end border-b border-border px-3 py-2"><Button type="button" variant="outline" size="sm" onClick={exportCurrentRows}><Download aria-hidden="true" className="h-4 w-4" />Baixar lista</Button></div>}
+            <CotacoesTable mode="abertas" rows={filteredRows} motivos={emptyMotivos} onSelectCotacao={selectQuote} />
+          </div>
         )}
       </ComercialDataViewport>
 
