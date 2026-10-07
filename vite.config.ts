@@ -2,6 +2,7 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import type { IncomingMessage, ServerResponse } from "http";
+import { releaseVersionConfig } from './scripts/releaseVersion';
 
 async function readRequestBody(req: IncomingMessage): Promise<Buffer | undefined> {
   const chunks: Buffer[] = [];
@@ -121,12 +122,15 @@ function localApiProxyPlugin() {
 }
 
 // https://vitejs.dev/config/
-export default defineConfig({
+export default defineConfig(async ({ command, mode }) => {
+  const release = await releaseVersionConfig(command === 'build' && mode === 'production');
+  return {
+  define: release.define,
   server: {
     host: "::",
     port: 8080,
   },
-  plugins: [react(), localApiProxyPlugin()],
+  plugins: [react(), localApiProxyPlugin(), release.plugin],
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
@@ -135,4 +139,5 @@ export default defineConfig({
   optimizeDeps: {
     include: ["react-day-picker", "date-fns", "date-fns/locale"],
   },
+  };
 });

@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useFilialSelecionada } from '@/contexts/FilialSelecionadaContext';
 import { PelegriniBrandMark } from './PelegriniBrandMark';
+import { SidebarVersion } from './SidebarVersion';
 
 export interface PelegriniSidebarItem {
   label: string;
@@ -255,6 +256,7 @@ export function PelegriniModuleSidebar({
               setTheme(isDarkTheme ? 'light' : 'dark');
             }}
           />
+          <SidebarVersion />
         </div>
       </aside>
     </TooltipProvider>

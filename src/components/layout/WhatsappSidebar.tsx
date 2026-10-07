@@ -14,6 +14,7 @@ import { useEmpresaAtiva } from '@/hooks/useEmpresaAtiva';
 import { resolvePelegriniTheme } from '@/config/pelegriniTheme';
 import { useFilialSelecionada } from '@/contexts/FilialSelecionadaContext';
 import { PelegriniBrandMark } from '@/components/pelegrini';
+import { SidebarVersion } from '@/components/pelegrini/SidebarVersion';
 
 interface MenuItem {
   label: string;
@@ -123,7 +124,9 @@ export function WhatsappSidebar() {
             );
           })}
         </nav>
-
+        <div className="shrink-0 border-t border-sidebar-border px-3 pb-3">
+          <SidebarVersion />
+        </div>
       </aside>
     </>
   );
