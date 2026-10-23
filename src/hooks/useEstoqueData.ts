@@ -8,6 +8,7 @@ import { EstoqueRecord, GiroRecord, type StockSourceState } from '@/types/estoqu
 import { filtrarEstoqueCasaChevrolet10041, isAgraleEstoque10041, isForcaPEstoque } from '@/utils/estoque10041';
 import { useFilialSelecionada } from '@/contexts/FilialSelecionadaContext';
 import { resolveCodEmpresaBiParam } from '@/utils/filialEndpoint';
+import type { StockOverviewResponse } from '@/components/operacional/estoque/estoqueOverviewData';
 
 type EstoqueApiRow = Record<string, unknown>;
 
@@ -108,6 +109,25 @@ async function fetchFromEndpoint(
   } finally {
     clearTimeout(timeout);
   }
+}
+
+async function fetchOverviewFromEndpoint(empresa: Empresa, path: string): Promise<StockOverviewResponse> {
+  const { data: sessionData } = await supabase.auth.getSession();
+  const token = sessionData?.session?.access_token;
+  const response = await fetch(buildApiProxyUrl(empresa, path), {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+    },
+  });
+  if (!response.ok || response.headers.get('x-proxy-upstream-error') === 'true') {
+    throw new Error(`Falha na visão geral do estoque (HTTP ${response.status}).`);
+  }
+  const payload = await response.json() as StockOverviewResponse;
+  if (!payload?.summary || !payload?.options || !Array.isArray(payload.topValue)) {
+    throw new Error('Resposta inesperada da visão geral do estoque.');
+  }
+  return payload;
 }
 
 async function fetchEstoqueSource(
@@ -282,7 +302,7 @@ export function buildOperationalEstoqueFallbackFromGiro(
   });
 }
 
-export function useEstoqueData(periodMonths = 3) {
+export function useEstoqueData(periodMonths = 3, activeTab: 'overview' | 'central' | 'giro' | 'assistente' = 'central', overviewFilters = { brand: '', group: '', branch: '' }) {
   const { empresa, codEmpresaAtiva, isLoading: isLoadingEmpresa } = useEmpresaAtiva();
   const { filialAtiva } = useFilialSelecionada();
   const estoqueCompanyCode = resolveCodEmpresaBiParam(empresa, filialAtiva) || codEmpresaAtiva;
@@ -290,10 +310,26 @@ export function useEstoqueData(periodMonths = 3) {
   const isCT = String(estoqueCompanyCode) === '1004';
   const period = getEstoqueAnalysisPeriod(periodMonths);
   const currentCT = () => fetchFromEndpoint(empresa!, '/operacional/estoque/analise/produtos?cod_empresa_bi=1004');
+  const overviewQuery = useQuery({
+    queryKey: ['estoque-visao-geral-r9', estoqueCompanyCode, periodMonths, overviewFilters.brand, overviewFilters.group, overviewFilters.branch],
+    queryFn: async () => {
+      const params = new URLSearchParams({
+        cod_empresa_bi: String(estoqueCompanyCode),
+        periodo_meses: String(periodMonths),
+      });
+      if (overviewFilters.brand) params.set('marca', overviewFilters.brand);
+      if (overviewFilters.group) params.set('grupo', overviewFilters.group);
+      if (overviewFilters.branch) params.set('filial', overviewFilters.branch);
+      return fetchOverviewFromEndpoint(empresa!, `/operacional/estoque/visao-geral?${params}`);
+    },
+    enabled: !!empresa && !!empresa.modulo_operacional && activeTab === 'overview',
+    staleTime: 30 * 1000,
+    retry: false,
+  });
   const consolidadoQuery = useQuery({
     queryKey: [isCT ? 'estoque-produtos-ct-v2' : 'estoque-consolidado', estoqueCompanyCode],
     queryFn: async () => isCT ? currentCT() : fetchEstoqueSource(empresa!, 'consolidado', estoqueCompanyCode),
-    enabled: !!empresa && !!empresa.modulo_operacional,
+    enabled: !!empresa && !!empresa.modulo_operacional && activeTab !== 'overview',
     staleTime: 5 * 60 * 1000,
     retry: false,
   });
@@ -301,7 +337,7 @@ export function useEstoqueData(periodMonths = 3) {
   const detalhadoQuery = useQuery({
     queryKey: [isCT ? 'estoque-produtos-ct-v2' : 'estoque-detalhado', estoqueCompanyCode],
     queryFn: async () => isCT ? currentCT() : fetchEstoqueSource(empresa!, 'detalhado', estoqueCompanyCode),
-    enabled: !!empresa && !!empresa.modulo_operacional,
+    enabled: !!empresa && !!empresa.modulo_operacional && activeTab === 'central',
     staleTime: 5 * 60 * 1000,
     retry: false,
   });
@@ -312,7 +348,7 @@ export function useEstoqueData(periodMonths = 3) {
       && previousQuery?.queryKey[0] === 'estoque-giro-v2'
       && previousQuery.queryKey[1] === estoqueCompanyCode ? previousData : undefined,
     queryFn: async () => isCT ? fetchFromEndpoint(empresa!, `/operacional/estoque/analise/movimentos?cod_empresa_bi=1004&data_ini=${period.data_ini}&data_fim=${period.data_fim}`) : fetchEstoqueSource(empresa!, 'giro', estoqueCompanyCode),
-    enabled: !!empresa && !!empresa.modulo_operacional,
+    enabled: !!empresa && !!empresa.modulo_operacional && activeTab !== 'overview',
     staleTime: 5 * 60 * 1000,
     retry: false,
   });
@@ -323,6 +359,7 @@ export function useEstoqueData(periodMonths = 3) {
     enabled: !!empresa
       && !!empresa.modulo_operacional
       && !isCT
+      && activeTab !== 'overview'
       && (consolidadoQuery.isError || detalhadoQuery.isError),
     staleTime: 30 * 60 * 1000,
     retry: false,
@@ -400,16 +437,19 @@ export function useEstoqueData(periodMonths = 3) {
     return latestTimestamp > 0 ? new Date(latestTimestamp) : null;
   }, [consolidadoQuery.dataUpdatedAt, detalhadoQuery.dataUpdatedAt, giroQuery.dataUpdatedAt, recoveryQuery.dataUpdatedAt]);
 
-  const isLoading = isLoadingEmpresa || (consolidadoQuery.isLoading && consolidadoQuery.data === undefined);
+  const isLoading = isLoadingEmpresa || (activeTab === 'overview'
+    ? overviewQuery.isLoading && overviewQuery.data === undefined
+    : consolidadoQuery.isLoading && consolidadoQuery.data === undefined);
   const isInitialLoading = isLoadingEmpresa
-    || consolidadoQuery.isLoading
-    || detalhadoQuery.isLoading
-    || giroQuery.isLoading
-    || recoveryQuery.isLoading;
-  const isError = consolidadoQuery.isError || detalhadoQuery.isError || giroQuery.isError;
+    || (activeTab === 'overview' ? overviewQuery.isLoading : consolidadoQuery.isLoading || detalhadoQuery.isLoading || giroQuery.isLoading || recoveryQuery.isLoading);
+  const isError = activeTab === 'overview' ? overviewQuery.isError : consolidadoQuery.isError || detalhadoQuery.isError || giroQuery.isError;
 
   return {
     activeCompanyCode: String(estoqueCompanyCode ?? ''),
+    overviewData: overviewQuery.data,
+    overviewError: overviewQuery.error,
+    overviewStatus: resolveStockSourceState(overviewQuery),
+    overviewLastUpdated: overviewQuery.dataUpdatedAt > 0 ? new Date(overviewQuery.dataUpdatedAt) : null,
     consolidadoData,
     detalhadoData,
     giroData,
@@ -427,8 +467,8 @@ export function useEstoqueData(periodMonths = 3) {
     partialSources,
     recoveredSources,
     recoveryStatus: resolveStockSourceState(recoveryQuery),
-    isFetching: consolidadoQuery.isFetching || detalhadoQuery.isFetching || giroQuery.isFetching || recoveryQuery.isFetching,
-    refetch: () => Promise.all([
+    isFetching: activeTab === 'overview' ? overviewQuery.isFetching : consolidadoQuery.isFetching || detalhadoQuery.isFetching || giroQuery.isFetching || recoveryQuery.isFetching,
+    refetch: () => activeTab === 'overview' ? overviewQuery.refetch() : Promise.all([
       consolidadoQuery.refetch(),
       detalhadoQuery.refetch(),
       giroQuery.refetch(),

@@ -88,9 +88,10 @@ interface EstoquePageProps {
 
 export function EstoqueProdutosPage({ initialTab = 'overview', onOpenCurrent }: EstoquePageProps & { onOpenCurrent?: () => void }) {
   const [overviewMonths, setOverviewMonths] = useState(3);
+  const [overviewFilters, setOverviewFilters] = useState({brand: '', group: '', branch: ''});
   const [giroFilters, setGiroFilters] = useState<GiroFiltersState>(DEFAULT_GIRO_FILTERS);
   const [activeTab, setActiveTab] = useState<EstoqueTab>(initialTab);
-  const { activeCompanyCode, consolidadoData, detalhadoData, giroData, isLoading, isInitialLoading, empresa, sourceErrors, sourceStatus, sourceLastUpdated, lastSuccessfulUpdate, partialSources, recoveredSources, recoveryStatus, isFetching, refetch } = useEstoqueData(activeTab === 'giro' ? giroFilters.periodoMeses : overviewMonths);
+  const { activeCompanyCode, consolidadoData, detalhadoData, giroData, overviewData, overviewError, overviewStatus, overviewLastUpdated, isLoading, isInitialLoading, empresa, sourceErrors, sourceStatus, sourceLastUpdated, lastSuccessfulUpdate, partialSources, recoveredSources, recoveryStatus, isFetching, refetch } = useEstoqueData(activeTab === 'giro' ? giroFilters.periodoMeses : overviewMonths, activeTab, overviewFilters);
   const { codEmpresaContexto, filialAtiva } = useFilialSelecionada();
 
   const [requestedQuickFilter, setRequestedQuickFilter] = useState<StockQuickFilter | null>(null);
@@ -110,34 +111,27 @@ export function EstoqueProdutosPage({ initialTab = 'overview', onOpenCurrent }: 
   const activeSourceData = activeSource === 'consolidado'
     ? consolidadoData
     : activeSource === 'detalhado' ? detalhadoData : giroData;
-  const hasCurrentViewData = activeSourceData.length > 0;
   const isOverview = activeTab === 'overview';
+  const hasCurrentViewData = isOverview ? Boolean(overviewData) : activeSourceData.length > 0;
   const branchKey = `${codEmpresaContexto ?? empresa?.cod_empresa_bi ?? 'empresa'}:${filialAtiva ?? 'sem-filial'}`;
-  const activeSourceError = sourceErrors?.[activeSource];
+  const activeSourceError = isOverview ? overviewError : sourceErrors?.[activeSource];
   const activeSourceState = isOverview
-    ? sourceStatus?.consolidado === 'fetching' || sourceStatus?.giro === 'fetching'
-      ? 'fetching'
-      : sourceStatus?.consolidado === 'ready' && sourceStatus?.giro === 'ready'
-        ? 'ready'
-        : sourceStatus?.consolidado
+    ? overviewStatus
     : sourceStatus?.[activeSource];
-  const stockSource = activeSource === 'giro' ? null : activeSource;
+  const stockSource = isOverview || activeSource === 'giro' ? null : activeSource;
   const stockData = stockSource === 'consolidado' ? consolidadoData : stockSource === 'detalhado' ? detalhadoData : [];
   const stockError = stockSource ? sourceErrors?.[stockSource] : null;
   const movementError = sourceErrors?.giro;
   const stockUnavailable = Boolean(stockError && stockData.length === 0);
   const movementUnavailable = Boolean(movementError);
-  const overviewMovementIssue = isOverview && movementUnavailable;
+  const overviewMovementIssue = false;
   const movementAvailable = !movementUnavailable && (
     sourceStatus?.giro === undefined || sourceStatus.giro === 'ready' || (sourceStatus.giro === 'fetching' && giroData.length > 0)
   );
   const detailedStockLoading = activeTab === 'central' && viewMode === 'detalhado'
     && sourceStatus?.detalhado === 'loading' && detalhadoData.length === 0;
   const movementLoading = (activeTab === 'giro' || activeTab === 'assistente') && sourceStatus?.giro === 'loading' && giroData.length === 0;
-  const overviewDependencyLoading = isOverview && !stockUnavailable && (
-    (!stockError && sourceStatus?.consolidado === 'loading' && consolidadoData.length === 0)
-    || (!movementError && sourceStatus?.giro === 'loading' && giroData.length === 0)
-  );
+  const overviewDependencyLoading = isOverview && overviewStatus === 'loading' && !overviewData;
   const activeSourceLoading = overviewDependencyLoading || (!isOverview && !hasCurrentViewData && !activeSourceError && (
     activeSourceState === 'loading'
     || ((activeSourceState === 'idle' || activeSourceState === undefined) && (isLoading || isInitialLoading))
@@ -150,7 +144,7 @@ export function EstoqueProdutosPage({ initialTab = 'overview', onOpenCurrent }: 
   const sourceHasActiveIssue = Boolean(
     (activeSourceError && !recoveredStock) || partialStock || recoveringStock || overviewMovementIssue,
   );
-  const activeSourceUpdate = sourceLastUpdated?.[activeSource];
+  const activeSourceUpdate = isOverview ? overviewLastUpdated : sourceLastUpdated?.[activeSource];
   const displayedUpdate = sourceLastUpdated === undefined ? lastSuccessfulUpdate : activeSourceUpdate;
   const lastUpdateLabel = displayedUpdate
     ? `Atualizado as ${displayedUpdate.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`
@@ -215,6 +209,7 @@ export function EstoqueProdutosPage({ initialTab = 'overview', onOpenCurrent }: 
 
   useEffect(() => {
     setOverviewMonths(3);
+    setOverviewFilters({brand: '', group: '', branch: ''});
     setGiroFilters(DEFAULT_GIRO_FILTERS);
     setPendingGiro(DEFAULT_GIRO_FILTERS);
     setRequestedProductCode(null);
@@ -289,7 +284,7 @@ export function EstoqueProdutosPage({ initialTab = 'overview', onOpenCurrent }: 
 
   return (
     <EstoqueWorkspace className="bg-background">
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="contents">
+      <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as EstoqueTab)} className="contents">
         <EstoqueWorkspaceHeader className="gap-3">
           <PelegriniTabs
             ariaLabel="Visões do estoque"
@@ -393,6 +388,8 @@ export function EstoqueProdutosPage({ initialTab = 'overview', onOpenCurrent }: 
               onOpenCentral={openCentralFromOverview}
               onRefresh={() => { void refetch(); }}
               stockData={consolidadoData}
+              precomputed={overviewData}
+              onFilterChange={setOverviewFilters}
             />
           </Suspense>
         </TabsContent>

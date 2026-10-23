@@ -43,6 +43,20 @@ export interface StockOverviewSummary {
   branches: OverviewDistribution[];
 }
 
+export interface StockOverviewResponse {
+  release: string;
+  cod_empresa_bi: number;
+  atualizado_em: string;
+  summary: StockOverviewSummary;
+  filteredCount: number;
+  options: { brands: string[]; groups: string[]; branches: string[] };
+  topValue: OverviewRankItem[];
+  topRisk: OverviewRankItem[];
+  topExcess: OverviewRankItem[];
+}
+
+export type OverviewRankItem = Pick<OverviewProduct, 'cod_produto' | 'produto' | 'marca' | 'valor_estoque' | 'cobertura_meses'>;
+
 const statusLabel: Record<GiroStatus, string> = {
   atendendo: 'Atendendo', alerta: 'Alerta', faltando: 'Ruptura', excesso: 'Excesso',
 };

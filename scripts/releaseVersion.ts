@@ -43,8 +43,7 @@ export async function releaseVersionConfig(productionBuild: boolean) {
     );
     if (versions.length) {
       version = fromOrdinal(Math.max(floor - 1, ...versions) + 1);
-    } else if (process.env.PELEGRINI_VERSION_BOOTSTRAP !== '1' ||
-      results.some((result) => result.status === 'rejected')) {
+    } else if (results.some((result) => result.status === 'rejected')) {
       throw new Error('Nao foi possivel consultar a versao publicada. Build interrompido para evitar repetir ou retroceder a versao.');
     }
   }
