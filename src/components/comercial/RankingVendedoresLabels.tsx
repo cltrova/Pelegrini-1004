@@ -31,7 +31,7 @@ export function RankingVendedoresLabels({ data, modo, variant }: Props) {
     <div
       className={cn(
         "grid items-start gap-0",
-        isPelegrini ? "min-h-[48px] pl-[48px] pr-2 pt-1" : "min-h-[104px] pl-[68px] pr-4 pt-2",
+        isPelegrini ? "min-h-[48px] pl-[52px] pr-[18px] pt-1" : "min-h-[104px] pl-[68px] pr-4 pt-2",
       )}
       style={{ gridTemplateColumns: `repeat(${data.length}, minmax(0, 1fr))` }}
     >
@@ -47,7 +47,7 @@ export function RankingVendedoresLabels({ data, modo, variant }: Props) {
           <div key={String(row.codigo ?? index)} className="min-w-0 text-center" title={row.nome}>
             <span
               className={cn(
-                "block min-w-0 truncate text-muted-foreground sm:overflow-visible sm:text-clip sm:whitespace-normal sm:break-words",
+                "block min-w-0 truncate text-muted-foreground",
                 isPelegrini && "leading-tight",
               )}
               style={{
@@ -59,23 +59,14 @@ export function RankingVendedoresLabels({ data, modo, variant }: Props) {
             </span>
             <span
               aria-label={valueLabel}
-              className={cn("block min-w-0 truncate font-mono text-foreground sm:hidden", isPelegrini ? "mt-0.5" : "mt-1")}
+              className={cn("block min-w-0 truncate font-mono text-foreground", isPelegrini ? "mt-0.5" : "mt-1")}
               title={valueLabel}
               style={{
                 fontSize: isPelegrini ? 13 : layout.valueFontSize,
                 fontWeight: isPelegrini ? 750 : layout.valueFontWeight,
               }}
             >
-              {compactValueLabel}
-            </span>
-            <span
-              className={cn("hidden whitespace-nowrap font-mono text-foreground sm:block", isPelegrini ? "mt-0.5" : "mt-1")}
-              style={{
-                fontSize: isPelegrini ? 13 : layout.valueFontSize,
-                fontWeight: isPelegrini ? 750 : layout.valueFontWeight,
-              }}
-            >
-              {valueLabel}
+              {data.length > 6 ? compactValueLabel : valueLabel}
             </span>
           </div>
         );

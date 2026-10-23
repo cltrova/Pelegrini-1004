@@ -161,8 +161,8 @@ export function RankingVendedoresChart({ data, periodo, onClick, variant = 'defa
             Sem dados no período selecionado
           </div>
         ) : (
-          <div className="w-full min-w-0 pb-2">
-            <div className="min-w-0">
+          <div className="w-full min-w-0 overflow-x-auto pb-2" tabIndex={0} aria-label="Ranking de vendedores; deslize para ver todos">
+            <div className="min-w-0" style={{ minWidth: Math.max(300, enriched.length * 84 + (isBlue ? 64 : 84)) }}>
               <div className={cn(isBlue ? 'h-[160px]' : 'h-[280px] sm:h-[320px]')}>
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart
