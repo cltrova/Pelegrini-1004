@@ -5,6 +5,7 @@ import { FilterDropdownChip, MultiSelectOptions } from '@/components/common/Filt
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
+import type { ViewMode } from '@/types/estoque';
 import {
   Sheet,
   SheetContent,
@@ -38,6 +39,7 @@ interface EstoqueSmartFiltersProps {
   leading?: ReactNode;
   actions?: ReactNode;
   compact?: boolean;
+  serverPagedMode?: ViewMode;
 }
 
 const quickFilterLabels: Record<StockQuickFilter, string> = {
@@ -90,6 +92,7 @@ export function EstoqueSmartFilters({
   leading,
   actions,
   compact = false,
+  serverPagedMode,
 }: EstoqueSmartFiltersProps) {
   const hasFilters = Boolean(search || quickFilter !== 'all' || brands.length || groups.length || lines.length);
   const activeCount = Number(quickFilter !== 'all') + brands.length + groups.length + lines.length;
@@ -180,10 +183,10 @@ export function EstoqueSmartFilters({
                   </FilterDropdownChip>
                 </div>
               </div>
-              <div className="space-y-2">
+              {(!serverPagedMode || serverPagedMode === 'detalhado') && <div className="space-y-2">
                 <p className="text-xs font-semibold uppercase text-muted-foreground">Disponibilidade</p>
                 <div aria-label="Filtros rapidos de disponibilidade" className="flex flex-wrap items-center gap-2" role="group">
-          <Button
+          {!serverPagedMode && <Button
             aria-pressed={quickFilter === 'available'}
             className="h-8 gap-1.5 px-2.5 text-xs"
             onClick={() => onQuickFilterChange(quickFilter === 'available' ? 'all' : 'available')}
@@ -193,7 +196,7 @@ export function EstoqueSmartFilters({
           >
             <CircleCheck aria-hidden="true" className="h-3.5 w-3.5" />
             Disponiveis
-          </Button>
+          </Button>}
           <Button
             aria-pressed={quickFilter === 'with-stock'}
             className="h-8 gap-1.5 px-2.5 text-xs"
@@ -206,7 +209,7 @@ export function EstoqueSmartFilters({
             Com estoque
           </Button>
                 </div>
-              </div>
+              </div>}
               {hasFilters && (
                 <Button aria-label="Limpar todos os filtros" className="w-full" onClick={onClearAll} size="sm" type="button" variant="outline">
                   <X aria-hidden="true" />

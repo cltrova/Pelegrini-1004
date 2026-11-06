@@ -109,6 +109,8 @@ export interface EstoqueProductsTableProps {
   onSelectProduct: (product: StockProductInsight) => void;
   onVisibleColumnsChange?: (columns: StockColumnKey[]) => void;
   visibleColumns?: StockColumnKey[];
+  serverPagination?: { page: number; pageCount: number; loading?: boolean; onPageChange: (page: number) => void };
+  serverPaged?: boolean;
 }
 
 export function storageKey(branchKey: string, viewMode: ViewMode): string {
@@ -174,14 +176,16 @@ export function StockColumnPicker({
   viewMode,
   visibleColumns,
   onVisibleColumnsChange,
+  serverPaged = false,
 }: {
   branchKey: string;
   viewMode: ViewMode;
   visibleColumns: StockColumnKey[];
   onVisibleColumnsChange: (columns: StockColumnKey[]) => void;
+  serverPaged?: boolean;
 }) {
   const [columnsMenuOpen, setColumnsMenuOpen] = useState(false);
-  const stockColumns = columnsByMode[viewMode];
+  const stockColumns = columnsByMode[viewMode].filter((column) => !serverPaged || column.key !== 'status');
 
   const toggleColumn = (column: StockColumnKey) => {
     if (requiredColumns.has(column)) return;
@@ -339,6 +343,8 @@ export function EstoqueProductsTable({
   onSelectProduct,
   onVisibleColumnsChange,
   visibleColumns: controlledVisibleColumns,
+  serverPagination,
+  serverPaged = false,
 }: EstoqueProductsTableProps) {
   const [internalVisibleColumns, setInternalVisibleColumns] = useState<StockColumnKey[]>(() => readVisibleColumns(branchKey, viewMode));
   const [page, setPage] = useState(0);
@@ -354,10 +360,10 @@ export function EstoqueProductsTable({
   }, [branchKey, products, sortMode, viewMode]);
 
   const stockColumns = columnsByMode[viewMode];
-  const selectedColumns = stockColumns.filter((column) => visibleColumns.includes(column.key));
-  const pageCount = Math.max(1, Math.ceil(products.length / PAGE_SIZE));
-  const safePage = Math.min(page, pageCount - 1);
-  const visibleProducts = products.slice(safePage * PAGE_SIZE, (safePage + 1) * PAGE_SIZE);
+  const selectedColumns = stockColumns.filter((column) => visibleColumns.includes(column.key) && (!serverPaged || column.key !== 'status'));
+  const pageCount = Math.max(1, serverPagination?.pageCount ?? Math.ceil(products.length / PAGE_SIZE));
+  const safePage = serverPagination ? Math.min(serverPagination.page - 1, pageCount - 1) : Math.min(page, pageCount - 1);
+  const visibleProducts = serverPagination ? products : products.slice(safePage * PAGE_SIZE, (safePage + 1) * PAGE_SIZE);
   const emptyMessage = sourceEmpty
     ? 'Nenhum produto disponivel na fonte de estoque.'
     : 'Nenhum produto corresponde aos filtros atuais.';
@@ -372,7 +378,7 @@ export function EstoqueProductsTable({
         <StockColumnPicker branchKey={branchKey} onVisibleColumnsChange={(next) => {
           setInternalVisibleColumns(next);
           onVisibleColumnsChange?.(next);
-        }} viewMode={viewMode} visibleColumns={visibleColumns} />
+        }} serverPaged={serverPaged} viewMode={viewMode} visibleColumns={visibleColumns} />
       </div>}
 
       <div
@@ -406,11 +412,16 @@ export function EstoqueProductsTable({
                     >
                       <button
                         aria-label={`Ordenar por ${column.label}`}
+                        disabled={Boolean(serverPagination) && !['product', 'quantity', 'value'].includes(column.key)}
                         className={cn(
                           'flex h-7 w-full items-center rounded px-1 hover:bg-background/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring',
                           column.key === 'product' ? 'justify-start text-left' : 'justify-center text-center',
                         )}
-                        onClick={() => onSortChange(nextSortMode(sortMode, sortKey))}
+                        onClick={() => {
+                          const nextMode = nextSortMode(sortMode, sortKey);
+                          onSortChange(nextMode);
+                          if (serverPagination) serverPagination.onPageChange(1);
+                        }}
                         type="button"
                       >
                         {column.label}
@@ -490,7 +501,7 @@ export function EstoqueProductsTable({
                 </dl>
               )}
               <div className="mt-2 flex min-w-0 items-center justify-end gap-2">
-                {viewMode === 'consolidado' ? <StockStatusValue status={product.status} /> : <span />}
+                {viewMode === 'consolidado' && !serverPaged ? <StockStatusValue status={product.status} /> : <span />}
               </div>
             </article>
             ))
@@ -505,8 +516,8 @@ export function EstoqueProductsTable({
         >
           <Button
             aria-label="Pagina anterior"
-            disabled={safePage === 0}
-            onClick={() => setPage((current) => Math.max(0, current - 1))}
+            disabled={safePage === 0 || serverPagination?.loading}
+            onClick={() => serverPagination ? serverPagination.onPageChange(safePage) : setPage((current) => Math.max(0, current - 1))}
             className="h-7 w-7"
             size="icon"
             type="button"
@@ -519,8 +530,8 @@ export function EstoqueProductsTable({
           </p>
           <Button
             aria-label="Proxima pagina"
-            disabled={safePage >= pageCount - 1}
-            onClick={() => setPage((current) => Math.min(pageCount - 1, current + 1))}
+            disabled={safePage >= pageCount - 1 || serverPagination?.loading}
+            onClick={() => serverPagination ? serverPagination.onPageChange(safePage + 2) : setPage((current) => Math.min(pageCount - 1, current + 1))}
             className="h-7 w-7"
             size="icon"
             type="button"

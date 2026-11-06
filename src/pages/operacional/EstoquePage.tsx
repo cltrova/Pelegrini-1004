@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { AlertTriangle, RefreshCw, Search, X } from 'lucide-react';
 
 import { EmptyState } from '@/components/common/EmptyState';
@@ -24,7 +24,7 @@ import { resolveCodEmpresaBiParam } from '@/utils/filialEndpoint';
 import { EstoqueAtualPage } from './EstoqueAtualPage';
 import { useEstoqueData } from '@/hooks/useEstoqueData';
 import type { EstoqueRecord, GiroFiltersState, GiroStatus, ViewMode } from '@/types/estoque';
-import type { StockQuickFilter } from '@/components/operacional/estoque/estoqueIntelligence';
+import type { StockPageQuery, StockQuickFilter } from '@/components/operacional/estoque/estoqueIntelligence';
 import { toast } from 'sonner';
 
 function calcDiasSemVenda(dataUltimaVenda: string | null): number {
@@ -67,6 +67,9 @@ const STATUS_OPTIONS = [
 const DEFAULT_GIRO_FILTERS: GiroFiltersState = {
   periodoMeses: 3, statusFilter: [], empresas: [], marcas: [], grupos: [], searchTerm: '',
 };
+const DEFAULT_STOCK_PAGE_QUERY: StockPageQuery = {
+  page: 1, search: '', quickFilter: 'all', brands: [], groups: [], lines: [], sortMode: 'product-asc',
+};
 
 const LazyEstoqueOverview = lazy(() => import('@/components/operacional/estoque/EstoqueOverview').then(({ EstoqueOverview }) => ({ default: EstoqueOverview })));
 const LazyGiroEstoqueTab = lazy(() => import('@/components/operacional/GiroEstoqueTab').then(({ GiroEstoqueTab }) => ({ default: GiroEstoqueTab })));
@@ -91,11 +94,25 @@ export function EstoqueProdutosPage({ initialTab = 'overview', onOpenCurrent }: 
   const [overviewFilters, setOverviewFilters] = useState({brand: '', group: '', branch: ''});
   const [giroFilters, setGiroFilters] = useState<GiroFiltersState>(DEFAULT_GIRO_FILTERS);
   const [activeTab, setActiveTab] = useState<EstoqueTab>(initialTab);
-  const { activeCompanyCode, consolidadoData, detalhadoData, giroData, overviewData, overviewError, overviewStatus, overviewLastUpdated, isLoading, isInitialLoading, empresa, sourceErrors, sourceStatus, sourceLastUpdated, lastSuccessfulUpdate, partialSources, recoveredSources, recoveryStatus, isFetching, refetch } = useEstoqueData(activeTab === 'giro' ? giroFilters.periodoMeses : overviewMonths, activeTab, overviewFilters);
-  const { codEmpresaContexto, filialAtiva } = useFilialSelecionada();
-
   const [requestedQuickFilter, setRequestedQuickFilter] = useState<StockQuickFilter | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>('consolidado');
+  const [stockPageQuery, setStockPageQuery] = useState<StockPageQuery>(DEFAULT_STOCK_PAGE_QUERY);
+  const updateStockPageQuery = useCallback((next: StockPageQuery) => {
+    setStockPageQuery((current) => JSON.stringify(current) === JSON.stringify(next) ? current : next);
+  }, []);
+  const {
+    activeCompanyCode, consolidadoData, detalhadoData, giroData, overviewData, overviewError,
+    overviewStatus, overviewLastUpdated, isLoading, isInitialLoading, empresa, sourceErrors,
+    sourceStatus, sourceLastUpdated, lastSuccessfulUpdate, partialSources, recoveredSources,
+    recoveryStatus, isFetching, refetch, isServerPagedStock, stockPage, stockPageLoading,
+  } = useEstoqueData(
+    activeTab === 'giro' ? giroFilters.periodoMeses : overviewMonths,
+    activeTab,
+    overviewFilters,
+    viewMode,
+    stockPageQuery,
+  );
+  const { codEmpresaContexto, filialAtiva } = useFilialSelecionada();
 
   const [pendingGiro, setPendingGiro] = useState<GiroFiltersState>(DEFAULT_GIRO_FILTERS);
   const [requestedProductCode, setRequestedProductCode] = useState<string | null>(null);
@@ -213,6 +230,7 @@ export function EstoqueProdutosPage({ initialTab = 'overview', onOpenCurrent }: 
     setGiroFilters(DEFAULT_GIRO_FILTERS);
     setPendingGiro(DEFAULT_GIRO_FILTERS);
     setRequestedProductCode(null);
+    setStockPageQuery(DEFAULT_STOCK_PAGE_QUERY);
   }, [branchKey]);
 
   const sourceNotice = sourceHasActiveIssue && !sourceNoticeDismissed ? (
@@ -362,6 +380,11 @@ export function EstoqueProdutosPage({ initialTab = 'overview', onOpenCurrent }: 
             <EstoqueCommandCenter
               stockData={estoqueData}
               movementData={giroData}
+              serverPaged={isServerPagedStock}
+              serverPage={isServerPagedStock ? stockPage : undefined}
+              serverPageLoading={stockPageLoading}
+              stockPageQuery={stockPageQuery}
+              onStockPageQueryChange={updateStockPageQuery}
               movementAvailable={movementAvailable}
               branchKey={branchKey}
               viewMode={viewMode}

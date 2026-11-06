@@ -52,6 +52,16 @@ export interface StockInsightFilters {
   lines?: string[];
 }
 
+export interface StockPageQuery {
+  page: number;
+  search: string;
+  quickFilter: StockQuickFilter;
+  brands: string[];
+  groups: string[];
+  lines: string[];
+  sortMode: StockSortMode;
+}
+
 const DAY_MS = 86_400_000;
 export const STOCK_EXCESS_COVERAGE_DAYS = 90;
 
