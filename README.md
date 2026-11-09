@@ -77,3 +77,5 @@ Use `npm run build` normalmente. Nao recompile entre a publicacao em um dominio
 e no outro. Sem uma versao publicada acessivel o build para, evitando repetir
 numeros. `PELEGRINI_VERSION_BOOTSTRAP=1` serve exclusivamente para a primeira
 publicacao, quando nenhum dos dominios ainda possui o manifesto.
+## Login
+O fluxo de autenticacao valida a configuracao antes de chamar o Supabase, encerra o estado de carregamento quando a sessao nao pode ser recuperada e apresenta mensagens seguras em falhas de rede ou autenticacao.
