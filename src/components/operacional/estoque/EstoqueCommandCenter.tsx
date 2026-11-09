@@ -12,7 +12,8 @@ import {
 } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
 import type { EstoqueRecord, GiroRecord, ViewMode } from '@/types/estoque';
-import type { StockQuickFilter } from './estoqueIntelligence';
+import type { PelegriniStockPage } from '@/hooks/useEstoqueData';
+import type { StockPageQuery } from './estoqueIntelligence';
 
 import { EstoqueAttentionPanel } from './EstoqueAttentionPanel';
 import { EstoqueMovementHighlights } from './EstoqueMovementHighlights';
@@ -25,7 +26,6 @@ import { EstoqueDataViewport, EstoqueToolbar } from './EstoqueWorkspace';
 import {
   buildStockInsights,
   consolidateStockRecords,
-  detectStockGranularity,
   filterStockInsights,
   sortStockInsights,
   type StockProductInsight,
@@ -46,6 +46,11 @@ export interface EstoqueCommandCenterProps {
   sourceNotice?: ReactNode;
   requestedQuickFilter?: StockQuickFilter | null;
   onRequestedQuickFilterHandled?: () => void;
+  serverPage?: PelegriniStockPage;
+  serverPageLoading?: boolean;
+  serverPaged?: boolean;
+  stockPageQuery?: StockPageQuery;
+  onStockPageQueryChange?: (query: StockPageQuery) => void;
 }
 
 function uniqueOptions(values: Array<string | null>): string[] {
@@ -66,6 +71,11 @@ export function EstoqueCommandCenter({
   sourceNotice,
   requestedQuickFilter,
   onRequestedQuickFilterHandled,
+  serverPage,
+  serverPageLoading = false,
+  serverPaged = false,
+  stockPageQuery,
+  onStockPageQueryChange,
 }: EstoqueCommandCenterProps) {
   const [search, setSearch] = useState('');
   const [quickFilter, setQuickFilter] = useState<StockQuickFilter>('all');
@@ -89,6 +99,7 @@ export function EstoqueCommandCenter({
     setBrands([]);
     setGroups([]);
     setLines([]);
+    setSortMode('product-asc');
     setSelectedProduct(null);
     setAttentionOpen(false);
   }, [branchKey]);
@@ -103,12 +114,37 @@ export function EstoqueCommandCenter({
     }
   }, [movementAvailable, quickFilter]);
 
+  useEffect(() => {
+    if (serverPaged && (viewMode !== 'detalhado' || quickFilter !== 'with-stock') && quickFilter !== 'all') {
+      setQuickFilter('all');
+    }
+  }, [quickFilter, serverPaged, viewMode]);
+
+  const queryFilterKey = JSON.stringify({
+    search,
+    quickFilter: viewMode === 'detalhado' && quickFilter === 'with-stock' ? 'with-stock' : 'all',
+    brands,
+    groups,
+    lines,
+    sortMode,
+  });
+  const savedFilterKey = stockPageQuery ? JSON.stringify({
+    search: stockPageQuery.search,
+    quickFilter: stockPageQuery.quickFilter,
+    brands: stockPageQuery.brands,
+    groups: stockPageQuery.groups,
+    lines: stockPageQuery.lines,
+    sortMode: stockPageQuery.sortMode,
+  }) : '';
+  useEffect(() => {
+    if (!serverPaged || !stockPageQuery || !onStockPageQueryChange || queryFilterKey === savedFilterKey) return;
+    onStockPageQueryChange({ page: 1, search, quickFilter: viewMode === 'detalhado' && quickFilter === 'with-stock' ? 'with-stock' : 'all', brands, groups, lines, sortMode });
+  }, [brands, groups, lines, onStockPageQueryChange, quickFilter, queryFilterKey, savedFilterKey, search, serverPaged, sortMode, stockPageQuery, viewMode]);
+
   const displayedStock = useMemo(
     () => viewMode === 'consolidado' ? consolidateStockRecords(stockData) : stockData,
     [stockData, viewMode],
   );
-  const detailedGranularity = useMemo(() => detectStockGranularity(stockData), [stockData]);
-
   const insights = useMemo(
     () => buildStockInsights(
       displayedStock,
@@ -119,14 +155,19 @@ export function EstoqueCommandCenter({
     [displayedStock, movementData, viewMode],
   );
 
-  const options = useMemo(() => ({
+  const localOptions = useMemo(() => ({
     brands: uniqueOptions(insights.map((product) => product.marca)),
     groups: uniqueOptions(insights.map((product) => product.grupo)),
     lines: uniqueOptions(insights.map((product) => product.linha)),
   }), [insights]);
+  const options = serverPage?.opcoes ? {
+    brands: serverPage.opcoes.marcas,
+    groups: serverPage.opcoes.grupos,
+    lines: serverPage.opcoes.linhas,
+  } : localOptions;
 
   const filtered = useMemo(
-    () => sortStockInsights(
+    () => serverPaged ? sortStockInsights(insights, sortMode) : sortStockInsights(
       filterStockInsights(insights, {
         search,
         quickFilter,
@@ -136,7 +177,7 @@ export function EstoqueCommandCenter({
       }),
       sortMode,
     ),
-    [brands, groups, insights, lines, quickFilter, search, sortMode],
+    [brands, groups, insights, lines, quickFilter, search, serverPaged, sortMode],
   );
 
   useEffect(() => {
@@ -183,7 +224,7 @@ export function EstoqueCommandCenter({
           compact
           actions={(
             <>
-              <Sheet onOpenChange={setAttentionOpen} open={attentionOpen}>
+              {!serverPaged && <Sheet onOpenChange={setAttentionOpen} open={attentionOpen}>
                 <SheetTrigger asChild>
                   <Button aria-label="Abrir painel de atencao" className="h-8 gap-1.5 px-2.5 text-xs" type="button" variant="outline">
                     <BellRing aria-hidden="true" className="h-3.5 w-3.5" />
@@ -201,10 +242,11 @@ export function EstoqueCommandCenter({
                     <EstoqueMovementHighlights products={filtered} onSelectProduct={selectProduct} />
                   </div>
                 </SheetContent>
-              </Sheet>
+              </Sheet>}
               <StockColumnPicker
                 branchKey={branchKey}
                 onVisibleColumnsChange={handleVisibleColumnsChange}
+                serverPaged={serverPaged}
                 viewMode={viewMode}
                 visibleColumns={visibleColumns}
               />
@@ -252,6 +294,7 @@ export function EstoqueCommandCenter({
           options={options}
           quickFilter={quickFilter}
           search={search}
+          serverPagedMode={serverPaged ? viewMode : undefined}
         />
       </EstoqueToolbar>
 
@@ -260,18 +303,34 @@ export function EstoqueCommandCenter({
         movementAvailable={movementAvailable}
         onFilterChange={setQuickFilter}
         products={insights}
+        serverSummary={serverPage ? {
+          label: viewMode === 'consolidado' ? 'Produtos' : 'Registros detalhados',
+          count: serverPage.total_itens,
+          quantity: Number(serverPage.totais.quantidade_estoque ?? 0),
+          value: Number(serverPage.totais.valor_estoque ?? 0),
+        } : undefined}
       />
+      {serverPaged && <p className="shrink-0 px-3 py-1 text-[11px] text-muted-foreground">
+        Para carregar a lista rapidamente, os indicadores de giro e o painel Atenção ficam na aba Giro de Estoque.
+      </p>}
 
       <EstoqueDataViewport>
         {sourceNotice ? <div className="shrink-0">{sourceNotice}</div> : null}
         <div aria-label="Contagem e ordenacao dos produtos" className="sr-only shrink-0" role="group" />
-        {filtered.length > 0 && <div className="flex shrink-0 justify-end border-b border-border px-3 py-2"><Button aria-label="Baixar lista de produtos" disabled={!filtered.length} className="h-8 gap-1.5 px-2.5 text-xs" onClick={() => onExport(filtered)} type="button" variant="outline"><Download aria-hidden="true" className="h-3.5 w-3.5" />Baixar lista</Button></div>}
+        {filtered.length > 0 && <div className="flex shrink-0 justify-end border-b border-border px-3 py-2"><Button aria-label="Baixar lista de produtos" disabled={!filtered.length} className="h-8 gap-1.5 px-2.5 text-xs" onClick={() => onExport(filtered)} type="button" variant="outline"><Download aria-hidden="true" className="h-3.5 w-3.5" />{serverPaged ? 'Baixar página' : 'Baixar lista'}</Button></div>}
         <EstoqueProductsTable
           branchKey={branchKey}
           onSelectProduct={selectProduct}
           onSortChange={setSortMode}
           onVisibleColumnsChange={handleVisibleColumnsChange}
           products={filtered}
+          serverPaged={serverPaged}
+          serverPagination={serverPage && stockPageQuery && onStockPageQueryChange ? {
+            page: serverPage.pagina,
+            pageCount: serverPage.total_paginas,
+            loading: serverPageLoading,
+            onPageChange: (page) => onStockPageQueryChange({ ...stockPageQuery, page }),
+          } : undefined}
           sortMode={sortMode}
           sourceEmpty={stockData.length === 0}
           visibleColumns={visibleColumns}

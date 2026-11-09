@@ -1,16 +1,49 @@
 import { useQuery } from '@tanstack/react-query';
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useEmpresaAtiva } from '@/hooks/useEmpresaAtiva';
 import type { Empresa } from '@/hooks/useEmpresaConfig';
 import { supabase } from '@/integrations/supabase/client';
 import { buildApiProxyUrl } from '@/utils/apiEndpointResolver';
-import { EstoqueRecord, GiroRecord, type StockSourceState } from '@/types/estoque';
+import { EstoqueRecord, GiroRecord, type StockSourceState, type ViewMode } from '@/types/estoque';
 import { filtrarEstoqueCasaChevrolet10041, isAgraleEstoque10041, isForcaPEstoque } from '@/utils/estoque10041';
 import { useFilialSelecionada } from '@/contexts/FilialSelecionadaContext';
 import { resolveCodEmpresaBiParam } from '@/utils/filialEndpoint';
 import type { StockOverviewResponse } from '@/components/operacional/estoque/estoqueOverviewData';
+import type { StockPageQuery } from '@/components/operacional/estoque/estoqueIntelligence';
 
 type EstoqueApiRow = Record<string, unknown>;
+
+export interface PelegriniStockPage {
+  release: string;
+  cod_empresa_bi: number;
+  cod_empresas: number[];
+  atualizado_em: string;
+  total_registros: number;
+  total_itens: number;
+  pagina: number;
+  tamanho_pagina: number;
+  total_paginas: number;
+  totais: {
+    quantidade_estoque?: number;
+    valor_estoque?: number;
+    produtos_com_estoque?: number;
+    produtos_sem_estoque?: number;
+    total_produtos?: number;
+  };
+  opcoes: { marcas: string[]; grupos: string[]; linhas: string[] };
+  itens: EstoqueApiRow[];
+}
+
+const PELEGRINI_FAST_STOCK_RELEASE = 'pelegrini-estoque-empresas-20261106-r11';
+const DEFAULT_STOCK_PAGE_QUERY: StockPageQuery = {
+  page: 1,
+  search: '',
+  quickFilter: 'all',
+  brands: [],
+  groups: [],
+  lines: [],
+  sortMode: 'product-asc',
+};
 
 export function getEstoqueAnalysisPeriod(months: number, now = new Date()) {
   const start = new Date(now.getFullYear(), now.getMonth() - Math.max(1,months) + 1, 1);
@@ -128,6 +161,72 @@ async function fetchOverviewFromEndpoint(empresa: Empresa, path: string): Promis
     throw new Error('Resposta inesperada da visão geral do estoque.');
   }
   return payload;
+}
+
+function stockPageOrder(sortMode: StockPageQuery['sortMode']): string {
+  if (sortMode === 'product-desc') return 'produto_desc';
+  if (sortMode === 'value-desc') return 'valor_desc';
+  if (sortMode === 'value-asc') return 'valor_asc';
+  if (sortMode === 'quantity-desc' || sortMode === 'stock-desc') return 'quantidade_desc';
+  if (sortMode === 'quantity-asc' || sortMode === 'stock-asc') return 'quantidade_asc';
+  return 'produto_asc';
+}
+
+async function fetchPelegriniStockPage(
+  empresa: Empresa,
+  codEmpresaBi: string,
+  viewMode: ViewMode,
+  filters: StockPageQuery,
+): Promise<PelegriniStockPage> {
+  const pageSize = 50;
+  const params = new URLSearchParams({
+    cod_empresa_bi: codEmpresaBi,
+    formato: 'pagina',
+    pagina: String(filters.page),
+    tamanho_pagina: String(pageSize),
+    ordem: stockPageOrder(filters.sortMode),
+  });
+  if (filters.search.trim()) params.set('busca', filters.search.trim());
+  filters.brands.forEach((value) => params.append('marca', value));
+  filters.groups.forEach((value) => params.append('grupo', value));
+  filters.lines.forEach((value) => params.append('linha', value));
+  if (viewMode === 'detalhado' && filters.quickFilter === 'with-stock') params.set('estoque', 'com');
+
+  const endpoint = viewMode === 'detalhado' ? 'detalhado' : 'consolidado';
+  const path = `/operacional/estoque/${endpoint}?${params.toString()}`;
+  const { data: sessionData } = await supabase.auth.getSession();
+  const controller = new AbortController();
+  const timeout = window.setTimeout(() => controller.abort(), 60000);
+  try {
+  const response = await fetch(buildApiProxyUrl(empresa, path), {
+    signal: controller.signal,
+    headers: {
+      Authorization: `Bearer ${sessionData?.session?.access_token}`,
+      apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+    },
+  });
+  if (!response.ok || response.headers.get('x-proxy-upstream-error') === 'true') {
+    throw new Error(`Falha na página do estoque (HTTP ${response.status}).`);
+  }
+  const payload = await response.json() as PelegriniStockPage;
+  const allowed = codEmpresaBi === '1004' ? [1] : [2, 3];
+  if (payload?.release !== PELEGRINI_FAST_STOCK_RELEASE || payload.cod_empresa_bi !== Number(codEmpresaBi)
+      || !Array.isArray(payload.itens) || !Array.isArray(payload.cod_empresas)
+      || payload.cod_empresas.some((code) => !allowed.includes(Number(code)))) {
+    throw new Error('Resposta paginada incompatível com a empresa selecionada.');
+  }
+  if (payload.itens.some((row) => Number(row.cod_empresa_bi) !== Number(codEmpresaBi)
+      || !allowed.includes(Number(row.cod_empresa)) || isForcaPEstoque(row))) {
+    throw new Error('A página do estoque contém registros fora da casa selecionada.');
+  }
+  payload.opcoes ??= { marcas: [], grupos: [], linhas: [] };
+  return payload;
+  } catch (error) {
+    if (controller.signal.aborted) throw new Error('A consulta paginada do estoque excedeu 60 segundos.');
+    throw error;
+  } finally {
+    window.clearTimeout(timeout);
+  }
 }
 
 async function fetchEstoqueSource(
@@ -302,12 +401,49 @@ export function buildOperationalEstoqueFallbackFromGiro(
   });
 }
 
-export function useEstoqueData(periodMonths = 3, activeTab: 'overview' | 'central' | 'giro' | 'assistente' = 'central', overviewFilters = { brand: '', group: '', branch: '' }) {
+export function useEstoqueData(
+  periodMonths = 3,
+  activeTab: 'overview' | 'central' | 'giro' | 'assistente' = 'central',
+  overviewFilters = { brand: '', group: '', branch: '' },
+  viewMode: ViewMode = 'consolidado',
+  stockPageQuery: StockPageQuery = DEFAULT_STOCK_PAGE_QUERY,
+) {
   const { empresa, codEmpresaAtiva, isLoading: isLoadingEmpresa } = useEmpresaAtiva();
   const { filialAtiva } = useFilialSelecionada();
   const estoqueCompanyCode = resolveCodEmpresaBiParam(empresa, filialAtiva) || codEmpresaAtiva;
 
   const isCT = String(estoqueCompanyCode) === '1004';
+  const isPelegriniVps = empresa?.vps_cliente_identificador === 'pelegrini';
+  const isPelegriniCentral = isPelegriniVps && activeTab === 'central';
+  const stockPageQueryKey = [stockPageQuery.page, stockPageQuery.search, stockPageQuery.quickFilter,
+    [...stockPageQuery.brands].sort(), [...stockPageQuery.groups].sort(), [...stockPageQuery.lines].sort(), stockPageQuery.sortMode];
+  const stockVersionQuery = useQuery({
+    queryKey: ['estoque-api-version', estoqueCompanyCode],
+    queryFn: async () => {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const response = await fetch(buildApiProxyUrl(empresa!, '/operacional/estoque/fontes/versao'), {
+        headers: {
+          Authorization: `Bearer ${sessionData?.session?.access_token}`,
+          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+        },
+      });
+      if (!response.ok || response.headers.get('x-proxy-upstream-error') === 'true') {
+        throw new Error(`Falha ao identificar a versão da API de estoque (HTTP ${response.status}).`);
+      }
+      return response.json() as Promise<{ release?: string }>;
+    },
+    enabled: isPelegriniCentral,
+    staleTime: 60 * 1000,
+    retry: false,
+  });
+  const isServerPagedStock = isPelegriniCentral && stockVersionQuery.data?.release === PELEGRINI_FAST_STOCK_RELEASE;
+  const waitingForStockVersion = isPelegriniCentral && stockVersionQuery.isLoading;
+  const [debouncedStockSearch, setDebouncedStockSearch] = useState(stockPageQuery.search);
+  useEffect(() => {
+    const timer = window.setTimeout(() => setDebouncedStockSearch(stockPageQuery.search), 300);
+    return () => window.clearTimeout(timer);
+  }, [stockPageQuery.search]);
+  const stockSearchSettled = debouncedStockSearch === stockPageQuery.search;
   const period = getEstoqueAnalysisPeriod(periodMonths);
   const currentCT = () => fetchFromEndpoint(empresa!, '/operacional/estoque/analise/produtos?cod_empresa_bi=1004');
   const overviewQuery = useQuery({
@@ -327,17 +463,34 @@ export function useEstoqueData(periodMonths = 3, activeTab: 'overview' | 'centra
     retry: false,
   });
   const consolidadoQuery = useQuery({
-    queryKey: [isCT ? 'estoque-produtos-ct-v2' : 'estoque-consolidado', estoqueCompanyCode],
-    queryFn: async () => isCT ? currentCT() : fetchEstoqueSource(empresa!, 'consolidado', estoqueCompanyCode),
-    enabled: !!empresa && !!empresa.modulo_operacional && activeTab !== 'overview',
+    queryKey: isServerPagedStock
+      ? ['estoque-pagina-r11', estoqueCompanyCode, viewMode, ...stockPageQueryKey]
+      : [isCT ? 'estoque-produtos-ct-v2' : 'estoque-consolidado', estoqueCompanyCode],
+    queryFn: async () => isServerPagedStock
+      ? fetchPelegriniStockPage(empresa!, String(estoqueCompanyCode), viewMode, {
+        ...stockPageQuery,
+        search: debouncedStockSearch,
+      })
+      : isCT ? currentCT() : fetchEstoqueSource(empresa!, 'consolidado', estoqueCompanyCode),
+    enabled: !!empresa && !!empresa.modulo_operacional && activeTab !== 'overview'
+      && !waitingForStockVersion && (!isServerPagedStock || viewMode === 'consolidado')
+      && stockSearchSettled,
     staleTime: 5 * 60 * 1000,
     retry: false,
   });
 
   const detalhadoQuery = useQuery({
-    queryKey: [isCT ? 'estoque-produtos-ct-v2' : 'estoque-detalhado', estoqueCompanyCode],
-    queryFn: async () => isCT ? currentCT() : fetchEstoqueSource(empresa!, 'detalhado', estoqueCompanyCode),
-    enabled: !!empresa && !!empresa.modulo_operacional && activeTab === 'central',
+    queryKey: isServerPagedStock
+      ? ['estoque-pagina-r11', estoqueCompanyCode, viewMode, ...stockPageQueryKey]
+      : [isCT ? 'estoque-produtos-ct-v2' : 'estoque-detalhado', estoqueCompanyCode],
+    queryFn: async () => isServerPagedStock
+      ? fetchPelegriniStockPage(empresa!, String(estoqueCompanyCode), viewMode, {
+        ...stockPageQuery,
+        search: debouncedStockSearch,
+      })
+      : isCT ? currentCT() : fetchEstoqueSource(empresa!, 'detalhado', estoqueCompanyCode),
+    enabled: !!empresa && !!empresa.modulo_operacional && activeTab === 'central' && !waitingForStockVersion
+      && (!isServerPagedStock || viewMode === 'detalhado') && stockSearchSettled,
     staleTime: 5 * 60 * 1000,
     retry: false,
   });
@@ -348,7 +501,8 @@ export function useEstoqueData(periodMonths = 3, activeTab: 'overview' | 'centra
       && previousQuery?.queryKey[0] === 'estoque-giro-v2'
       && previousQuery.queryKey[1] === estoqueCompanyCode ? previousData : undefined,
     queryFn: async () => isCT ? fetchFromEndpoint(empresa!, `/operacional/estoque/analise/movimentos?cod_empresa_bi=1004&data_ini=${period.data_ini}&data_fim=${period.data_fim}`) : fetchEstoqueSource(empresa!, 'giro', estoqueCompanyCode),
-    enabled: !!empresa && !!empresa.modulo_operacional && activeTab !== 'overview',
+    enabled: !!empresa && !!empresa.modulo_operacional && activeTab !== 'overview'
+      && !(isServerPagedStock && activeTab === 'central'),
     staleTime: 5 * 60 * 1000,
     retry: false,
   });
@@ -360,19 +514,29 @@ export function useEstoqueData(periodMonths = 3, activeTab: 'overview' | 'centra
       && !!empresa.modulo_operacional
       && !isCT
       && activeTab !== 'overview'
+      && !isServerPagedStock
       && (consolidadoQuery.isError || detalhadoQuery.isError),
     staleTime: 30 * 60 * 1000,
     retry: false,
   });
 
+  const consolidadoRows = (isServerPagedStock
+    ? (consolidadoQuery.data as PelegriniStockPage | undefined)?.itens
+    : consolidadoQuery.data) || [];
+  const detalhadoRows = (isServerPagedStock
+    ? (detalhadoQuery.data as PelegriniStockPage | undefined)?.itens
+    : detalhadoQuery.data) || [];
+  const activeStockPage = isServerPagedStock
+    ? ((viewMode === 'detalhado' ? detalhadoQuery.data : consolidadoQuery.data) as PelegriniStockPage | undefined)
+    : undefined;
   const estoqueConsolidadoPrincipal = useMemo(() => filtrarEstoqueCasaChevrolet10041(
-    (consolidadoQuery.data || []) as unknown as Array<Record<string, unknown>>,
+    consolidadoRows as unknown as Array<Record<string, unknown>>,
     estoqueCompanyCode,
-  ) as unknown as EstoqueRecord[], [consolidadoQuery.data, estoqueCompanyCode]);
+  ) as unknown as EstoqueRecord[], [consolidadoRows, estoqueCompanyCode]);
   const estoqueDetalhadoPrincipal = useMemo(() => filtrarEstoqueCasaChevrolet10041(
-    (detalhadoQuery.data || []) as unknown as Array<Record<string, unknown>>,
+    detalhadoRows as unknown as Array<Record<string, unknown>>,
     estoqueCompanyCode,
-  ) as unknown as EstoqueRecord[], [detalhadoQuery.data, estoqueCompanyCode]);
+  ) as unknown as EstoqueRecord[], [detalhadoRows, estoqueCompanyCode]);
   const giroData = useMemo(() => (filtrarEstoqueCasaChevrolet10041(
     (giroQuery.data || []) as unknown as Array<Record<string, unknown>>,
     estoqueCompanyCode,
@@ -437,10 +601,10 @@ export function useEstoqueData(periodMonths = 3, activeTab: 'overview' | 'centra
     return latestTimestamp > 0 ? new Date(latestTimestamp) : null;
   }, [consolidadoQuery.dataUpdatedAt, detalhadoQuery.dataUpdatedAt, giroQuery.dataUpdatedAt, recoveryQuery.dataUpdatedAt]);
 
-  const isLoading = isLoadingEmpresa || (activeTab === 'overview'
+  const isLoading = isLoadingEmpresa || waitingForStockVersion || (activeTab === 'overview'
     ? overviewQuery.isLoading && overviewQuery.data === undefined
     : consolidadoQuery.isLoading && consolidadoQuery.data === undefined);
-  const isInitialLoading = isLoadingEmpresa
+  const isInitialLoading = isLoadingEmpresa || waitingForStockVersion
     || (activeTab === 'overview' ? overviewQuery.isLoading : consolidadoQuery.isLoading || detalhadoQuery.isLoading || giroQuery.isLoading || recoveryQuery.isLoading);
   const isError = activeTab === 'overview' ? overviewQuery.isError : consolidadoQuery.isError || detalhadoQuery.isError || giroQuery.isError;
 
@@ -452,6 +616,9 @@ export function useEstoqueData(periodMonths = 3, activeTab: 'overview' | 'centra
     overviewLastUpdated: overviewQuery.dataUpdatedAt > 0 ? new Date(overviewQuery.dataUpdatedAt) : null,
     consolidadoData,
     detalhadoData,
+    isServerPagedStock,
+    stockPage: activeStockPage,
+    stockPageLoading: isServerPagedStock && (viewMode === 'detalhado' ? detalhadoQuery.isFetching : consolidadoQuery.isFetching),
     giroData,
     isLoading,
     isInitialLoading,
@@ -467,13 +634,17 @@ export function useEstoqueData(periodMonths = 3, activeTab: 'overview' | 'centra
     partialSources,
     recoveredSources,
     recoveryStatus: resolveStockSourceState(recoveryQuery),
-    isFetching: activeTab === 'overview' ? overviewQuery.isFetching : consolidadoQuery.isFetching || detalhadoQuery.isFetching || giroQuery.isFetching || recoveryQuery.isFetching,
-    refetch: () => activeTab === 'overview' ? overviewQuery.refetch() : Promise.all([
-      consolidadoQuery.refetch(),
-      detalhadoQuery.refetch(),
-      giroQuery.refetch(),
-      ...(isCT ? [] : [recoveryQuery.refetch()]),
-    ]),
+    isFetching: activeTab === 'overview' ? overviewQuery.isFetching : isServerPagedStock
+      ? (viewMode === 'detalhado' ? detalhadoQuery.isFetching : consolidadoQuery.isFetching)
+      : consolidadoQuery.isFetching || detalhadoQuery.isFetching || giroQuery.isFetching || recoveryQuery.isFetching,
+    refetch: () => activeTab === 'overview' ? overviewQuery.refetch() : isServerPagedStock
+      ? (viewMode === 'detalhado' ? detalhadoQuery.refetch() : consolidadoQuery.refetch())
+      : Promise.all([
+        consolidadoQuery.refetch(),
+        detalhadoQuery.refetch(),
+        giroQuery.refetch(),
+        ...(isCT ? [] : [recoveryQuery.refetch()]),
+      ]),
     empresa,
     isMasterDemo: false,
   };

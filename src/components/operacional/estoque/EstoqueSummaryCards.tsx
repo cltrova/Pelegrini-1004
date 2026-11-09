@@ -1,4 +1,4 @@
-import { CircleDollarSign, CircleOff, Gauge, Package, PackageMinus, TriangleAlert } from 'lucide-react';
+import { Boxes, CircleDollarSign, CircleOff, Gauge, Package, PackageMinus, TriangleAlert } from 'lucide-react';
 
 import { EstoqueMetricStrip, type EstoqueMetric } from './EstoqueMetricStrip';
 import { isStockExcess, type StockProductInsight, type StockQuickFilter } from './estoqueIntelligence';
@@ -8,6 +8,7 @@ interface EstoqueSummaryCardsProps {
   activeFilter: StockQuickFilter;
   movementAvailable?: boolean;
   onFilterChange: (filter: StockQuickFilter) => void;
+  serverSummary?: { label: string; count: number; quantity: number; value: number };
 }
 
 const currencyFormatter = new Intl.NumberFormat('pt-BR', {
@@ -21,7 +22,32 @@ export function EstoqueSummaryCards({
   activeFilter,
   movementAvailable = true,
   onFilterChange,
+  serverSummary,
 }: EstoqueSummaryCardsProps) {
+  if (serverSummary) {
+    const metrics: EstoqueMetric[] = [
+      {
+        key: 'all', label: serverSummary.label, value: serverSummary.count.toLocaleString('pt-BR'),
+        icon: Package, tone: 'information', interactive: false,
+        description: 'Total de todos os registros que atendem aos filtros, incluindo todas as paginas.',
+      },
+      {
+        key: 'quantity', label: 'Quantidade total', value: new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 2 }).format(serverSummary.quantity),
+        icon: Boxes, tone: 'neutral', interactive: false,
+        description: 'Soma da quantidade em estoque de todos os registros que atendem aos filtros.',
+      },
+      {
+        key: 'value', label: 'Valor total', value: currencyFormatter.format(serverSummary.value),
+        icon: CircleDollarSign, tone: 'neutral', interactive: false,
+        description: 'Soma do valor em estoque de todos os registros que atendem aos filtros.',
+      },
+    ];
+    return (
+      <section aria-label="Resumo do estoque" className="operational-kpi-grid min-w-0 shrink-0">
+        <EstoqueMetricStrip metrics={metrics} />
+      </section>
+    );
+  }
   const excessCapital = products
     .filter(isStockExcess)
     .reduce((total, item) => total + item.valor_estoque, 0);

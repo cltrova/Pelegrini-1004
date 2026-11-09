@@ -469,3 +469,26 @@ describe('EstoqueCommandCenter', () => {
     expect(screen.getAllByText('FILIAL 2')).not.toHaveLength(0);
   });
 });
+
+it('usa totais globais e troca pagina no servidor sem limitar os indicadores aos itens visiveis', () => {
+  const onQueryChange = vi.fn();
+  const query = { page: 1, search: '', quickFilter: 'all' as const, brands: [], groups: [], lines: [], sortMode: 'product-asc' as const };
+  render(<EstoqueCommandCenter {...fixtureProps}
+    movementData={[]}
+    serverPaged
+    stockPageQuery={query}
+    onStockPageQueryChange={onQueryChange}
+    serverPage={{
+      release: 'pelegrini-estoque-empresas-20261106-r11', cod_empresa_bi: 10041,
+      cod_empresas: [2, 3], atualizado_em: '2026-11-06T18:00:00Z',
+      total_registros: 113058, total_itens: 56529, pagina: 1, tamanho_pagina: 50,
+      total_paginas: 1131, totais: { quantidade_estoque: 12345, valor_estoque: 2000000 },
+      opcoes: { marcas: ['ZF'], grupos: ['EMBREAGEM'], linhas: ['PESADA'] }, itens: [],
+    }}
+  />);
+  expect(screen.getByText('56.529')).toBeInTheDocument();
+  expect(screen.getByText('Pagina 1 de 1131')).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Baixar lista de produtos' })).toHaveTextContent('Baixar página');
+  fireEvent.click(screen.getByRole('button', { name: 'Proxima pagina' }));
+  expect(onQueryChange).toHaveBeenLastCalledWith({ ...query, page: 2 });
+});
