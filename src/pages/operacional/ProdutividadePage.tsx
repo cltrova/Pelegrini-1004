@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Navigate } from 'react-router-dom';
 import { useEmpresaAtiva } from '@/hooks/useEmpresaAtiva';
 import { useFilialSelecionada } from '@/contexts/FilialSelecionadaContext';
 import { resolveCodEmpresaBiParam } from '@/utils/filialEndpoint';
@@ -40,7 +39,7 @@ export default function ProdutividadePage() {
   const valido = Number.isFinite(intervalo) && intervalo >= 0 && intervalo < 31;
   const query = useQuery({ queryKey: ['produtividade-chevrolet', empresa?.id, companhia, inicio, fim, filial], queryFn: ({ signal }) => buscarProdutividade(empresa!, inicio, fim, filial, signal), enabled: !!empresa && companhia === '10041' && valido, staleTime: 30000, retry: false });
   if (isLoading) return <LoadingState message="Carregando empresa" />;
-  if (companhia !== '10041') return <Navigate replace to="/operacional/estoque" />;
+  if (companhia !== '10041') return <main className="p-4"><h1 className="text-xl font-semibold">Produtividade diária</h1><p className="mt-2 text-muted-foreground">Selecione a Casa Chevrolet para consultar a produtividade.</p></main>;
   const r = query.data?.resumo;
   const cards = r ? [
     ['Pedidos separados', numero(r.pedidos_separados)], ['Unidades separadas', numero(r.unidades_separadas)],

@@ -6,11 +6,12 @@ import { buscarProdutividade } from './ProdutividadePage';
 import { buildOperacionalMenuItems } from '@/components/layout/operacionalSidebarItems';
 import type { Empresa } from '@/hooks/useEmpresaConfig';
 vi.mock('@/hooks/useEmpresaAtiva', () => ({ useEmpresaAtiva: () => ({ empresa, isLoading: false }) }));
-vi.mock('@/contexts/FilialSelecionadaContext', () => ({ useFilialSelecionada: () => ({ filialAtiva: 'chevrolet' }) }));
+const filial = vi.hoisted(() => ({ ativa: 'chevrolet' as string | null }));
+vi.mock('@/contexts/FilialSelecionadaContext', () => ({ useFilialSelecionada: () => ({ filialAtiva: filial.ativa }) }));
 vi.mock('@/integrations/supabase/client', () => ({ supabase: { auth: { getSession: async () => ({ data: { session: { access_token: 'test-session' } } }) } } }));
 const empresa = { cod_empresa_bi: '10041', usar_vps_intermediaria: true, vps_base_url: 'http://187.77.203.16', vps_cliente_identificador: 'pelegrini' } as Empresa;
 const resposta = {cod_empresa_bi:10041,cod_empresas:[2],resumo:{},por_dia_responsavel:[{cod_empresa_bi:10041,cod_empresa:2}]};
-beforeEach(() => vi.stubGlobal('fetch',vi.fn().mockResolvedValue(new Response(JSON.stringify(resposta),{status:200}))));
+beforeEach(() => { empresa.cod_empresa_bi = '10041'; filial.ativa = 'chevrolet'; vi.stubGlobal('fetch',vi.fn().mockResolvedValue(new Response(JSON.stringify(resposta),{status:200}))); });
 describe('produtividade Chevrolet', () => {
  it('consulta o período e filial pelo proxy com a sessão', async () => {await buscarProdutividade(empresa,'2026-11-03','2026-11-07','2'); const [url,options]=vi.mocked(fetch).mock.calls[0]; const parsed=new URL(String(url),'https://local.test'); expect(parsed.pathname).toBe('/api/produtividade/diario'); const path=parsed.search; expect(path).toContain('cod_empresa_bi=10041'); expect(path).toContain('cod_empresa=2'); expect(path).toContain('data_ini=2026-11-03');expect(options?.headers).toMatchObject({Authorization:'Bearer test-session'});});
  it('rejeita dados de outra empresa mesmo se o servidor responder 200', async () => {vi.mocked(fetch).mockResolvedValue(new Response(JSON.stringify({...resposta,por_dia_responsavel:[{cod_empresa_bi:10041,cod_empresa:80}]}),{status:200}));await expect(buscarProdutividade(empresa,'2026-11-03','2026-11-07','')).rejects.toThrow('Casa Chevrolet');});
@@ -26,4 +27,16 @@ it('exibe os totais reais e separa as duas medidas de conferencia', async () => 
   expect(screen.getByText('2.425')).toBeInTheDocument();
   expect(screen.getByText('273')).toBeInTheDocument();
   expect(screen.getByText(/79 de 113 notas elegíveis/)).toBeInTheDocument();
+});
+
+it('aguarda a filial sem redirecionar nem consultar dados de outra casa', async () => {
+  empresa.cod_empresa_bi = '1004';
+  filial.ativa = null;
+  const client = new QueryClient({defaultOptions:{queries:{retry:false}}});
+  const view = render(<QueryClientProvider client={client}><ProdutividadePage /></QueryClientProvider>);
+  expect(screen.getByText(/Selecione a Casa Chevrolet/)).toBeInTheDocument();
+  expect(fetch).not.toHaveBeenCalled();
+  filial.ativa = 'chevrolet';
+  view.rerender(<QueryClientProvider client={client}><ProdutividadePage /></QueryClientProvider>);
+  expect(await screen.findByText(/Casa Chevrolet · dados do RSYS/)).toBeInTheDocument();
 });
