@@ -4,7 +4,6 @@ import { Navigate } from 'react-router-dom';
 import { useEmpresaAtiva } from '@/hooks/useEmpresaAtiva';
 import { useFilialSelecionada } from '@/contexts/FilialSelecionadaContext';
 import { resolveCodEmpresaBiParam } from '@/utils/filialEndpoint';
-import { buildApiProxyUrl } from '@/utils/apiEndpointResolver';
 import { supabase } from '@/integrations/supabase/client';
 import { ErrorState } from '@/components/common/ErrorState';
 import { LoadingState } from '@/components/common/LoadingState';
@@ -15,14 +14,14 @@ type Dados = { cod_empresa_bi: number; cod_empresas: number[]; atualizado_em: st
 const numero = (n: number) => new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 2 }).format(n);
 const hoje = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; };
 
-export async function buscarProdutividade(empresa: Empresa, inicio: string, fim: string, filial: string, signal?: AbortSignal): Promise<Dados> {
+export async function buscarProdutividade(_empresa: Empresa, inicio: string, fim: string, filial: string, signal?: AbortSignal): Promise<Dados> {
   const { data } = await supabase.auth.getSession();
   const token = data.session?.access_token;
   if (!token) throw new Error('Entre novamente para consultar a produtividade.');
   const params = new URLSearchParams({ cod_empresa_bi: '10041', data_ini: inicio, data_fim: fim });
   if (filial) params.set('cod_empresa', filial);
-  const response = await fetch(buildApiProxyUrl(empresa, `/operacional/produtividade/diario?${params}`), {
-    signal, cache: 'no-store', headers: { Authorization: `Bearer ${token}`, apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY },
+  const response = await fetch(`/api/produtividade/diario?${params}`, {
+    signal, cache: 'no-store', headers: { Authorization: `Bearer ${token}` },
   });
   if (!response.ok || response.headers.get('x-proxy-upstream-error') === 'true') throw new Error(`Não foi possível consultar a produtividade (HTTP ${response.status}).`);
   const result = await response.json() as Dados;
