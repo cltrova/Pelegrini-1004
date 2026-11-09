@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import type { User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { isSupabaseConfigured } from '@/config/supabase';
 import type { Profile, AppRole, RolePermissions } from '@/types/auth';
 import { ROLE_PERMISSIONS } from '@/types/auth';
 import {
@@ -125,10 +126,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    let mounted = true;
+    if (!isSupabaseConfigured()) { setIsLoading(false); return; } let mounted = true;
     
     // Primeiro verificar sessão existente
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
+    void supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (mounted && session?.user) {
         setUser(session.user);
         // Aguardar carregar perfil + roles ANTES de liberar a UI,
@@ -136,8 +137,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // e mostra "Módulo Bloqueado" indevidamente.
         await loadUserData(session.user.id);
       }
-      if (mounted) setIsLoading(false);
-    });
+      if (mounted) setIsLoading(false); }).catch(() => { if (!mounted) return; setUser(null); setProfile(null); setRoles([]); setIsLoading(false); });
 
     // Depois configurar listener para mudanças
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -186,7 +186,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      if (!isSupabaseConfigured()) return { success: false, error: 'AUTH_CONFIGURATION_MISSING' }; const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
@@ -197,7 +197,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       return { success: true };
     } catch (error) {
-      return { success: false, error: 'Erro ao fazer login' };
+      return { success: false, error: 'AUTH_SERVICE_UNAVAILABLE' };
     }
   };
 
@@ -205,7 +205,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (localPreview) {
       setAuthenticatedLocalPreviewUserAccount(null);
     } else {
-      await supabase.auth.signOut();
+      if (isSupabaseConfigured()) await supabase.auth.signOut();
     }
     setUser(null);
     setProfile(null);
@@ -218,7 +218,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     try {
-      const { data, error } = await supabase.auth.signUp({
+      if (!isSupabaseConfigured()) return { success: false, error: 'AUTH_CONFIGURATION_MISSING' }; const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
