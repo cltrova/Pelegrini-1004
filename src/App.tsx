@@ -34,6 +34,7 @@ const ProdutosPage = lazy(() => import('./pages/comercial/ProdutosPage'));
 const ComissaoPage = lazy(() => import('./pages/comercial/ComissaoPage'));
 const CotacoesAbertasPage = lazy(() => import('./pages/comercial/CotacoesAbertasPage'));
 const VendasPerdidasPage = lazy(() => import('./pages/comercial/VendasPerdidasPage'));
+const ProdutividadePage = lazy(() => import('./pages/operacional/ProdutividadePage'));
 const EstoquePage = lazy(() => import('./pages/operacional/EstoquePage'));
 const DistribuidoresPage = lazy(() => import('./pages/operacional/DistribuidoresPage'));
 const EstoqueRetroativoPage = lazy(() => import('./pages/operacional/EstoqueRetroativoPage'));
@@ -255,6 +256,7 @@ const App = () => (
               }>
                 <Route index element={<Navigate to="/operacional/estoque" replace />} />
                 <Route path="estoque" element={<EstoquePage />} />
+                <Route path="produtividade" element={<ProdutividadePage />} />
                 <Route path="distribuidores" element={<DistribuidoresPage />} />
                 <Route path="estoque/retroativo" element={
                   <RequirePelegrini redirectTo="/operacional/estoque">

@@ -1,4 +1,4 @@
-import { History, Package, TrendingUp } from 'lucide-react';
+import { BarChart3, History, Package, TrendingUp } from 'lucide-react';
 
 import type { PelegriniSidebarItem } from '@/components/pelegrini';
 
@@ -12,6 +12,8 @@ export function buildOperacionalMenuItems(
 ): PelegriniSidebarItem[] {
   return [
     ...baseMenuItems,
+    ...((companyCode === '10041' || (companyCode === '1004' && branchId === 'chevrolet'))
+      ? [{ label: 'Produtividade diária', icon: BarChart3, path: '/operacional/produtividade' }] : []),
     ...(companyCode === '1004' || companyCode === '10041'
       ? [{ label: 'Estoque Retroativo', icon: History, path: '/operacional/estoque/retroativo' }]
       : []),
