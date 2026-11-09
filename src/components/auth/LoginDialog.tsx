@@ -19,13 +19,13 @@ import { pelegriniBrand } from '@/config/pelegriniHome';
 import { isLocalPreviewEnabled } from '@/config/localPreview';
 
 const SUPABASE_CONNECTION_ERROR =
-  'Nao foi possivel conectar ao Supabase. Configure VITE_SUPABASE_URL e VITE_SUPABASE_PUBLISHABLE_KEY reais no .env.local para testar cadastro e login.';
+  'O serviço de login está indisponível no momento. Tente novamente em instantes.';
 
 export function formatAuthDialogError(error?: string) {
   if (!error) return 'Nao foi possivel concluir a autenticacao.';
 
   const normalized = error.toLowerCase();
-  if (normalized.includes('failed to fetch') || normalized.includes('fetch failed')) {
+  if (error === 'AUTH_CONFIGURATION_MISSING') return 'O acesso ao sistema está indisponível. Entre em contato com o suporte.'; if (error === 'AUTH_SERVICE_UNAVAILABLE' || normalized.includes('failed to fetch') || normalized.includes('fetch failed') || normalized.includes('networkerror') || normalized.includes('network error') || normalized.includes('load failed')) {
     return SUPABASE_CONNECTION_ERROR;
   }
 
