@@ -36,7 +36,7 @@ export default function ProdutividadePage() {
   const [fim, setFim] = useState(hoje);
   const [filial, setFilial] = useState('');
   const intervalo = Math.round((Date.parse(`${fim}T00:00:00Z`) - Date.parse(`${inicio}T00:00:00Z`)) / 86400000);
-  const valido = Number.isFinite(intervalo) && intervalo >= 0 && intervalo < 31;
+  const valido = Number.isFinite(intervalo) && intervalo >= 0;
   const query = useQuery({ queryKey: ['produtividade-chevrolet', empresa?.id, companhia, inicio, fim, filial], queryFn: ({ signal }) => buscarProdutividade(empresa!, inicio, fim, filial, signal), enabled: !!empresa && companhia === '10041' && valido, staleTime: 30000, retry: false });
   if (isLoading) return <LoadingState message="Carregando empresa" />;
   if (companhia !== '10041') return <main className="p-4"><h1 className="text-xl font-semibold">Produtividade diária</h1><p className="mt-2 text-muted-foreground">Selecione a Casa Chevrolet para consultar a produtividade.</p></main>;
@@ -55,7 +55,7 @@ export default function ProdutividadePage() {
       <label className="text-sm">Filial<select value={filial} onChange={e => setFilial(e.target.value)} className="block rounded border bg-background p-2"><option value="">Todas</option><option value="2">Filial 2</option><option value="3">Filial 3</option></select></label>
       <button type="button" onClick={() => query.refetch()} disabled={!valido || query.isFetching} className="rounded border px-3 py-2 text-sm">Atualizar</button>
     </div>
-    {!valido && <p role="alert" className="text-destructive">Selecione um período válido de até 31 dias.</p>}
+    {!valido && <p role="alert" className="text-destructive">A data inicial deve ser anterior ou igual à data final.</p>}
     {valido && query.isLoading && <LoadingState message="Carregando produtividade" variant="content" />}
     {valido && query.isError && <ErrorState message={query.error instanceof Error ? query.error.message : 'Não foi possível consultar os dados.'} onRetry={() => query.refetch()} />}
     {valido && query.data && r && <>

@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import ProdutividadePage from './ProdutividadePage';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { buscarProdutividade } from './ProdutividadePage';
@@ -39,4 +39,13 @@ it('aguarda a filial sem redirecionar nem consultar dados de outra casa', async 
   filial.ativa = 'chevrolet';
   view.rerender(<QueryClientProvider client={client}><ProdutividadePage /></QueryClientProvider>);
   expect(await screen.findByText(/Casa Chevrolet · dados do RSYS/)).toBeInTheDocument();
+});
+
+it('permite consultar um periodo maior que 31 dias', async () => {
+  const client = new QueryClient({defaultOptions:{queries:{retry:false}}});
+  render(<QueryClientProvider client={client}><ProdutividadePage /></QueryClientProvider>);
+  fireEvent.change(screen.getByLabelText('Data inicial'), {target:{value:'2026-09-05'}});
+  fireEvent.change(screen.getByLabelText('Data final'), {target:{value:'2026-11-09'}});
+  await waitFor(() => expect(vi.mocked(fetch).mock.calls.some(([url]) => String(url).includes('data_ini=2026-09-05') && String(url).includes('data_fim=2026-11-09'))).toBe(true));
+  expect(screen.queryByRole('alert')).not.toBeInTheDocument();
 });
