@@ -14,6 +14,7 @@ import { WhatsappLayout } from "@/components/layout/WhatsappLayout";
 import { OperacionalLayout } from "@/components/layout/OperacionalLayout";
 import { EcommerceLayout } from "@/components/layout/EcommerceLayout";
 import { AppErrorBoundary } from "@/components/common/AppErrorBoundary";
+import { AppInstallBranding } from "@/components/common/AppInstallBranding";
 import { LoadingState } from "@/components/common/LoadingState";
 import { RequireModule } from "@/components/auth/RequireModule";
 import { RequireEcommerceBranch } from "@/components/auth/RequireEcommerceBranch";
@@ -157,6 +158,7 @@ const App = () => (
       <AuthProvider>
         <EmpresaSelecionadaProvider>
           <FilialSelecionadaProvider>
+            <AppInstallBranding />
           <TooltipProvider>
             <Toaster />
             <Sonner />

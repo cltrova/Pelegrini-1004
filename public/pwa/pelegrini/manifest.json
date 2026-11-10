@@ -1,0 +1,32 @@
+{
+  "id": "/app/pelegrini",
+  "name": "Grupo Pelegrini",
+  "short_name": "Pelegrini",
+  "description": "Sistema de gestão - Grupo Pelegrini",
+  "lang": "pt-BR",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#080f1f",
+  "theme_color": "#073f73",
+  "icons": [
+    {
+      "type": "image/png",
+      "src": "/pwa/pelegrini/icon-192.png",
+      "sizes": "192x192",
+      "purpose": "any"
+    },
+    {
+      "type": "image/png",
+      "src": "/pwa/pelegrini/icon-512.png",
+      "sizes": "512x512",
+      "purpose": "any"
+    },
+    {
+      "type": "image/png",
+      "src": "/pwa/pelegrini/icon-maskable-512.png",
+      "sizes": "512x512",
+      "purpose": "maskable"
+    }
+  ]
+}

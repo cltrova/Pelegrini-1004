@@ -1,0 +1,32 @@
+{
+  "id": "/app/chevrolet",
+  "name": "Casa do Chevrolet",
+  "short_name": "Chevrolet",
+  "description": "Sistema de gestão - Casa do Chevrolet",
+  "lang": "pt-BR",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#080f1f",
+  "theme_color": "#073f73",
+  "icons": [
+    {
+      "type": "image/png",
+      "src": "/pwa/chevrolet/icon-192.png",
+      "sizes": "192x192",
+      "purpose": "any"
+    },
+    {
+      "type": "image/png",
+      "src": "/pwa/chevrolet/icon-512.png",
+      "sizes": "512x512",
+      "purpose": "any"
+    },
+    {
+      "type": "image/png",
+      "src": "/pwa/chevrolet/icon-maskable-512.png",
+      "sizes": "512x512",
+      "purpose": "maskable"
+    }
+  ]
+}
