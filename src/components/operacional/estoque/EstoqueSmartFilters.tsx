@@ -5,7 +5,6 @@ import { FilterDropdownChip, MultiSelectOptions } from '@/components/common/Filt
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
-import type { ViewMode } from '@/types/estoque';
 import {
   Sheet,
   SheetContent,
@@ -16,6 +15,9 @@ import {
 } from '@/components/ui/sheet';
 
 import type { StockQuickFilter } from './estoqueIntelligence';
+import { EMPTY_STOCK_VALUE } from './stockColumnFilters';
+
+const classificationLabel = (value: string) => value === EMPTY_STOCK_VALUE ? 'Sem informação' : value;
 
 interface EstoqueFilterOptions {
   brands: string[];
@@ -39,7 +41,7 @@ interface EstoqueSmartFiltersProps {
   leading?: ReactNode;
   actions?: ReactNode;
   compact?: boolean;
-  serverPagedMode?: ViewMode;
+  extraActiveCount?: number;
 }
 
 const quickFilterLabels: Record<StockQuickFilter, string> = {
@@ -92,10 +94,10 @@ export function EstoqueSmartFilters({
   leading,
   actions,
   compact = false,
-  serverPagedMode,
+  extraActiveCount = 0,
 }: EstoqueSmartFiltersProps) {
-  const hasFilters = Boolean(search || quickFilter !== 'all' || brands.length || groups.length || lines.length);
-  const activeCount = Number(quickFilter !== 'all') + brands.length + groups.length + lines.length;
+  const hasFilters = Boolean(search || quickFilter !== 'all' || brands.length || groups.length || lines.length || extraActiveCount);
+  const activeCount = Number(quickFilter !== 'all') + brands.length + groups.length + lines.length + extraActiveCount;
 
   return (
     <section
@@ -138,21 +140,6 @@ export function EstoqueSmartFilters({
                 <div className="flex flex-wrap gap-2">
                   <FilterDropdownChip
           contentClassName="operational-overlay"
-          displayValue={brands.length ? `${brands.length} selecionada(s)` : 'Todas'}
-          isActive={brands.length > 0}
-          label="Marca"
-          onClear={() => onBrandsChange([])}
-        >
-          <MultiSelectOptions
-            allLabel="Todas"
-            onChange={onBrandsChange}
-            options={options.brands}
-            searchable
-            selected={brands}
-          />
-                  </FilterDropdownChip>
-                  <FilterDropdownChip
-          contentClassName="operational-overlay"
           displayValue={groups.length ? `${groups.length} selecionado(s)` : 'Todos'}
           isActive={groups.length > 0}
           label="Grupo"
@@ -160,10 +147,27 @@ export function EstoqueSmartFilters({
         >
           <MultiSelectOptions
             allLabel="Todos"
+            getOptionLabel={classificationLabel}
             onChange={onGroupsChange}
             options={options.groups}
             searchable
             selected={groups}
+          />
+                  </FilterDropdownChip>
+                  <FilterDropdownChip
+          contentClassName="operational-overlay"
+          displayValue={brands.length ? `${brands.length} selecionada(s)` : 'Todas'}
+          isActive={brands.length > 0}
+          label="Marca"
+          onClear={() => onBrandsChange([])}
+        >
+          <MultiSelectOptions
+            allLabel="Todas"
+            getOptionLabel={classificationLabel}
+            onChange={onBrandsChange}
+            options={options.brands}
+            searchable
+            selected={brands}
           />
                   </FilterDropdownChip>
                   <FilterDropdownChip
@@ -183,10 +187,10 @@ export function EstoqueSmartFilters({
                   </FilterDropdownChip>
                 </div>
               </div>
-              {(!serverPagedMode || serverPagedMode === 'detalhado') && <div className="space-y-2">
+              <div className="space-y-2">
                 <p className="text-xs font-semibold uppercase text-muted-foreground">Disponibilidade</p>
                 <div aria-label="Filtros rapidos de disponibilidade" className="flex flex-wrap items-center gap-2" role="group">
-          {!serverPagedMode && <Button
+          <Button
             aria-pressed={quickFilter === 'available'}
             className="h-8 gap-1.5 px-2.5 text-xs"
             onClick={() => onQuickFilterChange(quickFilter === 'available' ? 'all' : 'available')}
@@ -196,7 +200,7 @@ export function EstoqueSmartFilters({
           >
             <CircleCheck aria-hidden="true" className="h-3.5 w-3.5" />
             Disponiveis
-          </Button>}
+          </Button>
           <Button
             aria-pressed={quickFilter === 'with-stock'}
             className="h-8 gap-1.5 px-2.5 text-xs"
@@ -209,7 +213,7 @@ export function EstoqueSmartFilters({
             Com estoque
           </Button>
                 </div>
-              </div>}
+              </div>
               {hasFilters && (
                 <Button aria-label="Limpar todos os filtros" className="w-full" onClick={onClearAll} size="sm" type="button" variant="outline">
                   <X aria-hidden="true" />

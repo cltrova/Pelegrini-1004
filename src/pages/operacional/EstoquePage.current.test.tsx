@@ -2,19 +2,21 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
 import { expect, it, vi } from 'vitest';
 import EstoquePage from './EstoquePage';
-import { payload } from '@/test/estoqueAtualFixture';
 
-vi.mock('@/hooks/useEmpresaAtiva', () => ({useEmpresaAtiva: () => ({empresa: {id: 'ct', cod_empresa_bi: '1004', modulo_operacional: true, endpoint_url: 'https://api.test'}, isLoading: false, codEmpresaAtiva: '1004'})}));
-vi.mock('@/contexts/FilialSelecionadaContext', () => ({useFilialSelecionada: () => ({filialAtiva: 'transmissao', codEmpresaContexto: '1004'})}));
-vi.mock('@/hooks/useEstoqueData', () => ({useEstoqueData: () => { throw new Error('Estoque atual nao deve consultar recuperacao historica'); }}));
+const state = vi.hoisted(() => ({ filial: 'transmissao', codes: [] as string[] }));
+vi.mock('@/hooks/useEmpresaAtiva', () => ({useEmpresaAtiva: () => ({empresa: {id: 'ct', cod_empresa_bi: '1004', modulo_operacional: true}, isLoading: false, codEmpresaAtiva: '1004'})}));
+vi.mock('@/contexts/FilialSelecionadaContext', () => ({useFilialSelecionada: () => ({filialAtiva: state.filial, codEmpresaContexto: state.filial === 'chevrolet' ? '10041' : '1004'})}));
+vi.mock('@/hooks/useEstoqueData', () => ({useEstoqueData: () => {
+  state.codes.push(state.filial === 'chevrolet' ? '10041' : '1004');
+  return {activeCompanyCode: state.codes.at(-1), consolidadoData: [], detalhadoData: [], giroData: [], isLoading: true, isInitialLoading: true, overviewStatus: 'loading', sourceErrors: {}, sourceStatus: {}, partialSources: {}, recoveredSources: {}, refetch: vi.fn(), empresa: {modulo_operacional: true}};
+}}));
 vi.mock('@/integrations/supabase/client', () => ({supabase: {auth: {getSession: async () => ({data: {session: {access_token: 'test-session'}}})}}}));
 
-it('a entrada de estoque CT usa a procedure atual sem depender dos endpoints antigos', async () => {
-  vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify(payload), {status: 200})));
+it.each([['transmissao', '1004'], ['chevrolet', '10041']])('abre a mesma visao de estoque para %s com a empresa %s', (filial, code) => {
+  state.filial = filial; state.codes = [];
   const client = new QueryClient({defaultOptions: {queries: {retry: false}}});
   const {unmount} = render(<QueryClientProvider client={client}><EstoquePage /></QueryClientProvider>);
-  await screen.findByRole('heading', {name: 'Estoque atual'});
-  expect(await screen.findAllByText('R$ 3.812.529,38')).toHaveLength(2);
-  expect(String(vi.mocked(fetch).mock.calls[0][0])).toContain(encodeURIComponent('/operacional/estoque/atual?cod_empresa_bi=1004'));
+  expect(screen.getByRole('status', {name: 'Carregando dados da filial'})).toBeInTheDocument();
+  expect(state.codes).toContain(code);
   unmount(); client.clear();
 });

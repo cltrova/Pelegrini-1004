@@ -187,7 +187,7 @@ export function EstoqueProductDrawer({ product, open, onOpenChange }: EstoquePro
               <h3 className="text-sm font-semibold text-foreground" id="stock-financial-title">Estoque e filial</h3>
               <dl className="mt-3 grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2">
                 <DetailValue label="Valor em estoque">{formatCurrency(product.valor_estoque)}</DetailValue>
-                <DetailValue label="Custo medio">{formatCurrency(product.custo_medio)}</DetailValue>
+                  <DetailValue label="Custo medio">{product.custo_medio_consolidado === null ? 'Não informado' : formatCurrency(product.custo_medio)}</DetailValue>
                 <DetailValue label="Filial">{product.empresa || 'Nao informada'}</DetailValue>
                 {product.localizacao_produto ? (
                   <DetailValue label="Localizacao">{product.localizacao_produto}</DetailValue>

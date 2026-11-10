@@ -107,12 +107,13 @@ interface MultiSelectOptionsProps {
   onChange: (v: string[]) => void;
   searchable?: boolean;
   allLabel?: string;
+  getOptionLabel?: (value: string) => string;
 }
 
-export function MultiSelectOptions({ options, selected, onChange, searchable = false, allLabel = 'Todos' }: MultiSelectOptionsProps) {
+export function MultiSelectOptions({ options, selected, onChange, searchable = false, allLabel = 'Todos', getOptionLabel = value => value }: MultiSelectOptionsProps) {
   const [search, setSearch] = useState('');
   const filtered = searchable && search
-    ? options.filter(o => o.toLowerCase().includes(search.toLowerCase()))
+    ? options.filter(o => getOptionLabel(o).toLowerCase().includes(search.toLowerCase()))
     : options;
   const allSelected = selected.length === 0;
 
@@ -152,7 +153,7 @@ export function MultiSelectOptions({ options, selected, onChange, searchable = f
                   : 'bg-muted/50 text-muted-foreground border-transparent hover:bg-muted'
               )}
             >
-              {opt}
+              {getOptionLabel(opt)}
             </button>
           );
         })}

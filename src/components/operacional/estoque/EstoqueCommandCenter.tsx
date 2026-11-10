@@ -1,5 +1,5 @@
 import { BellRing, Download, Layers3, ListTree } from 'lucide-react';
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -12,8 +12,6 @@ import {
 } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
 import type { EstoqueRecord, GiroRecord, ViewMode } from '@/types/estoque';
-import type { PelegriniStockPage } from '@/hooks/useEstoqueData';
-import type { StockPageQuery } from './estoqueIntelligence';
 
 import { EstoqueAttentionPanel } from './EstoqueAttentionPanel';
 import { EstoqueMovementHighlights } from './EstoqueMovementHighlights';
@@ -23,9 +21,12 @@ import { readVisibleColumns, StockColumnPicker, storageKey, type StockColumnKey 
 import { EstoqueSmartFilters } from './EstoqueSmartFilters';
 import { EstoqueSummaryCards } from './EstoqueSummaryCards';
 import { EstoqueDataViewport, EstoqueToolbar } from './EstoqueWorkspace';
+import { EMPTY_STOCK_VALUE, filterStockColumns, hasStockColumnFilter, reconcileStockBrands, stockClassificationOptions, stockColumnOptions, type StockColumnFilters, type StockColumnFilterValue, type StockFilterOption } from './stockColumnFilters';
+import type { PelegriniStockPage, StockPageQuery } from './stockPagedApi';
 import {
   buildStockInsights,
   consolidateStockRecords,
+  detectStockGranularity,
   filterStockInsights,
   sortStockInsights,
   type StockProductInsight,
@@ -49,13 +50,9 @@ export interface EstoqueCommandCenterProps {
   serverPage?: PelegriniStockPage;
   serverPageLoading?: boolean;
   serverPaged?: boolean;
+  stockColumnFiltersSupported?: boolean;
   stockPageQuery?: StockPageQuery;
   onStockPageQueryChange?: (query: StockPageQuery) => void;
-}
-
-function uniqueOptions(values: Array<string | null>): string[] {
-  return [...new Set(values.filter((value): value is string => Boolean(value)))]
-    .sort((a, b) => a.localeCompare(b, 'pt-BR'));
 }
 
 export function EstoqueCommandCenter({
@@ -74,18 +71,21 @@ export function EstoqueCommandCenter({
   serverPage,
   serverPageLoading = false,
   serverPaged = false,
+  stockColumnFiltersSupported = false,
   stockPageQuery,
   onStockPageQueryChange,
 }: EstoqueCommandCenterProps) {
-  const [search, setSearch] = useState('');
-  const [quickFilter, setQuickFilter] = useState<StockQuickFilter>('all');
-  const [brands, setBrands] = useState<string[]>([]);
-  const [groups, setGroups] = useState<string[]>([]);
-  const [lines, setLines] = useState<string[]>([]);
-  const [sortMode, setSortMode] = useState<StockSortMode>('product-asc');
+  const [search, setSearch] = useState(stockPageQuery?.search ?? '');
+  const [quickFilter, setQuickFilter] = useState<StockQuickFilter>(stockPageQuery?.quickFilter ?? 'all');
+  const [brands, setBrands] = useState<string[]>(stockPageQuery?.brands ?? []);
+  const [groups, setGroups] = useState<string[]>(stockPageQuery?.groups ?? []);
+  const [lines, setLines] = useState<string[]>(stockPageQuery?.lines ?? []);
+  const [sortMode, setSortMode] = useState<StockSortMode>(stockPageQuery?.sortMode ?? 'group-brand-product');
+  const [columnFilters, setColumnFilters] = useState<StockColumnFilters>(stockPageQuery?.columnFilters ?? {});
   const [visibleColumns, setVisibleColumns] = useState<StockColumnKey[]>(() => readVisibleColumns(branchKey, viewMode));
   const [selectedProduct, setSelectedProduct] = useState<StockProductInsight | null>(null);
   const [attentionOpen, setAttentionOpen] = useState(false);
+  const previousBranch = useRef(branchKey);
 
   useEffect(() => {
     if (!requestedQuickFilter) return;
@@ -94,12 +94,15 @@ export function EstoqueCommandCenter({
   }, [onRequestedQuickFilterHandled, requestedQuickFilter]);
 
   useEffect(() => {
+    if (previousBranch.current === branchKey) return;
+    previousBranch.current = branchKey;
     setSearch('');
     setQuickFilter('all');
     setBrands([]);
     setGroups([]);
     setLines([]);
-    setSortMode('product-asc');
+    setColumnFilters({});
+    setSortMode('group-brand-product');
     setSelectedProduct(null);
     setAttentionOpen(false);
   }, [branchKey]);
@@ -115,69 +118,77 @@ export function EstoqueCommandCenter({
   }, [movementAvailable, quickFilter]);
 
   useEffect(() => {
-    if (serverPaged && (viewMode !== 'detalhado' || quickFilter !== 'with-stock') && quickFilter !== 'all') {
-      setQuickFilter('all');
-    }
-  }, [quickFilter, serverPaged, viewMode]);
-
-  const queryFilterKey = JSON.stringify({
-    search,
-    quickFilter: viewMode === 'detalhado' && quickFilter === 'with-stock' ? 'with-stock' : 'all',
-    brands,
-    groups,
-    lines,
-    sortMode,
-  });
-  const savedFilterKey = stockPageQuery ? JSON.stringify({
-    search: stockPageQuery.search,
-    quickFilter: stockPageQuery.quickFilter,
-    brands: stockPageQuery.brands,
-    groups: stockPageQuery.groups,
-    lines: stockPageQuery.lines,
-    sortMode: stockPageQuery.sortMode,
-  }) : '';
+    if (serverPaged && ['stagnant', 'attention', 'excess'].includes(quickFilter)) setQuickFilter('all');
+  }, [quickFilter, serverPaged]);
+  const queryFilterKey = JSON.stringify({ search, quickFilter, brands, groups, lines, sortMode, columnFilters });
+  const savedFilterKey = stockPageQuery ? JSON.stringify({ search: stockPageQuery.search, quickFilter: stockPageQuery.quickFilter, brands: stockPageQuery.brands, groups: stockPageQuery.groups, lines: stockPageQuery.lines, sortMode: stockPageQuery.sortMode, columnFilters: stockPageQuery.columnFilters ?? {} }) : '';
   useEffect(() => {
-    if (!serverPaged || !stockPageQuery || !onStockPageQueryChange || queryFilterKey === savedFilterKey) return;
-    onStockPageQueryChange({ page: 1, search, quickFilter: viewMode === 'detalhado' && quickFilter === 'with-stock' ? 'with-stock' : 'all', brands, groups, lines, sortMode });
-  }, [brands, groups, lines, onStockPageQueryChange, quickFilter, queryFilterKey, savedFilterKey, search, serverPaged, sortMode, stockPageQuery, viewMode]);
+    if (serverPaged && onStockPageQueryChange && queryFilterKey !== savedFilterKey) onStockPageQueryChange({ ...JSON.parse(queryFilterKey), page: 1 });
+  }, [serverPaged, onStockPageQueryChange, queryFilterKey, savedFilterKey]);
+  useEffect(() => {
+    if (serverPaged && serverPage && !serverPageLoading) setBrands(current => {
+      const next = reconcileStockBrands(current, serverPage.opcoes.marcas);
+      return next.length === current.length ? current : next;
+    });
+  }, [serverPaged, serverPage, serverPageLoading]);
 
   const displayedStock = useMemo(
-    () => viewMode === 'consolidado' ? consolidateStockRecords(stockData) : stockData,
-    [stockData, viewMode],
+    () => !serverPaged && viewMode === 'consolidado' ? consolidateStockRecords(stockData) : stockData,
+    [stockData, viewMode, serverPaged],
   );
+  const detailedGranularity = useMemo(() => detectStockGranularity(stockData), [stockData]);
+
   const insights = useMemo(
     () => buildStockInsights(
       displayedStock,
-      movementData,
+      serverPaged ? [] : movementData,
       new Date(),
       viewMode === 'consolidado' ? 'product' : 'branch',
     ),
-    [displayedStock, movementData, viewMode],
+    [displayedStock, movementData, viewMode, serverPaged],
   );
 
-  const localOptions = useMemo(() => ({
-    brands: uniqueOptions(insights.map((product) => product.marca)),
-    groups: uniqueOptions(insights.map((product) => product.grupo)),
-    lines: uniqueOptions(insights.map((product) => product.linha)),
-  }), [insights]);
-  const options = serverPage?.opcoes ? {
-    brands: serverPage.opcoes.marcas,
-    groups: serverPage.opcoes.grupos,
-    lines: serverPage.opcoes.linhas,
-  } : localOptions;
+  const options = useMemo(() => serverPaged && serverPage ? { groups: serverPage.opcoes.grupos, brands: serverPage.opcoes.marcas, lines: serverPage.opcoes.linhas } : stockClassificationOptions(insights, groups), [insights, groups, serverPaged, serverPage]);
+  const effectiveColumnFilters = useMemo<StockColumnFilters>(() => ({ ...columnFilters, group: { values: groups }, brand: { values: brands } }), [columnFilters, groups, brands]);
+  const columnFilterOptions = useMemo(() => {
+    const selection: Partial<Record<StockColumnKey, StockFilterOption[]>> = {};
+    for (const key of ['group', 'brand', 'status', 'branch', 'location'] as const) selection[key] = stockColumnOptions(insights, key);
+    selection.brand = selection.brand?.filter(option => options.brands.includes(option.value));
+    if (serverPaged && serverPage) {
+      selection.group = options.groups.map(value => ({ value, label: value || 'Sem informação' }));
+      selection.brand = options.brands.map(value => ({ value, label: value || 'Sem informação' }));
+      selection.branch = serverPage.opcoes.filiais?.map(branch => ({ value: String(branch.codigo), label: `${branch.codigo} · ${branch.nome}` })) ?? [];
+      selection.location = serverPage.opcoes.localizacoes?.map(value => ({ value, label: value || 'Sem informação' })) ?? [];
+      selection.status = [{ value: 'available', label: 'Disponível' }, { value: 'low', label: 'Estoque baixo' }, { value: 'critical', label: 'Crítico' }, { value: 'out', label: 'Sem estoque' }];
+    }
+    return selection;
+  }, [insights, options, serverPaged, serverPage]);
+  const handleGroupsChange = (next: string[]) => {
+    const available = stockClassificationOptions(insights, next);
+    setGroups(next);
+    if (!serverPaged) setBrands(current => reconcileStockBrands(current, available.brands));
+  };
+  const handleColumnFilterChange = (key: StockColumnKey, value: StockColumnFilterValue) => {
+    if (key === 'group') handleGroupsChange(value.values ?? []);
+    else if (key === 'brand') setBrands(value.values ?? []);
+    else {
+      if (key === 'status') setQuickFilter('all');
+      setColumnFilters(current => { const next = { ...current }; if (hasStockColumnFilter(value)) next[key] = value; else delete next[key]; return next; });
+    }
+  };
+  const activeColumnCount = Object.values(columnFilters).filter(hasStockColumnFilter).length;
+  const hasFilters = Boolean(search || quickFilter !== 'all' || brands.length || groups.length || lines.length || activeColumnCount);
 
   const filtered = useMemo(
-    () => serverPaged ? sortStockInsights(insights, sortMode) : sortStockInsights(
-      filterStockInsights(insights, {
+    () => serverPaged ? insights : sortStockInsights(
+      filterStockColumns(filterStockInsights(insights, {
         search,
         quickFilter,
-        brands,
-        groups,
         lines,
-      }),
+      }), effectiveColumnFilters),
       sortMode,
     ),
-    [brands, groups, insights, lines, quickFilter, search, serverPaged, sortMode],
+    [effectiveColumnFilters, insights, lines, quickFilter, search, sortMode, serverPaged],
   );
 
   useEffect(() => {
@@ -202,6 +213,7 @@ export function EstoqueCommandCenter({
     setBrands([]);
     setGroups([]);
     setLines([]);
+    setColumnFilters({});
   };
 
   const selectProduct = (product: StockProductInsight) => {
@@ -246,13 +258,13 @@ export function EstoqueCommandCenter({
               <StockColumnPicker
                 branchKey={branchKey}
                 onVisibleColumnsChange={handleVisibleColumnsChange}
-                serverPaged={serverPaged}
                 viewMode={viewMode}
                 visibleColumns={visibleColumns}
               />
             </>
           )}
           brands={brands}
+          extraActiveCount={activeColumnCount}
           groups={groups}
           leading={(
             <div
@@ -287,14 +299,13 @@ export function EstoqueCommandCenter({
           lines={lines}
           onBrandsChange={setBrands}
           onClearAll={clearFilters}
-          onGroupsChange={setGroups}
+          onGroupsChange={handleGroupsChange}
           onLinesChange={setLines}
-          onQuickFilterChange={setQuickFilter}
+          onQuickFilterChange={filter => { setQuickFilter(filter); setColumnFilters(current => { const next = { ...current }; delete next.status; return next; }); }}
           onSearchChange={setSearch}
           options={options}
           quickFilter={quickFilter}
           search={search}
-          serverPagedMode={serverPaged ? viewMode : undefined}
         />
       </EstoqueToolbar>
 
@@ -303,36 +314,33 @@ export function EstoqueCommandCenter({
         movementAvailable={movementAvailable}
         onFilterChange={setQuickFilter}
         products={insights}
-        serverSummary={serverPage ? {
-          label: viewMode === 'consolidado' ? 'Produtos' : 'Registros detalhados',
-          count: serverPage.total_itens,
-          quantity: Number(serverPage.totais.quantidade_estoque ?? 0),
-          value: Number(serverPage.totais.valor_estoque ?? 0),
-        } : undefined}
+        serverSummary={serverPage ? { label: viewMode === 'consolidado' ? 'Produtos' : 'Registros detalhados', count: serverPage.total_itens, quantity: Number(serverPage.totais.quantidade_estoque ?? 0), value: Number(serverPage.totais.valor_estoque ?? 0) } : undefined}
       />
-      {serverPaged && <p className="shrink-0 px-3 py-1 text-[11px] text-muted-foreground">
-        Para carregar a lista rapidamente, os indicadores de giro e o painel Atenção ficam na aba Giro de Estoque.
-      </p>}
 
       <EstoqueDataViewport>
         {sourceNotice ? <div className="shrink-0">{sourceNotice}</div> : null}
-        <div aria-label="Contagem e ordenacao dos produtos" className="sr-only shrink-0" role="group" />
-        {filtered.length > 0 && <div className="flex shrink-0 justify-end border-b border-border px-3 py-2"><Button aria-label="Baixar lista de produtos" disabled={!filtered.length} className="h-8 gap-1.5 px-2.5 text-xs" onClick={() => onExport(filtered)} type="button" variant="outline"><Download aria-hidden="true" className="h-3.5 w-3.5" />{serverPaged ? 'Baixar página' : 'Baixar lista'}</Button></div>}
+        <div aria-label="Contagem e ordenacao dos produtos" className="flex shrink-0 flex-wrap items-center gap-x-3 gap-y-1 border-b border-border px-3 py-1.5 text-xs" role="group">
+          <span className="tabular-nums text-muted-foreground">{(serverPage?.total_itens ?? filtered.length).toLocaleString('pt-BR')} {viewMode === 'consolidado' ? 'produto(s)' : 'registro(s)'}</span>
+          {serverPageLoading && <span role="status" className="text-muted-foreground">Atualizando…</span>}
+          {sortMode === 'group-brand-product' ? <span className="text-muted-foreground">1 Grupo → 2 Marca → 3 Produto</span> : <Button className="h-7 px-2 text-xs" type="button" variant="ghost" onClick={() => setSortMode('group-brand-product')}>Restaurar Grupo → Marca → Produto</Button>}
+          <div className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto" aria-label="Filtros de coluna ativos">
+            {Object.entries(effectiveColumnFilters).filter(([, value]) => hasStockColumnFilter(value)).map(([key, value]) => <button key={key} type="button" aria-label={`Remover filtro ${columnLabels[key as StockColumnKey]}`} onClick={() => handleColumnFilterChange(key as StockColumnKey, {})} title={describeFilter(value)} className="inline-flex max-w-48 shrink-0 items-center gap-1 rounded border border-primary/25 bg-primary/10 px-2 py-1 text-primary"><span className="truncate">{columnLabels[key as StockColumnKey]}: {describeFilter(value)}</span><span aria-hidden="true">×</span></button>)}
+          </div>
+          {hasFilters && <Button type="button" variant="ghost" className="h-7 px-2 text-xs" onClick={clearFilters}>Limpar filtros</Button>}
+          <Button aria-label={serverPaged ? 'Baixar página de produtos' : 'Baixar lista de produtos'} disabled={!filtered.length || serverPageLoading} className="h-8 gap-1.5 px-2.5 text-xs" onClick={() => onExport(filtered)} type="button" variant="outline"><Download aria-hidden="true" className="h-3.5 w-3.5" />{serverPaged ? 'Baixar página' : 'Baixar lista'}</Button>
+        </div>
         <EstoqueProductsTable
           branchKey={branchKey}
           onSelectProduct={selectProduct}
           onSortChange={setSortMode}
           onVisibleColumnsChange={handleVisibleColumnsChange}
           products={filtered}
-          serverPaged={serverPaged}
-          serverPagination={serverPage && stockPageQuery && onStockPageQueryChange ? {
-            page: serverPage.pagina,
-            pageCount: serverPage.total_paginas,
-            loading: serverPageLoading,
-            onPageChange: (page) => onStockPageQueryChange({ ...stockPageQuery, page }),
-          } : undefined}
+          columnFilters={effectiveColumnFilters}
+          columnFilterOptions={columnFilterOptions}
+          onColumnFilterChange={!serverPaged || stockColumnFiltersSupported ? handleColumnFilterChange : undefined}
+          serverPagination={serverPage && stockPageQuery && onStockPageQueryChange ? { page: serverPage.pagina, pageCount: serverPage.total_paginas, loading: serverPageLoading, onPageChange: page => onStockPageQueryChange({ ...stockPageQuery, page }) } : undefined}
           sortMode={sortMode}
-          sourceEmpty={stockData.length === 0}
+          sourceEmpty={!serverPaged && stockData.length === 0}
           visibleColumns={visibleColumns}
           viewMode={viewMode}
         />
@@ -347,4 +355,14 @@ export function EstoqueCommandCenter({
       />
     </section>
   );
+}
+
+const columnLabels: Record<StockColumnKey, string> = { product: 'Produto', brand: 'Marca', group: 'Grupo', quantity: 'Quantidade', value: 'Valor', lastMovement: 'Última movimentação', status: 'Situação', branch: 'Filial', averageCost: 'Custo médio', location: 'Localização', lastPurchase: 'Última compra', lastSale: 'Última venda' };
+function describeFilter(value: StockColumnFilterValue): string {
+  if (value.values?.length) return value.values.map(item => item === EMPTY_STOCK_VALUE ? 'Sem informação' : ({ available: 'Disponível', low: 'Estoque baixo', critical: 'Crítico', out: 'Sem estoque' }[item] ?? item)).join(', ');
+  if (value.text) return value.text;
+  if (value.min || value.max) return `${value.min || 'sem mínimo'} a ${value.max || 'sem máximo'}`;
+  if (value.dateMode === 'unknown') return 'Data desconhecida';
+  if (value.from || value.to) return `${value.from || 'início'} a ${value.to || 'hoje'}`;
+  return 'Com data informada';
 }

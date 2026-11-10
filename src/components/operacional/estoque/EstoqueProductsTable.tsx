@@ -5,6 +5,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Columns3,
+  ArrowDown,
+  ArrowUp,
   Siren,
   TriangleAlert,
   type LucideIcon,
@@ -23,6 +25,8 @@ import { cn } from '@/lib/utils';
 import type { ViewMode } from '@/types/estoque';
 
 import type { StockProductInsight, StockSortKey, StockSortMode, StockStatus } from './estoqueIntelligence';
+import { StockColumnFilter } from './StockColumnFilter';
+import type { StockColumnFilters, StockColumnFilterValue, StockFilterOption } from './stockColumnFilters';
 
 export type StockColumnKey =
   | 'product'
@@ -109,8 +113,10 @@ export interface EstoqueProductsTableProps {
   onSelectProduct: (product: StockProductInsight) => void;
   onVisibleColumnsChange?: (columns: StockColumnKey[]) => void;
   visibleColumns?: StockColumnKey[];
+  columnFilters?: StockColumnFilters;
+  columnFilterOptions?: Partial<Record<StockColumnKey, StockFilterOption[]>>;
+  onColumnFilterChange?: (column: StockColumnKey, value: StockColumnFilterValue) => void;
   serverPagination?: { page: number; pageCount: number; loading?: boolean; onPageChange: (page: number) => void };
-  serverPaged?: boolean;
 }
 
 export function storageKey(branchKey: string, viewMode: ViewMode): string {
@@ -153,6 +159,7 @@ const sortKeyByColumn: Record<StockColumnKey, StockSortKey> = {
 };
 
 function sortKeyFromMode(mode: StockSortMode): StockSortKey {
+  if (mode === 'group-brand-product') return 'group';
   if (mode === 'stock-desc' || mode === 'stock-asc') return 'quantity';
   if (mode === 'product') return 'product';
   if (mode === 'brand') return 'brand';
@@ -162,10 +169,12 @@ function sortKeyFromMode(mode: StockSortMode): StockSortKey {
 
 function sortDirectionFromMode(mode: StockSortMode, key: StockSortKey): 'ascending' | 'descending' | 'none' {
   if (sortKeyFromMode(mode) !== key) return 'none';
+  if (mode === 'group-brand-product') return 'ascending';
   return mode.endsWith('-asc') ? 'ascending' : 'descending';
 }
 
 function nextSortMode(mode: StockSortMode, key: StockSortKey): StockSortMode {
+  if (mode === `${key}-desc`) return 'group-brand-product';
   const currentKey = sortKeyFromMode(mode);
   const direction = currentKey === key && sortDirectionFromMode(mode, key) === 'ascending' ? 'desc' : 'asc';
   return `${key}-${direction}` as StockSortMode;
@@ -176,16 +185,14 @@ export function StockColumnPicker({
   viewMode,
   visibleColumns,
   onVisibleColumnsChange,
-  serverPaged = false,
 }: {
   branchKey: string;
   viewMode: ViewMode;
   visibleColumns: StockColumnKey[];
   onVisibleColumnsChange: (columns: StockColumnKey[]) => void;
-  serverPaged?: boolean;
 }) {
   const [columnsMenuOpen, setColumnsMenuOpen] = useState(false);
-  const stockColumns = columnsByMode[viewMode].filter((column) => !serverPaged || column.key !== 'status');
+  const stockColumns = columnsByMode[viewMode];
 
   const toggleColumn = (column: StockColumnKey) => {
     if (requiredColumns.has(column)) return;
@@ -264,7 +271,7 @@ function AverageCostValue({ product }: { product: StockProductInsight }) {
         </span>
       )}
       <PelegriniResponsiveValue className="tabular-nums" size="sm">
-        {formatCurrency(product.custo_medio)}
+        {product.custo_medio_consolidado === null ? 'Não informado' : formatCurrency(product.custo_medio)}
       </PelegriniResponsiveValue>
     </span>
   );
@@ -343,8 +350,10 @@ export function EstoqueProductsTable({
   onSelectProduct,
   onVisibleColumnsChange,
   visibleColumns: controlledVisibleColumns,
+  columnFilters,
+  columnFilterOptions,
+  onColumnFilterChange,
   serverPagination,
-  serverPaged = false,
 }: EstoqueProductsTableProps) {
   const [internalVisibleColumns, setInternalVisibleColumns] = useState<StockColumnKey[]>(() => readVisibleColumns(branchKey, viewMode));
   const [page, setPage] = useState(0);
@@ -353,16 +362,16 @@ export function EstoqueProductsTable({
 
   useEffect(() => {
     if (!isControlled) setInternalVisibleColumns(readVisibleColumns(branchKey, viewMode));
-  }, [branchKey, viewMode]);
+  }, [branchKey, viewMode, isControlled]);
 
   useEffect(() => {
     setPage(0);
   }, [branchKey, products, sortMode, viewMode]);
 
   const stockColumns = columnsByMode[viewMode];
-  const selectedColumns = stockColumns.filter((column) => visibleColumns.includes(column.key) && (!serverPaged || column.key !== 'status'));
+  const selectedColumns = stockColumns.filter((column) => visibleColumns.includes(column.key));
   const pageCount = Math.max(1, serverPagination?.pageCount ?? Math.ceil(products.length / PAGE_SIZE));
-  const safePage = serverPagination ? Math.min(serverPagination.page - 1, pageCount - 1) : Math.min(page, pageCount - 1);
+  const safePage = serverPagination ? Math.max(0, Math.min(serverPagination.page - 1, pageCount - 1)) : Math.min(page, pageCount - 1);
   const visibleProducts = serverPagination ? products : products.slice(safePage * PAGE_SIZE, (safePage + 1) * PAGE_SIZE);
   const emptyMessage = sourceEmpty
     ? 'Nenhum produto disponivel na fonte de estoque.'
@@ -370,6 +379,9 @@ export function EstoqueProductsTable({
 
   return (
     <section aria-label="Produtos do estoque" className="operational-table-frame estoque-products-table flex h-full min-h-0 min-w-0 max-w-full flex-1 flex-col overflow-hidden border border-border/70 bg-background">
+      {onColumnFilterChange && <div aria-label="Filtros de coluna no celular" className="flex shrink-0 gap-1 overflow-x-auto border-b border-border px-2 py-1 md:hidden">
+        {selectedColumns.map(column => <StockColumnFilter key={column.key} column={column.key} label={column.label} value={columnFilters?.[column.key]} options={columnFilterOptions?.[column.key]} showLabel onChange={value => onColumnFilterChange(column.key, value)} />)}
+      </div>}
       {!isControlled && <div
         aria-label="Opcoes da tabela"
         className="flex min-w-0 shrink-0 flex-wrap items-center justify-end gap-1.5 border-b border-border/70 px-2.5 py-1"
@@ -378,7 +390,7 @@ export function EstoqueProductsTable({
         <StockColumnPicker branchKey={branchKey} onVisibleColumnsChange={(next) => {
           setInternalVisibleColumns(next);
           onVisibleColumnsChange?.(next);
-        }} serverPaged={serverPaged} viewMode={viewMode} visibleColumns={visibleColumns} />
+        }} viewMode={viewMode} visibleColumns={visibleColumns} />
       </div>}
 
       <div
@@ -390,9 +402,9 @@ export function EstoqueProductsTable({
           aria-label="Tabela de produtos do estoque"
           className="hidden min-w-0 max-w-full md:block"
         >
-          {products.length === 0 ? (
+          {products.length === 0 && (
             <p className="px-4 py-10 text-center text-sm text-muted-foreground">{emptyMessage}</p>
-          ) : (
+          )}
             <div className="min-h-full min-w-full">
               <table className="operational-stock-table w-full table-fixed text-sm">
                 <thead aria-label="Cabecalho da tabela" className="sticky top-0 z-10 bg-muted">
@@ -410,22 +422,21 @@ export function EstoqueProductsTable({
                       key={column.key}
                       scope="col"
                     >
-                      <button
+                      <div className={cn('flex min-w-0 items-center gap-0.5', column.key === 'product' ? 'justify-start' : 'justify-center')}><button
                         aria-label={`Ordenar por ${column.label}`}
                         disabled={Boolean(serverPagination) && !['product', 'quantity', 'value'].includes(column.key)}
                         className={cn(
-                          'flex h-7 w-full items-center rounded px-1 hover:bg-background/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring',
+                          'flex h-7 min-w-0 items-center gap-1 rounded px-1 hover:bg-background/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring',
                           column.key === 'product' ? 'justify-start text-left' : 'justify-center text-center',
                         )}
-                        onClick={() => {
-                          const nextMode = nextSortMode(sortMode, sortKey);
-                          onSortChange(nextMode);
-                          if (serverPagination) serverPagination.onPageChange(1);
-                        }}
+                        onClick={() => onSortChange(nextSortMode(sortMode, sortKey))}
                         type="button"
                       >
-                        {column.label}
+                        {sortMode === 'group-brand-product' && ['group', 'brand', 'product'].includes(column.key) && <span aria-hidden="true" className="rounded bg-primary/10 px-1 text-[9px] text-primary">{column.key === 'group' ? 1 : column.key === 'brand' ? 2 : 3}</span>}
+                        <span className="truncate" title={column.label}>{column.label}</span>
+                        {sortDirectionFromMode(sortMode, sortKey) !== 'none' && (sortDirectionFromMode(sortMode, sortKey) === 'ascending' ? <ArrowUp aria-hidden="true" className="h-3 w-3 shrink-0" /> : <ArrowDown aria-hidden="true" className="h-3 w-3 shrink-0" />)}
                       </button>
+                      {onColumnFilterChange && <StockColumnFilter column={column.key} label={column.label} value={columnFilters?.[column.key]} options={columnFilterOptions?.[column.key]} onChange={value => onColumnFilterChange(column.key, value)} />}</div>
                     </th>
                     );
                   })}
@@ -449,7 +460,6 @@ export function EstoqueProductsTable({
                 </tbody>
               </table>
             </div>
-          )}
         </div>
 
         <div aria-label="Lista compacta de produtos" className="min-w-0 divide-y divide-border/70 md:hidden">
@@ -501,7 +511,7 @@ export function EstoqueProductsTable({
                 </dl>
               )}
               <div className="mt-2 flex min-w-0 items-center justify-end gap-2">
-                {viewMode === 'consolidado' && !serverPaged ? <StockStatusValue status={product.status} /> : <span />}
+                {viewMode === 'consolidado' ? <StockStatusValue status={product.status} /> : <span />}
               </div>
             </article>
             ))

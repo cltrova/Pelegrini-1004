@@ -1,4 +1,9 @@
 export interface EstoqueRecord {
+  quantidade_consolidada?: number;
+  valor_estoque_consolidado?: number;
+  custo_medio_consolidado?: number | null;
+  situacao?: 'available' | 'low' | 'critical' | 'out';
+  data_ultima_movimentacao?: string | null;
   cod_empresa_bi: number;
   cod_empresa: number;
   empresa: string;

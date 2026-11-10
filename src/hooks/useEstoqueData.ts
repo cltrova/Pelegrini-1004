@@ -9,41 +9,12 @@ import { filtrarEstoqueCasaChevrolet10041, isAgraleEstoque10041, isForcaPEstoque
 import { useFilialSelecionada } from '@/contexts/FilialSelecionadaContext';
 import { resolveCodEmpresaBiParam } from '@/utils/filialEndpoint';
 import type { StockOverviewResponse } from '@/components/operacional/estoque/estoqueOverviewData';
-import type { StockPageQuery } from '@/components/operacional/estoque/estoqueIntelligence';
+import { buildStockPageParams, defaultStockPageQuery, normalizeStockPageRows, supportsStockColumnFilters, validateStockPage, type PelegriniStockPage, type StockApiCapabilities, type StockPageQuery } from '@/components/operacional/estoque/stockPagedApi';
+export type { PelegriniStockPage } from '@/components/operacional/estoque/stockPagedApi';
 
 type EstoqueApiRow = Record<string, unknown>;
 
-export interface PelegriniStockPage {
-  release: string;
-  cod_empresa_bi: number;
-  cod_empresas: number[];
-  atualizado_em: string;
-  total_registros: number;
-  total_itens: number;
-  pagina: number;
-  tamanho_pagina: number;
-  total_paginas: number;
-  totais: {
-    quantidade_estoque?: number;
-    valor_estoque?: number;
-    produtos_com_estoque?: number;
-    produtos_sem_estoque?: number;
-    total_produtos?: number;
-  };
-  opcoes: { marcas: string[]; grupos: string[]; linhas: string[] };
-  itens: EstoqueApiRow[];
-}
-
-const PELEGRINI_FAST_STOCK_RELEASE = 'pelegrini-estoque-empresas-20261106-r11';
-const DEFAULT_STOCK_PAGE_QUERY: StockPageQuery = {
-  page: 1,
-  search: '',
-  quickFilter: 'all',
-  brands: [],
-  groups: [],
-  lines: [],
-  sortMode: 'product-asc',
-};
+const DEFAULT_STOCK_PAGE_QUERY = defaultStockPageQuery();
 
 export function getEstoqueAnalysisPeriod(months: number, now = new Date()) {
   const start = new Date(now.getFullYear(), now.getMonth() - Math.max(1,months) + 1, 1);
@@ -163,39 +134,22 @@ async function fetchOverviewFromEndpoint(empresa: Empresa, path: string): Promis
   return payload;
 }
 
-function stockPageOrder(sortMode: StockPageQuery['sortMode']): string {
-  if (sortMode === 'product-desc') return 'produto_desc';
-  if (sortMode === 'value-desc') return 'valor_desc';
-  if (sortMode === 'value-asc') return 'valor_asc';
-  if (sortMode === 'quantity-desc' || sortMode === 'stock-desc') return 'quantidade_desc';
-  if (sortMode === 'quantity-asc' || sortMode === 'stock-asc') return 'quantidade_asc';
-  return 'produto_asc';
-}
-
 async function fetchPelegriniStockPage(
   empresa: Empresa,
   codEmpresaBi: string,
   viewMode: ViewMode,
   filters: StockPageQuery,
+  signal?: AbortSignal,
 ): Promise<PelegriniStockPage> {
-  const pageSize = 50;
-  const params = new URLSearchParams({
-    cod_empresa_bi: codEmpresaBi,
-    formato: 'pagina',
-    pagina: String(filters.page),
-    tamanho_pagina: String(pageSize),
-    ordem: stockPageOrder(filters.sortMode),
-  });
-  if (filters.search.trim()) params.set('busca', filters.search.trim());
-  filters.brands.forEach((value) => params.append('marca', value));
-  filters.groups.forEach((value) => params.append('grupo', value));
-  filters.lines.forEach((value) => params.append('linha', value));
-  if (viewMode === 'detalhado' && filters.quickFilter === 'with-stock') params.set('estoque', 'com');
+  const params = buildStockPageParams(codEmpresaBi, filters);
 
   const endpoint = viewMode === 'detalhado' ? 'detalhado' : 'consolidado';
   const path = `/operacional/estoque/${endpoint}?${params.toString()}`;
   const { data: sessionData } = await supabase.auth.getSession();
   const controller = new AbortController();
+  const abort = () => controller.abort();
+  if (signal?.aborted) controller.abort();
+  signal?.addEventListener('abort', abort, { once: true });
   const timeout = window.setTimeout(() => controller.abort(), 60000);
   try {
   const response = await fetch(buildApiProxyUrl(empresa, path), {
@@ -208,24 +162,13 @@ async function fetchPelegriniStockPage(
   if (!response.ok || response.headers.get('x-proxy-upstream-error') === 'true') {
     throw new Error(`Falha na página do estoque (HTTP ${response.status}).`);
   }
-  const payload = await response.json() as PelegriniStockPage;
-  const allowed = codEmpresaBi === '1004' ? [1] : [2, 3];
-  if (payload?.release !== PELEGRINI_FAST_STOCK_RELEASE || payload.cod_empresa_bi !== Number(codEmpresaBi)
-      || !Array.isArray(payload.itens) || !Array.isArray(payload.cod_empresas)
-      || payload.cod_empresas.some((code) => !allowed.includes(Number(code)))) {
-    throw new Error('Resposta paginada incompatível com a empresa selecionada.');
-  }
-  if (payload.itens.some((row) => Number(row.cod_empresa_bi) !== Number(codEmpresaBi)
-      || !allowed.includes(Number(row.cod_empresa)) || isForcaPEstoque(row))) {
-    throw new Error('A página do estoque contém registros fora da casa selecionada.');
-  }
-  payload.opcoes ??= { marcas: [], grupos: [], linhas: [] };
-  return payload;
+  return validateStockPage(await response.json(), codEmpresaBi);
   } catch (error) {
     if (controller.signal.aborted) throw new Error('A consulta paginada do estoque excedeu 60 segundos.');
     throw error;
   } finally {
     window.clearTimeout(timeout);
+    signal?.removeEventListener('abort', abort);
   }
 }
 
@@ -416,12 +359,13 @@ export function useEstoqueData(
   const isPelegriniVps = empresa?.vps_cliente_identificador === 'pelegrini';
   const isPelegriniCentral = isPelegriniVps && activeTab === 'central';
   const stockPageQueryKey = [stockPageQuery.page, stockPageQuery.search, stockPageQuery.quickFilter,
-    [...stockPageQuery.brands].sort(), [...stockPageQuery.groups].sort(), [...stockPageQuery.lines].sort(), stockPageQuery.sortMode];
+    [...stockPageQuery.brands].sort(), [...stockPageQuery.groups].sort(), [...stockPageQuery.lines].sort(), stockPageQuery.sortMode, stockPageQuery.columnFilters];
   const stockVersionQuery = useQuery({
     queryKey: ['estoque-api-version', estoqueCompanyCode],
-    queryFn: async () => {
+    queryFn: async ({ signal }) => {
       const { data: sessionData } = await supabase.auth.getSession();
       const response = await fetch(buildApiProxyUrl(empresa!, '/operacional/estoque/fontes/versao'), {
+        signal,
         headers: {
           Authorization: `Bearer ${sessionData?.session?.access_token}`,
           apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
@@ -430,13 +374,16 @@ export function useEstoqueData(
       if (!response.ok || response.headers.get('x-proxy-upstream-error') === 'true') {
         throw new Error(`Falha ao identificar a versão da API de estoque (HTTP ${response.status}).`);
       }
-      return response.json() as Promise<{ release?: string }>;
+      const capabilities = await response.json() as StockApiCapabilities;
+      if (!supportsStockColumnFilters(capabilities)) throw new Error('A API de estoque não informa capacidades de paginação compatíveis.');
+      return capabilities;
     },
     enabled: isPelegriniCentral,
     staleTime: 60 * 1000,
     retry: false,
   });
-  const isServerPagedStock = isPelegriniCentral && stockVersionQuery.data?.release === PELEGRINI_FAST_STOCK_RELEASE;
+  const isServerPagedStock = isPelegriniCentral;
+  const stockColumnFiltersSupported = supportsStockColumnFilters(stockVersionQuery.data);
   const waitingForStockVersion = isPelegriniCentral && stockVersionQuery.isLoading;
   const [debouncedStockSearch, setDebouncedStockSearch] = useState(stockPageQuery.search);
   useEffect(() => {
@@ -444,6 +391,11 @@ export function useEstoqueData(
     return () => window.clearTimeout(timer);
   }, [stockPageQuery.search]);
   const stockSearchSettled = debouncedStockSearch === stockPageQuery.search;
+  const pagedFilters = {
+    ...stockPageQuery,
+    search: debouncedStockSearch,
+    ...(!stockColumnFiltersSupported ? { sortMode: 'product-asc' as const, columnFilters: {} } : {}),
+  };
   const period = getEstoqueAnalysisPeriod(periodMonths);
   const currentCT = () => fetchFromEndpoint(empresa!, '/operacional/estoque/analise/produtos?cod_empresa_bi=1004');
   const overviewQuery = useQuery({
@@ -464,16 +416,14 @@ export function useEstoqueData(
   });
   const consolidadoQuery = useQuery({
     queryKey: isServerPagedStock
-      ? ['estoque-pagina-r11', estoqueCompanyCode, viewMode, ...stockPageQueryKey]
+      ? ['estoque-pagina-r15', estoqueCompanyCode, 'consolidado', ...stockPageQueryKey]
       : [isCT ? 'estoque-produtos-ct-v2' : 'estoque-consolidado', estoqueCompanyCode],
-    queryFn: async () => isServerPagedStock
-      ? fetchPelegriniStockPage(empresa!, String(estoqueCompanyCode), viewMode, {
-        ...stockPageQuery,
-        search: debouncedStockSearch,
-      })
+    queryFn: async ({ signal }) => isServerPagedStock
+      ? fetchPelegriniStockPage(empresa!, String(estoqueCompanyCode), 'consolidado', pagedFilters, signal)
       : isCT ? currentCT() : fetchEstoqueSource(empresa!, 'consolidado', estoqueCompanyCode),
+    placeholderData: (previous, previousQuery) => isServerPagedStock && previousQuery?.queryKey[0] === 'estoque-pagina-r15' && previousQuery.queryKey[1] === estoqueCompanyCode && previousQuery.queryKey[2] === 'consolidado' ? previous : undefined,
     enabled: !!empresa && !!empresa.modulo_operacional && activeTab !== 'overview'
-      && !waitingForStockVersion && (!isServerPagedStock || viewMode === 'consolidado')
+      && !waitingForStockVersion && (!isServerPagedStock || Boolean(stockVersionQuery.data) && viewMode === 'consolidado')
       && stockSearchSettled,
     staleTime: 5 * 60 * 1000,
     retry: false,
@@ -481,16 +431,14 @@ export function useEstoqueData(
 
   const detalhadoQuery = useQuery({
     queryKey: isServerPagedStock
-      ? ['estoque-pagina-r11', estoqueCompanyCode, viewMode, ...stockPageQueryKey]
+      ? ['estoque-pagina-r15', estoqueCompanyCode, 'detalhado', ...stockPageQueryKey]
       : [isCT ? 'estoque-produtos-ct-v2' : 'estoque-detalhado', estoqueCompanyCode],
-    queryFn: async () => isServerPagedStock
-      ? fetchPelegriniStockPage(empresa!, String(estoqueCompanyCode), viewMode, {
-        ...stockPageQuery,
-        search: debouncedStockSearch,
-      })
+    queryFn: async ({ signal }) => isServerPagedStock
+      ? fetchPelegriniStockPage(empresa!, String(estoqueCompanyCode), 'detalhado', pagedFilters, signal)
       : isCT ? currentCT() : fetchEstoqueSource(empresa!, 'detalhado', estoqueCompanyCode),
+    placeholderData: (previous, previousQuery) => isServerPagedStock && previousQuery?.queryKey[0] === 'estoque-pagina-r15' && previousQuery.queryKey[1] === estoqueCompanyCode && previousQuery.queryKey[2] === 'detalhado' ? previous : undefined,
     enabled: !!empresa && !!empresa.modulo_operacional && activeTab === 'central' && !waitingForStockVersion
-      && (!isServerPagedStock || viewMode === 'detalhado') && stockSearchSettled,
+      && (!isServerPagedStock || Boolean(stockVersionQuery.data) && viewMode === 'detalhado') && stockSearchSettled,
     staleTime: 5 * 60 * 1000,
     retry: false,
   });
@@ -520,12 +468,12 @@ export function useEstoqueData(
     retry: false,
   });
 
-  const consolidadoRows = (isServerPagedStock
-    ? (consolidadoQuery.data as PelegriniStockPage | undefined)?.itens
-    : consolidadoQuery.data) || [];
-  const detalhadoRows = (isServerPagedStock
-    ? (detalhadoQuery.data as PelegriniStockPage | undefined)?.itens
-    : detalhadoQuery.data) || [];
+  const consolidadoRows = useMemo(() => isServerPagedStock
+    ? consolidadoQuery.data ? normalizeStockPageRows(consolidadoQuery.data as PelegriniStockPage, 'consolidado') : []
+    : consolidadoQuery.data || [], [consolidadoQuery.data, isServerPagedStock]);
+  const detalhadoRows = useMemo(() => isServerPagedStock
+    ? detalhadoQuery.data ? normalizeStockPageRows(detalhadoQuery.data as PelegriniStockPage, 'detalhado') : []
+    : detalhadoQuery.data || [], [detalhadoQuery.data, isServerPagedStock]);
   const activeStockPage = isServerPagedStock
     ? ((viewMode === 'detalhado' ? detalhadoQuery.data : consolidadoQuery.data) as PelegriniStockPage | undefined)
     : undefined;
@@ -556,13 +504,13 @@ export function useEstoqueData(
     recentStart,
   ), [estoqueCompanyCode, recentStart, recoveryRows]);
   const recoveredSources = useMemo(() => ({
-    consolidado: !isCT && consolidadoQuery.isError && !estoqueConsolidadoPrincipal.length && estoqueRecuperado.length > 0,
-    detalhado: !isCT && detalhadoQuery.isError && !estoqueDetalhadoPrincipal.length && estoqueRecuperado.length > 0,
-  }), [isCT, consolidadoQuery.isError, detalhadoQuery.isError, estoqueConsolidadoPrincipal.length, estoqueDetalhadoPrincipal.length, estoqueRecuperado.length]);
+    consolidado: !isServerPagedStock && !isCT && consolidadoQuery.isError && !estoqueConsolidadoPrincipal.length && estoqueRecuperado.length > 0,
+    detalhado: !isServerPagedStock && !isCT && detalhadoQuery.isError && !estoqueDetalhadoPrincipal.length && estoqueRecuperado.length > 0,
+  }), [isServerPagedStock, isCT, consolidadoQuery.isError, detalhadoQuery.isError, estoqueConsolidadoPrincipal.length, estoqueDetalhadoPrincipal.length, estoqueRecuperado.length]);
   const partialSources = useMemo(() => ({
-    consolidado: !isCT && consolidadoQuery.isError && !estoqueConsolidadoPrincipal.length && !recoveredSources.consolidado && estoqueFallback.length > 0,
-    detalhado: !isCT && detalhadoQuery.isError && !estoqueDetalhadoPrincipal.length && !recoveredSources.detalhado && estoqueFallback.length > 0,
-  }), [isCT, consolidadoQuery.isError, detalhadoQuery.isError, estoqueConsolidadoPrincipal.length, estoqueDetalhadoPrincipal.length, estoqueFallback.length, recoveredSources]);
+    consolidado: !isServerPagedStock && !isCT && consolidadoQuery.isError && !estoqueConsolidadoPrincipal.length && !recoveredSources.consolidado && estoqueFallback.length > 0,
+    detalhado: !isServerPagedStock && !isCT && detalhadoQuery.isError && !estoqueDetalhadoPrincipal.length && !recoveredSources.detalhado && estoqueFallback.length > 0,
+  }), [isServerPagedStock, isCT, consolidadoQuery.isError, detalhadoQuery.isError, estoqueConsolidadoPrincipal.length, estoqueDetalhadoPrincipal.length, estoqueFallback.length, recoveredSources]);
   const consolidadoData = useMemo(() => recoveredSources.consolidado
     ? estoqueRecuperado
     : partialSources.consolidado ? estoqueFallback : estoqueConsolidadoPrincipal, [estoqueConsolidadoPrincipal, estoqueFallback, estoqueRecuperado, partialSources, recoveredSources]);
@@ -571,8 +519,8 @@ export function useEstoqueData(
     : partialSources.detalhado ? estoqueFallback : estoqueDetalhadoPrincipal, [estoqueDetalhadoPrincipal, estoqueFallback, estoqueRecuperado, partialSources, recoveredSources]);
 
   const sourceStatus = {
-    consolidado: resolveStockSourceState(consolidadoQuery, partialSources.consolidado || recoveredSources.consolidado),
-    detalhado: resolveStockSourceState(detalhadoQuery, partialSources.detalhado || recoveredSources.detalhado),
+    consolidado: isPelegriniCentral && stockVersionQuery.isError ? 'error' as const : resolveStockSourceState(consolidadoQuery, partialSources.consolidado || recoveredSources.consolidado),
+    detalhado: isPelegriniCentral && stockVersionQuery.isError ? 'error' as const : resolveStockSourceState(detalhadoQuery, partialSources.detalhado || recoveredSources.detalhado),
     giro: resolveStockSourceState(giroQuery),
   };
   const sourceLastUpdated = useMemo(() => ({
@@ -617,15 +565,16 @@ export function useEstoqueData(
     consolidadoData,
     detalhadoData,
     isServerPagedStock,
+    stockColumnFiltersSupported,
     stockPage: activeStockPage,
-    stockPageLoading: isServerPagedStock && (viewMode === 'detalhado' ? detalhadoQuery.isFetching : consolidadoQuery.isFetching),
+    stockPageLoading: isServerPagedStock && (!stockSearchSettled || (viewMode === 'detalhado' ? detalhadoQuery.isFetching : consolidadoQuery.isFetching)),
     giroData,
     isLoading,
     isInitialLoading,
     isError,
     sourceErrors: {
-      consolidado: consolidadoQuery.error,
-      detalhado: detalhadoQuery.error,
+      consolidado: (isPelegriniCentral ? stockVersionQuery.error : null) || consolidadoQuery.error,
+      detalhado: (isPelegriniCentral ? stockVersionQuery.error : null) || detalhadoQuery.error,
       giro: giroQuery.error,
     },
     sourceStatus,
@@ -638,7 +587,7 @@ export function useEstoqueData(
       ? (viewMode === 'detalhado' ? detalhadoQuery.isFetching : consolidadoQuery.isFetching)
       : consolidadoQuery.isFetching || detalhadoQuery.isFetching || giroQuery.isFetching || recoveryQuery.isFetching,
     refetch: () => activeTab === 'overview' ? overviewQuery.refetch() : isServerPagedStock
-      ? (viewMode === 'detalhado' ? detalhadoQuery.refetch() : consolidadoQuery.refetch())
+      ? stockVersionQuery.isError ? stockVersionQuery.refetch() : (viewMode === 'detalhado' ? detalhadoQuery.refetch() : consolidadoQuery.refetch())
       : Promise.all([
         consolidadoQuery.refetch(),
         detalhadoQuery.refetch(),

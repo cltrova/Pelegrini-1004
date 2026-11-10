@@ -16,7 +16,7 @@ export type StockSortKey =
   | 'average-cost'
   | 'last-purchase'
   | 'last-sale';
-export type StockSortMode = `${StockSortKey}-${'asc' | 'desc'}` | 'stock-desc' | 'stock-asc' | 'product' | 'last-movement' | 'brand';
+export type StockSortMode = `${StockSortKey}-${'asc' | 'desc'}` | 'stock-desc' | 'stock-asc' | 'product' | 'last-movement' | 'brand' | 'group-brand-product';
 export type StockMovementTrend = 'increasing' | 'decreasing' | 'stagnant' | 'irregular';
 export type StockPrimaryMovementType = 'sale' | 'withdrawal' | 'purchase' | 'entry';
 export type StockMovementScope = 'branch' | 'product';
@@ -50,16 +50,6 @@ export interface StockInsightFilters {
   brands?: string[];
   groups?: string[];
   lines?: string[];
-}
-
-export interface StockPageQuery {
-  page: number;
-  search: string;
-  quickFilter: StockQuickFilter;
-  brands: string[];
-  groups: string[];
-  lines: string[];
-  sortMode: StockSortMode;
 }
 
 const DAY_MS = 86_400_000;
@@ -114,6 +104,7 @@ export function consolidateStockRecords(rows: EstoqueRecord[]): EstoqueRecord[] 
         current.data_ultima_transferencia,
         row.data_ultima_transferencia,
       ]),
+      data_ultima_movimentacao: latestOperationalDate([current.data_ultima_movimentacao ?? null, row.data_ultima_movimentacao ?? null]),
     });
   });
 
@@ -260,12 +251,14 @@ export function buildStockInsights(
     if (item.quantidade_estoque <= 0) status = 'out';
     else if (coverageDays !== null && coverageDays < 15) status = 'critical';
     else if (coverageDays !== null && coverageDays < 30) status = 'low';
+    if (item.situacao && ['available', 'low', 'critical', 'out'].includes(item.situacao)) status = item.situacao;
 
     const latestTimestamp = [
       ...movements.map((row) => row.data_movimento),
       item.data_ultima_venda,
       item.data_ultima_compra,
       item.data_ultima_transferencia,
+      item.data_ultima_movimentacao ?? null,
     ].reduce((latest, value) => Math.max(latest, validTimestamp(value)), 0);
     const lastMovementDate = latestTimestamp ? new Date(latestTimestamp).toISOString() : null;
     const stagnantDays = latestTimestamp
@@ -342,7 +335,7 @@ export function filterStockInsights(
   const lines = new Set(filters.lines ?? []);
 
   return insights.filter((item) => {
-    const searchable = [
+    const matchesSearch = !search || [
       item.cod_produto,
       item.produto,
       item.marca,
@@ -354,8 +347,7 @@ export function filterStockInsights(
       item.nr_original,
     ]
       .map(normalizeStockSearch)
-      .join(' ');
-    const matchesSearch = !search || searchable.includes(search);
+      .join(' ').includes(search);
     const matchesBrand = brands.size === 0 || brands.has(item.marca);
     const matchesGroup = groups.size === 0 || groups.has(item.grupo);
     const matchesLine = lines.size === 0 || lines.has(item.linha ?? '');
@@ -386,24 +378,27 @@ export function sortStockInsights(insights: StockProductInsight[], mode: StockSo
   const descending = legacyMode.endsWith('-desc');
   const key = legacyMode.replace(/-(asc|desc)$/, '') as StockSortKey;
 
+  const compareText = (a: unknown, b: unknown) => stockSortCollator.compare(String(a ?? ''), String(b ?? ''));
+  const hierarchy = (a: StockProductInsight, b: StockProductInsight) => compareText(a.grupo, b.grupo) || compareText(a.marca, b.marca) || compareText(a.produto, b.produto) || a.cod_produto - b.cod_produto;
+  if (mode === 'group-brand-product') return [...insights].sort(hierarchy);
   return [...insights].sort((a, b) => {
-    const textValue = (value: unknown) => String(value ?? '');
-    const numericValue = (value: unknown) => Number(value ?? 0);
-    const values: Record<StockSortKey, string | number> = {
-      product: textValue(a.produto).localeCompare(textValue(b.produto), 'pt-BR'),
-      brand: textValue(a.marca).localeCompare(textValue(b.marca), 'pt-BR'),
-      group: textValue(a.grupo).localeCompare(textValue(b.grupo), 'pt-BR'),
-      quantity: a.quantidade_estoque - b.quantidade_estoque,
-      value: a.valor_estoque - b.valor_estoque,
-      'last-movement': textValue(a.lastMovementDate).localeCompare(textValue(b.lastMovementDate)),
-      status: textValue(a.status).localeCompare(textValue(b.status), 'pt-BR'),
-      branch: textValue(a.empresa).localeCompare(textValue(b.empresa), 'pt-BR'),
-      location: textValue(a.localizacao_produto).localeCompare(textValue(b.localizacao_produto), 'pt-BR'),
-      'average-cost': numericValue(a.custo_medio) - numericValue(b.custo_medio),
-      'last-purchase': textValue(a.data_ultima_compra).localeCompare(textValue(b.data_ultima_compra)),
-      'last-sale': textValue(a.data_ultima_venda).localeCompare(textValue(b.data_ultima_venda)),
-    };
-    const comparison = Number(values[key] ?? 0);
-    return descending ? -comparison : comparison;
+    let comparison = 0;
+    switch (key) {
+      case 'product': comparison = compareText(a.produto, b.produto); break;
+      case 'brand': comparison = compareText(a.marca, b.marca); break;
+      case 'group': comparison = compareText(a.grupo, b.grupo); break;
+      case 'quantity': comparison = a.quantidade_estoque - b.quantidade_estoque; break;
+      case 'value': comparison = a.valor_estoque - b.valor_estoque; break;
+      case 'last-movement': comparison = compareText(a.lastMovementDate, b.lastMovementDate); break;
+      case 'status': comparison = compareText(a.status, b.status); break;
+      case 'branch': comparison = compareText(a.empresa, b.empresa); break;
+      case 'location': comparison = compareText(a.localizacao_produto, b.localizacao_produto); break;
+      case 'average-cost': comparison = Number(a.custo_medio ?? 0) - Number(b.custo_medio ?? 0); break;
+      case 'last-purchase': comparison = compareText(a.data_ultima_compra, b.data_ultima_compra); break;
+      case 'last-sale': comparison = compareText(a.data_ultima_venda, b.data_ultima_venda); break;
+    }
+    return comparison ? (descending ? -comparison : comparison) : hierarchy(a, b);
   });
 }
+
+const stockSortCollator = new Intl.Collator('pt-BR', { numeric: true, sensitivity: 'base' });

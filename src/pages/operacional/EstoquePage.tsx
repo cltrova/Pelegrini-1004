@@ -19,12 +19,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { useFilialSelecionada } from '@/contexts/FilialSelecionadaContext';
-import { useEmpresaAtiva } from '@/hooks/useEmpresaAtiva';
-import { resolveCodEmpresaBiParam } from '@/utils/filialEndpoint';
-import { EstoqueAtualPage } from './EstoqueAtualPage';
 import { useEstoqueData } from '@/hooks/useEstoqueData';
 import type { EstoqueRecord, GiroFiltersState, GiroStatus, ViewMode } from '@/types/estoque';
-import type { StockPageQuery, StockQuickFilter } from '@/components/operacional/estoque/estoqueIntelligence';
+import type { StockQuickFilter } from '@/components/operacional/estoque/estoqueIntelligence';
+import { defaultStockPageQuery, type StockPageQuery } from '@/components/operacional/estoque/stockPagedApi';
 import { toast } from 'sonner';
 
 function calcDiasSemVenda(dataUltimaVenda: string | null): number {
@@ -38,7 +36,7 @@ function exportToExcel(data: EstoqueRecord[]) {
     String(r.cod_produto), r.produto, r.marca, r.cod_fabricante, r.nr_fabricante, r.grupo, r.empresa, r.classe_abc,
     String(r.quantidade_estoque),
     r.valor_estoque.toFixed(2).replace('.', ','),
-    r.custo_medio.toFixed(2).replace('.', ','),
+    r.custo_medio_consolidado === null ? '' : r.custo_medio.toFixed(2).replace('.', ','),
     r.data_ultima_venda ? new Date(r.data_ultima_venda).toLocaleDateString('pt-BR') : '—',
     String(calcDiasSemVenda(r.data_ultima_venda) === 9999 ? 'N/A' : calcDiasSemVenda(r.data_ultima_venda)),
   ]);
@@ -67,9 +65,6 @@ const STATUS_OPTIONS = [
 const DEFAULT_GIRO_FILTERS: GiroFiltersState = {
   periodoMeses: 3, statusFilter: [], empresas: [], marcas: [], grupos: [], searchTerm: '',
 };
-const DEFAULT_STOCK_PAGE_QUERY: StockPageQuery = {
-  page: 1, search: '', quickFilter: 'all', brands: [], groups: [], lines: [], sortMode: 'product-asc',
-};
 
 const LazyEstoqueOverview = lazy(() => import('@/components/operacional/estoque/EstoqueOverview').then(({ EstoqueOverview }) => ({ default: EstoqueOverview })));
 const LazyGiroEstoqueTab = lazy(() => import('@/components/operacional/GiroEstoqueTab').then(({ GiroEstoqueTab }) => ({ default: GiroEstoqueTab })));
@@ -89,29 +84,16 @@ interface EstoquePageProps {
   initialTab?: EstoqueTab;
 }
 
-export function EstoqueProdutosPage({ initialTab = 'overview', onOpenCurrent }: EstoquePageProps & { onOpenCurrent?: () => void }) {
+export function EstoqueProdutosPage({ initialTab = 'overview' }: EstoquePageProps) {
   const [overviewMonths, setOverviewMonths] = useState(3);
   const [overviewFilters, setOverviewFilters] = useState({brand: '', group: '', branch: ''});
   const [giroFilters, setGiroFilters] = useState<GiroFiltersState>(DEFAULT_GIRO_FILTERS);
   const [activeTab, setActiveTab] = useState<EstoqueTab>(initialTab);
   const [requestedQuickFilter, setRequestedQuickFilter] = useState<StockQuickFilter | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>('consolidado');
-  const [stockPageQuery, setStockPageQuery] = useState<StockPageQuery>(DEFAULT_STOCK_PAGE_QUERY);
-  const updateStockPageQuery = useCallback((next: StockPageQuery) => {
-    setStockPageQuery((current) => JSON.stringify(current) === JSON.stringify(next) ? current : next);
-  }, []);
-  const {
-    activeCompanyCode, consolidadoData, detalhadoData, giroData, overviewData, overviewError,
-    overviewStatus, overviewLastUpdated, isLoading, isInitialLoading, empresa, sourceErrors,
-    sourceStatus, sourceLastUpdated, lastSuccessfulUpdate, partialSources, recoveredSources,
-    recoveryStatus, isFetching, refetch, isServerPagedStock, stockPage, stockPageLoading,
-  } = useEstoqueData(
-    activeTab === 'giro' ? giroFilters.periodoMeses : overviewMonths,
-    activeTab,
-    overviewFilters,
-    viewMode,
-    stockPageQuery,
-  );
+  const [stockPageQuery, setStockPageQuery] = useState<StockPageQuery>(defaultStockPageQuery);
+  const updateStockPageQuery = useCallback((next: StockPageQuery) => setStockPageQuery(current => JSON.stringify(current) === JSON.stringify(next) ? current : next), []);
+  const { activeCompanyCode, consolidadoData, detalhadoData, giroData, overviewData, overviewError, overviewStatus, overviewLastUpdated, isLoading, isInitialLoading, empresa, sourceErrors, sourceStatus, sourceLastUpdated, lastSuccessfulUpdate, partialSources, recoveredSources, recoveryStatus, isFetching, refetch, isServerPagedStock, stockPage, stockPageLoading, stockColumnFiltersSupported } = useEstoqueData(activeTab === 'giro' ? giroFilters.periodoMeses : overviewMonths, activeTab, overviewFilters, viewMode, stockPageQuery);
   const { codEmpresaContexto, filialAtiva } = useFilialSelecionada();
 
   const [pendingGiro, setPendingGiro] = useState<GiroFiltersState>(DEFAULT_GIRO_FILTERS);
@@ -129,7 +111,7 @@ export function EstoqueProdutosPage({ initialTab = 'overview', onOpenCurrent }: 
     ? consolidadoData
     : activeSource === 'detalhado' ? detalhadoData : giroData;
   const isOverview = activeTab === 'overview';
-  const hasCurrentViewData = isOverview ? Boolean(overviewData) : activeSourceData.length > 0;
+  const hasCurrentViewData = isOverview ? Boolean(overviewData) : activeSourceData.length > 0 || Boolean(isServerPagedStock && stockPage);
   const branchKey = `${codEmpresaContexto ?? empresa?.cod_empresa_bi ?? 'empresa'}:${filialAtiva ?? 'sem-filial'}`;
   const activeSourceError = isOverview ? overviewError : sourceErrors?.[activeSource];
   const activeSourceState = isOverview
@@ -230,7 +212,7 @@ export function EstoqueProdutosPage({ initialTab = 'overview', onOpenCurrent }: 
     setGiroFilters(DEFAULT_GIRO_FILTERS);
     setPendingGiro(DEFAULT_GIRO_FILTERS);
     setRequestedProductCode(null);
-    setStockPageQuery(DEFAULT_STOCK_PAGE_QUERY);
+    setStockPageQuery(defaultStockPageQuery());
   }, [branchKey]);
 
   const sourceNotice = sourceHasActiveIssue && !sourceNoticeDismissed ? (
@@ -308,9 +290,8 @@ export function EstoqueProdutosPage({ initialTab = 'overview', onOpenCurrent }: 
             ariaLabel="Visões do estoque"
             className="estoque-tabs min-w-0 flex-1"
             value={activeTab}
-            onValueChange={value => { if (value === 'atual') onOpenCurrent?.(); else setActiveTab(value as EstoqueTab); }}
+            onValueChange={value => setActiveTab(value as EstoqueTab)}
             items={[
-              ...(onOpenCurrent ? [{ value: 'atual', label: 'Estoque atual' }] : []),
               { value: 'overview', label: 'Visão geral' },
               { value: 'central', label: 'Central de Estoque' },
               { value: 'giro', label: 'Giro de Estoque' },
@@ -383,12 +364,13 @@ export function EstoqueProdutosPage({ initialTab = 'overview', onOpenCurrent }: 
               serverPaged={isServerPagedStock}
               serverPage={isServerPagedStock ? stockPage : undefined}
               serverPageLoading={stockPageLoading}
+              stockColumnFiltersSupported={stockColumnFiltersSupported}
               stockPageQuery={stockPageQuery}
               onStockPageQueryChange={updateStockPageQuery}
               movementAvailable={movementAvailable}
               branchKey={branchKey}
               viewMode={viewMode}
-              onViewModeChange={setViewMode}
+              onViewModeChange={mode => { setStockPageQuery(current => ({ ...current, page: 1 })); setViewMode(mode); }}
               onExport={exportToExcel}
               requestedProductCode={requestedProductCode}
               onRequestedProductHandled={() => setRequestedProductCode(null)}
@@ -479,16 +461,5 @@ export function EstoqueProdutosPage({ initialTab = 'overview', onOpenCurrent }: 
 }
 
 export default function EstoquePage(props: EstoquePageProps) {
-  const { empresa, isLoading } = useEmpresaAtiva();
-  const { filialAtiva } = useFilialSelecionada();
-  const companyCode = resolveCodEmpresaBiParam(empresa, filialAtiva);
-  const [productsBranch, setProductsBranch] = useState<string | undefined>();
-  const currentBranch = `${companyCode}:${filialAtiva ?? ''}`;
-  const isCT = companyCode === '1004' && filialAtiva !== 'chevrolet';
-  const showCurrent = isCT && props.initialTab === undefined && productsBranch !== currentBranch;
-  if (isLoading && !empresa) return <LoadingState message="Carregando configuração do estoque" />;
-  if (showCurrent && empresa?.modulo_operacional) {
-    return <EstoqueAtualPage empresa={empresa} onOpenProducts={() => setProductsBranch(currentBranch)} />;
-  }
-  return <EstoqueProdutosPage {...props} onOpenCurrent={isCT ? () => setProductsBranch(undefined) : undefined} />;
+  return <EstoqueProdutosPage {...props} />;
 }
