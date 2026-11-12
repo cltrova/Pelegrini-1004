@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 import type { ProdutividadeLinha } from '@/components/operacional/ProdutividadeDashboard';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { getProdutividadeColaborador, matchesProdutividadeColaborador, type ProdutividadeColaborador } from './produtividadeColaborador';
+import { getProdutividadeColaborador, matchesProdutividadeColaborador, sameProdutividadeColaborador, type ProdutividadeColaborador } from './produtividadeColaborador';
 import { exportarAtividadesExcel, type ProdutividadePeriodo } from './produtividadeExcel';
 
 const number = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 2 });
@@ -56,22 +56,38 @@ function ActivityRow({ row, byDay }: { row: ProdutividadeLinha; byDay: boolean }
   );
 }
 
-export function ProdutividadeAtividades({ rows, periodo, collaborator, onClearCollaborator }: {
+export function ProdutividadeAtividades({ rows, periodo, collaborator, onCollaboratorChange }: {
   rows: ProdutividadeLinha[];
   periodo: ProdutividadePeriodo;
   collaborator: ProdutividadeColaborador | null;
-  onClearCollaborator: () => void;
+  onCollaboratorChange: (person: ProdutividadeColaborador | null) => void;
 }) {
   const [query, setQuery] = useState('');
   const [groupBy, setGroupBy] = useState('dia');
   const [exporting, setExporting] = useState(false);
   const { inicio, fim, filial } = periodo;
   const byDay = groupBy === 'dia';
+  const periodRows = useMemo(() => rows.filter(row =>
+    row.data_atividade >= inicio && row.data_atividade <= fim &&
+    (!filial || Number(row.cod_empresa) === Number(filial))
+  ), [rows, inicio, fim, filial]);
+  const collaborators = useMemo(() => {
+    const people = new Map<string, ProdutividadeColaborador>();
+    for (const row of periodRows) {
+      const person = getProdutividadeColaborador(row);
+      people.set(person.id, person);
+    }
+    const options: ProdutividadeColaborador[] = [];
+    for (const person of people.values()) {
+      if (!options.some(option => sameProdutividadeColaborador(person, option))) options.push(person);
+    }
+    return options.sort((a, b) => a.name.localeCompare(b.name, 'pt-BR') || a.branch - b.branch || a.identity.localeCompare(b.identity));
+  }, [periodRows]);
+  const selected = collaborator && (collaborators.find(person => sameProdutividadeColaborador(person, collaborator)) ?? collaborator);
+
   const results = useMemo(() => {
     const term = normalize(query);
-    const matching = rows.filter(row =>
-      row.data_atividade >= inicio && row.data_atividade <= fim &&
-      (!filial || Number(row.cod_empresa) === Number(filial)) &&
+    const matching = periodRows.filter(row =>
       (!collaborator || matchesProdutividadeColaborador(row, collaborator)) &&
       normalize((row.nome_responsavel ?? '') + ' ' + (row.identificacao_responsavel ?? '')).includes(term)
     );
@@ -92,7 +108,7 @@ export function ProdutividadeAtividades({ rows, periodo, collaborator, onClearCo
         : b.data_atividade.localeCompare(a.data_atividade));
     }
     return { count: matching.length, sorted };
-  }, [rows, query, byDay, collaborator, inicio, fim, filial]);
+  }, [periodRows, query, byDay, collaborator]);
 
   async function exportActivities() {
     setExporting(true);
@@ -108,14 +124,31 @@ export function ProdutividadeAtividades({ rows, periodo, collaborator, onClearCo
   return (
     <section aria-label="Registros de produtividade" className="space-y-2">
       <div className="operational-toolbar flex flex-wrap items-center gap-2 rounded-sm border bg-card p-2">
-        {collaborator && (
-          <Button type="button" variant="outline" size="sm" className="h-8 max-w-full gap-1.5 border-primary/40 bg-primary/10 px-2.5 text-xs"
-            aria-label={'Remover filtro de ' + collaborator.name} onClick={onClearCollaborator}>
-            <Users className="h-3.5 w-3.5 shrink-0 text-primary" aria-hidden="true" />
-            <span className="truncate">{collaborator.name}</span>
-            <X className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-          </Button>
-        )}
+        <div className="flex min-w-0 items-center gap-1">
+          <label className="flex min-w-0 items-center gap-2 text-xs font-medium">
+            <span>Responsável</span>
+            <select value={selected?.id ?? ''} className="h-8 min-w-0 max-w-[min(48vw,16rem)] rounded-sm border border-input bg-background px-2 text-sm"
+              onChange={event => {
+                setQuery('');
+                onCollaboratorChange(collaborators.find(person => person.id === event.target.value) ?? null);
+              }}>
+              <option value="">Todos</option>
+              {selected && !collaborators.includes(selected) && <option value={selected.id}>{selected.name}</option>}
+              {collaborators.map(person => (
+                <option key={person.id} value={person.id}>
+                  {person.name}{collaborators.some(other => other.id !== person.id && other.name === person.name)
+                    && ' · Filial ' + person.branch + (person.identity ? ' · ' + person.identity : '')}
+                </option>
+              ))}
+            </select>
+          </label>
+          {collaborator && (
+            <Button type="button" variant="ghost" size="icon" className="h-8 w-8 shrink-0"
+              aria-label={'Remover filtro de ' + collaborator.name} onClick={() => onCollaboratorChange(null)}>
+              <X className="h-3.5 w-3.5" aria-hidden="true" />
+            </Button>
+          )}
+        </div>
         <label className="relative min-w-[12rem] flex-1 sm:max-w-xs">
           <span className="sr-only">Buscar responsável</span>
           <Search className="pointer-events-none absolute left-2.5 top-2 h-4 w-4 text-muted-foreground" aria-hidden="true" />

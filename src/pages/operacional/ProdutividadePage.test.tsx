@@ -62,7 +62,10 @@ beforeEach(() => {
   mockResponse();
 });
 
-afterEach(() => vi.useRealTimers());
+afterEach(() => {
+  vi.useRealTimers();
+  vi.unstubAllEnvs();
+});
 
 describe('produtividade Chevrolet', () => {
   it('abre com o mês inteiro e não mostra o horário da atualização', async () => {
@@ -162,12 +165,37 @@ describe('produtividade Chevrolet', () => {
     fireEvent.click(bar!);
     const activities = screen.getByRole('region', { name: 'Registros de produtividade' });
     const clear = within(activities).getByRole('button', { name: 'Remover filtro de Colaborador exemplo' });
+    expect(within(activities).getByRole('combobox', { name: 'Responsável' })).toHaveValue(JSON.stringify([2, '123']));
     expect(screen.getByRole('tab', { name: 'Atividades por dia e responsável' })).toHaveAttribute('aria-selected', 'true');
     expect(within(activities).getByText('3 registros')).toBeInTheDocument();
     expect(within(activities).queryByText('Filial 2 · 456')).not.toBeInTheDocument();
     expect(fetch).toHaveBeenCalledTimes(1);
     fireEvent.click(clear);
     expect(within(activities).getByText('4 registros')).toBeInTheDocument();
+  });
+
+  it('retira os lançamentos administrativos do estoque sem excluir um homônimo', async () => {
+    vi.stubEnv('VITE_PRODUTIVIDADE_USUARIO_NF_ADMIN_FILIAL_2', 'usuario-rsys:teste-administrativo');
+    const somenteNotas = {
+      ...linha, pedidos_separados: 0, unidades_separadas: 0, pedidos_conferidos: 0,
+      unidades_pedidos_marcados_conferidos: 0, unidades_conferidas_registradas: 0, unidades_guardadas: 0,
+    };
+    mockResponse({
+      ...resposta, cod_empresas: [2],
+      resumo: { ...resumo, notas_lancadas: 12 },
+      por_dia_responsavel: [
+        { ...somenteNotas, nome_responsavel: 'ANDRÉ', identificacao_responsavel: 'usuario-rsys:teste-administrativo', notas_lancadas: 7 },
+        { ...somenteNotas, nome_responsavel: 'ANDRÉ LIMA', identificacao_responsavel: '321', notas_lancadas: 5 },
+      ],
+    });
+    renderPage();
+    const ranking = await screen.findByRole('region', { name: 'Lançamento de NF por colaborador' });
+    expect(within(ranking).queryByRole('button', { name: /^ANDRÉ ·/ })).not.toBeInTheDocument();
+    expect(within(ranking).getByRole('button', { name: 'ANDRÉ LIMA · Filial 2 · 5 notas lançadas' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Detalhar notas lançadas' })).toHaveTextContent('5');
+    fireEvent.click(screen.getByRole('tab', { name: 'Atividades por dia e responsável' }));
+    const responsible = screen.getByRole('combobox', { name: 'Responsável' });
+    expect(within(responsible).queryByRole('option', { name: 'ANDRÉ', exact: true })).not.toBeInTheDocument();
   });
 
   it('separa as atividades em uma subaba e permite buscar, agrupar e expandir os registros', async () => {
@@ -238,7 +266,10 @@ describe('produtividade Chevrolet', () => {
     fireEvent.change(within(filters).getByLabelText('Data final'), { target: { value: '2026-11-10' } });
     fireEvent.change(within(filters).getByLabelText('Filial'), { target: { value: '2' } });
     fireEvent.click(within(filters).getByRole('button', { name: 'Aplicar' }));
-    fireEvent.click(await screen.findByRole('button', { name: 'Colaborador exemplo · Filial 2 · 15 notas lançadas' }));
+    fireEvent.click(screen.getByRole('tab', { name: 'Atividades por dia e responsável' }));
+    const responsible = await screen.findByRole('combobox', { name: 'Responsável' });
+    const option = within(responsible).getByRole('option', { name: 'Colaborador exemplo · Filial 2 · 123' });
+    fireEvent.change(responsible, { target: { value: (option as HTMLOptionElement).value } });
     expect(screen.getByText('2 registros')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Exportar Excel' }));
     await waitFor(() => expect(XLSX.writeFile).toHaveBeenCalledTimes(1));

@@ -67,6 +67,30 @@ export async function buscarProdutividade(_empresa: Empresa, inicio: string, fim
   return result;
 }
 
+function selecionarProdutividadeEstoque(dados: Dados): Dados {
+  const usuarioNotasAdministrativas = import.meta.env.VITE_PRODUTIVIDADE_USUARIO_NF_ADMIN_FILIAL_2;
+  if (!usuarioNotasAdministrativas) return dados;
+
+  let notasAdministrativas = 0;
+  const por_dia_responsavel = dados.por_dia_responsavel.flatMap(row => {
+    if (Number(row.cod_empresa) !== 2 || row.identificacao_responsavel !== usuarioNotasAdministrativas) return [row];
+
+    notasAdministrativas += Number(row.notas_lancadas) || 0;
+    const temAtividadeEstoque = row.pedidos_separados > 0 || row.unidades_separadas > 0 ||
+      row.pedidos_conferidos > 0 || row.unidades_pedidos_marcados_conferidos > 0 ||
+      row.unidades_conferidas_registradas > 0 || row.unidades_guardadas > 0;
+    return temAtividadeEstoque ? [{ ...row, notas_lancadas: 0 }] : [];
+  });
+  return {
+    ...dados,
+    por_dia_responsavel,
+    resumo: {
+      ...dados.resumo,
+      notas_lancadas: Math.max(0, dados.resumo.notas_lancadas - notasAdministrativas),
+    },
+  };
+}
+
 function FiltrosProdutividade({ value, onApply }: { value: Filtros; onApply: (filtros: Filtros) => void }) {
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState(value);
@@ -138,6 +162,7 @@ export default function ProdutividadePage() {
   const query = useQuery({
     queryKey: ['produtividade-chevrolet', empresa?.id, companhia, inicio, fim, filial],
     queryFn: ({ signal }) => buscarProdutividade(empresa!, inicio, fim, filial, signal),
+    select: selecionarProdutividadeEstoque,
     enabled: !!empresa && companhia === '10041',
     staleTime: 30_000,
     retry: false,
@@ -198,7 +223,7 @@ export default function ProdutividadePage() {
         ref={activityPanel} role="tabpanel" tabIndex={0} hidden={activeTab !== activityTab} className="p-2 outline-none sm:p-3">
         {activeTab === activityTab && query.data && (
           <ProdutividadeAtividades rows={query.data.por_dia_responsavel} periodo={filters}
-            collaborator={collaborator} onClearCollaborator={() => setCollaborator(null)} />
+            collaborator={collaborator} onCollaboratorChange={setCollaborator} />
         )}
       </section>
     </main>

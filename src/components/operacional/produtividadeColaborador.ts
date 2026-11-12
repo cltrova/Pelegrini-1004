@@ -19,7 +19,10 @@ export function getProdutividadeColaborador(row: Responsavel): ProdutividadeCola
 }
 
 export function matchesProdutividadeColaborador(row: Responsavel, selected: ProdutividadeColaborador) {
-  const current = getProdutividadeColaborador(row);
+  return sameProdutividadeColaborador(getProdutividadeColaborador(row), selected);
+}
+
+export function sameProdutividadeColaborador(current: ProdutividadeColaborador, selected: ProdutividadeColaborador) {
   return current.id === selected.id || Boolean(
     selected.identity && current.identity === selected.identity &&
     current.name.localeCompare(selected.name, 'pt-BR', { sensitivity: 'base' }) === 0
