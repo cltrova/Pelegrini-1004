@@ -7,6 +7,7 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { cn } from '@/lib/utils';
+import { getProdutividadeColaborador, type ProdutividadeColaborador } from './produtividadeColaborador';
 
 const metrics = {
   pedidos_separados: 'Pedidos separados',
@@ -43,8 +44,8 @@ const panels = {
 } as const;
 type Panel = keyof typeof panels;
 type BarPanel = 'separacao' | 'conferencia';
-type Collaborator = { id: string; name: string; branch: number; identity: string; totals: Totals };
-type Detail = { panel: Panel; collaboratorId?: string; status?: 'concluidas' | 'pendentes'; byDay?: boolean };
+type Collaborator = ProdutividadeColaborador & { totals: Totals };
+type Detail = { panel: Panel; status?: 'concluidas' | 'pendentes'; byDay?: boolean };
 
 const keys = Object.keys(metrics) as Metric[];
 const teal = 'hsl(var(--chart-2))';
@@ -53,23 +54,16 @@ const compact = new Intl.NumberFormat('pt-BR', { notation: 'compact', maximumFra
 const valueOf = (value: number) => Number.isFinite(Number(value)) ? Number(value) : 0;
 const percentOf = (resumo: ProdutividadeResumo) => resumo.nivel_servico_guarda_pct == null ? '—' : number.format(resumo.nivel_servico_guarda_pct) + '%';
 
-function collaboratorKey(row: ProdutividadeLinha) {
-  return JSON.stringify([Number(row.cod_empresa), String(row.identificacao_responsavel ?? '').trim() || row.nome_responsavel?.trim()]);
-}
-
 function groupCollaborators(rows: readonly ProdutividadeLinha[]) {
   const collaborators = new Map<string, Collaborator>();
   for (const row of rows) {
-    const id = collaboratorKey(row);
-    const person = collaborators.get(id) ?? {
-      id,
-      name: row.nome_responsavel?.trim() || 'Sem nome',
-      branch: Number(row.cod_empresa),
-      identity: String(row.identificacao_responsavel ?? '').trim(),
+    const collaborator = getProdutividadeColaborador(row);
+    const person = collaborators.get(collaborator.id) ?? {
+      ...collaborator,
       totals: Object.fromEntries(keys.map(key => [key, 0])) as Totals,
     };
     for (const key of keys) person.totals[key] += valueOf(row[key]);
-    collaborators.set(id, person);
+    collaborators.set(collaborator.id, person);
   }
   return [...collaborators.values()];
 }
@@ -97,7 +91,7 @@ function ChartFrame({ panel, title = panels[panel].title, children, onDetails }:
 }) {
   const id = useId();
   return (
-    <section aria-labelledby={id} className="min-w-0 overflow-hidden rounded-lg border border-border/80 bg-card shadow-sm">
+    <section aria-labelledby={id} className="operational-panel min-w-0 overflow-hidden rounded-sm border bg-card">
       <div className="flex min-h-10 items-center justify-between gap-2 border-b border-border/60 px-3.5">
         <h2 id={id} className="text-sm font-semibold leading-tight">{title}</h2>
         <Button type="button" variant="ghost" size="icon" className="h-7 w-7 shrink-0 text-muted-foreground"
@@ -110,10 +104,11 @@ function ChartFrame({ panel, title = panels[panel].title, children, onDetails }:
   );
 }
 
-function VerticalChart({ panel, collaborators, onDetail }: {
+function VerticalChart({ panel, collaborators, onDetail, onCollaborator }: {
   panel: BarPanel;
   collaborators: Collaborator[];
   onDetail: (detail: Detail) => void;
+  onCollaborator: (person: ProdutividadeColaborador) => void;
 }) {
   const gradient = 'produtividade-' + useId().replace(/[^a-z0-9_-]/gi, '');
   const series: readonly Metric[] = panels[panel].series;
@@ -168,12 +163,25 @@ function VerticalChart({ panel, collaborators, onDetail }: {
               </defs>
               <CartesianGrid vertical={false} stroke="hsl(var(--border))" strokeDasharray="3 4" />
               <YAxis width={48} axisLine={false} tickLine={false} allowDecimals={false} tickCount={4} tickFormatter={value => compact.format(value)} />
-              <XAxis dataKey="person.id" interval={0} axisLine={false} tickLine={false} tickMargin={6} tick={{ fontSize: 10 }}
-                tickFormatter={value => {
-                  const person = names.get(value);
-                  if (!person) return '';
+              <XAxis dataKey="person.id" interval={0} axisLine={false} tickLine={false}
+                tick={({ x, y, payload }) => {
+                  const person = names.get(payload.value);
+                  if (!person) return <g />;
                   const label = shortName(person.name);
-                  return (byShortName.get(label) ?? 0) > 1 ? label + ' · ' + person.branch : label;
+                  return (
+                    <text x={x} y={y + 10} textAnchor="middle" fontSize={10} role="button" tabIndex={0}
+                      aria-label={'Ver atividades de ' + person.name + ' · Filial ' + person.branch}
+                      className="cursor-pointer fill-muted-foreground hover:fill-primary focus-visible:fill-primary"
+                      onClick={() => onCollaborator(person)}
+                      onKeyDown={event => {
+                        if (event.key === 'Enter' || event.key === ' ') {
+                          event.preventDefault();
+                          onCollaborator(person);
+                        }
+                      }}>
+                      {(byShortName.get(label) ?? 0) > 1 ? label + ' · ' + person.branch : label}
+                    </text>
+                  );
                 }} />
               <ChartTooltip cursor={{ fill: 'hsl(var(--muted) / 0.5)' }} content={
                 <ChartTooltipContent
@@ -192,10 +200,13 @@ function VerticalChart({ panel, collaborators, onDetail }: {
               } />
               {visible.map(metric => (
                 <Bar key={metric} dataKey={metric} name={metrics[metric]} fill={'url(#' + gradient + '-' + metric + ')'}
-                  stroke={config[metric].color} strokeOpacity={0.48} radius={[4, 4, 0, 0]} barSize={series.length > 1 ? 23 : 28}
+                  stroke={config[metric].color} strokeOpacity={0.48} radius={[2, 2, 0, 0]} barSize={series.length > 1 ? 23 : 28}
                   className="cursor-pointer" isAnimationActive={false}
                   activeBar={{ stroke: config[metric].color, strokeWidth: 2, filter: 'drop-shadow(0 0 4px ' + config[metric].color + ')' }}
-                  onClick={entry => onDetail({ panel, collaboratorId: (entry.payload?.person ?? entry.person)?.id })} />
+                  onClick={entry => {
+                    const person = entry.payload?.person ?? entry.person;
+                    if (person) onCollaborator(person);
+                  }} />
               ))}
             </BarChart>
           </ChartContainer>
@@ -274,7 +285,11 @@ function GuardChart({ resumo, onDetail }: { resumo: ProdutividadeResumo; onDetai
   );
 }
 
-function InvoicesChart({ collaborators, onDetail }: { collaborators: Collaborator[]; onDetail: (detail: Detail) => void }) {
+function InvoicesChart({ collaborators, onDetail, onCollaborator }: {
+  collaborators: Collaborator[];
+  onDetail: (detail: Detail) => void;
+  onCollaborator: (person: ProdutividadeColaborador) => void;
+}) {
   const rows = collaborators.filter(person => person.totals.notas_lancadas > 0)
     .sort((a, b) => comparePeople(a, b, 'notas_lancadas'));
   const max = rows[0]?.totals.notas_lancadas ?? 1;
@@ -286,7 +301,7 @@ function InvoicesChart({ collaborators, onDetail }: { collaborators: Collaborato
             <li key={person.id}>
               <button type="button" className="group grid w-full grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-2 rounded-md px-2 py-1 text-left hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
                 aria-label={person.name + ' · Filial ' + person.branch + ' · ' + number.format(person.totals.notas_lancadas) + ' notas lançadas'}
-                onClick={() => onDetail({ panel: 'notas', collaboratorId: person.id })}>
+                onClick={() => onCollaborator(person)}>
                 <span className="text-[10px] text-muted-foreground tabular-nums">{index + 1}</span>
                 <span className="flex min-w-0 items-baseline gap-1.5 text-xs font-medium">
                   <span className="truncate">{person.name}</span>
@@ -371,14 +386,12 @@ function UnitsChart({ days, onDetail }: { days: DailyUnits[]; onDetail: (detail:
   );
 }
 
-function DetailsTable({ detail, rows, collaborators, person, resumo, days, onSelect }: {
+function DetailsTable({ detail, collaborators, resumo, days, onCollaborator }: {
   detail: Detail;
-  rows: ProdutividadeLinha[];
   collaborators: Collaborator[];
-  person?: Collaborator;
   resumo: ProdutividadeResumo;
   days: DailyUnits[];
-  onSelect: (id?: string) => void;
+  onCollaborator: (person: ProdutividadeColaborador) => void;
 }) {
   if (detail.byDay) {
     if (!days.length) return <p className="text-sm text-muted-foreground">Sem atividade no período.</p>;
@@ -421,26 +434,19 @@ function DetailsTable({ detail, rows, collaborators, person, resumo, days, onSel
   const metricsShown: readonly Metric[] = detail.panel === 'conferencia'
     ? [...panels.conferencia.series, 'unidades_conferidas_registradas']
     : panels[detail.panel].series;
-  if (detail.collaboratorId && !person) return <p className="text-sm text-muted-foreground">Sem atividade para este colaborador no período.</p>;
-  const entries = person
-    ? rows.filter(row => collaboratorKey(row) === person.id && metricsShown.some(metric => valueOf(row[metric]) > 0))
-      .sort((a, b) => b.data_atividade.localeCompare(a.data_atividade))
-      .map(row => ({ label: row.data_atividade.split('-').reverse().join('/'), branch: row.cod_empresa, key: row.data_atividade, totals: row }))
-    : collaborators.filter(row => hasActivity(row, metricsShown))
-      .sort((a, b) => comparePeople(a, b, metricsShown[0]))
-      .map(row => ({ label: row.name, branch: row.branch, key: row.id, totals: row.totals }));
+  const entries = collaborators.filter(row => hasActivity(row, metricsShown))
+    .sort((a, b) => comparePeople(a, b, metricsShown[0]));
   return (
     <>
       <dl className="flex flex-wrap gap-2">
         {metricsShown.map(metric => (
-          <div key={metric} className="min-w-24 rounded-md border bg-muted/30 px-3 py-2">
+          <div key={metric} className="min-w-24 rounded-sm border bg-muted/30 px-3 py-2">
             <dt className="text-xs text-muted-foreground">{metrics[metric]}</dt>
-            <dd className="text-lg font-semibold tabular-nums">{number.format(valueOf((person?.totals ?? resumo)[metric]))}</dd>
+            <dd className="text-lg font-semibold tabular-nums">{number.format(valueOf(resumo[metric]))}</dd>
           </div>
         ))}
       </dl>
-      {person && <Button type="button" size="sm" variant="outline" className="justify-self-start" onClick={() => onSelect()}>Ver todos os colaboradores</Button>}
-      {!person && (detail.panel === 'separacao' || detail.panel === 'conferencia') && (
+      {(detail.panel === 'separacao' || detail.panel === 'conferencia') && (
         <p className="text-xs text-muted-foreground">O total de pedidos considera pedidos distintos no período. A tabela soma a atividade diária por colaborador.</p>
       )}
       {detail.panel === 'conferencia' && <p className="text-xs text-muted-foreground">As unidades dos pedidos conferidos usam a quantidade atendida atual. Unidades por leitura vêm do log de conferência.</p>}
@@ -448,22 +454,20 @@ function DetailsTable({ detail, rows, collaborators, person, resumo, days, onSel
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>{person ? 'Dia' : 'Colaborador'}</TableHead>
+              <TableHead>Colaborador</TableHead>
               <TableHead>Filial</TableHead>
               {metricsShown.map(metric => <TableHead className="text-right" key={metric}>{metrics[metric]}</TableHead>)}
             </TableRow>
           </TableHeader>
           <TableBody>
             {entries.map(entry => (
-              <TableRow key={entry.key}>
+              <TableRow key={entry.id}>
                 <TableCell className="font-medium">
-                  {person ? entry.label : (
-                    <Button type="button" variant="link" className="h-auto p-0 text-left"
-                      aria-label={'Ver dias de ' + entry.label + ' · Filial ' + entry.branch}
-                      onClick={() => onSelect(entry.key)}>
-                      {entry.label}
-                    </Button>
-                  )}
+                  <Button type="button" variant="link" className="h-auto p-0 text-left"
+                    aria-label={'Ver atividades de ' + entry.name + ' · Filial ' + entry.branch}
+                    onClick={() => onCollaborator(entry)}>
+                    {entry.name}
+                  </Button>
                 </TableCell>
                 <TableCell>{entry.branch}</TableCell>
                 {metricsShown.map(metric => <TableCell className="text-right tabular-nums" key={metric}>{number.format(valueOf(entry.totals[metric]))}</TableCell>)}
@@ -476,13 +480,16 @@ function DetailsTable({ detail, rows, collaborators, person, resumo, days, onSel
   );
 }
 
-export function ProdutividadeDashboard({ rows, resumo }: { rows: ProdutividadeLinha[]; resumo: ProdutividadeResumo }) {
+export function ProdutividadeDashboard({ rows, resumo, onCollaborator }: {
+  rows: ProdutividadeLinha[];
+  resumo: ProdutividadeResumo;
+  onCollaborator: (person: ProdutividadeColaborador) => void;
+}) {
   const cardId = useId();
   const returnFocus = useRef<HTMLElement | null>(null);
   const [detail, setDetail] = useState<Detail | null>(null);
   const collaborators = groupCollaborators(rows);
   const days = groupDailyUnits(rows);
-  const selected = collaborators.find(person => person.id === detail?.collaboratorId);
   function showDetail(next: Detail) {
     returnFocus.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     setDetail(next);
@@ -499,14 +506,14 @@ export function ProdutividadeDashboard({ rows, resumo }: { rows: ProdutividadeLi
   ] as const;
   return (
     <>
-      <section aria-label="Totalizadores de produtividade" className="grid grid-cols-2 gap-2 sm:grid-cols-4 xl:grid-cols-8">
+      <section aria-label="Totalizadores de produtividade" className="operational-kpi-grid operational-metric-strip grid grid-cols-2 gap-px overflow-hidden rounded-sm border bg-border sm:grid-cols-4 xl:grid-cols-8">
         {cards.map(({ panel, label, value }, index) => {
           const { icon: Icon, color } = panels[panel];
           return (
             <button key={label} type="button" aria-label={'Detalhar ' + label.toLocaleLowerCase('pt-BR')} aria-describedby={cardId + index}
-              className="group relative flex min-h-[70px] min-w-0 flex-col justify-between gap-1 overflow-hidden rounded-lg border border-border bg-card px-2.5 py-2 text-left shadow-sm transition-colors hover:border-primary/60 hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="group relative flex min-h-16 min-w-0 flex-col justify-between gap-1 overflow-hidden bg-card px-3 py-2 text-left transition-colors hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
               onClick={() => showDetail({ panel })}>
-              <span aria-hidden="true" className="absolute inset-y-0 left-0 w-0.5" style={{ backgroundColor: color, boxShadow: '0 0 7px ' + color }} />
+              <span aria-hidden="true" className="absolute inset-y-0 left-0 w-0.5" style={{ backgroundColor: color }} />
               <span className="flex items-start gap-1.5 text-[11px] font-medium leading-tight text-muted-foreground">
                 <Icon className="h-3.5 w-3.5 shrink-0" aria-hidden="true" style={{ color }} />
                 {label}
@@ -519,32 +526,27 @@ export function ProdutividadeDashboard({ rows, resumo }: { rows: ProdutividadeLi
       </section>
       <section aria-label="Gráficos de produtividade" className="space-y-2">
         <div className="grid gap-2 lg:grid-cols-2">
-          <VerticalChart panel="separacao" collaborators={collaborators} onDetail={showDetail} />
-          <VerticalChart panel="conferencia" collaborators={collaborators} onDetail={showDetail} />
+          <VerticalChart panel="separacao" collaborators={collaborators} onDetail={showDetail} onCollaborator={onCollaborator} />
+          <VerticalChart panel="conferencia" collaborators={collaborators} onDetail={showDetail} onCollaborator={onCollaborator} />
         </div>
         <div className="grid gap-2 lg:grid-cols-3">
           <GuardChart resumo={resumo} onDetail={showDetail} />
-          <InvoicesChart collaborators={collaborators} onDetail={showDetail} />
+          <InvoicesChart collaborators={collaborators} onDetail={showDetail} onCollaborator={onCollaborator} />
           <UnitsChart days={days} onDetail={showDetail} />
         </div>
       </section>
       <Dialog open={detail !== null} onOpenChange={open => { if (!open) setDetail(null); }}>
         {detail && (
-          <DialogContent className="max-h-[85dvh] w-[calc(100%-2rem)] max-w-3xl overflow-auto rounded-lg"
+          <DialogContent className="operational-overlay max-h-[85dvh] w-[calc(100%-2rem)] max-w-3xl overflow-auto"
             onCloseAutoFocus={event => {
-              if (returnFocus.current?.isConnected) {
-                event.preventDefault();
-                returnFocus.current.focus();
-              }
+              event.preventDefault();
+              if (returnFocus.current?.isConnected) returnFocus.current.focus();
             }}>
             <DialogHeader>
               <DialogTitle>{detail.byDay ? unitsByDayTitle : panels[detail.panel].title}</DialogTitle>
-              <DialogDescription>
-                {selected ? selected.name + ' · Filial ' + selected.branch : 'Dados do período e da filial selecionados.'}
-              </DialogDescription>
+              <DialogDescription>Dados do período e da filial selecionados.</DialogDescription>
             </DialogHeader>
-            <DetailsTable detail={detail} rows={rows} collaborators={collaborators} person={selected} resumo={resumo} days={days}
-              onSelect={collaboratorId => setDetail({ panel: detail.panel, collaboratorId })} />
+            <DetailsTable detail={detail} collaborators={collaborators} resumo={resumo} days={days} onCollaborator={onCollaborator} />
           </DialogContent>
         )}
       </Dialog>

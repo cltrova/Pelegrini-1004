@@ -1,16 +1,17 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Activity, LayoutGrid, RefreshCw, SlidersHorizontal } from 'lucide-react';
+import { RefreshCw, SlidersHorizontal } from 'lucide-react';
 
 import { ErrorState } from '@/components/common/ErrorState';
 import { LoadingState } from '@/components/common/LoadingState';
 import { ProdutividadeAtividades } from '@/components/operacional/ProdutividadeAtividades';
 import { ProdutividadeDashboard, type ProdutividadeLinha, type ProdutividadeResumo } from '@/components/operacional/ProdutividadeDashboard';
+import type { ProdutividadeColaborador } from '@/components/operacional/produtividadeColaborador';
+import { PelegriniTabs } from '@/components/pelegrini/PelegriniTabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useFilialSelecionada } from '@/contexts/FilialSelecionadaContext';
 import { useEmpresaAtiva } from '@/hooks/useEmpresaAtiva';
 import type { Empresa } from '@/hooks/useEmpresaConfig';
@@ -26,6 +27,8 @@ type Dados = {
 };
 
 type Filtros = { inicio: string; fim: string; filial: string };
+const overviewTab = 'produtividade-visao-geral';
+const activityTab = 'produtividade-atividades';
 
 function filtrosIniciais(): Filtros {
   const date = new Date();
@@ -123,6 +126,10 @@ export default function ProdutividadePage() {
   const { filialAtiva } = useFilialSelecionada();
   const companhia = resolveCodEmpresaBiParam(empresa, filialAtiva);
   const [filters, setFilters] = useState(filtrosIniciais);
+  const [activeTab, setActiveTab] = useState(overviewTab);
+  const [collaborator, setCollaborator] = useState<ProdutividadeColaborador | null>(null);
+  const activityPanel = useRef<HTMLElement>(null);
+  const focusActivity = useRef(false);
   const { inicio, fim, filial } = filters;
   const query = useQuery({
     queryKey: ['produtividade-chevrolet', empresa?.id, companhia, inicio, fim, filial],
@@ -132,6 +139,19 @@ export default function ProdutividadePage() {
     retry: false,
   });
 
+  useEffect(() => {
+    if (activeTab === activityTab && focusActivity.current) {
+      activityPanel.current?.focus();
+      focusActivity.current = false;
+    }
+  }, [activeTab]);
+
+  function openCollaboratorActivity(person: ProdutividadeColaborador) {
+    focusActivity.current = true;
+    setCollaborator(person);
+    setActiveTab(activityTab);
+  }
+
   if (isLoading) return <LoadingState message="Carregando empresa" />;
   if (companhia !== '10041') {
     return <main className="p-4 text-sm text-muted-foreground" aria-label="Produtividade diária">Selecione a Casa Chevrolet para consultar a produtividade.</main>;
@@ -140,40 +160,46 @@ export default function ProdutividadePage() {
   const periodo = inicio === fim ? formatDate(inicio) : formatDate(inicio) + ' a ' + formatDate(fim);
   const atualizado = query.data?.atualizado_em ? new Date(query.data.atualizado_em) : null;
   return (
-    <main className="h-full space-y-2 overflow-auto p-2 sm:p-3" aria-label="Produtividade diária">
-      <div className="flex min-h-9 flex-wrap items-center justify-between gap-2">
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-muted-foreground" aria-live="polite">
-          <span className="font-medium text-foreground">{periodo} · {filial ? 'Filial ' + filial : 'Todas as filiais'}</span>
-          {atualizado && !Number.isNaN(atualizado.getTime()) && (
-            <span title={atualizado.toLocaleString('pt-BR')}>Atualizado às {atualizado.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
-          )}
-        </div>
-        <div className="ml-auto flex items-center gap-1.5">
-          <FiltrosProdutividade value={filters} onApply={setFilters} />
-          <Button type="button" variant="outline" size="icon" className="h-8 w-8" title="Atualizar dados"
-            aria-label="Atualizar dados" disabled={query.isFetching} onClick={() => void query.refetch()}>
-            <RefreshCw className="h-4 w-4" aria-hidden="true" />
-          </Button>
+    <main className="operational-dashboard h-full min-w-0 overflow-auto" aria-label="Produtividade diária">
+      <div className="operational-workspace-header flex min-h-11 flex-wrap items-center justify-between gap-x-3 gap-y-1 border-b bg-card px-2 py-1 sm:px-3">
+        <PelegriniTabs ariaLabel="Visões de produtividade" className="estoque-tabs min-w-0 grow basis-full sm:basis-0"
+          value={activeTab} onValueChange={setActiveTab}
+          items={[
+            { value: overviewTab, label: 'Visão geral' },
+            { value: activityTab, label: 'Atividades por dia e responsável' },
+          ]} />
+        <div className="ml-auto flex flex-wrap items-center justify-end gap-x-3 gap-y-1">
+          <div className="text-xs text-muted-foreground" aria-live="polite">
+            <span className="font-medium tabular-nums text-foreground">{periodo} · {filial ? 'Filial ' + filial : 'Todas as filiais'}</span>
+            {atualizado && !Number.isNaN(atualizado.getTime()) && (
+              <span className="ml-2 hidden lg:inline" title={atualizado.toLocaleString('pt-BR')}>Atualizado às {atualizado.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
+            )}
+          </div>
+          <div className="flex shrink-0 items-center gap-1.5">
+            <FiltrosProdutividade value={filters} onApply={setFilters} />
+            <Button type="button" variant="outline" size="icon" className="h-8 w-8" title="Atualizar dados"
+              aria-label="Atualizar dados" disabled={query.isFetching} onClick={() => void query.refetch()}>
+              <RefreshCw className="h-4 w-4" aria-hidden="true" />
+            </Button>
+          </div>
         </div>
       </div>
       {query.isLoading && <LoadingState message="Carregando produtividade" variant="content" />}
       {query.isError && <ErrorState message={query.error instanceof Error ? query.error.message : 'Não foi possível consultar os dados.'} onRetry={() => query.refetch()} />}
-      <Tabs defaultValue="visao-geral">
-        <TabsList aria-label="Produtividade diária" className="h-9 max-w-full justify-start">
-          <TabsTrigger value="visao-geral" className="gap-1.5 px-2 text-xs sm:px-3 sm:text-sm">
-            <LayoutGrid className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />Visão geral
-          </TabsTrigger>
-          <TabsTrigger value="atividades" className="gap-1.5 px-2 text-xs sm:px-3 sm:text-sm">
-            <Activity className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />Atividades por dia e responsável
-          </TabsTrigger>
-        </TabsList>
-        <TabsContent value="visao-geral" className="space-y-2">
-          {query.data && <ProdutividadeDashboard key={[inicio, fim, filial].join('|')} rows={query.data.por_dia_responsavel} resumo={query.data.resumo} />}
-        </TabsContent>
-        <TabsContent value="atividades">
-          {query.data && <ProdutividadeAtividades rows={query.data.por_dia_responsavel} />}
-        </TabsContent>
-      </Tabs>
+      <section id={'pelegrini-tabpanel-' + overviewTab} aria-labelledby={'pelegrini-tab-' + overviewTab}
+        role="tabpanel" tabIndex={0} hidden={activeTab !== overviewTab} className="space-y-2 p-2 outline-none sm:p-3">
+        {activeTab === overviewTab && query.data && (
+          <ProdutividadeDashboard key={[inicio, fim, filial].join('|')} rows={query.data.por_dia_responsavel}
+            resumo={query.data.resumo} onCollaborator={openCollaboratorActivity} />
+        )}
+      </section>
+      <section id={'pelegrini-tabpanel-' + activityTab} aria-labelledby={'pelegrini-tab-' + activityTab}
+        ref={activityPanel} role="tabpanel" tabIndex={0} hidden={activeTab !== activityTab} className="p-2 outline-none sm:p-3">
+        {activeTab === activityTab && query.data && (
+          <ProdutividadeAtividades rows={query.data.por_dia_responsavel}
+            collaborator={collaborator} onClearCollaborator={() => setCollaborator(null)} />
+        )}
+      </section>
     </main>
   );
 }

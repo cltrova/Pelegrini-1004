@@ -125,7 +125,8 @@ describe('produtividade Chevrolet', () => {
     expect(within(dialog).getByText('273')).toBeInTheDocument();
   });
 
-  it('mostra o dia ao selecionar uma coluna e mantém a agregação por filial na tabela', async () => {
+  it('abre as atividades do responsável pelo gráfico e permite remover o filtro', async () => {
+    mockResponse({ ...resposta, por_dia_responsavel: [...resposta.por_dia_responsavel, { ...linha, identificacao_responsavel: '456' }] });
     renderPage();
     const chart = await screen.findByRole('region', { name: 'Separação por colaborador' });
     const pedidos = within(chart).getByRole('button', { name: 'Pedidos separados' });
@@ -135,22 +136,25 @@ describe('produtividade Chevrolet', () => {
     const table = screen.getByRole('dialog', { name: 'Separação por colaborador' });
     expect(within(table).getByRole('row', { name: 'Colaborador exemplo 2 20 42' })).toBeInTheDocument();
     expect(within(table).getByRole('row', { name: 'Colaborador exemplo 3 10 21' })).toBeInTheDocument();
-    fireEvent.click(within(table).getByRole('button', { name: 'Ver dias de Colaborador exemplo · Filial 3' }));
-    expect(within(table).getByRole('row', { name: '09/11/2026 3 10 21' })).toBeInTheDocument();
     fireEvent.click(within(table).getByRole('button', { name: 'Close' }));
     const bar = chart.querySelector('.recharts-bar-rectangle path');
     expect(bar).toBeTruthy();
     fireEvent.click(bar!);
-    const person = screen.getByRole('dialog', { name: 'Separação por colaborador' });
-    expect(within(person).getByText('Colaborador exemplo · Filial 2')).toBeInTheDocument();
-    expect(within(person).getByRole('row', { name: '10/11/2026 2 10 21' })).toBeInTheDocument();
+    const activities = screen.getByRole('region', { name: 'Registros de produtividade' });
+    const clear = within(activities).getByRole('button', { name: 'Remover filtro de Colaborador exemplo' });
+    expect(screen.getByRole('tab', { name: 'Atividades por dia e responsável' })).toHaveAttribute('aria-selected', 'true');
+    expect(within(activities).getByText('3 registros')).toBeInTheDocument();
+    expect(within(activities).queryByText('Filial 2 · 456')).not.toBeInTheDocument();
+    expect(fetch).toHaveBeenCalledTimes(1);
+    fireEvent.click(clear);
+    expect(within(activities).getByText('4 registros')).toBeInTheDocument();
   });
 
   it('separa as atividades em uma subaba e permite buscar, agrupar e expandir os registros', async () => {
     renderPage();
     await screen.findByRole('region', { name: 'Gráficos de produtividade' });
     const tab = screen.getByRole('tab', { name: 'Atividades por dia e responsável' });
-    fireEvent.mouseDown(tab, { button: 0, ctrlKey: false });
+    fireEvent.click(tab);
     const activities = await screen.findByRole('region', { name: 'Registros de produtividade' });
     expect(screen.queryByRole('region', { name: 'Gráficos de produtividade' })).not.toBeInTheDocument();
     expect(within(activities).getByText('3 registros')).toBeInTheDocument();
@@ -173,5 +177,22 @@ describe('produtividade Chevrolet', () => {
     const modal = screen.getByRole('dialog', { name: 'Unidades guardadas por dia' });
     expect(within(modal).getByRole('row', { name: '09/11/2026 18' })).toBeInTheDocument();
     expect(within(modal).getByRole('row', { name: '10/11/2026 9' })).toBeInTheDocument();
+  });
+
+  it('mantém as datas e a filial aplicadas ao abrir as atividades pelo ranking', async () => {
+    mockResponse({ ...resposta, cod_empresas: [2], por_dia_responsavel: [linha] });
+    renderPage();
+    await screen.findByRole('region', { name: 'Gráficos de produtividade' });
+    fireEvent.click(screen.getByRole('button', { name: 'Filtros' }));
+    const filters = screen.getByRole('dialog', { name: 'Filtros de produtividade' });
+    fireEvent.change(within(filters).getByLabelText('Data inicial'), { target: { value: '2026-11-01' } });
+    fireEvent.change(within(filters).getByLabelText('Data final'), { target: { value: '2026-11-10' } });
+    fireEvent.change(within(filters).getByLabelText('Filial'), { target: { value: '2' } });
+    fireEvent.click(within(filters).getByRole('button', { name: 'Aplicar' }));
+    const ranking = await screen.findByRole('region', { name: 'Lançamento de NF por colaborador' });
+    fireEvent.click(within(ranking).getByRole('button', { name: 'Colaborador exemplo · Filial 2 · 5 notas lançadas' }));
+    expect(screen.getByText('01/11/2026 a 10/11/2026 · Filial 2')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Remover filtro de Colaborador exemplo' })).toBeInTheDocument();
+    expect(fetch).toHaveBeenCalledTimes(2);
   });
 });
