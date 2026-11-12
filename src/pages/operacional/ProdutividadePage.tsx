@@ -7,6 +7,7 @@ import { LoadingState } from '@/components/common/LoadingState';
 import { ProdutividadeAtividades } from '@/components/operacional/ProdutividadeAtividades';
 import { ProdutividadeDashboard, type ProdutividadeLinha, type ProdutividadeResumo } from '@/components/operacional/ProdutividadeDashboard';
 import type { ProdutividadeColaborador } from '@/components/operacional/produtividadeColaborador';
+import type { ProdutividadePeriodo } from '@/components/operacional/produtividadeExcel';
 import { PelegriniTabs } from '@/components/pelegrini/PelegriniTabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -26,14 +27,17 @@ type Dados = {
   por_dia_responsavel: ProdutividadeLinha[];
 };
 
-type Filtros = { inicio: string; fim: string; filial: string };
+type Filtros = ProdutividadePeriodo;
 const overviewTab = 'produtividade-visao-geral';
 const activityTab = 'produtividade-atividades';
 
 function filtrosIniciais(): Filtros {
-  const date = new Date();
-  const hoje = [date.getFullYear(), date.getMonth() + 1, date.getDate()].map(value => String(value).padStart(2, '0')).join('-');
-  return { inicio: hoje, fim: hoje, filial: '' };
+  const hoje = new Date();
+  const ano = hoje.getFullYear();
+  const mes = hoje.getMonth();
+  const prefixo = ano + '-' + String(mes + 1).padStart(2, '0') + '-';
+  const ultimoDia = new Date(ano, mes + 1, 0).getDate();
+  return { inicio: prefixo + '01', fim: prefixo + ultimoDia, filial: '' };
 }
 
 function formatDate(date: string) {
@@ -158,10 +162,9 @@ export default function ProdutividadePage() {
   }
 
   const periodo = inicio === fim ? formatDate(inicio) : formatDate(inicio) + ' a ' + formatDate(fim);
-  const atualizado = query.data?.atualizado_em ? new Date(query.data.atualizado_em) : null;
   return (
-    <main className="operational-dashboard h-full min-w-0 overflow-auto" aria-label="Produtividade diária">
-      <div className="operational-workspace-header flex min-h-11 flex-wrap items-center justify-between gap-x-3 gap-y-1 border-b bg-card px-2 py-1 sm:px-3">
+    <main className="operational-dashboard flex h-full min-h-0 min-w-0 flex-col overflow-auto" aria-label="Produtividade diária">
+      <div className="operational-workspace-header flex min-h-11 shrink-0 flex-wrap items-center justify-between gap-x-3 gap-y-1 border-b bg-card px-2 py-1 sm:px-3">
         <PelegriniTabs ariaLabel="Visões de produtividade" className="estoque-tabs min-w-0 grow basis-full sm:basis-0"
           value={activeTab} onValueChange={setActiveTab}
           items={[
@@ -171,9 +174,6 @@ export default function ProdutividadePage() {
         <div className="ml-auto flex flex-wrap items-center justify-end gap-x-3 gap-y-1">
           <div className="text-xs text-muted-foreground" aria-live="polite">
             <span className="font-medium tabular-nums text-foreground">{periodo} · {filial ? 'Filial ' + filial : 'Todas as filiais'}</span>
-            {atualizado && !Number.isNaN(atualizado.getTime()) && (
-              <span className="ml-2 hidden lg:inline" title={atualizado.toLocaleString('pt-BR')}>Atualizado às {atualizado.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
-            )}
           </div>
           <div className="flex shrink-0 items-center gap-1.5">
             <FiltrosProdutividade value={filters} onApply={setFilters} />
@@ -187,7 +187,8 @@ export default function ProdutividadePage() {
       {query.isLoading && <LoadingState message="Carregando produtividade" variant="content" />}
       {query.isError && <ErrorState message={query.error instanceof Error ? query.error.message : 'Não foi possível consultar os dados.'} onRetry={() => query.refetch()} />}
       <section id={'pelegrini-tabpanel-' + overviewTab} aria-labelledby={'pelegrini-tab-' + overviewTab}
-        role="tabpanel" tabIndex={0} hidden={activeTab !== overviewTab} className="space-y-2 p-2 outline-none sm:p-3">
+        role="tabpanel" tabIndex={0} hidden={activeTab !== overviewTab}
+        className={activeTab === overviewTab ? 'flex flex-1 flex-col gap-2 p-2 outline-none sm:p-3' : 'hidden'}>
         {activeTab === overviewTab && query.data && (
           <ProdutividadeDashboard key={[inicio, fim, filial].join('|')} rows={query.data.por_dia_responsavel}
             resumo={query.data.resumo} onCollaborator={openCollaboratorActivity} />
@@ -196,7 +197,7 @@ export default function ProdutividadePage() {
       <section id={'pelegrini-tabpanel-' + activityTab} aria-labelledby={'pelegrini-tab-' + activityTab}
         ref={activityPanel} role="tabpanel" tabIndex={0} hidden={activeTab !== activityTab} className="p-2 outline-none sm:p-3">
         {activeTab === activityTab && query.data && (
-          <ProdutividadeAtividades rows={query.data.por_dia_responsavel}
+          <ProdutividadeAtividades rows={query.data.por_dia_responsavel} periodo={filters}
             collaborator={collaborator} onClearCollaborator={() => setCollaborator(null)} />
         )}
       </section>

@@ -1,10 +1,12 @@
 import { useMemo, useState } from 'react';
-import { CalendarDays, ChevronDown, ClipboardCheck, FileText, PackageCheck, PackageOpen, Search, Users, X } from 'lucide-react';
+import { CalendarDays, ChevronDown, ClipboardCheck, Download, FileText, PackageCheck, PackageOpen, Search, Users, X } from 'lucide-react';
+import { toast } from 'sonner';
 
 import type { ProdutividadeLinha } from '@/components/operacional/ProdutividadeDashboard';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { getProdutividadeColaborador, matchesProdutividadeColaborador, type ProdutividadeColaborador } from './produtividadeColaborador';
+import { exportarAtividadesExcel, type ProdutividadePeriodo } from './produtividadeExcel';
 
 const number = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 2 });
 const date = (value: string) => value.split('-').reverse().join('/');
@@ -54,17 +56,22 @@ function ActivityRow({ row, byDay }: { row: ProdutividadeLinha; byDay: boolean }
   );
 }
 
-export function ProdutividadeAtividades({ rows, collaborator, onClearCollaborator }: {
+export function ProdutividadeAtividades({ rows, periodo, collaborator, onClearCollaborator }: {
   rows: ProdutividadeLinha[];
+  periodo: ProdutividadePeriodo;
   collaborator: ProdutividadeColaborador | null;
   onClearCollaborator: () => void;
 }) {
   const [query, setQuery] = useState('');
   const [groupBy, setGroupBy] = useState('dia');
+  const [exporting, setExporting] = useState(false);
+  const { inicio, fim, filial } = periodo;
   const byDay = groupBy === 'dia';
   const results = useMemo(() => {
     const term = normalize(query);
     const matching = rows.filter(row =>
+      row.data_atividade >= inicio && row.data_atividade <= fim &&
+      (!filial || Number(row.cod_empresa) === Number(filial)) &&
       (!collaborator || matchesProdutividadeColaborador(row, collaborator)) &&
       normalize((row.nome_responsavel ?? '') + ' ' + (row.identificacao_responsavel ?? '')).includes(term)
     );
@@ -85,7 +92,18 @@ export function ProdutividadeAtividades({ rows, collaborator, onClearCollaborato
         : b.data_atividade.localeCompare(a.data_atividade));
     }
     return { count: matching.length, sorted };
-  }, [rows, query, byDay, collaborator]);
+  }, [rows, query, byDay, collaborator, inicio, fim, filial]);
+
+  async function exportActivities() {
+    setExporting(true);
+    try {
+      await exportarAtividadesExcel(results.sorted.flatMap(([, group]) => group.rows), periodo);
+    } catch {
+      toast.error('Não foi possível exportar as atividades.');
+    } finally {
+      setExporting(false);
+    }
+  }
 
   return (
     <section aria-label="Registros de produtividade" className="space-y-2">
@@ -112,6 +130,10 @@ export function ProdutividadeAtividades({ rows, collaborator, onClearCollaborato
           </Button>
         </div>
         <span aria-live="polite" className="ml-auto px-1 text-xs text-muted-foreground">{number.format(results.count)} {results.count === 1 ? 'registro' : 'registros'}</span>
+        <Button type="button" size="sm" variant="outline" className="h-8 shrink-0 gap-1.5 text-xs"
+          disabled={results.count === 0 || exporting} onClick={() => void exportActivities()}>
+          <Download className="h-4 w-4" aria-hidden="true" />{exporting ? 'Exportando…' : 'Exportar Excel'}
+        </Button>
       </div>
       {results.sorted.length === 0 && (
         <p className="operational-panel p-4 text-sm text-muted-foreground">

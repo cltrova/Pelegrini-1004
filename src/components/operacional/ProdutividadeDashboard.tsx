@@ -91,8 +91,8 @@ function ChartFrame({ panel, title = panels[panel].title, children, onDetails }:
 }) {
   const id = useId();
   return (
-    <section aria-labelledby={id} className="operational-panel min-w-0 overflow-hidden rounded-sm border bg-card">
-      <div className="flex min-h-10 items-center justify-between gap-2 border-b border-border/60 px-3.5">
+    <section aria-labelledby={id} className="operational-panel flex min-w-0 flex-col overflow-hidden rounded-sm border bg-card">
+      <div className="flex min-h-10 shrink-0 items-center justify-between gap-2 border-b border-border/60 px-3.5">
         <h2 id={id} className="text-sm font-semibold leading-tight">{title}</h2>
         <Button type="button" variant="ghost" size="icon" className="h-7 w-7 shrink-0 text-muted-foreground"
           title="Ver dados" aria-label={'Ver dados de ' + title.toLocaleLowerCase('pt-BR')} onClick={onDetails}>
@@ -132,7 +132,7 @@ function VerticalChart({ panel, collaborators, onDetail, onCollaborator }: {
   return (
     <ChartFrame panel={panel} onDetails={() => onDetail({ panel })}>
       {series.length > 1 && (
-        <div className="flex flex-wrap gap-1 px-3 pb-0.5 pt-1.5">
+        <div className="flex shrink-0 flex-wrap gap-1 px-3 pb-0.5 pt-1.5">
           {series.map(metric => (
             <Button key={metric} type="button" size="sm" variant="ghost"
               className="h-6 gap-1.5 px-2 text-[11px] aria-[pressed=false]:text-muted-foreground aria-[pressed=false]:line-through"
@@ -146,10 +146,10 @@ function VerticalChart({ panel, collaborators, onDetail, onCollaborator }: {
         </div>
       )}
       {data.length === 0 ? (
-        <p className="grid h-[156px] place-items-center px-3 text-sm text-muted-foreground">Sem atividade para exibir.</p>
+        <p className="grid min-h-[156px] flex-1 place-items-center px-3 text-sm text-muted-foreground">Sem atividade para exibir.</p>
       ) : (
-        <div className="overflow-x-auto px-2 pb-1">
-          <ChartContainer config={config} className="aspect-auto h-[156px] w-full"
+        <div className="relative min-h-[156px] flex-1 overflow-x-auto">
+          <ChartContainer config={config} className="absolute inset-y-0 left-0 aspect-auto w-full px-2 pb-1"
             style={{ minWidth: data.length * 64 + 28 }}>
             <BarChart accessibilityLayer data={data} margin={{ top: 10, right: 9, bottom: 0, left: 0 }} barGap={3}>
               <defs>
@@ -236,9 +236,9 @@ function GuardChart({ resumo, onDetail }: { resumo: ProdutividadeResumo; onDetai
   return (
     <ChartFrame panel="nivel" onDetails={() => onDetail({ panel: 'nivel' })}>
       {resumo.notas_guarda_consideradas > 0 ? (
-        <div className="grid min-h-[162px] grid-cols-[128px_minmax(0,1fr)] items-center gap-2 p-3">
-          <div className="relative h-32 w-32">
-            <ChartContainer config={guardConfig} className="aspect-square h-full w-full">
+        <div className="grid min-h-[162px] flex-1 grid-cols-[minmax(0,2fr)_minmax(0,3fr)] items-center gap-2 p-3">
+          <div className="relative aspect-square w-full max-w-[200px] justify-self-center">
+            <ChartContainer config={guardConfig} className="absolute inset-0 aspect-square">
               <PieChart>
                 <defs>
                   {data.map(({ status }) => (
@@ -248,7 +248,7 @@ function GuardChart({ resumo, onDetail }: { resumo: ProdutividadeResumo; onDetai
                     </linearGradient>
                   ))}
                 </defs>
-                <Pie data={data} dataKey="value" nameKey="status" innerRadius={45} outerRadius={59}
+                <Pie data={data} dataKey="value" nameKey="status" innerRadius="70%" outerRadius="95%"
                   startAngle={90} endAngle={-270} cornerRadius={4} paddingAngle={3} stroke="none" isAnimationActive={false} className="cursor-pointer"
                   onMouseEnter={entry => setActive(entry.payload?.status ?? entry.status)}
                   onMouseLeave={() => setActive(null)}
@@ -259,7 +259,7 @@ function GuardChart({ resumo, onDetail }: { resumo: ProdutividadeResumo; onDetai
               </PieChart>
             </ChartContainer>
             <div className="pointer-events-none absolute inset-0 grid place-content-center text-center">
-              <span className="text-xl font-semibold leading-none tabular-nums">{percentOf(resumo)}</span>
+              <span className="text-base font-semibold leading-none tabular-nums xl:text-xl">{percentOf(resumo)}</span>
               <span className="mt-1 text-[10px] text-muted-foreground">Concluídas</span>
             </div>
           </div>
@@ -278,7 +278,7 @@ function GuardChart({ resumo, onDetail }: { resumo: ProdutividadeResumo; onDetai
           </div>
         </div>
       ) : (
-        <p className="grid h-[150px] place-items-center px-3 text-sm text-muted-foreground">Sem notas elegíveis no período.</p>
+        <p className="grid min-h-[162px] flex-1 place-items-center px-3 text-sm text-muted-foreground">Sem notas elegíveis no período.</p>
       )}
     </ChartFrame>
   );
@@ -295,28 +295,30 @@ function InvoicesChart({ collaborators, onDetail, onCollaborator }: {
   return (
     <ChartFrame panel="notas" onDetails={() => onDetail({ panel: 'notas' })}>
       {rows.length ? (
-        <ol className="max-h-[166px] space-y-0.5 overflow-y-auto px-2 py-1">
-          {rows.map((person, index) => (
-            <li key={person.id}>
-              <button type="button" className="group grid w-full grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-2 rounded-md px-2 py-1 text-left hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
-                aria-label={person.name + ' · Filial ' + person.branch + ' · ' + number.format(person.totals.notas_lancadas) + ' notas lançadas'}
-                onClick={() => onCollaborator(person)}>
-                <span className="text-[10px] text-muted-foreground tabular-nums">{index + 1}</span>
-                <span className="flex min-w-0 items-baseline gap-1.5 text-xs font-medium">
-                  <span className="truncate">{person.name}</span>
-                  <span className="shrink-0 text-[10px] font-normal text-muted-foreground">Filial {person.branch}</span>
-                </span>
-                <strong className="text-xs tabular-nums">{number.format(person.totals.notas_lancadas)}</strong>
-                <span className="col-start-2 col-span-2 mt-1 block h-1.5 bg-muted" aria-hidden="true"
-                  style={{ maskImage: 'repeating-linear-gradient(to right, black 0 7px, transparent 7px 10px)' }}>
-                  <span className="block h-full bg-gradient-to-r from-primary to-[hsl(var(--chart-2))] group-hover:brightness-125"
-                    style={{ width: person.totals.notas_lancadas / max * 100 + '%' }} />
-                </span>
-              </button>
-            </li>
-          ))}
-        </ol>
-      ) : <p className="grid h-[162px] place-items-center px-3 text-sm text-muted-foreground">Sem notas lançadas no período.</p>}
+        <div className="relative min-h-[162px] flex-1">
+          <ol className="absolute inset-0 space-y-0.5 overflow-y-auto px-2 py-1">
+            {rows.map((person, index) => (
+              <li key={person.id}>
+                <button type="button" className="group grid w-full grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-2 rounded-md px-2 py-1.5 text-left hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
+                  aria-label={person.name + ' · Filial ' + person.branch + ' · ' + number.format(person.totals.notas_lancadas) + ' notas lançadas'}
+                  onClick={() => onCollaborator(person)}>
+                  <span className="text-[10px] text-muted-foreground tabular-nums">{index + 1}</span>
+                  <span className="flex min-w-0 items-baseline gap-1.5 text-xs font-medium">
+                    <span className="truncate">{person.name}</span>
+                    <span className="shrink-0 text-[10px] font-normal text-muted-foreground">Filial {person.branch}</span>
+                  </span>
+                  <strong className="text-xs tabular-nums">{number.format(person.totals.notas_lancadas)}</strong>
+                  <span className="col-start-2 col-span-2 mt-1 block h-1.5 bg-muted" aria-hidden="true"
+                    style={{ maskImage: 'repeating-linear-gradient(to right, black 0 7px, transparent 7px 10px)' }}>
+                    <span className="block h-full bg-gradient-to-r from-primary to-[hsl(var(--chart-2))] group-hover:brightness-125"
+                      style={{ width: person.totals.notas_lancadas / max * 100 + '%' }} />
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ol>
+        </div>
+      ) : <p className="grid min-h-[162px] flex-1 place-items-center px-3 text-sm text-muted-foreground">Sem notas lançadas no período.</p>}
     </ChartFrame>
   );
 }
@@ -348,39 +350,41 @@ function UnitsChart({ days, onDetail }: { days: DailyUnits[]; onDetail: (detail:
   return (
     <ChartFrame panel="unidades" title={unitsByDayTitle} onDetails={() => onDetail({ panel: 'unidades', byDay: true })}>
       {data.length ? (
-        <ChartContainer config={guardLine} className="aspect-auto h-[162px] w-full px-2 pb-1">
-          <AreaChart accessibilityLayer data={data} margin={{ top: 12, right: 12, bottom: 0, left: 0 }}>
-            <defs>
-              <linearGradient id={id} x1="0%" x2="0%" y1="0%" y2="100%">
-                <stop offset="0%" stopColor={teal} stopOpacity={0.45} />
-                <stop offset="100%" stopColor={teal} stopOpacity={0.02} />
-              </linearGradient>
-            </defs>
-            <CartesianGrid vertical={false} stroke="hsl(var(--border))" strokeDasharray="3 4" />
-            <YAxis width={48} axisLine={false} tickLine={false} allowDecimals={false} tickCount={4} tickFormatter={value => compact.format(value)} />
-            <XAxis type="number" dataKey="time" scale="time"
-              domain={single ? [singleTime - oneDay / 2, singleTime + oneDay / 2] : ['dataMin', 'dataMax']}
-              ticks={single ? [singleTime] : undefined} minTickGap={16} axisLine={false} tickLine={false} tickCount={5}
-              tickFormatter={value => dateLabel(value).slice(0, 5)} />
-            <ChartTooltip content={
-              <ChartTooltipContent
-                labelFormatter={(_, payload) => {
-                  const time = payload?.[0]?.payload?.time;
-                  return typeof time === 'number' ? dateLabel(time) : '';
-                }}
-                formatter={value => (
-                  <div className="flex w-full items-center justify-between gap-3">
-                    <span className="text-muted-foreground">Unidades guardadas</span>
-                    <strong className="tabular-nums">{number.format(Number(value))}</strong>
-                  </div>
-                )}
-              />
-            } />
-            <Area type="linear" dataKey="unidades" stroke={teal} strokeWidth={2.5} fill={'url(#' + id + ')'}
-              isAnimationActive={false} dot={days.length <= 7 || data.length !== days.length} activeDot={{ r: 5, strokeWidth: 2 }} />
-          </AreaChart>
-        </ChartContainer>
-      ) : <p className="grid h-[162px] place-items-center px-3 text-sm text-muted-foreground">Sem atividade para exibir.</p>}
+        <div className="relative min-h-[162px] flex-1">
+          <ChartContainer config={guardLine} className="absolute inset-0 aspect-auto px-2 pb-1">
+            <AreaChart accessibilityLayer data={data} margin={{ top: 12, right: 12, bottom: 0, left: 0 }}>
+              <defs>
+                <linearGradient id={id} x1="0%" x2="0%" y1="0%" y2="100%">
+                  <stop offset="0%" stopColor={teal} stopOpacity={0.45} />
+                  <stop offset="100%" stopColor={teal} stopOpacity={0.02} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid vertical={false} stroke="hsl(var(--border))" strokeDasharray="3 4" />
+              <YAxis width={48} axisLine={false} tickLine={false} allowDecimals={false} tickCount={4} tickFormatter={value => compact.format(value)} />
+              <XAxis type="number" dataKey="time" scale="time"
+                domain={single ? [singleTime - oneDay / 2, singleTime + oneDay / 2] : ['dataMin', 'dataMax']}
+                ticks={single ? [singleTime] : undefined} minTickGap={16} axisLine={false} tickLine={false} tickCount={5}
+                tickFormatter={value => dateLabel(value).slice(0, 5)} />
+              <ChartTooltip content={
+                <ChartTooltipContent
+                  labelFormatter={(_, payload) => {
+                    const time = payload?.[0]?.payload?.time;
+                    return typeof time === 'number' ? dateLabel(time) : '';
+                  }}
+                  formatter={value => (
+                    <div className="flex w-full items-center justify-between gap-3">
+                      <span className="text-muted-foreground">Unidades guardadas</span>
+                      <strong className="tabular-nums">{number.format(Number(value))}</strong>
+                    </div>
+                  )}
+                />
+              } />
+              <Area type="linear" dataKey="unidades" stroke={teal} strokeWidth={2.5} fill={'url(#' + id + ')'}
+                isAnimationActive={false} dot={days.length <= 7 || data.length !== days.length} activeDot={{ r: 5, strokeWidth: 2 }} />
+            </AreaChart>
+          </ChartContainer>
+        </div>
+      ) : <p className="grid min-h-[162px] flex-1 place-items-center px-3 text-sm text-muted-foreground">Sem atividade para exibir.</p>}
     </ChartFrame>
   );
 }
@@ -505,7 +509,7 @@ export function ProdutividadeDashboard({ rows, resumo, onCollaborator }: {
   ] as const;
   return (
     <>
-      <section aria-label="Totalizadores de produtividade" className="operational-kpi-grid operational-metric-strip grid grid-cols-2 gap-px overflow-hidden rounded-sm border bg-border sm:grid-cols-4 xl:grid-cols-8">
+      <section aria-label="Totalizadores de produtividade" className="operational-kpi-grid operational-metric-strip grid shrink-0 grid-cols-2 gap-px overflow-hidden rounded-sm border bg-border sm:grid-cols-4 xl:grid-cols-8">
         {cards.map(({ panel, label, value }, index) => {
           const { icon: Icon, color } = panels[panel];
           return (
@@ -523,12 +527,12 @@ export function ProdutividadeDashboard({ rows, resumo, onCollaborator }: {
           );
         })}
       </section>
-      <section aria-label="Gráficos de produtividade" className="space-y-2">
-        <div className="grid gap-2 lg:grid-cols-2">
+      <section aria-label="Gráficos de produtividade" className="flex flex-1 flex-col gap-2">
+        <div className="grid gap-2 lg:flex-1 lg:grid-cols-2">
           <VerticalChart panel="separacao" collaborators={collaborators} onDetail={showDetail} onCollaborator={onCollaborator} />
           <VerticalChart panel="conferencia" collaborators={collaborators} onDetail={showDetail} onCollaborator={onCollaborator} />
         </div>
-        <div className="grid gap-2 lg:grid-cols-3">
+        <div className="grid gap-2 lg:flex-1 lg:grid-cols-3">
           <GuardChart resumo={resumo} onDetail={showDetail} />
           <InvoicesChart collaborators={collaborators} onDetail={showDetail} onCollaborator={onCollaborator} />
           <UnitsChart days={days} onDetail={showDetail} />
