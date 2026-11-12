@@ -173,8 +173,8 @@ export function ProdutividadeAtividades({ rows, periodo, collaborator, onCollabo
           {collaborator ? 'Nenhuma atividade para este responsável nos filtros atuais.' : rows.length ? 'Nenhum responsável encontrado.' : 'Nenhuma atividade no período.'}
         </p>
       )}
-      {results.sorted.map(([key, group], index) => (
-        <details key={groupBy + key} open={index === 0 ? true : undefined} className="group/bucket operational-table-frame overflow-hidden rounded-sm border bg-card">
+      {results.sorted.map(([key, group]) => (
+        <details key={groupBy + key} className="group/bucket operational-table-frame overflow-hidden rounded-sm border bg-card">
           <summary className="flex min-h-10 cursor-pointer list-none items-center gap-2 bg-muted/30 px-3 text-sm font-medium hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring [&::-webkit-details-marker]:hidden">
             {byDay ? <CalendarDays className="h-4 w-4 text-primary" aria-hidden="true" /> : <Users className="h-4 w-4 text-primary" aria-hidden="true" />}
             {group.label}

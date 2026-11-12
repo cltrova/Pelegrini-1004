@@ -198,7 +198,7 @@ export default function ProdutividadePage() {
           ]} />
         <div className="ml-auto flex flex-wrap items-center justify-end gap-x-3 gap-y-1">
           <div className="text-xs text-muted-foreground" aria-live="polite">
-            <span className="font-medium tabular-nums text-foreground">{periodo} · {filial ? 'Filial ' + filial : 'Todas as filiais'}</span>
+            <span className="font-medium tabular-nums text-foreground">{periodo}</span>
           </div>
           <div className="flex shrink-0 items-center gap-1.5">
             <FiltrosProdutividade value={filters} onApply={setFilters} />

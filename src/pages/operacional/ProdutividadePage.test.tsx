@@ -206,16 +206,27 @@ describe('produtividade Chevrolet', () => {
     const activities = await screen.findByRole('region', { name: 'Registros de produtividade' });
     expect(screen.queryByRole('region', { name: 'Gráficos de produtividade' })).not.toBeInTheDocument();
     expect(within(activities).getByText('3 registros')).toBeInTheDocument();
+    expect(activities.querySelector('details[open]')).toBeNull();
+    const groupByDay = within(activities).getByText('10/11/2026').closest('summary')!;
+    fireEvent.click(groupByDay);
+    expect(groupByDay.parentElement).toHaveAttribute('open');
     const search = within(activities).getByRole('searchbox', { name: 'Buscar responsável' });
     fireEvent.change(search, { target: { value: 'Não cadastrado' } });
     expect(within(activities).getByText('Nenhum responsável encontrado.')).toBeInTheDocument();
     fireEvent.change(search, { target: { value: 'COLABORADOR' } });
     fireEvent.click(within(activities).getByRole('button', { name: 'Por responsável' }));
+    expect(activities.querySelector('details[open]')).toBeNull();
     expect(within(activities).getByText('Colaborador exemplo · Filial 2')).toBeInTheDocument();
     expect(within(activities).getByText('Colaborador exemplo · Filial 3')).toBeInTheDocument();
     const day = within(activities).getByText('10/11/2026').closest('summary');
     fireEvent.click(day!);
     expect(day?.parentElement).toHaveAttribute('open');
+    fireEvent.click(within(activities).getByRole('button', { name: 'Por dia' }));
+    expect(activities.querySelector('details[open]')).toBeNull();
+    fireEvent.click(within(activities).getByText('10/11/2026').closest('summary')!);
+    fireEvent.click(screen.getByRole('tab', { name: 'Visão geral' }));
+    fireEvent.click(tab);
+    expect(screen.getByRole('region', { name: 'Registros de produtividade' }).querySelector('details[open]')).toBeNull();
   });
 
   it('detalha a guarda por dia somando os registros das filiais no período', async () => {
@@ -239,7 +250,7 @@ describe('produtividade Chevrolet', () => {
     fireEvent.click(within(filters).getByRole('button', { name: 'Aplicar' }));
     const ranking = await screen.findByRole('region', { name: 'Lançamento de NF por colaborador' });
     fireEvent.click(within(ranking).getByRole('button', { name: 'Colaborador exemplo · Filial 2 · 5 notas lançadas' }));
-    expect(screen.getByText('01/11/2026 a 10/11/2026 · Filial 2')).toBeInTheDocument();
+    expect(screen.getByText('01/11/2026 a 10/11/2026', { exact: true })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Remover filtro de Colaborador exemplo' })).toBeInTheDocument();
     expect(fetch).toHaveBeenCalledTimes(2);
   });
