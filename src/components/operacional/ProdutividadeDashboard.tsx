@@ -183,7 +183,7 @@ function VerticalChart({ panel, collaborators, onDetail, onCollaborator }: {
                     </text>
                   );
                 }} />
-              <ChartTooltip cursor={{ fill: 'hsl(var(--muted) / 0.5)' }} content={
+              <ChartTooltip cursor={{ fill: 'hsl(var(--muted) / 0.5)', pointerEvents: 'none' }} content={
                 <ChartTooltipContent
                   labelFormatter={value => {
                     const person = names.get(value);
@@ -201,8 +201,7 @@ function VerticalChart({ panel, collaborators, onDetail, onCollaborator }: {
               {visible.map(metric => (
                 <Bar key={metric} dataKey={metric} name={metrics[metric]} fill={'url(#' + gradient + '-' + metric + ')'}
                   stroke={config[metric].color} strokeOpacity={0.48} radius={[2, 2, 0, 0]} barSize={series.length > 1 ? 23 : 28}
-                  className="cursor-pointer" isAnimationActive={false}
-                  activeBar={{ stroke: config[metric].color, strokeWidth: 2, filter: 'drop-shadow(0 0 4px ' + config[metric].color + ')' }}
+                  className="cursor-pointer hover:brightness-125" isAnimationActive={false}
                   onClick={entry => {
                     const person = entry.payload?.person ?? entry.person;
                     if (person) onCollaborator(person);
