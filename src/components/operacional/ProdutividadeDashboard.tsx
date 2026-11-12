@@ -1,6 +1,6 @@
 import { useId, useRef, useState, type ReactNode } from 'react';
 import { ArrowUpRight, Boxes, ClipboardCheck, FileText, PackageCheck, PackageOpen } from 'lucide-react';
-import { Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, XAxis, YAxis } from 'recharts';
+import { Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, XAxis, YAxis } from 'recharts';
 
 import { Button } from '@/components/ui/button';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
@@ -42,9 +42,9 @@ const panels = {
   unidades: { label: 'Guarda de unidades', title: 'Unidades guardadas por colaborador', icon: Boxes, color: 'hsl(var(--chart-1))', series: ['unidades_guardadas'] },
 } as const;
 type Panel = keyof typeof panels;
-type BarPanel = Exclude<Panel, 'nivel'>;
+type BarPanel = 'separacao' | 'conferencia';
 type Collaborator = { id: string; name: string; branch: number; identity: string; totals: Totals };
-type Detail = { panel: Panel; collaboratorId?: string; status?: 'concluidas' | 'pendentes' };
+type Detail = { panel: Panel; collaboratorId?: string; status?: 'concluidas' | 'pendentes'; byDay?: boolean };
 
 const keys = Object.keys(metrics) as Metric[];
 const teal = 'hsl(var(--chart-2))';
@@ -89,13 +89,13 @@ function comparePeople(a: Collaborator, b: Collaborator, metric: Metric) {
   return b.totals[metric] - a.totals[metric] || a.name.localeCompare(b.name, 'pt-BR');
 }
 
-function ChartFrame({ panel, children, onDetails }: {
+function ChartFrame({ panel, title = panels[panel].title, children, onDetails }: {
   panel: Panel;
+  title?: string;
   children: ReactNode;
   onDetails: () => void;
 }) {
   const id = useId();
-  const { title } = panels[panel];
   return (
     <section aria-labelledby={id} className="min-w-0 overflow-hidden rounded-lg border border-border/80 bg-card shadow-sm">
       <div className="flex min-h-10 items-center justify-between gap-2 border-b border-border/60 px-3.5">
@@ -167,7 +167,7 @@ function VerticalChart({ panel, collaborators, onDetail }: {
                 ))}
               </defs>
               <CartesianGrid vertical={false} stroke="hsl(var(--border))" strokeDasharray="3 4" />
-              <YAxis width={34} axisLine={false} tickLine={false} allowDecimals={false} tickCount={4} tickFormatter={value => compact.format(value)} />
+              <YAxis width={48} axisLine={false} tickLine={false} allowDecimals={false} tickCount={4} tickFormatter={value => compact.format(value)} />
               <XAxis dataKey="person.id" interval={0} axisLine={false} tickLine={false} tickMargin={6} tick={{ fontSize: 10 }}
                 tickFormatter={value => {
                   const person = names.get(value);
@@ -194,6 +194,7 @@ function VerticalChart({ panel, collaborators, onDetail }: {
                 <Bar key={metric} dataKey={metric} name={metrics[metric]} fill={'url(#' + gradient + '-' + metric + ')'}
                   stroke={config[metric].color} strokeOpacity={0.48} radius={[4, 4, 0, 0]} barSize={series.length > 1 ? 23 : 28}
                   className="cursor-pointer" isAnimationActive={false}
+                  activeBar={{ stroke: config[metric].color, strokeWidth: 2, filter: 'drop-shadow(0 0 4px ' + config[metric].color + ')' }}
                   onClick={entry => onDetail({ panel, collaboratorId: (entry.payload?.person ?? entry.person)?.id })} />
               ))}
             </BarChart>
@@ -221,13 +222,14 @@ function guardData(resumo: ProdutividadeResumo) {
 function GuardChart({ resumo, onDetail }: { resumo: ProdutividadeResumo; onDetail: (detail: Detail) => void }) {
   const id = 'guarda-' + useId().replace(/[^a-z0-9_-]/gi, '');
   const data = guardData(resumo);
+  const [active, setActive] = useState<(typeof data)[number]['status'] | null>(null);
   return (
     <ChartFrame panel="nivel" onDetails={() => onDetail({ panel: 'nivel' })}>
       {resumo.notas_guarda_consideradas > 0 ? (
-        <>
-          <div className="relative">
-            <ChartContainer config={guardConfig} className="mx-auto aspect-auto h-[124px] w-full max-w-56">
-              <PieChart accessibilityLayer>
+        <div className="grid min-h-[162px] grid-cols-[128px_minmax(0,1fr)] items-center gap-2 p-3">
+          <div className="relative h-32 w-32">
+            <ChartContainer config={guardConfig} className="aspect-square h-full w-full">
+              <PieChart>
                 <defs>
                   {data.map(({ status }) => (
                     <linearGradient key={status} id={id + '-' + status} x1="0%" y1="0%" x2="85%" y2="100%">
@@ -236,33 +238,35 @@ function GuardChart({ resumo, onDetail }: { resumo: ProdutividadeResumo; onDetai
                     </linearGradient>
                   ))}
                 </defs>
-                <Pie data={data} cy="55%" dataKey="value" nameKey="status" innerRadius={33} outerRadius={50}
-                  startAngle={90} endAngle={-270} stroke="none" isAnimationActive={false} tooltipType="none" pointerEvents="none">
-                  {data.map(({ status }) => <Cell key={status} fill={guardConfig[status].color} opacity={0.42} />)}
-                </Pie>
-                <Pie data={data} cy="49%" dataKey="value" nameKey="status" innerRadius={33} outerRadius={50}
-                  startAngle={90} endAngle={-270} stroke="none" isAnimationActive={false} className="cursor-pointer"
+                <Pie data={data} dataKey="value" nameKey="status" innerRadius={45} outerRadius={59}
+                  startAngle={90} endAngle={-270} cornerRadius={4} paddingAngle={3} stroke="none" isAnimationActive={false} className="cursor-pointer"
+                  onMouseEnter={entry => setActive(entry.payload?.status ?? entry.status)}
+                  onMouseLeave={() => setActive(null)}
                   onClick={entry => onDetail({ panel: 'nivel', status: entry.payload?.status ?? entry.status })}>
-                  {data.map(({ status }) => <Cell key={status} fill={'url(#' + id + '-' + status + ')'} />)}
+                  {data.map(({ status }) => <Cell key={status} fill={'url(#' + id + '-' + status + ')'}
+                    opacity={active && active !== status ? 0.35 : 1} />)}
                 </Pie>
-                <ChartTooltip content={<ChartTooltipContent hideLabel nameKey="status" />} />
               </PieChart>
             </ChartContainer>
             <div className="pointer-events-none absolute inset-0 grid place-content-center text-center">
-              <span className="text-[17px] font-semibold leading-none tabular-nums">{percentOf(resumo)}</span>
-              <span className="mt-1 text-[9px] text-muted-foreground">Concluídas</span>
+              <span className="text-xl font-semibold leading-none tabular-nums">{percentOf(resumo)}</span>
+              <span className="mt-1 text-[10px] text-muted-foreground">Concluídas</span>
             </div>
           </div>
-          <div className="flex flex-wrap justify-center gap-x-2 pb-1">
+          <div className="min-w-0 space-y-1">
             {data.map(({ status, value }) => (
-              <Button key={status} type="button" variant="ghost" size="sm" className="h-6 gap-1.5 px-2 text-[11px]"
+              <Button key={status} type="button" variant="ghost" size="sm"
+                className={cn('h-8 w-full justify-start gap-1.5 px-2 text-xs', active === status && 'bg-muted')}
+                onMouseEnter={() => setActive(status)} onMouseLeave={() => setActive(null)}
+                onFocus={() => setActive(status)} onBlur={() => setActive(null)}
                 onClick={() => onDetail({ panel: 'nivel', status })}>
                 <span className="h-2 w-2 rounded-sm" aria-hidden="true" style={{ backgroundColor: guardConfig[status].color }} />
-                {guardConfig[status].label} <strong className="tabular-nums">{number.format(value)}</strong>
+                {guardConfig[status].label} <strong className="ml-auto tabular-nums">{number.format(value)}</strong>
               </Button>
             ))}
+            <p className="px-2 pt-1 text-[11px] text-muted-foreground">{number.format(resumo.notas_guarda_consideradas)} notas elegíveis</p>
           </div>
-        </>
+        </div>
       ) : (
         <p className="grid h-[150px] place-items-center px-3 text-sm text-muted-foreground">Sem notas elegíveis no período.</p>
       )}
@@ -270,14 +274,128 @@ function GuardChart({ resumo, onDetail }: { resumo: ProdutividadeResumo; onDetai
   );
 }
 
-function DetailsTable({ detail, rows, collaborators, person, resumo, onSelect }: {
+function InvoicesChart({ collaborators, onDetail }: { collaborators: Collaborator[]; onDetail: (detail: Detail) => void }) {
+  const rows = collaborators.filter(person => person.totals.notas_lancadas > 0)
+    .sort((a, b) => comparePeople(a, b, 'notas_lancadas'));
+  const max = rows[0]?.totals.notas_lancadas ?? 1;
+  return (
+    <ChartFrame panel="notas" onDetails={() => onDetail({ panel: 'notas' })}>
+      {rows.length ? (
+        <ol className="max-h-[166px] space-y-0.5 overflow-y-auto px-2 py-1">
+          {rows.map((person, index) => (
+            <li key={person.id}>
+              <button type="button" className="group grid w-full grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-2 rounded-md px-2 py-1 text-left hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
+                aria-label={person.name + ' · Filial ' + person.branch + ' · ' + number.format(person.totals.notas_lancadas) + ' notas lançadas'}
+                onClick={() => onDetail({ panel: 'notas', collaboratorId: person.id })}>
+                <span className="text-[10px] text-muted-foreground tabular-nums">{index + 1}</span>
+                <span className="flex min-w-0 items-baseline gap-1.5 text-xs font-medium">
+                  <span className="truncate">{person.name}</span>
+                  <span className="shrink-0 text-[10px] font-normal text-muted-foreground">Filial {person.branch}</span>
+                </span>
+                <strong className="text-xs tabular-nums">{number.format(person.totals.notas_lancadas)}</strong>
+                <span className="col-start-2 col-span-2 mt-1 block h-1.5 bg-muted" aria-hidden="true"
+                  style={{ maskImage: 'repeating-linear-gradient(to right, black 0 7px, transparent 7px 10px)' }}>
+                  <span className="block h-full bg-gradient-to-r from-primary to-[hsl(var(--chart-2))] group-hover:brightness-125"
+                    style={{ width: person.totals.notas_lancadas / max * 100 + '%' }} />
+                </span>
+              </button>
+            </li>
+          ))}
+        </ol>
+      ) : <p className="grid h-[162px] place-items-center px-3 text-sm text-muted-foreground">Sem notas lançadas no período.</p>}
+    </ChartFrame>
+  );
+}
+
+const guardLine = { unidades: { label: 'Unidades guardadas', color: teal } };
+const unitsByDayTitle = 'Unidades guardadas por dia';
+const oneDay = 86_400_000;
+type DailyUnits = { time: number; unidades: number };
+const dateLabel = (time: number) => new Date(time).toISOString().slice(0, 10).split('-').reverse().join('/');
+
+function groupDailyUnits(rows: ProdutividadeLinha[]): DailyUnits[] {
+  const daily = new Map<number, number>();
+  for (const row of rows) {
+    const time = Date.parse(row.data_atividade + 'T00:00:00Z');
+    if (Number.isFinite(time)) daily.set(time, (daily.get(time) ?? 0) + valueOf(row.unidades_guardadas));
+  }
+  return [...daily].sort(([a], [b]) => a - b).map(([time, unidades]) => ({ time, unidades }));
+}
+
+function UnitsChart({ days, onDetail }: { days: DailyUnits[]; onDetail: (detail: Detail) => void }) {
+  const id = 'unidades-' + useId().replace(/[^a-z0-9_-]/gi, '');
+  const data = days.flatMap((day, index) => {
+    const previous = days[index - 1];
+    return previous && day.time - previous.time > oneDay
+      ? [{ time: previous.time + oneDay, unidades: null }, day] : [day];
+  });
+  const single = days.length === 1;
+  const singleTime = days[0]?.time ?? 0;
+  return (
+    <ChartFrame panel="unidades" title={unitsByDayTitle} onDetails={() => onDetail({ panel: 'unidades', byDay: true })}>
+      {data.length ? (
+        <ChartContainer config={guardLine} className="aspect-auto h-[162px] w-full px-2 pb-1">
+          <AreaChart accessibilityLayer data={data} margin={{ top: 12, right: 12, bottom: 0, left: 0 }}>
+            <defs>
+              <linearGradient id={id} x1="0%" x2="0%" y1="0%" y2="100%">
+                <stop offset="0%" stopColor={teal} stopOpacity={0.45} />
+                <stop offset="100%" stopColor={teal} stopOpacity={0.02} />
+              </linearGradient>
+            </defs>
+            <CartesianGrid vertical={false} stroke="hsl(var(--border))" strokeDasharray="3 4" />
+            <YAxis width={48} axisLine={false} tickLine={false} allowDecimals={false} tickCount={4} tickFormatter={value => compact.format(value)} />
+            <XAxis type="number" dataKey="time" scale="time"
+              domain={single ? [singleTime - oneDay / 2, singleTime + oneDay / 2] : ['dataMin', 'dataMax']}
+              ticks={single ? [singleTime] : undefined} minTickGap={16} axisLine={false} tickLine={false} tickCount={5}
+              tickFormatter={value => dateLabel(value).slice(0, 5)} />
+            <ChartTooltip content={
+              <ChartTooltipContent
+                labelFormatter={(_, payload) => {
+                  const time = payload?.[0]?.payload?.time;
+                  return typeof time === 'number' ? dateLabel(time) : '';
+                }}
+                formatter={value => (
+                  <div className="flex w-full items-center justify-between gap-3">
+                    <span className="text-muted-foreground">Unidades guardadas</span>
+                    <strong className="tabular-nums">{number.format(Number(value))}</strong>
+                  </div>
+                )}
+              />
+            } />
+            <Area type="linear" dataKey="unidades" stroke={teal} strokeWidth={2.5} fill={'url(#' + id + ')'}
+              isAnimationActive={false} dot={days.length <= 7 || data.length !== days.length} activeDot={{ r: 5, strokeWidth: 2 }} />
+          </AreaChart>
+        </ChartContainer>
+      ) : <p className="grid h-[162px] place-items-center px-3 text-sm text-muted-foreground">Sem atividade para exibir.</p>}
+    </ChartFrame>
+  );
+}
+
+function DetailsTable({ detail, rows, collaborators, person, resumo, days, onSelect }: {
   detail: Detail;
   rows: ProdutividadeLinha[];
   collaborators: Collaborator[];
   person?: Collaborator;
   resumo: ProdutividadeResumo;
+  days: DailyUnits[];
   onSelect: (id?: string) => void;
 }) {
+  if (detail.byDay) {
+    if (!days.length) return <p className="text-sm text-muted-foreground">Sem atividade no período.</p>;
+    return (
+      <Table>
+        <TableHeader><TableRow><TableHead>Dia</TableHead><TableHead className="text-right">Unidades guardadas</TableHead></TableRow></TableHeader>
+        <TableBody>
+          {days.map(({ time, unidades }) => (
+            <TableRow key={time}>
+              <TableCell>{dateLabel(time)}</TableCell>
+              <TableCell className="text-right tabular-nums">{number.format(unidades)}</TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    );
+  }
   if (detail.panel === 'nivel') {
     const data = guardData(resumo);
     return (
@@ -363,40 +481,38 @@ export function ProdutividadeDashboard({ rows, resumo }: { rows: ProdutividadeLi
   const returnFocus = useRef<HTMLElement | null>(null);
   const [detail, setDetail] = useState<Detail | null>(null);
   const collaborators = groupCollaborators(rows);
+  const days = groupDailyUnits(rows);
   const selected = collaborators.find(person => person.id === detail?.collaboratorId);
   function showDetail(next: Detail) {
     returnFocus.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     setDetail(next);
   }
   const cards = [
-    { panel: 'separacao', value: number.format(resumo.pedidos_separados), unit: 'pedidos', extra: number.format(resumo.unidades_separadas) + ' unidades' },
-    { panel: 'conferencia', value: number.format(resumo.pedidos_conferidos), unit: 'pedidos', extra: number.format(resumo.unidades_pedidos_marcados_conferidos) + ' unidades · ' + number.format(resumo.unidades_conferidas_registradas) + ' por leitura' },
-    { panel: 'nivel', value: percentOf(resumo), unit: 'concluídas', extra: number.format(resumo.notas_guarda_concluidas) + ' de ' + number.format(resumo.notas_guarda_consideradas) + ' notas elegíveis' },
-    { panel: 'notas', value: number.format(resumo.notas_lancadas), unit: 'notas lançadas', extra: 'Notas fiscais de compra' },
-    { panel: 'unidades', value: number.format(resumo.unidades_guardadas), unit: 'unidades guardadas', extra: '' },
+    { panel: 'separacao', label: metrics.pedidos_separados, value: number.format(resumo.pedidos_separados) },
+    { panel: 'separacao', label: metrics.unidades_separadas, value: number.format(resumo.unidades_separadas) },
+    { panel: 'conferencia', label: metrics.pedidos_conferidos, value: number.format(resumo.pedidos_conferidos) },
+    { panel: 'conferencia', label: metrics.unidades_pedidos_marcados_conferidos, value: number.format(resumo.unidades_pedidos_marcados_conferidos) },
+    { panel: 'conferencia', label: metrics.unidades_conferidas_registradas, value: number.format(resumo.unidades_conferidas_registradas) },
+    { panel: 'notas', label: metrics.notas_lancadas, value: number.format(resumo.notas_lancadas) },
+    { panel: 'unidades', label: metrics.unidades_guardadas, value: number.format(resumo.unidades_guardadas) },
+    { panel: 'nivel', label: 'Guarda concluída', value: percentOf(resumo) },
   ] as const;
   return (
     <>
-      <section aria-label="Totalizadores de produtividade" className="grid grid-cols-2 gap-2 lg:grid-cols-5">
-        {cards.map(({ panel, value, unit, extra }) => {
-          const { label, icon: Icon, color } = panels[panel];
+      <section aria-label="Totalizadores de produtividade" className="grid grid-cols-2 gap-2 sm:grid-cols-4 xl:grid-cols-8">
+        {cards.map(({ panel, label, value }, index) => {
+          const { icon: Icon, color } = panels[panel];
           return (
-            <button key={panel} type="button" aria-label={'Detalhar ' + label.toLocaleLowerCase('pt-BR')} aria-describedby={cardId + panel}
-              className="group relative min-w-0 overflow-hidden rounded-lg border border-border bg-card px-3 py-2 text-left shadow-sm transition-colors hover:border-primary/60 hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring last:col-span-2 lg:last:col-span-1"
+            <button key={label} type="button" aria-label={'Detalhar ' + label.toLocaleLowerCase('pt-BR')} aria-describedby={cardId + index}
+              className="group relative flex min-h-[70px] min-w-0 flex-col justify-between gap-1 overflow-hidden rounded-lg border border-border bg-card px-2.5 py-2 text-left shadow-sm transition-colors hover:border-primary/60 hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               onClick={() => showDetail({ panel })}>
-              <span aria-hidden="true" className="absolute inset-y-0 left-0 w-0.5" style={{ backgroundColor: color }} />
-              <span className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground">
+              <span aria-hidden="true" className="absolute inset-y-0 left-0 w-0.5" style={{ backgroundColor: color, boxShadow: '0 0 7px ' + color }} />
+              <span className="flex items-start gap-1.5 text-[11px] font-medium leading-tight text-muted-foreground">
                 <Icon className="h-3.5 w-3.5 shrink-0" aria-hidden="true" style={{ color }} />
                 {label}
                 <ArrowUpRight className="ml-auto h-3.5 w-3.5 shrink-0 group-hover:text-primary" aria-hidden="true" />
               </span>
-              <span id={cardId + panel} className="mt-1 block">
-                <span className="flex flex-wrap items-baseline gap-x-1.5">
-                  <strong className="text-xl font-semibold leading-tight tabular-nums">{value}</strong>
-                  <span className="text-[10px] text-muted-foreground">{unit}</span>
-                </span>
-                {extra && <span className="mt-0.5 block text-[10px] leading-tight text-muted-foreground">{extra}</span>}
-              </span>
+              <strong id={cardId + index} className="text-xl font-semibold leading-tight tabular-nums">{value}</strong>
             </button>
           );
         })}
@@ -408,8 +524,8 @@ export function ProdutividadeDashboard({ rows, resumo }: { rows: ProdutividadeLi
         </div>
         <div className="grid gap-2 lg:grid-cols-3">
           <GuardChart resumo={resumo} onDetail={showDetail} />
-          <VerticalChart panel="notas" collaborators={collaborators} onDetail={showDetail} />
-          <VerticalChart panel="unidades" collaborators={collaborators} onDetail={showDetail} />
+          <InvoicesChart collaborators={collaborators} onDetail={showDetail} />
+          <UnitsChart days={days} onDetail={showDetail} />
         </div>
       </section>
       <Dialog open={detail !== null} onOpenChange={open => { if (!open) setDetail(null); }}>
@@ -422,12 +538,12 @@ export function ProdutividadeDashboard({ rows, resumo }: { rows: ProdutividadeLi
               }
             }}>
             <DialogHeader>
-              <DialogTitle>{panels[detail.panel].title}</DialogTitle>
+              <DialogTitle>{detail.byDay ? unitsByDayTitle : panels[detail.panel].title}</DialogTitle>
               <DialogDescription>
                 {selected ? selected.name + ' · Filial ' + selected.branch : 'Dados do período e da filial selecionados.'}
               </DialogDescription>
             </DialogHeader>
-            <DetailsTable detail={detail} rows={rows} collaborators={collaborators} person={selected} resumo={resumo}
+            <DetailsTable detail={detail} rows={rows} collaborators={collaborators} person={selected} resumo={resumo} days={days}
               onSelect={collaboratorId => setDetail({ panel: detail.panel, collaboratorId })} />
           </DialogContent>
         )}

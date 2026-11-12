@@ -112,11 +112,14 @@ describe('produtividade Chevrolet', () => {
     renderPage();
     const charts = await screen.findByRole('region', { name: 'Gráficos de produtividade' });
     expect(within(charts).getAllByRole('heading', { level: 2 })).toHaveLength(5);
+    const cards = screen.getByRole('region', { name: 'Totalizadores de produtividade' });
+    expect(within(cards).getAllByRole('button')).toHaveLength(8);
+    expect(within(cards).getByRole('button', { name: 'Detalhar unidades por leitura' })).toHaveTextContent('273');
     expect(screen.queryByRole('heading', { level: 1 })).not.toBeInTheDocument();
     const guard = within(charts).getByRole('region', { name: 'Nível de serviço de guarda de NF' });
     expect(within(guard).getByText('69,91%')).toBeInTheDocument();
     expect(within(guard).getByRole('button', { name: 'Pendentes 34' })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Detalhar conferência' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Detalhar pedidos conferidos' }));
     const dialog = screen.getByRole('dialog', { name: 'Conferência por colaborador' });
     expect(within(dialog).getByText('2.425')).toBeInTheDocument();
     expect(within(dialog).getByText('273')).toBeInTheDocument();
@@ -141,5 +144,34 @@ describe('produtividade Chevrolet', () => {
     const person = screen.getByRole('dialog', { name: 'Separação por colaborador' });
     expect(within(person).getByText('Colaborador exemplo · Filial 2')).toBeInTheDocument();
     expect(within(person).getByRole('row', { name: '10/11/2026 2 10 21' })).toBeInTheDocument();
+  });
+
+  it('separa as atividades em uma subaba e permite buscar, agrupar e expandir os registros', async () => {
+    renderPage();
+    await screen.findByRole('region', { name: 'Gráficos de produtividade' });
+    const tab = screen.getByRole('tab', { name: 'Atividades por dia e responsável' });
+    fireEvent.mouseDown(tab, { button: 0, ctrlKey: false });
+    const activities = await screen.findByRole('region', { name: 'Registros de produtividade' });
+    expect(screen.queryByRole('region', { name: 'Gráficos de produtividade' })).not.toBeInTheDocument();
+    expect(within(activities).getByText('3 registros')).toBeInTheDocument();
+    const search = within(activities).getByRole('searchbox', { name: 'Buscar responsável' });
+    fireEvent.change(search, { target: { value: 'Não cadastrado' } });
+    expect(within(activities).getByText('Nenhum responsável encontrado.')).toBeInTheDocument();
+    fireEvent.change(search, { target: { value: 'COLABORADOR' } });
+    fireEvent.click(within(activities).getByRole('button', { name: 'Por responsável' }));
+    expect(within(activities).getByText('Colaborador exemplo · Filial 2')).toBeInTheDocument();
+    expect(within(activities).getByText('Colaborador exemplo · Filial 3')).toBeInTheDocument();
+    const day = within(activities).getByText('10/11/2026').closest('summary');
+    fireEvent.click(day!);
+    expect(day?.parentElement).toHaveAttribute('open');
+  });
+
+  it('detalha a guarda por dia somando os registros das filiais no período', async () => {
+    renderPage();
+    const chart = await screen.findByRole('region', { name: 'Unidades guardadas por dia' });
+    fireEvent.click(within(chart).getByRole('button', { name: 'Ver dados de unidades guardadas por dia' }));
+    const modal = screen.getByRole('dialog', { name: 'Unidades guardadas por dia' });
+    expect(within(modal).getByRole('row', { name: '09/11/2026 18' })).toBeInTheDocument();
+    expect(within(modal).getByRole('row', { name: '10/11/2026 9' })).toBeInTheDocument();
   });
 });

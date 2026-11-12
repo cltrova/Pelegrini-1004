@@ -1,14 +1,16 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { ChevronDown, RefreshCw, SlidersHorizontal } from 'lucide-react';
+import { Activity, LayoutGrid, RefreshCw, SlidersHorizontal } from 'lucide-react';
 
 import { ErrorState } from '@/components/common/ErrorState';
 import { LoadingState } from '@/components/common/LoadingState';
+import { ProdutividadeAtividades } from '@/components/operacional/ProdutividadeAtividades';
 import { ProdutividadeDashboard, type ProdutividadeLinha, type ProdutividadeResumo } from '@/components/operacional/ProdutividadeDashboard';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useFilialSelecionada } from '@/contexts/FilialSelecionadaContext';
 import { useEmpresaAtiva } from '@/hooks/useEmpresaAtiva';
 import type { Empresa } from '@/hooks/useEmpresaConfig';
@@ -24,8 +26,6 @@ type Dados = {
 };
 
 type Filtros = { inicio: string; fim: string; filial: string };
-
-const numero = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 2 });
 
 function filtrosIniciais(): Filtros {
   const date = new Date();
@@ -118,48 +118,6 @@ function FiltrosProdutividade({ value, onApply }: { value: Filtros; onApply: (fi
   );
 }
 
-const columns = [
-  ['pedidos_separados', 'Pedidos separados'],
-  ['unidades_separadas', 'Unidades separadas'],
-  ['pedidos_conferidos', 'Pedidos conferidos'],
-  ['unidades_pedidos_marcados_conferidos', 'Unidades dos pedidos'],
-  ['unidades_conferidas_registradas', 'Unidades por leitura'],
-  ['notas_lancadas', 'Notas lançadas'],
-  ['unidades_guardadas', 'Unidades guardadas'],
-] as const;
-
-function Atividades({ linhas }: { linhas: ProdutividadeLinha[] }) {
-  return (
-    <details className="group rounded-lg border bg-card">
-      <summary className="flex cursor-pointer list-none items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [&::-webkit-details-marker]:hidden">
-        <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform group-open:rotate-180" aria-hidden="true" />
-        Atividades por dia e responsável
-      </summary>
-      {linhas.length === 0 ? <p className="border-t p-3 text-sm text-muted-foreground">Nenhuma atividade encontrada no período.</p> : (
-        <div className="overflow-x-auto border-t">
-          <table className="w-full min-w-[880px] text-left text-xs" aria-label="Atividades por dia e responsável">
-            <thead className="bg-muted/40">
-              <tr>
-                {['Data', 'Filial', 'Responsável', ...columns.map(([, label]) => label)].map(label => <th key={label} scope="col" className="px-3 py-2 font-medium">{label}</th>)}
-              </tr>
-            </thead>
-            <tbody>
-              {linhas.map(row => (
-                <tr key={[row.data_atividade, row.cod_empresa, row.identificacao_responsavel].join('|')} className="border-t">
-                  <td className="whitespace-nowrap px-3 py-2">{formatDate(row.data_atividade)}</td>
-                  <td className="px-3 py-2">{row.cod_empresa}</td>
-                  <td className="px-3 py-2">{row.nome_responsavel}<span className="block text-muted-foreground">{row.identificacao_responsavel}</span></td>
-                  {columns.map(([key]) => <td key={key} className="px-3 py-2 tabular-nums">{numero.format(row[key])}</td>)}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-    </details>
-  );
-}
-
 export default function ProdutividadePage() {
   const { empresa, isLoading } = useEmpresaAtiva();
   const { filialAtiva } = useFilialSelecionada();
@@ -200,10 +158,22 @@ export default function ProdutividadePage() {
       </div>
       {query.isLoading && <LoadingState message="Carregando produtividade" variant="content" />}
       {query.isError && <ErrorState message={query.error instanceof Error ? query.error.message : 'Não foi possível consultar os dados.'} onRetry={() => query.refetch()} />}
-      {query.data && <>
-        <ProdutividadeDashboard key={[inicio, fim, filial].join('|')} rows={query.data.por_dia_responsavel} resumo={query.data.resumo} />
-        <Atividades linhas={query.data.por_dia_responsavel} />
-      </>}
+      <Tabs defaultValue="visao-geral">
+        <TabsList aria-label="Produtividade diária" className="h-9 max-w-full justify-start">
+          <TabsTrigger value="visao-geral" className="gap-1.5 px-2 text-xs sm:px-3 sm:text-sm">
+            <LayoutGrid className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />Visão geral
+          </TabsTrigger>
+          <TabsTrigger value="atividades" className="gap-1.5 px-2 text-xs sm:px-3 sm:text-sm">
+            <Activity className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />Atividades por dia e responsável
+          </TabsTrigger>
+        </TabsList>
+        <TabsContent value="visao-geral" className="space-y-2">
+          {query.data && <ProdutividadeDashboard key={[inicio, fim, filial].join('|')} rows={query.data.por_dia_responsavel} resumo={query.data.resumo} />}
+        </TabsContent>
+        <TabsContent value="atividades">
+          {query.data && <ProdutividadeAtividades rows={query.data.por_dia_responsavel} />}
+        </TabsContent>
+      </Tabs>
     </main>
   );
 }
