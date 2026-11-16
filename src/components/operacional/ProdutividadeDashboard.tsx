@@ -43,7 +43,7 @@ const panels = {
   unidades: { label: 'Guarda de unidades', title: 'Unidades guardadas por colaborador', icon: Boxes, color: 'hsl(var(--chart-1))', series: ['unidades_guardadas'] },
 } as const;
 type Panel = keyof typeof panels;
-type BarPanel = 'separacao' | 'conferencia';
+type BarPanel = 'separacao' | 'conferencia' | 'unidades';
 type Collaborator = ProdutividadeColaborador & { totals: Totals };
 type Detail = { panel: Panel; status?: 'concluidas' | 'pendentes'; byDay?: boolean };
 
@@ -83,10 +83,11 @@ function comparePeople(a: Collaborator, b: Collaborator, metric: Metric) {
   return b.totals[metric] - a.totals[metric] || a.name.localeCompare(b.name, 'pt-BR');
 }
 
-function ChartFrame({ panel, title = panels[panel].title, children, onDetails }: {
+function ChartFrame({ panel, title = panels[panel].title, children, controls, onDetails }: {
   panel: Panel;
   title?: string;
   children: ReactNode;
+  controls?: ReactNode;
   onDetails: () => void;
 }) {
   const id = useId();
@@ -94,20 +95,22 @@ function ChartFrame({ panel, title = panels[panel].title, children, onDetails }:
     <section aria-labelledby={id} className="operational-panel flex min-w-0 flex-col overflow-hidden rounded-sm border bg-card">
       <div className="flex min-h-10 shrink-0 items-center justify-between gap-2 border-b border-border/60 px-3.5">
         <h2 id={id} className="text-sm font-semibold leading-tight">{title}</h2>
-        <Button type="button" variant="ghost" size="icon" className="h-7 w-7 shrink-0 text-muted-foreground"
-          title="Ver dados" aria-label={'Ver dados de ' + title.toLocaleLowerCase('pt-BR')} onClick={onDetails}>
-          <ArrowUpRight aria-hidden="true" className="h-3.5 w-3.5" />
-        </Button>
+        <div className="flex shrink-0 items-center gap-1">
+          {controls}
+          <Button type="button" variant="ghost" size="icon" className="h-7 w-7 shrink-0 text-muted-foreground"
+            title="Ver dados" aria-label={'Ver dados de ' + title.toLocaleLowerCase('pt-BR')} onClick={onDetails}>
+            <ArrowUpRight aria-hidden="true" className="h-3.5 w-3.5" />
+          </Button>
+        </div>
       </div>
       {children}
     </section>
   );
 }
 
-function VerticalChart({ panel, collaborators, onDetail, onCollaborator }: {
+function CollaboratorBars({ panel, collaborators, onCollaborator }: {
   panel: BarPanel;
   collaborators: Collaborator[];
-  onDetail: (detail: Detail) => void;
   onCollaborator: (person: ProdutividadeColaborador) => void;
 }) {
   const gradient = 'produtividade-' + useId().replace(/[^a-z0-9_-]/gi, '');
@@ -130,7 +133,7 @@ function VerticalChart({ panel, collaborators, onDetail, onCollaborator }: {
   ]));
 
   return (
-    <ChartFrame panel={panel} onDetails={() => onDetail({ panel })}>
+    <>
       {series.length > 1 && (
         <div className="flex shrink-0 flex-wrap gap-1 px-3 pb-0.5 pt-1.5">
           {series.map(metric => (
@@ -211,7 +214,7 @@ function VerticalChart({ panel, collaborators, onDetail, onCollaborator }: {
           </ChartContainer>
         </div>
       )}
-    </ChartFrame>
+    </>
   );
 }
 
@@ -338,7 +341,7 @@ function groupDailyUnits(rows: ProdutividadeLinha[]): DailyUnits[] {
   return [...daily].sort(([a], [b]) => a - b).map(([time, unidades]) => ({ time, unidades }));
 }
 
-function UnitsChart({ days, onDetail }: { days: DailyUnits[]; onDetail: (detail: Detail) => void }) {
+function DailyUnitsArea({ days }: { days: DailyUnits[] }) {
   const id = 'unidades-' + useId().replace(/[^a-z0-9_-]/gi, '');
   const data = days.flatMap((day, index) => {
     const previous = days[index - 1];
@@ -348,7 +351,7 @@ function UnitsChart({ days, onDetail }: { days: DailyUnits[]; onDetail: (detail:
   const single = days.length === 1;
   const singleTime = days[0]?.time ?? 0;
   return (
-    <ChartFrame panel="unidades" title={unitsByDayTitle} onDetails={() => onDetail({ panel: 'unidades', byDay: true })}>
+    <>
       {data.length ? (
         <div className="relative min-h-[162px] flex-1">
           <ChartContainer config={guardLine} className="absolute inset-0 aspect-auto px-2 pb-1">
@@ -385,6 +388,34 @@ function UnitsChart({ days, onDetail }: { days: DailyUnits[]; onDetail: (detail:
           </ChartContainer>
         </div>
       ) : <p className="grid min-h-[162px] flex-1 place-items-center px-3 text-sm text-muted-foreground">Sem atividade para exibir.</p>}
+    </>
+  );
+}
+
+function UnitsChart({ days, collaborators, onDetail, onCollaborator }: {
+  days: DailyUnits[];
+  collaborators: Collaborator[];
+  onDetail: (detail: Detail) => void;
+  onCollaborator: (person: ProdutividadeColaborador) => void;
+}) {
+  const [byDay, setByDay] = useState(false);
+  return (
+    <ChartFrame panel="unidades" title={byDay ? unitsByDayTitle : panels.unidades.title}
+      onDetails={() => onDetail({ panel: 'unidades', byDay })}
+      controls={
+        <div role="group" aria-label="Agrupar unidades guardadas" className="flex rounded-sm border bg-muted/40 p-0.5">
+          {(['Colaboradores', 'Por dia'] as const).map((label, index) => (
+            <Button key={label} type="button" size="sm" variant="ghost"
+              className="h-5 rounded-sm px-1.5 text-[10px] text-muted-foreground aria-pressed:bg-background aria-pressed:text-foreground"
+              aria-pressed={byDay === Boolean(index)} onClick={() => setByDay(Boolean(index))}>
+              {label}
+            </Button>
+          ))}
+        </div>
+      }>
+      {byDay
+        ? <DailyUnitsArea days={days} />
+        : <CollaboratorBars panel="unidades" collaborators={collaborators} onCollaborator={onCollaborator} />}
     </ChartFrame>
   );
 }
@@ -529,13 +560,16 @@ export function ProdutividadeDashboard({ rows, resumo, onCollaborator }: {
       </section>
       <section aria-label="Gráficos de produtividade" className="flex flex-1 flex-col gap-2">
         <div className="grid gap-2 lg:flex-1 lg:grid-cols-2">
-          <VerticalChart panel="separacao" collaborators={collaborators} onDetail={showDetail} onCollaborator={onCollaborator} />
-          <VerticalChart panel="conferencia" collaborators={collaborators} onDetail={showDetail} onCollaborator={onCollaborator} />
+          {(['separacao', 'conferencia'] as const).map(panel => (
+            <ChartFrame key={panel} panel={panel} onDetails={() => showDetail({ panel })}>
+              <CollaboratorBars panel={panel} collaborators={collaborators} onCollaborator={onCollaborator} />
+            </ChartFrame>
+          ))}
         </div>
         <div className="grid gap-2 lg:flex-1 lg:grid-cols-3">
           <GuardChart resumo={resumo} onDetail={showDetail} />
           <InvoicesChart collaborators={collaborators} onDetail={showDetail} onCollaborator={onCollaborator} />
-          <UnitsChart days={days} onDetail={showDetail} />
+          <UnitsChart days={days} collaborators={collaborators} onDetail={showDetail} onCollaborator={onCollaborator} />
         </div>
       </section>
       <Dialog open={detail !== null} onOpenChange={open => { if (!open) setDetail(null); }}>

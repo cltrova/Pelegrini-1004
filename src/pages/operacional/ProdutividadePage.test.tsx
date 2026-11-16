@@ -174,17 +174,20 @@ describe('produtividade Chevrolet', () => {
     expect(within(activities).getByText('4 registros')).toBeInTheDocument();
   });
 
-  it('retira os lançamentos administrativos do estoque sem excluir um homônimo', async () => {
+  it('retira lançamentos administrativos pelos identificadores da filial sem alterar a guarda de NF', async () => {
     vi.stubEnv('VITE_PRODUTIVIDADE_USUARIO_NF_ADMIN_FILIAL_2', 'usuario-rsys:teste-administrativo');
+    vi.stubEnv('VITE_PRODUTIVIDADE_USUARIOS_NF_ADMIN_FILIAL_2', ' usuario-rsys:outro-admin, ');
     const somenteNotas = {
       ...linha, pedidos_separados: 0, unidades_separadas: 0, pedidos_conferidos: 0,
       unidades_pedidos_marcados_conferidos: 0, unidades_conferidas_registradas: 0, unidades_guardadas: 0,
     };
     mockResponse({
-      ...resposta, cod_empresas: [2],
-      resumo: { ...resumo, notas_lancadas: 12 },
+      ...resposta,
+      resumo: { ...resumo, notas_lancadas: 18 },
       por_dia_responsavel: [
         { ...somenteNotas, nome_responsavel: 'ANDRÉ', identificacao_responsavel: 'usuario-rsys:teste-administrativo', notas_lancadas: 7 },
+        { ...somenteNotas, nome_responsavel: 'Admin exemplo', identificacao_responsavel: 'usuario-rsys:outro-admin', notas_lancadas: 4 },
+        { ...somenteNotas, cod_empresa: 3, nome_responsavel: 'Admin exemplo', identificacao_responsavel: 'usuario-rsys:outro-admin', notas_lancadas: 2 },
         { ...somenteNotas, nome_responsavel: 'ANDRÉ LIMA', identificacao_responsavel: '321', notas_lancadas: 5 },
       ],
     });
@@ -192,10 +195,28 @@ describe('produtividade Chevrolet', () => {
     const ranking = await screen.findByRole('region', { name: 'Lançamento de NF por colaborador' });
     expect(within(ranking).queryByRole('button', { name: /^ANDRÉ ·/ })).not.toBeInTheDocument();
     expect(within(ranking).getByRole('button', { name: 'ANDRÉ LIMA · Filial 2 · 5 notas lançadas' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Detalhar notas lançadas' })).toHaveTextContent('5');
+    expect(within(ranking).queryByRole('button', { name: /^Admin exemplo · Filial 2/ })).not.toBeInTheDocument();
+    expect(within(ranking).getByRole('button', { name: 'Admin exemplo · Filial 3 · 2 notas lançadas' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Detalhar notas lançadas' })).toHaveTextContent('7');
+    expect(screen.getByRole('button', { name: 'Detalhar guarda concluída' })).toHaveTextContent('69,91%');
     fireEvent.click(screen.getByRole('tab', { name: 'Atividades por dia e responsável' }));
     const responsible = screen.getByRole('combobox', { name: 'Responsável' });
     expect(within(responsible).queryByRole('option', { name: 'ANDRÉ', exact: true })).not.toBeInTheDocument();
+  });
+
+  it('mostra quem guardou unidades mesmo sem lançar notas e abre suas atividades', async () => {
+    const guardou = {
+      ...linha, identificacao_responsavel: 'usuario-rsys:guarda', nome_responsavel: 'Operadora de guarda',
+      pedidos_separados: 0, unidades_separadas: 0, pedidos_conferidos: 0, unidades_pedidos_marcados_conferidos: 0,
+      unidades_conferidas_registradas: 0, notas_lancadas: 0, unidades_guardadas: 42,
+    };
+    mockResponse({ ...resposta, cod_empresas: [2], por_dia_responsavel: [linha, guardou] });
+    renderPage();
+    const chart = await screen.findByRole('region', { name: 'Unidades guardadas por colaborador' });
+    const ranking = screen.getByRole('region', { name: 'Lançamento de NF por colaborador' });
+    expect(within(ranking).queryByRole('button', { name: /Operadora de guarda/ })).not.toBeInTheDocument();
+    fireEvent.click(within(chart).getByRole('button', { name: 'Ver atividades de Operadora de guarda · Filial 2' }));
+    expect(screen.getByRole('button', { name: 'Remover filtro de Operadora de guarda' })).toBeInTheDocument();
   });
 
   it('separa as atividades em uma subaba e permite buscar, agrupar e expandir os registros', async () => {
@@ -231,6 +252,8 @@ describe('produtividade Chevrolet', () => {
 
   it('detalha a guarda por dia somando os registros das filiais no período', async () => {
     renderPage();
+    const defaultChart = await screen.findByRole('region', { name: 'Unidades guardadas por colaborador' });
+    fireEvent.click(within(defaultChart).getByRole('button', { name: 'Por dia', exact: true }));
     const chart = await screen.findByRole('region', { name: 'Unidades guardadas por dia' });
     fireEvent.click(within(chart).getByRole('button', { name: 'Ver dados de unidades guardadas por dia' }));
     const modal = screen.getByRole('dialog', { name: 'Unidades guardadas por dia' });

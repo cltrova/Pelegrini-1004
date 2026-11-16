@@ -68,12 +68,15 @@ export async function buscarProdutividade(_empresa: Empresa, inicio: string, fim
 }
 
 function selecionarProdutividadeEstoque(dados: Dados): Dados {
-  const usuarioNotasAdministrativas = import.meta.env.VITE_PRODUTIVIDADE_USUARIO_NF_ADMIN_FILIAL_2;
-  if (!usuarioNotasAdministrativas) return dados;
+  const usuariosNotasAdministrativas = new Set([
+    import.meta.env.VITE_PRODUTIVIDADE_USUARIO_NF_ADMIN_FILIAL_2,
+    ...(import.meta.env.VITE_PRODUTIVIDADE_USUARIOS_NF_ADMIN_FILIAL_2 ?? '').split(','),
+  ].map(id => id?.trim()).filter(Boolean));
+  if (usuariosNotasAdministrativas.size === 0) return dados;
 
   let notasAdministrativas = 0;
   const por_dia_responsavel = dados.por_dia_responsavel.flatMap(row => {
-    if (Number(row.cod_empresa) !== 2 || row.identificacao_responsavel !== usuarioNotasAdministrativas) return [row];
+    if (Number(row.cod_empresa) !== 2 || !usuariosNotasAdministrativas.has(row.identificacao_responsavel)) return [row];
 
     notasAdministrativas += Number(row.notas_lancadas) || 0;
     const temAtividadeEstoque = row.pedidos_separados > 0 || row.unidades_separadas > 0 ||
