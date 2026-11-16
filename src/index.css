@@ -2008,40 +2008,16 @@
   isolation: isolate;
 }
 
-.pelegrini-home-header {
-  position: sticky;
-  z-index: 50;
-  top: 0;
-  border-bottom: 1px solid hsl(var(--border));
-  background: hsl(var(--background) / 0.94);
-  backdrop-filter: blur(14px);
-}
-
-.pelegrini-home-header-inner {
-  display: flex;
-  width: min(100% - 2rem, 1540px);
-  min-height: clamp(58px, 8dvh, 70px);
-  margin: 0 auto;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1.25rem;
-}
-
-.pelegrini-home-brand,
-.pelegrini-home-header-actions,
+.pelegrini-home-account-actions,
 .pelegrini-home-account {
   display: flex;
   min-width: 0;
   align-items: center;
 }
 
-.pelegrini-home-brand { gap: 0.8rem; }
-.pelegrini-home-header-actions { flex: none; gap: 0.65rem; }
+.pelegrini-home-account-actions { margin-inline-start: auto; flex-wrap: wrap; justify-content: flex-end; gap: 0.65rem; }
 .pelegrini-home-account { gap: 0.75rem; }
 .pelegrini-home-account > span { color: hsl(var(--muted-foreground)); font-size: 0.82rem; }
-.pelegrini-home-brand p { margin: 0; font-size: 1rem; font-weight: 750; line-height: 1.2; }
-.pelegrini-home-brand > div > span { display: block; margin-top: 0.2rem; color: hsl(var(--muted-foreground)); font-size: 0.72rem; }
-.pelegrini-home-group-logo { width: 62px; height: 48px; object-fit: contain; }
 .pelegrini-home-icon-button {
   display: inline-flex;
   width: 40px;
@@ -2066,21 +2042,14 @@
 .pelegrini-home-logo-stack img { grid-area: 1 / 1; width: 100%; max-height: 100%; object-fit: contain; }
 .pelegrini-home-logo-stack.transmissao { width: min(230px, 78%); }
 .pelegrini-home-logo-stack.transmissao.full-white { width: min(310px, 88%); }
-.pelegrini-home-logo-stack.header-logo { width: 108px; height: 56px; }
-.pelegrini-home-logo-stack.header-logo.transmissao { width: 58px; height: 52px; }
 .dark .pelegrini-home-logo-stack.transmissao img { filter: grayscale(1) brightness(0) invert(1); }
 .pelegrini-home-logo-stack.transmissao.full-white img { filter: brightness(0) invert(1); }
-.pelegrini-home-logo-stack.header-logo.transmissao.full-white { width: 170px; height: 44px; }
-.dark .pelegrini-home-logo-stack.header-logo.transmissao.full-white img { filter: brightness(0) invert(1); }
-html:not(.dark) .pelegrini-home-logo-stack.header-logo.transmissao.full-white img {
-  filter: brightness(0) saturate(100%) invert(20%) sepia(45%) saturate(1736%) hue-rotate(173deg) brightness(91%) contrast(98%);
-}
 .transmission-full-logo { display: block; width: 100%; height: auto; object-fit: contain; }
 
 .pelegrini-home-backdrop {
   position: fixed;
   z-index: -1;
-  inset: clamp(58px, 8dvh, 70px) 0 0;
+  inset: 0;
   overflow: hidden;
   pointer-events: none;
 }
@@ -2165,6 +2134,7 @@ html:not(.dark) .pelegrini-home-logo-stack.header-logo.transmissao.full-white im
   padding: clamp(18px, 3dvh, 34px) 0 clamp(18px, 4dvh, 44px);
 }
 .pelegrini-home-selection h1 { margin: 0 0 clamp(16px, 2.6dvh, 26px); text-align: center; font-size: clamp(1.45rem, 2.4dvh, 1.75rem); font-weight: 780; letter-spacing: 0; }
+.pelegrini-home-selection > .pelegrini-home-account-actions { margin-top: 0.75rem; }
 .pelegrini-home-branch-grid { display: grid; width: min(720px, 100%); margin: 0 auto; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(16px, 2.8dvh, 24px); }
 .pelegrini-home-branch-card {
   display: flex;
@@ -2195,7 +2165,7 @@ html:not(.dark) .pelegrini-home-logo-stack.header-logo.transmissao.full-white im
 .pelegrini-home-branch-card:hover .pelegrini-home-branch-name svg { transform: translateX(3px); }
 
 .pelegrini-home-modules-shell { width: min(100% - 2rem, 1540px); margin: 0 auto; padding: clamp(14px, 2.4dvh, 22px) 0 clamp(18px, 3dvh, 34px); }
-.pelegrini-home-modules-toolbar { display: flex; min-height: 44px; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 14px; }
+.pelegrini-home-modules-toolbar { display: flex; min-height: 44px; flex-wrap: wrap; align-items: center; gap: 0.5rem; margin-bottom: 14px; }
 .pelegrini-home-modules-toolbar > span { color: hsl(var(--muted-foreground)); font-size: 0.75rem; }
 .pelegrini-home-back-button { display: inline-flex; min-height: 40px; align-items: center; gap: 0.5rem; padding: 0 0.85rem; border: 1px solid hsl(var(--border)); border-radius: 6px; font-size: 0.84rem; font-weight: 650; transition: border-color 260ms ease, color 260ms ease, background-color 260ms ease; }
 .pelegrini-home-back-button:hover { border-color: var(--pelegrini-primary); color: var(--pelegrini-primary); background: hsl(var(--muted) / 0.35); }
@@ -2271,14 +2241,12 @@ html:not(.dark) .pelegrini-home-logo-stack.header-logo.transmissao.full-white im
 
 @media (max-width: 680px) {
   .pelegrini-home { max-height: none; overflow-y: auto; }
-  .pelegrini-home-header-inner { width: min(100% - 1rem, 1540px); min-height: 66px; }
-  .pelegrini-home-brand > div > span, .pelegrini-home-account > span { display: none; }
-  .pelegrini-home-brand p { max-width: 132px; overflow: hidden; font-size: 0.82rem; text-overflow: ellipsis; white-space: nowrap; }
+  .pelegrini-home-account > span { display: none; }
   .pelegrini-home-group-logo { width: 48px; height: 40px; }
   .pelegrini-home-logo-stack.header-logo { width: 76px; height: 42px; }
   .pelegrini-home-logo-stack.header-logo.transmissao { width: 43px; height: 40px; }
   .pelegrini-home-logo-stack.header-logo.transmissao.full-white { width: 118px; height: 34px; }
-  .pelegrini-home-header-actions { gap: 0.3rem; }
+  .pelegrini-home-account-actions { gap: 0.3rem; }
   .pelegrini-home-selection { width: min(100% - 1.5rem, 440px); padding: 32px 0 48px; }
   .pelegrini-home-selection h1 { margin-bottom: 22px; font-size: 1.55rem; }
   .pelegrini-home-branch-grid { grid-template-columns: 1fr; gap: 18px; }

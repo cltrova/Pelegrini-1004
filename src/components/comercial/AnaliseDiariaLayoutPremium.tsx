@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
   TrendingUp, TrendingDown, Users, ShoppingCart, AlertTriangle,
-  Clock, Target, UserX, Calendar, ArrowUpRight, ArrowDownRight,
+  Clock, Target, UserX, ArrowUpRight, ArrowDownRight,
   Minus, Sparkles, Zap, Trophy, Search, DollarSign, Activity, Flame
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
@@ -315,20 +315,11 @@ export function AnaliseDiariaLayoutPremium() {
 
   return (
     <div className="p-4 md:p-6 space-y-6">
-      {/* Header Premium */}
-      <div className="relative overflow-hidden rounded-lg border border-border/60 bg-card p-6">
-        <div className="relative flex items-center justify-between flex-wrap gap-4">
-          <div>
-            <h1 className="text-3xl font-bold flex items-center gap-3 tracking-tight">
-              <div className="h-11 w-11 rounded-lg flex items-center justify-center bg-primary/15 border border-primary/30">
-                <Calendar className="h-5 w-5 text-primary" />
-              </div>
-              Análise Diária Premium
-            </h1>
-            <p className="text-sm text-muted-foreground mt-1.5 ml-14">
-              Performance ao vivo de {hoje.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })}
-            </p>
-          </div>
+      <h1 className="sr-only">Análise Diária Premium</h1>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+          <span className="text-sm text-muted-foreground">
+            {hoje.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })}
+          </span>
           <div className="flex items-center gap-2">
             <Badge variant="outline" className="text-xs px-3 py-1.5 bg-background/40 border-emerald-500/30 text-emerald-400">
               <span className="relative flex h-2 w-2 mr-2">
@@ -342,7 +333,6 @@ export function AnaliseDiariaLayoutPremium() {
               {hoje.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
             </Badge>
           </div>
-        </div>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">

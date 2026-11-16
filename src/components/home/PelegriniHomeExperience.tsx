@@ -245,6 +245,25 @@ export function PelegriniHomeExperience({ mobile = false }: PelegriniHomeExperie
     '--pelegrini-accent': theme.accent,
   } as CSSProperties;
 
+  const accountActions = (
+    <div className="pelegrini-home-account-actions">
+      {canAccessSettings && (
+        <button type="button" className="pelegrini-home-icon-button" aria-label="Configuracoes" title="Configurações" onClick={() => navigate(pelegriniAdminEntry.path)}>
+          <Settings />
+        </button>
+      )}
+      <ThemeToggle />
+      {isAuthenticated && (
+        <div className="pelegrini-home-account">
+          <span>{user?.email}</span>
+          <Button variant="outline" size={mobile ? 'icon' : 'sm'} onClick={logout} aria-label="Sair" className="gap-2">
+            <LogOut className="h-4 w-4" />{!mobile && <span>Sair</span>}
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+
   return (
     <div
       ref={rootRef}
@@ -256,38 +275,6 @@ export function PelegriniHomeExperience({ mobile = false }: PelegriniHomeExperie
       style={rootStyle}
     >
       {!selectedBranch && <TechnicalBackdrop focusedBranch={focusedBranch} />}
-
-      <header className="pelegrini-home-header">
-        <div className="pelegrini-home-header-inner">
-          <div className="pelegrini-home-brand">
-            {selectedBranch
-              ? <LayeredBrandLogo branch={selectedBranch} className="header-logo" fullWhite={selectedBranch === 'transmissao'} />
-              : <img src="/brand/home/grupo-pelegrini.png" alt="Grupo Pelegrini" className="pelegrini-home-group-logo" />}
-            {!selectedBranch && (
-              <div className="min-w-0">
-                <p>Grupo Pelegrini</p>
-                <span>Central de operações das filiais</span>
-              </div>
-            )}
-          </div>
-          <div className="pelegrini-home-header-actions">
-            {canAccessSettings && (
-              <button type="button" className="pelegrini-home-icon-button" aria-label="Configuracoes" title="Configurações" onClick={() => navigate(pelegriniAdminEntry.path)}>
-                <Settings />
-              </button>
-            )}
-            <ThemeToggle />
-            {isAuthenticated ? (
-              <div className="pelegrini-home-account">
-                <span>{user?.email}</span>
-                <Button variant="outline" size={mobile ? 'icon' : 'sm'} onClick={logout} aria-label="Sair" className="gap-2">
-                  <LogOut className="h-4 w-4" />{!mobile && <span>Sair</span>}
-                </Button>
-              </div>
-            ) : null}
-          </div>
-        </div>
-      </header>
 
       {!selectedBranch ? (
         <main className="pelegrini-home-selection">
@@ -312,12 +299,14 @@ export function PelegriniHomeExperience({ mobile = false }: PelegriniHomeExperie
               </button>
             ))}
           </section>
+          {accountActions}
         </main>
       ) : (
         <main className="pelegrini-home-modules-shell">
           <div className="pelegrini-home-modules-toolbar">
             <button type="button" className="pelegrini-home-back-button" onClick={() => setSelectedBranch(null)}><ArrowLeft />Trocar filial</button>
             <span>Filial selecionada: {branchPresentation[selectedBranch].name}</span>
+            {accountActions}
           </div>
 
           <section className="pelegrini-home-carousel" aria-label={`Imagens da ${branchPresentation[selectedBranch].name}`}>

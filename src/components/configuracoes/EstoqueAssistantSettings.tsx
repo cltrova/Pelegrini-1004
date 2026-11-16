@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Bot, Check, Save, Sparkles } from 'lucide-react';
+import { Check, Save, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
@@ -126,16 +126,8 @@ export function EstoqueAssistantSettings({ codEmpresaBi }: EstoqueAssistantSetti
 
   return (
     <section aria-labelledby="estoque-assistant-settings-title" className="space-y-6">
-      <div className="flex flex-col gap-3 border-b pb-5 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <h1 id="estoque-assistant-settings-title" className="flex items-center gap-2 text-xl font-semibold">
-            <Bot className="h-5 w-5 text-primary" />
-            Configuração do Assistente de Estoque
-          </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Defina o comportamento usado no Chat e nos Insights da empresa selecionada.
-          </p>
-        </div>
+      <h1 id="estoque-assistant-settings-title" className="sr-only">Configuração do Assistente de Estoque</h1>
+      <div className="flex justify-end">
         <Button aria-busy={isSaving || undefined} size="sm" onClick={savePrompt} disabled={isSaving || !hasChanges} className="w-28 gap-2">
           <span aria-hidden="true" className="inline-flex h-4 w-4 shrink-0 items-center justify-center">
             {isSaving ? <LoadingIndicator size="sm" /> : hasChanges ? <Save className="h-4 w-4" /> : <Check className="h-4 w-4" />}
