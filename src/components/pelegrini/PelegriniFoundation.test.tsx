@@ -243,7 +243,8 @@ describe('Pelegrini visual foundation', () => {
     expect(cchHome.style.getPropertyValue('--pelegrini-secondary')).toBe('#0A67BF');
     expect(cchHome.style.getPropertyValue('--pelegrini-accent')).toBe('#E8B923');
     expect(cchHome.style.getPropertyValue('--pelegrini-accent')).not.toBe(ctHome.style.getPropertyValue('--pelegrini-accent'));
-    expect(screen.getByRole('img', { name: 'Casa do Chevrolet' })).toBeInTheDocument();
+    expect(screen.getByText('Filial selecionada: Casa do Chevrolet')).toBeInTheDocument();
+    expect(cchHome.querySelector('header')).toBeNull();
     expect(screen.getByRole('button', { name: /Trocar filial/i })).toBeInTheDocument();
 
     cchDesktop.unmount();
