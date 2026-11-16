@@ -210,9 +210,9 @@ function ConfiguracoesPageContent() {
 
   return (
     <PelegriniPageSurface moduleKey="financeiro">
-      {/* Top bar */}
-      <header className="shrink-0 border-b border-border/60 bg-background/80 backdrop-blur-xl">
-        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center gap-4">
+      <div className="min-h-0 flex-1 overflow-auto px-4 py-4">
+      <div className="max-w-6xl mx-auto space-y-4">
+        <h1 className="sr-only">Administração</h1>
           <Button
             variant="ghost"
             size="sm"
@@ -222,40 +222,6 @@ function ConfiguracoesPageContent() {
             <ChevronLeft className="h-4 w-4" />
             Voltar
           </Button>
-          <div className="h-6 w-px bg-border" />
-          <div className="flex items-center gap-3">
-            <div className="h-9 w-9 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center">
-              <Settings className="h-4.5 w-4.5 text-primary" />
-            </div>
-            <div>
-              <h1 className="font-semibold text-foreground text-[15px] leading-tight">
-                Administração
-              </h1>
-              <p className="text-xs text-muted-foreground">Centro de controle da plataforma</p>
-            </div>
-          </div>
-          <div className="ml-auto hidden md:flex items-center gap-2 text-xs text-muted-foreground">
-            <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              Sistema operacional
-            </span>
-          </div>
-        </div>
-      </header>
-
-      <div className="min-h-0 flex-1 overflow-auto px-4 py-4">
-      <div className="max-w-6xl mx-auto space-y-4">
-        {/* Hero */}
-        <div className="space-y-3">
-          <h2 className="text-2xl font-semibold tracking-tight text-foreground flex items-center gap-3">
-            <Settings className="h-7 w-7 text-primary" />
-            Administração
-          </h2>
-          <p className="text-muted-foreground max-w-2xl text-sm leading-relaxed">
-            Gerencie empresas, usuários, permissões e configurações globais da plataforma em um único centro de governança.
-            {!isMaster && ' Alguns módulos requerem perfil master.'}
-          </p>
-        </div>
 
         {/* KPIs */}
         <section className="grid grid-cols-2 lg:grid-cols-4 gap-4">

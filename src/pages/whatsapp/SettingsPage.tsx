@@ -125,11 +125,7 @@ export default function SettingsPage() {
   const content = (
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
       <div className="container mx-auto flex min-h-0 max-w-6xl flex-1 flex-col overflow-hidden p-4">
-        {/* Page Header */}
-        <div className="mb-3 shrink-0">
-          <h1 className="text-2xl font-bold text-foreground">Configurações</h1>
-          <p className="text-muted-foreground">Gerencie suas instâncias e automações</p>
-        </div>
+        <h1 className="sr-only">Configurações</h1>
         
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={handleTabChange} className="flex min-h-0 w-full flex-1 flex-col overflow-hidden">

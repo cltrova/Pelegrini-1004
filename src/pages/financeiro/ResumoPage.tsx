@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { AlertCircle, RefreshCw, Wallet } from 'lucide-react';
+import { AlertCircle, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -75,8 +75,6 @@ export default function ResumoPage() {
     <div className="financial-workspace enterprise-page-shell max-w-[1600px]">
       <EnterprisePageHeader
         title="Resumo Financeiro"
-        subtitle="Monitoramento de liquidez e contas a receber"
-        icon={Wallet}
         actions={
           <div className="financial-toolbar flex min-w-0 flex-wrap items-center justify-end gap-2">
           {hasSearched && !isLoading && hasSource && !error && alertas.length > 0 && (

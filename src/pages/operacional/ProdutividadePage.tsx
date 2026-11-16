@@ -189,17 +189,15 @@ export default function ProdutividadePage() {
   const periodo = inicio === fim ? formatDate(inicio) : formatDate(inicio) + ' a ' + formatDate(fim);
   return (
     <main className="operational-dashboard flex h-full min-h-0 min-w-0 flex-col overflow-auto" aria-label="Produtividade diária">
-      <div className="operational-workspace-header flex min-h-11 shrink-0 flex-wrap items-center justify-between gap-x-3 gap-y-1 border-b bg-card px-2 py-1 sm:px-3">
-        <PelegriniTabs ariaLabel="Visões de produtividade" className="estoque-tabs min-w-0 grow basis-full sm:basis-0"
+      <div className="flex shrink-0 flex-wrap items-center gap-x-3 gap-y-1 px-2 pt-2 sm:px-3">
+        <PelegriniTabs ariaLabel="Visões de produtividade" className="estoque-tabs min-w-0 basis-full sm:basis-auto"
           value={activeTab} onValueChange={setActiveTab}
           items={[
             { value: overviewTab, label: 'Visão geral' },
             { value: activityTab, label: 'Atividades por dia e responsável' },
           ]} />
         <div className="ml-auto flex flex-wrap items-center justify-end gap-x-3 gap-y-1">
-          <div className="text-xs text-muted-foreground" aria-live="polite">
-            <span className="font-medium tabular-nums text-foreground">{periodo}</span>
-          </div>
+          <span className="text-xs font-medium tabular-nums text-foreground" aria-live="polite">{periodo}</span>
           <div className="flex shrink-0 items-center gap-1.5">
             <FiltrosProdutividade value={filters} onApply={setFilters} />
             <Button type="button" variant="outline" size="icon" className="h-8 w-8" title="Atualizar dados"

@@ -264,10 +264,7 @@ export default function DuplicatasPage() {
     <div className="enterprise-page-shell">
       {/* Header */}
       <div className="flex shrink-0 items-end justify-between gap-4 flex-wrap">
-        <div>
-          <h1 className="text-2xl font-bold">Duplicatas</h1>
-          <p className="text-sm text-muted-foreground">Contas a pagar e a receber — análise financeira detalhada.</p>
-        </div>
+        <h1 className="sr-only">Duplicatas</h1>
         <div className="text-sm text-muted-foreground">
           {formatInteger(records.length)} de {formatInteger(allRecords.length)} duplicatas
         </div>

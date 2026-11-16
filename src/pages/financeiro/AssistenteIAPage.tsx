@@ -616,7 +616,6 @@ export default function AssistenteIAPage() {
       <div className="flex h-screen flex-col overflow-hidden bg-background">
         <MobileHeader
           title="Assistente"
-          subtitle="Análise Financeira"
           showBack
           actions={
             messages.length > 0 ? (
@@ -663,6 +662,7 @@ export default function AssistenteIAPage() {
   return (
     <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden">
       <Header
+        title="Assistente financeiro"
         actions={
           messages.length > 0 ? (
             <Button variant="outline" size="sm" onClick={clearChat}>

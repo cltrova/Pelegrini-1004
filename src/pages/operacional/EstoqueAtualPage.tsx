@@ -48,19 +48,13 @@ export function EstoqueAtualPage({empresa, onOpenProducts}: {empresa: Empresa; o
   ] as const : [];
 
   return <EstoqueWorkspace aria-label="Estoque atual da Casa da Transmissão" className="bg-background">
-    <header className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-b px-4 py-4 max-md:pl-14">
-      <div>
-        <h1 className="text-lg font-semibold">Estoque atual</h1>
-        <p className="text-sm text-muted-foreground">Casa da Transmissão · Estoque por grupo</p>
-      </div>
-      <div className="flex flex-wrap gap-2">
-        <Button variant="outline" onClick={onOpenProducts}>Análise por produto</Button>
-        <Button aria-label="Atualizar estoque atual" disabled={query.isFetching} onClick={() => {void query.refetch();}}>
-          <RefreshCw className={`mr-2 h-4 w-4 ${query.isFetching ? 'animate-spin' : ''}`} />
-          {query.isFetching ? 'Atualizando' : 'Atualizar'}
-        </Button>
-      </div>
-    </header>
+    <div className="flex shrink-0 flex-wrap justify-end gap-2 px-4 pt-2 max-md:pl-14">
+      <Button variant="outline" onClick={onOpenProducts}>Análise por produto</Button>
+      <Button aria-label="Atualizar estoque atual" disabled={query.isFetching} onClick={() => {void query.refetch();}}>
+        <RefreshCw className={`mr-2 h-4 w-4 ${query.isFetching ? 'animate-spin' : ''}`} />
+        {query.isFetching ? 'Atualizando' : 'Atualizar'}
+      </Button>
+    </div>
     <div className="min-h-0 flex-1 overflow-auto p-4 space-y-4">
       {query.isPending && <LoadingState message="Consultando estoque atual e movimentos de hoje" variant="content" />}
       {query.isError && <ErrorState title="Estoque atual indisponível" message={query.error instanceof Error ? query.error.message : 'Tente atualizar novamente.'} onRetry={() => {void query.refetch();}} />}

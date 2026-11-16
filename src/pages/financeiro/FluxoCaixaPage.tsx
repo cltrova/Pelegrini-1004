@@ -204,12 +204,7 @@ export default function FluxoCaixaPage() {
     <div className="enterprise-page-shell">
       {/* Header */}
       <div className="flex shrink-0 items-end justify-between gap-4 flex-wrap">
-        <div>
-          <h1 className="text-2xl font-bold">Fluxo de Caixa</h1>
-          <p className="text-sm text-muted-foreground">
-            Saldos por banco e projeção de entradas e saídas.
-          </p>
-        </div>
+        <h1 className="sr-only">Fluxo de Caixa</h1>
         <div className="text-xs text-muted-foreground">
           {formatInteger(saldosFiltrados.length)} saldo(s) · {formatInteger(movFiltrados.length)} movimento(s)
         </div>

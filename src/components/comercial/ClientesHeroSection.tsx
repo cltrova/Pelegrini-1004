@@ -191,7 +191,7 @@ export function ClientesHeroSection({
 
   return (
     <section className="relative overflow-hidden rounded-lg border border-border/60 bg-card p-5 md:p-8">
-      <h1 className="mb-6 text-xl font-semibold md:text-2xl">Análise de Clientes</h1>
+      <h1 className="sr-only">Análise de Clientes</h1>
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4 xl:grid-cols-5">
         {cards.map((c) => (

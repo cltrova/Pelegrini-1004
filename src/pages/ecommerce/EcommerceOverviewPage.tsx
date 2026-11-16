@@ -71,11 +71,7 @@ export default function EcommerceOverviewPage() {
   if (isNotConfigured || isDisconnected) {
     return (
       <div className="enterprise-page-shell min-w-0 space-y-5">
-        <EnterprisePageHeader
-          title="Visão geral"
-          subtitle="Acompanhe a operação da Casa do Chevrolet no Mercado Livre"
-          metadata="E-Commerce"
-        />
+        <h1 className="sr-only">Visão geral</h1>
         <EmptyState
           title="Mercado Livre não conectado"
           message={connection?.connection.message ?? 'Configure a integração para acompanhar anúncios, pedidos e sincronizações.'}
@@ -102,7 +98,6 @@ export default function EcommerceOverviewPage() {
     <div className="enterprise-page-shell min-w-0 space-y-5">
       <EnterprisePageHeader
         title="Visão geral"
-        subtitle="Acompanhe a operação da Casa do Chevrolet no Mercado Livre"
         metadata={connection?.connection.accountName ?? 'Mercado Livre'}
         actions={
           <Button asChild variant="outline" size="sm">

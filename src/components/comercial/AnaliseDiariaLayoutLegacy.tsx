@@ -257,17 +257,11 @@
    
    return (
      <div className="p-4 md:p-6 space-y-6">
-       {/* Header */}
-       <div className="page-header">
-         <div>
-           <h1 className="page-title flex items-center gap-2">
-             <Calendar className="h-7 w-7 text-primary" />
-             Análise Diária
-           </h1>
-           <p className="page-subtitle">
-             Performance do dia {hoje.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })}
-           </p>
-         </div>
+       <h1 className="sr-only">Análise Diária</h1>
+       <div className="flex flex-wrap items-center justify-between gap-2">
+         <span className="text-sm text-muted-foreground">
+           {hoje.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })}
+         </span>
          <Badge variant="outline" className="text-sm px-4 py-2">
            <Clock className="h-4 w-4 mr-2" />
            Atualizado às {hoje.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}

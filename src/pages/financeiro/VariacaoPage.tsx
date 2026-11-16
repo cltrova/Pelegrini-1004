@@ -189,7 +189,6 @@ export default function VariacaoPage() {
       <div className="financial-workspace flex h-screen min-w-0 max-w-full flex-col overflow-hidden bg-background pb-20">
         <MobileHeader
           title="Variação"
-          subtitle="Fluxo de Caixa"
           actions={
             <div className="financial-toolbar flex items-center gap-2">
               <Sheet open={showMobileFilters} onOpenChange={setShowMobileFilters}>
@@ -324,6 +323,7 @@ export default function VariacaoPage() {
   return (
     <div className="financial-workspace flex h-full min-h-0 min-w-0 max-w-full flex-1 flex-col overflow-hidden">
       <Header
+        title="Variação"
         actions={
           <div className="financial-toolbar flex items-center gap-2">
             <Button variant="outline" size="sm" onClick={() => refetch()} className="financial-filter-control">

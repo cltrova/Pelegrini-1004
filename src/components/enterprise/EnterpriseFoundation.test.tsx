@@ -64,18 +64,17 @@ import {
 } from './index';
 
 describe('enterprise visual foundation', () => {
-  it('renders a compact page header with metadata and actions', () => {
-    render(
+  it('shows page actions and metadata without a visible page heading', () => {
+    const { container } = render(
       <EnterprisePageHeader
         title="Resumo Financeiro"
-        subtitle="Liquidez e contas a receber"
         metadata={<span>Set/2026</span>}
         actions={<button type="button">Atualizar</button>}
       />,
     );
 
-    expect(screen.getByRole('heading', { name: 'Resumo Financeiro' })).toBeInTheDocument();
-    expect(screen.getByText('Liquidez e contas a receber')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Resumo Financeiro' })).toHaveClass('sr-only');
+    expect(container.querySelector('header')).toBeNull();
     expect(screen.getByText('Set/2026')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Atualizar' })).toBeInTheDocument();
   });

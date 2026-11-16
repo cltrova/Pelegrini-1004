@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ArrowLeft, Plus, Users, Crown, Shield, User } from 'lucide-react';
+import { ArrowLeft, Plus, Crown, Shield, User } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -35,37 +35,16 @@ function UsuariosPageContent() {
 
   return (
     <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden bg-background">
-      {/* Header */}
-      <div className="shrink-0 border-b bg-card/50 backdrop-blur-sm">
-        <div className="container mx-auto px-4 py-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => navigate(isMaster ? '/configuracoes' : '/')}
-              >
-                <ArrowLeft className="h-5 w-5" />
-              </Button>
-              <div>
-                <h1 className="text-xl font-semibold flex items-center gap-2">
-                  <Users className="h-5 w-5" />
-                  Gestão de Usuários
-                </h1>
-                <p className="text-sm text-muted-foreground">
-                  {isMaster 
-                    ? 'Gerencie todos os usuários do sistema'
-                    : `Gerencie os colaboradores da sua empresa`
-                  }
-                </p>
-              </div>
-            </div>
-            <Button onClick={() => { setEditingUserId(null); setIsFormOpen(true); }} className="gap-2">
-              <Plus className="h-4 w-4" />
-              Novo Usuário
-            </Button>
-          </div>
-        </div>
+      <h1 className="sr-only">Gestão de Usuários</h1>
+      <div className="container mx-auto flex shrink-0 items-center justify-between gap-2 px-4 pt-2">
+        <Button variant="ghost" size="icon" aria-label="Voltar"
+          onClick={() => navigate(isMaster ? '/configuracoes' : '/')}>
+          <ArrowLeft aria-hidden="true" className="h-5 w-5" />
+        </Button>
+        <Button onClick={() => { setEditingUserId(null); setIsFormOpen(true); }} className="gap-2">
+          <Plus className="h-4 w-4" />
+          Novo Usuário
+        </Button>
       </div>
 
       {/* Content */}

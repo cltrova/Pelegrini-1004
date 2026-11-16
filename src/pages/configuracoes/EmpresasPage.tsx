@@ -197,28 +197,18 @@ export default function EmpresasPage() {
   return (
     <PelegriniPageSurface moduleKey="financeiro">
       <div className="relative mx-auto flex min-h-0 w-full max-w-[1200px] flex-1 flex-col overflow-hidden px-4 py-4">
-        {/* Header */}
-        <div className="flex shrink-0 items-start justify-between gap-4 mb-4 animate-fade-in">
-          <div className="min-w-0">
-            <button
-              onClick={() => navigate('/configuracoes')}
-              className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors mb-3 group"
-            >
-              <ArrowLeft className="h-3.5 w-3.5 transition-transform group-hover:-translate-x-0.5" />
-              Voltar
-            </button>
-            <div className="flex items-center gap-3 flex-wrap">
-              <h1 className="text-2xl font-semibold tracking-tight text-foreground">Gestão de Empresas</h1>
-              <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full border border-border/60 bg-card/60 backdrop-blur-sm text-[11px] font-medium text-muted-foreground tabular-nums">
-                <Building2 className="h-3 w-3 text-primary" />
-                {lista.length} {lista.length === 1 ? 'empresa' : 'empresas'}
-              </span>
-            </div>
-            <p className="text-sm text-muted-foreground mt-1.5">
-              Gerencie empresas, endpoints e módulos disponíveis.
-            </p>
-          </div>
-          <Button onClick={handleNew} className="gap-2 shrink-0 shadow-lg shadow-primary/20 hover:shadow-primary/30 hover:-translate-y-0.5 transition-all">
+        <h1 className="sr-only">Gestão de Empresas</h1>
+        <div className="mb-3 flex shrink-0 flex-wrap items-center gap-2">
+          <button type="button" onClick={() => navigate('/configuracoes')}
+            className="group inline-flex items-center gap-1.5 px-2 py-1 text-sm text-muted-foreground transition-colors hover:text-foreground">
+            <ArrowLeft aria-hidden="true" className="h-3.5 w-3.5 transition-transform group-hover:-translate-x-0.5" />
+            Voltar
+          </button>
+          <span className="inline-flex items-center gap-1.5 text-xs font-medium tabular-nums text-muted-foreground">
+            <Building2 aria-hidden="true" className="h-3 w-3 text-primary" />
+            {lista.length} {lista.length === 1 ? 'empresa' : 'empresas'}
+          </span>
+          <Button onClick={handleNew} size="sm" className="ml-auto shrink-0 gap-2">
             <Plus className="h-4 w-4" />
             Nova Empresa
           </Button>

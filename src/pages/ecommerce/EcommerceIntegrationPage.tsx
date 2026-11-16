@@ -1,4 +1,4 @@
-import { AlertCircle, CheckCircle2, CircleOff, ExternalLink, Link2, RefreshCw } from 'lucide-react';
+import { AlertCircle, CheckCircle2, CircleOff, ExternalLink, RefreshCw } from 'lucide-react';
 import { useFilialSelecionada } from '@/contexts/FilialSelecionadaContext';
 import { useEcommerceData } from '@/hooks/useEcommerceData';
 import { LoadingState } from '@/components/common/LoadingState';
@@ -62,21 +62,7 @@ export function EcommerceIntegrationPage() {
 
   return (
     <main className="mx-auto flex w-full max-w-6xl flex-col gap-6 p-4 sm:p-6" aria-labelledby="ecommerce-settings-title">
-      <header className="flex flex-col gap-2 border-b border-border pb-5 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <p className="text-sm font-medium uppercase tracking-[0.14em] text-muted-foreground">E-Commerce</p>
-          <h1 id="ecommerce-settings-title" className="mt-1 text-2xl font-semibold tracking-tight">
-            Configurações
-          </h1>
-          <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-            Gerencie as integrações disponíveis para a Casa do Chevrolet.
-          </p>
-        </div>
-        <span className="inline-flex w-fit items-center gap-2 rounded-full border border-border px-3 py-1.5 text-sm text-muted-foreground">
-          <Link2 className="h-4 w-4" aria-hidden="true" />
-          Somente frontend
-        </span>
-      </header>
+      <h1 id="ecommerce-settings-title" className="sr-only">Configurações</h1>
 
       <Tabs defaultValue="mercado-livre" className="w-full">
         <TabsList aria-label="Configurações do E-Commerce">

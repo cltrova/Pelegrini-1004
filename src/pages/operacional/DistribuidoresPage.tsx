@@ -6,7 +6,6 @@ import { canViewDistributorEvolution } from '@/components/operacional/estoque/di
 import {
   EstoqueDataViewport,
   EstoqueWorkspace,
-  EstoqueWorkspaceHeader,
 } from '@/components/operacional/estoque/EstoqueWorkspace';
 import { useFilialSelecionada } from '@/contexts/FilialSelecionadaContext';
 import { useEmpresaAtiva } from '@/hooks/useEmpresaAtiva';
@@ -35,14 +34,7 @@ export default function DistribuidoresPage() {
 
   return (
     <EstoqueWorkspace aria-label="Evolução de distribuidores" className="operational-distributors bg-background">
-      <EstoqueWorkspaceHeader>
-        <div className="min-w-0">
-          <h1 className="truncate text-sm font-semibold text-foreground">Evolução de Distribuidores</h1>
-          <p className="hidden truncate text-xs text-muted-foreground sm:block">
-            Histórico mensal por marca e grupo
-          </p>
-        </div>
-      </EstoqueWorkspaceHeader>
+      <h1 className="sr-only">Evolução de Distribuidores</h1>
       <Suspense
         fallback={(
           <EstoqueDataViewport className="p-4">

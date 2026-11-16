@@ -2,6 +2,7 @@
  import { LayoutDashboard, Calendar, Users, Home, Clock, MoreHorizontal, XCircle } from 'lucide-react';
  import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
  import { useEmpresaAtiva } from '@/hooks/useEmpresaAtiva';
+ import { ThemeToggle } from '@/components/common/ThemeToggle';
  import { cn } from '@/lib/utils';
  
  interface NavItem {
@@ -90,6 +91,9 @@
              </PopoverContent>
            </Popover>
          )}
+         <div className="flex h-14 shrink-0 items-center justify-center px-0.5">
+           <ThemeToggle />
+         </div>
        </div>
      </nav>
    );

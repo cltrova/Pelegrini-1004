@@ -374,29 +374,15 @@ export default function AutenticacaoPedidosPagePremium() {
   return (
     <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden bg-background">
       <div className="enterprise-page-shell max-w-[1600px]">
-        {/* Header */}
-        <header className="flex shrink-0 flex-col md:flex-row md:items-end md:justify-between gap-4 animate-fade-in">
-          <div className="space-y-2">
-            <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
-              <Sparkles className="h-3.5 w-3.5" />
-              Auditoria inteligente
-            </div>
-            <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground">
-              Autenticação de Pedidos
-            </h1>
-            <p className="text-sm text-muted-foreground max-w-2xl">
-              Importe uma planilha de pedidos e compare automaticamente com os dados do sistema. Identifique divergências de valor, cliente e pedidos faltantes em segundos.
-            </p>
-          </div>
-          <div className="flex gap-2">
+        <h1 className="sr-only">Autenticação de Pedidos</h1>
+        <div className="flex shrink-0 flex-wrap justify-end gap-2">
             <Button variant="outline" onClick={() => exportar('xlsx')} disabled={!hasResults} className="rounded-lg">
               <Download className="h-4 w-4 mr-2" /> Exportar
             </Button>
             <Button onClick={clearFile} disabled={!hasFile && !hasResults} className="rounded-lg">
               <Sparkles className="h-4 w-4 mr-2" /> Nova autenticação
             </Button>
-          </div>
-        </header>
+        </div>
 
         <Tabs defaultValue="nova" className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden">
           <TabsList className="shrink-0 rounded-lg">

@@ -14,7 +14,6 @@ import { cn } from '@/lib/utils';
 import { useEmpresaAtiva } from '@/hooks/useEmpresaAtiva';
 import { resolvePelegriniTheme } from '@/config/pelegriniTheme';
 import { useFilialSelecionada } from '@/contexts/FilialSelecionadaContext';
-import { PelegriniBrandMark } from '@/components/pelegrini';
 import {
   Collapsible,
   CollapsibleContent,
@@ -73,9 +72,8 @@ export function WhatsappHeader() {
 
   return (
     <div ref={headerRef} className="relative z-50">
-      {/* Main header bar */}
-      <header
-        className="pelegrini-whatsapp-header min-h-16 bg-sidebar border-b border-sidebar-border flex items-center px-4 py-2 gap-3"
+      <div
+        className="flex min-h-11 items-center gap-2 px-3 py-1"
         style={{
           '--pelegrini-primary': theme.primary,
           '--pelegrini-secondary': theme.secondary,
@@ -85,8 +83,9 @@ export function WhatsappHeader() {
         {/* Hamburger button */}
         <button
           onClick={() => setIsMenuOpen(!isMenuOpen)}
-          className="p-2 rounded-lg hover:bg-sidebar-accent text-sidebar-foreground transition-colors"
+          className="rounded-sm p-2 text-foreground transition-colors hover:bg-accent"
           aria-label={isMenuOpen ? 'Fechar menu' : 'Abrir menu'}
+          aria-expanded={isMenuOpen}
         >
           {isMenuOpen ? (
             <X className="h-5 w-5" />
@@ -95,24 +94,14 @@ export function WhatsappHeader() {
           )}
         </button>
 
-        {/* Logo */}
-        <div className="flex min-w-0 items-center gap-3">
-          <PelegriniBrandMark theme={theme} compact tone="sidebar" />
-          <div className="hidden min-w-0 sm:block">
-            <span className="block font-semibold leading-tight text-sidebar-foreground">
-              {theme.name}
-            </span>
-          </div>
-        </div>
-
         {/* Connection status */}
-        <div className="ml-auto flex items-center gap-2 px-3 py-1.5 rounded-lg bg-sidebar-accent/70 border border-sidebar-border">
-          <Zap className="h-4 w-4 text-sidebar-primary" />
-          <span className="text-xs font-medium text-sidebar-foreground hidden sm:inline">
+        <div className="ml-auto flex items-center gap-1.5 text-muted-foreground">
+          <Zap aria-hidden="true" className="h-4 w-4 text-primary" />
+          <span className="text-xs font-medium">
             Conectado
           </span>
         </div>
-      </header>
+      </div>
 
       {/* Collapsible navigation menu */}
       <Collapsible open={isMenuOpen}>

@@ -77,13 +77,7 @@ export default function EcommerceListingsPage() {
 
   return (
     <section className="flex min-h-full flex-col gap-6 p-4 md:p-6" aria-labelledby="ecommerce-listings-title">
-      <header className="flex flex-col gap-2">
-        <div className="flex items-center gap-3">
-          <Megaphone className="h-6 w-6 text-primary" aria-hidden="true" />
-          <h1 id="ecommerce-listings-title" className="text-2xl font-semibold tracking-tight text-foreground">Anúncios</h1>
-        </div>
-        <p className="text-sm text-muted-foreground">Acompanhe os anúncios da Casa do Chevrolet no Mercado Livre.</p>
-      </header>
+      <h1 id="ecommerce-listings-title" className="sr-only">Anúncios</h1>
 
       {rows.length === 0 ? (
         <EmptyState

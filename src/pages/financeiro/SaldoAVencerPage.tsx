@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Wallet, Calendar, ChevronDown } from 'lucide-react';
+import { Calendar, ChevronDown } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import {
   Select,
@@ -75,18 +75,7 @@ export default function SaldoAVencerPage() {
 
   return (
     <div className="financial-workspace enterprise-page-shell max-w-[1600px] animate-fade-in">
-      <header className="flex items-center gap-3">
-        <div className="h-11 w-11 rounded-xl bg-primary/10 flex items-center justify-center">
-          <Wallet className="h-6 w-6 text-primary" />
-        </div>
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Saldo a Vencer</h1>
-          <p className="text-sm text-muted-foreground">
-            Pedidos com valor pendente de pagamento, a partir de /comercial/pedidos.
-          </p>
-
-        </div>
-      </header>
+      <h1 className="sr-only">Saldo a Vencer</h1>
 
       <Card className="financial-toolbar min-w-0 border-border/60">
         <button

@@ -1,26 +1,22 @@
 import { ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, MoreVertical } from 'lucide-react';
+import { ChevronLeft } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 
 interface MobileHeaderProps {
   title: string;
-  subtitle?: string;
   showBack?: boolean;
   onBack?: () => void;
   actions?: ReactNode;
-  transparent?: boolean;
   className?: string;
 }
 
 export function MobileHeader({
   title,
-  subtitle,
   showBack = false,
   onBack,
   actions,
-  transparent = false,
   className,
 }: MobileHeaderProps) {
   const navigate = useNavigate();
@@ -34,42 +30,19 @@ export function MobileHeader({
   };
 
   return (
-    <header
-      className={cn(
-        'sticky top-0 z-40 safe-area-top transition-all duration-200',
-        transparent
-          ? 'bg-transparent'
-          : 'bg-background/95 backdrop-blur-lg border-b border-border/50',
-        className
-      )}
-    >
-      <div className="flex items-center justify-between h-14 px-4">
-        {/* Left side */}
-        <div className="flex items-center gap-3 flex-1 min-w-0">
+    <>
+      <h1 className="sr-only">{title}</h1>
+      {(showBack || actions) && (
+        <div className={cn('safe-area-top flex shrink-0 flex-wrap items-center gap-2 px-3 py-1', className)}>
           {showBack && (
-            <button
-              onClick={handleBack}
-              className="flex items-center justify-center h-9 w-9 rounded-full bg-muted/60 active:bg-muted transition-colors shrink-0"
-            >
-              <ChevronLeft className="h-5 w-5" />
-            </button>
+            <Button type="button" variant="ghost" size="icon" aria-label="Voltar" onClick={handleBack}>
+              <ChevronLeft aria-hidden="true" className="h-5 w-5" />
+            </Button>
           )}
-          <div className="min-w-0 flex-1">
-            <h1 className="text-lg font-bold text-foreground truncate">{title}</h1>
-            {subtitle && (
-              <p className="text-xs text-muted-foreground truncate">{subtitle}</p>
-            )}
-          </div>
+          {actions && <div className="ml-auto flex flex-wrap items-center gap-2">{actions}</div>}
         </div>
-
-        {/* Right side - actions */}
-        {actions && (
-          <div className="flex items-center gap-2 shrink-0 ml-2">
-            {actions}
-          </div>
-        )}
-      </div>
-    </header>
+      )}
+    </>
   );
 }
 

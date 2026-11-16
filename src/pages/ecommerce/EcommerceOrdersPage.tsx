@@ -89,13 +89,7 @@ export default function EcommerceOrdersPage() {
 
   return (
     <section className="flex min-h-full flex-col gap-6 p-4 md:p-6" aria-labelledby="ecommerce-orders-title">
-      <header className="flex flex-col gap-2">
-        <div className="flex items-center gap-3">
-          <ShoppingCart className="h-6 w-6 text-primary" aria-hidden="true" />
-          <h1 id="ecommerce-orders-title" className="text-2xl font-semibold tracking-tight text-foreground">Pedidos</h1>
-        </div>
-        <p className="text-sm text-muted-foreground">Consulte os pedidos sincronizados da Casa do Chevrolet.</p>
-      </header>
+      <h1 id="ecommerce-orders-title" className="sr-only">Pedidos</h1>
 
       {rows.length === 0 ? (
         <EmptyState

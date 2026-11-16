@@ -15,7 +15,7 @@ import {
   calculateGroupSummary,
 } from '@/hooks/useDreData';
 import { DreFilters as DreFiltersType } from '@/types/dre';
-import { RefreshCw, LayoutDashboard, Table, Filter, GitCompare, Bot, FileBarChart2 } from 'lucide-react';
+import { RefreshCw, LayoutDashboard, Table, Filter, GitCompare, Bot } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
@@ -186,7 +186,6 @@ export default function DrePage() {
         {/* Header Mobile */}
         <MobileHeader
           title="DRE"
-          subtitle="Demonstrativo de Resultado"
           actions={
             <div className="financial-toolbar flex items-center gap-2">
               <Sheet open={showMobileFilters} onOpenChange={setShowMobileFilters}>
@@ -291,8 +290,6 @@ export default function DrePage() {
       <div className="enterprise-page-shell min-w-0 max-w-[1600px] overflow-hidden">
         <EnterprisePageHeader
           title="DRE"
-          subtitle="Demonstrativo de Resultado"
-          icon={FileBarChart2}
           actions={
             <Button variant="outline" size="sm" onClick={() => refetch()} className="financial-toolbar financial-filter-control">
               <RefreshCw className="h-4 w-4 mr-2" />

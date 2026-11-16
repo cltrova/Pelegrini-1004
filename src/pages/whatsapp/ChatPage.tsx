@@ -9,7 +9,6 @@ import { useWhatsappConversations, useWhatsappRealtime, useMarkAsRead } from '@/
 import type { ConversationFilters } from '@/types/whatsapp';
 import { useEmpresaAtiva } from '@/hooks/useEmpresaAtiva';
 import { EmpresaSelectorDialog } from '@/components/common/EmpresaSelectorDialog';
-import { PelegriniModuleHeader } from '@/components/pelegrini';
 
 type MobileView = 'list' | 'chat' | 'details';
 
@@ -125,12 +124,7 @@ export default function ChatPage() {
       <div className="flex-1 flex overflow-hidden min-h-0">
         {/* Left column - Conversation list */}
         <div className="w-80 border-r border-border flex flex-col flex-shrink-0 overflow-hidden">
-          <PelegriniModuleHeader
-            title="Atendimento"
-            subtitle="Conversas e fila de balcao"
-            moduleKey="whatsapp"
-            compact
-          />
+          <h1 className="sr-only">Atendimento</h1>
           <div className="min-h-0 flex-1">
             <ConversationList
               conversations={conversations || []}

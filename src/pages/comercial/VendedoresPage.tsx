@@ -387,7 +387,6 @@ export default function VendedoresPage() {
     <div className="enterprise-page">
       <EnterprisePageHeader
         title="Painel de Vendedores"
-        subtitle="Performance, metas, ranking e inteligência comercial"
         metadata={`${vendedoresFiltrados.length.toLocaleString('pt-BR')} vendedores visíveis`}
         actions={
           <div className="flex min-w-0 items-end gap-2">
