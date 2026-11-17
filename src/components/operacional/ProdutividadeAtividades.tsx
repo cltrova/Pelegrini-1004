@@ -11,6 +11,11 @@ import { exportarAtividadesExcel, type ProdutividadePeriodo } from './produtivid
 const number = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 2 });
 const date = (value: string) => value.split('-').reverse().join('/');
 const normalize = (value: string) => value.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLocaleLowerCase('pt-BR').trim();
+const activityMetrics = [
+  'pedidos_separados', 'unidades_separadas', 'pedidos_conferidos',
+  'unidades_pedidos_marcados_conferidos', 'unidades_conferidas_registradas',
+  'notas_lancadas', 'unidades_guardadas',
+] as const;
 const groups = [
   { name: 'Separação', icon: PackageOpen, color: 'hsl(var(--chart-1))', fields: [['pedidos_separados', 'Pedidos'], ['unidades_separadas', 'Unidades']] },
   { name: 'Conferência', icon: ClipboardCheck, color: 'hsl(var(--chart-2))', fields: [['pedidos_conferidos', 'Pedidos'], ['unidades_pedidos_marcados_conferidos', 'Unidades dos pedidos'], ['unidades_conferidas_registradas', 'Unidades por leitura']] },
@@ -25,7 +30,7 @@ function ActivityRow({ row, byDay }: { row: ProdutividadeLinha; byDay: boolean }
       <summary className="grid min-h-12 cursor-pointer list-none grid-cols-[minmax(0,1fr)_auto] items-center gap-x-2 px-3 py-2 hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring sm:grid-cols-[minmax(0,1fr)_auto_auto] [&::-webkit-details-marker]:hidden">
         <span className="min-w-0">
           <span className="block truncate text-sm font-medium">{byDay ? person : date(row.data_atividade)}</span>
-          <span className="block text-xs text-muted-foreground">Filial {row.cod_empresa}{row.identificacao_responsavel && ' · ' + row.identificacao_responsavel}</span>
+          <span className="block text-xs text-muted-foreground">Filial {row.cod_empresa}</span>
         </span>
         <span className="col-start-1 row-start-2 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-muted-foreground sm:col-start-2 sm:row-start-1">
           <span><strong className="tabular-nums text-foreground">{number.format(row.pedidos_separados)}</strong> separados</span>
@@ -91,8 +96,27 @@ export function ProdutividadeAtividades({ rows, periodo, collaborator, onCollabo
       (!collaborator || matchesProdutividadeColaborador(row, collaborator)) &&
       normalize((row.nome_responsavel ?? '') + ' ' + (row.identificacao_responsavel ?? '')).includes(term)
     );
-    const buckets = new Map<string, { label: string; rows: ProdutividadeLinha[] }>();
+    const consolidated = new Map<string, { row: ProdutividadeLinha; identities: Set<string> }>();
     for (const row of matching) {
+      const person = getProdutividadeColaborador(row);
+      const key = JSON.stringify([row.data_atividade, person.id]);
+      const current = consolidated.get(key);
+      if (!current) {
+        consolidated.set(key, {
+          row: { ...row, identificacao_responsavel: '' },
+          identities: new Set(row.identificacao_responsavel ? [row.identificacao_responsavel] : []),
+        });
+        continue;
+      }
+      for (const metric of activityMetrics) current.row[metric] += Number(row[metric]) || 0;
+      if (row.identificacao_responsavel) current.identities.add(row.identificacao_responsavel);
+    }
+    const consolidatedRows = [...consolidated.values()].map(({ row, identities }) => ({
+      ...row,
+      identificacao_responsavel: [...identities].join(' + '),
+    }));
+    const buckets = new Map<string, { label: string; rows: ProdutividadeLinha[] }>();
+    for (const row of consolidatedRows) {
       const person = getProdutividadeColaborador(row);
       const key = byDay ? row.data_atividade : person.id;
       const label = byDay ? date(row.data_atividade) : person.name + ' · Filial ' + person.branch;
@@ -107,7 +131,7 @@ export function ProdutividadeAtividades({ rows, periodo, collaborator, onCollabo
         ? (a.nome_responsavel ?? '').localeCompare(b.nome_responsavel ?? '', 'pt-BR') || a.cod_empresa - b.cod_empresa
         : b.data_atividade.localeCompare(a.data_atividade));
     }
-    return { count: matching.length, sorted };
+    return { count: consolidatedRows.length, sorted };
   }, [periodRows, query, byDay, collaborator]);
 
   async function exportActivities() {

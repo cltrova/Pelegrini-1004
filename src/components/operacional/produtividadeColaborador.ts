@@ -15,7 +15,9 @@ export function getProdutividadeColaborador(row: Responsavel): ProdutividadeCola
   const name = row.nome_responsavel?.trim() || 'Sem nome';
   const identity = String(row.identificacao_responsavel ?? '').trim();
   const branch = Number(row.cod_empresa);
-  return { id: JSON.stringify([branch, identity || name]), name, branch, identity };
+  const normalizedName = name.normalize('NFD').replace(/\p{Diacritic}/gu, '').replace(/\s+/g, ' ').toLocaleLowerCase('pt-BR');
+  const personKey = normalizedName === 'sem nome' ? identity || normalizedName : normalizedName;
+  return { id: JSON.stringify([branch, personKey]), name, branch, identity };
 }
 
 export function matchesProdutividadeColaborador(row: Responsavel, selected: ProdutividadeColaborador) {
@@ -23,8 +25,5 @@ export function matchesProdutividadeColaborador(row: Responsavel, selected: Prod
 }
 
 export function sameProdutividadeColaborador(current: ProdutividadeColaborador, selected: ProdutividadeColaborador) {
-  return current.id === selected.id || Boolean(
-    selected.identity && current.identity === selected.identity &&
-    current.name.localeCompare(selected.name, 'pt-BR', { sensitivity: 'base' }) === 0
-  );
+  return current.id === selected.id;
 }
