@@ -74,7 +74,8 @@ export function ProdutividadeAtividades({ rows, periodo, collaborator, onCollabo
   const byDay = groupBy === 'dia';
   const periodRows = useMemo(() => rows.filter(row =>
     row.data_atividade >= inicio && row.data_atividade <= fim &&
-    (!filial || Number(row.cod_empresa) === Number(filial))
+    (!filial || Number(row.cod_empresa) === Number(filial)) &&
+    activityMetrics.some(metric => Number(row[metric]) > 0)
   ), [rows, inicio, fim, filial]);
   const collaborators = useMemo(() => {
     const people = new Map<string, ProdutividadeColaborador>();
