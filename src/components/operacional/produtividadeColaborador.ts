@@ -16,8 +16,9 @@ export function getProdutividadeColaborador(row: Responsavel): ProdutividadeCola
   const identity = String(row.identificacao_responsavel ?? '').trim();
   const branch = Number(row.cod_empresa);
   const normalizedName = name.normalize('NFD').replace(/\p{Diacritic}/gu, '').replace(/\s+/g, ' ').toLocaleLowerCase('pt-BR');
-  const personKey = normalizedName === 'sem nome' ? identity || normalizedName : normalizedName;
-  return { id: JSON.stringify([branch, personKey]), name, branch, identity };
+  const kaioAlias = branch === 2 && normalizedName === 'kaio';
+  const personKey = normalizedName === 'sem nome' ? identity || normalizedName : kaioAlias ? 'kaio eduardo' : normalizedName;
+  return { id: JSON.stringify([branch, personKey]), name: kaioAlias ? 'KAIO EDUARDO' : name, branch, identity };
 }
 
 export function matchesProdutividadeColaborador(row: Responsavel, selected: ProdutividadeColaborador) {
