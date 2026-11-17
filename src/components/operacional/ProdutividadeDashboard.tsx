@@ -293,7 +293,8 @@ function InvoicesChart({ collaborators, onDetail, onCollaborator }: {
   onCollaborator: (person: ProdutividadeColaborador) => void;
 }) {
   const rows = collaborators.filter(person =>
-    person.totals.notas_lancadas > 0 || person.name.trim().toLocaleUpperCase('pt-BR') === 'VIVIA')
+    person.totals.notas_lancadas > 0 ||
+    (person.name.trim().toLocaleUpperCase('pt-BR') === 'VIVIA' && person.identity.startsWith('colaborador:')))
     .sort((a, b) => comparePeople(a, b, 'notas_lancadas'));
   const max = rows[0]?.totals.notas_lancadas ?? 1;
   return (
