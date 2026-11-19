@@ -211,10 +211,14 @@ describe('Home branch flow', () => {
     expectDestination('/financeiro/dre');
   });
 
-  it('navigates Settings directly from the selection header', () => {
+  it('places account actions above the branch cards and opens Settings directly', () => {
     renderHome(<HomePage />);
 
-    fireEvent.click(screen.getAllByRole('button', { name: /Configuracoes/i })[0]);
+    const actions = screen.getByRole('main').firstElementChild as HTMLElement;
+    const settings = within(actions).getByRole('button', { name: /Configuracoes/i });
+    expect(within(actions).getByRole('button', { name: 'Sair' })).toBeInTheDocument();
+
+    fireEvent.click(settings);
 
     expectDestination('/configuracoes');
   });

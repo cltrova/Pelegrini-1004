@@ -2126,16 +2126,17 @@
 }
 .dark .pelegrini-home-grain { color: #d8e9fb; opacity: 0.07; mix-blend-mode: soft-light; }
 
+.pelegrini-home[data-view="selection"] { overflow-y: auto; }
 .pelegrini-home-selection {
   position: relative;
   z-index: 1;
-  width: min(100% - 2rem, 980px);
+  width: min(100% - 2rem, 720px);
   margin: 0 auto;
   padding: clamp(18px, 3dvh, 34px) 0 clamp(18px, 4dvh, 44px);
 }
 .pelegrini-home-selection h1 { margin: 0 0 clamp(16px, 2.6dvh, 26px); text-align: center; font-size: clamp(1.45rem, 2.4dvh, 1.75rem); font-weight: 780; letter-spacing: 0; }
-.pelegrini-home-selection > .pelegrini-home-account-actions { margin-top: 0.75rem; }
-.pelegrini-home-branch-grid { display: grid; width: min(720px, 100%); margin: 0 auto; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(16px, 2.8dvh, 24px); }
+.pelegrini-home-selection > .pelegrini-home-account-actions { margin-bottom: clamp(8px, 1.4dvh, 14px); }
+.pelegrini-home-branch-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(16px, 2.8dvh, 24px); }
 .pelegrini-home-branch-card {
   display: flex;
   min-width: 0;
@@ -2247,7 +2248,16 @@
   .pelegrini-home-logo-stack.header-logo.transmissao { width: 43px; height: 40px; }
   .pelegrini-home-logo-stack.header-logo.transmissao.full-white { width: 118px; height: 34px; }
   .pelegrini-home-account-actions { gap: 0.3rem; }
-  .pelegrini-home-selection { width: min(100% - 1.5rem, 440px); padding: 32px 0 48px; }
+  .pelegrini-home-selection { width: min(100% - 1.5rem, 440px); padding: 16px 0 48px; }
+  .pelegrini-home-selection > .pelegrini-home-account-actions { flex-wrap: nowrap; }
+  .pelegrini-home-selection .pelegrini-home-account-actions button { flex-shrink: 0; }
+  .pelegrini-home-selection .pelegrini-home-account { gap: 0.4rem; }
+  .pelegrini-home-selection .pelegrini-home-account > span {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
   .pelegrini-home-selection h1 { margin-bottom: 22px; font-size: 1.55rem; }
   .pelegrini-home-branch-grid { grid-template-columns: 1fr; gap: 18px; }
   .pelegrini-home-branch-card { min-height: 370px; aspect-ratio: auto; }

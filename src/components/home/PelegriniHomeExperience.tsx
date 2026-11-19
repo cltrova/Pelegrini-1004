@@ -278,6 +278,7 @@ export function PelegriniHomeExperience({ mobile = false }: PelegriniHomeExperie
 
       {!selectedBranch ? (
         <main className="pelegrini-home-selection">
+          {accountActions}
           <h1>Escolha a filial</h1>
           <section className="pelegrini-home-branch-grid" aria-label="Filiais disponíveis">
             {(filialAccess.items.filter((item) => item.id === 'chevrolet' || item.id === 'transmissao') as Array<typeof filialAccess.items[number] & { id: HomeBranch }>).map((filial) => (
@@ -299,7 +300,6 @@ export function PelegriniHomeExperience({ mobile = false }: PelegriniHomeExperie
               </button>
             ))}
           </section>
-          {accountActions}
         </main>
       ) : (
         <main className="pelegrini-home-modules-shell">
