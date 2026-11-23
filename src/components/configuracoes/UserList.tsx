@@ -205,7 +205,7 @@ export function UserList({ onEdit, filterByCompany }: UserListProps) {
     return (
       <Badge className="gap-1 bg-green-500/10 text-green-600 hover:bg-green-500/20 border-green-500/20">
         <User className="h-3 w-3" />
-        Vendedor
+        {roles.includes('visitador') ? 'Visitador' : 'Vendedor'}
       </Badge>
     );
   };
@@ -282,15 +282,15 @@ export function UserList({ onEdit, filterByCompany }: UserListProps) {
                           <LogIn className={`h-4 w-4 ${getActiveLocalPreviewUserAccount().user.id === user.user_id ? 'text-primary' : ''}`} />
                         </Button>
                       )}
-                      <Button
+                      {(isMaster || !user.roles.includes('visitador')) && <Button
                         variant="ghost"
                         size="icon"
                         title="Editar"
                         onClick={() => onEdit(user.user_id)}
                       >
                         <Pencil className="h-4 w-4" />
-                      </Button>
-                      {!localPreview && (
+                      </Button>}
+                      {!localPreview && (isMaster || !user.roles.includes('visitador')) && (
                         <Button
                           variant="ghost"
                           size="icon"
@@ -300,7 +300,7 @@ export function UserList({ onEdit, filterByCompany }: UserListProps) {
                           <KeyRound className="h-4 w-4 text-primary" />
                         </Button>
                       )}
-                      {(!localPreview || user.user_id !== getDefaultLocalPreviewUserAccount().user.id) && (
+                      {(isMaster || !user.roles.includes('visitador')) && (!localPreview || user.user_id !== getDefaultLocalPreviewUserAccount().user.id) && (
                         <Button
                           variant="ghost"
                           size="icon"

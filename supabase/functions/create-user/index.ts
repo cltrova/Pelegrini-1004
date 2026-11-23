@@ -12,7 +12,7 @@ interface CreateUserPayload {
   cod_empresa_bi?: string;
   filial_id?: string | null;
   filiais_permitidas?: string[];
-  role: 'master' | 'gerencial' | 'vendedor';
+  role: 'master' | 'gerencial' | 'vendedor' | 'visitador';
   module_permissions: {
     modulo_dre: boolean;
     modulo_variacao: boolean;
@@ -295,6 +295,16 @@ Deno.serve(async (req) => {
           ? [filial_id]
           : [];
     const filialPadrao = filiaisPermitidas.length === 1 ? filiaisPermitidas[0] : null;
+    if (role === 'visitador') {
+      const permitidas = cod_empresa_bi === '1004' ? ['chevrolet', 'transmissao']
+        : cod_empresa_bi === '10041' ? ['chevrolet'] : [];
+      if (!filiaisPermitidas.length || filiaisPermitidas.some(filial => !permitidas.includes(filial))) {
+        return new Response(
+          JSON.stringify({ error: 'Selecione pelo menos uma filial válida para o visitador.' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    }
 
     step = 'create_auth_user';
     // Create user using admin API (does NOT auto-login)
@@ -358,7 +368,7 @@ Deno.serve(async (req) => {
     step = 'upsert_module_permissions';
     // Add module permissions
     try {
-      await upsertModulePermissions(supabaseAdmin, userId, module_permissions);
+      await upsertModulePermissions(supabaseAdmin, userId, role === 'visitador' ? undefined : module_permissions);
     } catch (permError) {
       console.error('Error adding module permissions:', permError);
       throw new Error('Failed to save module permissions');

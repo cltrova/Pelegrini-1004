@@ -1,9 +1,10 @@
  import { NavLink, useLocation, useNavigate } from 'react-router-dom';
- import { LayoutDashboard, Calendar, Users, Home, Clock, MoreHorizontal, XCircle } from 'lucide-react';
+ import { LayoutDashboard, Calendar, Users, Home, Clock, MoreHorizontal, XCircle, ClipboardList } from 'lucide-react';
  import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
  import { useEmpresaAtiva } from '@/hooks/useEmpresaAtiva';
  import { ThemeToggle } from '@/components/common/ThemeToggle';
  import { cn } from '@/lib/utils';
+ import { useAuth } from '@/contexts/AuthContext';
  
  interface NavItem {
    icon: React.ComponentType<{ className?: string }>;
@@ -23,9 +24,11 @@
    const location = useLocation();
    const navigate = useNavigate();
    const { codEmpresaAtiva } = useEmpresaAtiva();
+   const { isMaster, isGerencial } = useAuth();
    const showQuoteNavigation = codEmpresaAtiva === '1004' || codEmpresaAtiva === '10041';
    const isQuoteRoute = location.pathname === '/comercial/cotacoes'
-     || location.pathname === '/comercial/perdidas';
+     || location.pathname === '/comercial/perdidas'
+     || location.pathname === '/comercial/visitas';
  
    const isActive = (item: NavItem) => {
      if (item.match) {
@@ -88,6 +91,12 @@
                  <XCircle aria-hidden="true" className="h-4 w-4" />
                  Vendas Perdidas
                </NavLink>
+               {(isMaster || isGerencial) && (
+                 <NavLink to="/comercial/visitas" className="flex h-11 items-center gap-2 rounded-sm px-2 text-sm hover:bg-accent">
+                   <ClipboardList aria-hidden="true" className="h-4 w-4" />
+                   Relatórios de visitas
+                 </NavLink>
+               )}
              </PopoverContent>
            </Popover>
          )}

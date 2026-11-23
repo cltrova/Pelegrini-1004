@@ -225,7 +225,7 @@ export function UserFormDialog({
   const isEditing = !!userId;
 
   const availableRoles: AppRole[] = isMaster 
-    ? ['master', 'gerencial', 'vendedor'] 
+    ? ['master', 'gerencial', 'vendedor', 'visitador']
     : ['vendedor'];
 
   const selectedCompany = empresas.find(e => e.cod_empresa_bi === codEmpresaBi);
@@ -310,7 +310,7 @@ export function UserFormDialog({
           ? 'master'
           : account.roles.includes('gerencial')
             ? 'gerencial'
-            : 'vendedor';
+            : account.roles.includes('visitador') ? 'visitador' : 'vendedor';
         setSelectedRole(role);
         setModulePermissions({
           modulo_dre: account.permissions.modulo_dre ?? false,
@@ -365,6 +365,8 @@ export function UserFormDialog({
         setSelectedRole('master');
       } else if (userRoles.includes('gerencial')) {
         setSelectedRole('gerencial');
+      } else if (userRoles.includes('visitador')) {
+        setSelectedRole('visitador');
       } else {
         setSelectedRole('vendedor');
       }
@@ -447,7 +449,7 @@ export function UserFormDialog({
     if (selectedRole !== 'master' && !codEmpresaBi) {
       toast({
         title: 'Erro',
-        description: 'Código da empresa é obrigatório para usuários Gerencial e Vendedor.',
+        description: 'Informe a empresa para este perfil.',
         variant: 'destructive',
       });
       return;
@@ -462,11 +464,18 @@ export function UserFormDialog({
           ? filiaisPermitidas
           : [];
       const filialPadraoParaSalvar = filiaisParaSalvar.length === 1 ? filiaisParaSalvar[0] : null;
+      if (selectedRole === 'visitador' && filiaisParaSalvar.length === 0) {
+        throw new Error('Selecione pelo menos uma filial para o visitador.');
+      }
+      const modulosParaSalvar = selectedRole === 'visitador'
+        ? Object.fromEntries(Object.keys(modulePermissions).map(key => [key, false])) as unknown as ModulePermissions
+        : modulePermissions;
+      const paginasParaSalvar = selectedRole === 'visitador' ? {} : pagePermissions;
 
       if (localPreview) {
         const permissionsWithPages = {
-          ...modulePermissions,
-          permissoes_paginas: pagePermissions,
+          ...modulosParaSalvar,
+          permissoes_paginas: paginasParaSalvar,
         } as ModulePermissions;
         const account = createLocalPreviewUserAccount({
           email,
@@ -536,8 +545,8 @@ export function UserFormDialog({
           .from('user_module_permissions')
           .upsert({
             user_id: userId,
-            ...modulePermissions,
-            permissoes_paginas: pagePermissions,
+            ...modulosParaSalvar,
+            permissoes_paginas: paginasParaSalvar,
             updated_at: new Date().toISOString(),
           } as any, { onConflict: 'user_id' });
 
@@ -561,8 +570,8 @@ export function UserFormDialog({
           filiais_permitidas: filiaisParaSalvar,
           role: selectedRole,
           module_permissions: {
-            ...modulePermissions,
-            permissoes_paginas: pagePermissions,
+            ...modulosParaSalvar,
+            permissoes_paginas: paginasParaSalvar,
           },
         };
 
@@ -609,6 +618,7 @@ export function UserFormDialog({
       case 'gerencial':
         return <Shield className="h-4 w-4 text-blue-500" />;
       case 'vendedor':
+      case 'visitador':
         return <User className="h-4 w-4 text-green-500" />;
     }
   };
@@ -794,7 +804,7 @@ export function UserFormDialog({
 
 
             {/* Permissões Hierárquicas de Módulos */}
-            {selectedRole !== 'master' && (
+            {selectedRole !== 'master' && selectedRole !== 'visitador' && (
               <div className="space-y-3">
                 <Label>Permissões de Módulos</Label>
                 <p className="text-xs text-muted-foreground">

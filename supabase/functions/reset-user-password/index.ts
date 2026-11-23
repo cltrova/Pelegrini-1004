@@ -81,6 +81,13 @@ Deno.serve(async (req) => {
 
     // Escopo por empresa para gerencial
     if (!isMaster && isGerencial) {
+      const { data: targetRoles, error: targetRolesError } = await admin
+        .from('user_roles').select('role').eq('user_id', user_id);
+      if (targetRolesError || targetRoles?.some(({ role }) => role === 'visitador')) {
+        return new Response(JSON.stringify({ error: 'Somente o master pode redefinir a senha do visitador.' }), {
+          status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
       const { data: callerProfile } = await admin
         .from('profiles').select('cod_empresa_bi').eq('user_id', callerId).single();
       const { data: targetProfile } = await admin

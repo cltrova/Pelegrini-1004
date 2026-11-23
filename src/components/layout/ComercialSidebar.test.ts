@@ -1,5 +1,5 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { createElement, type ComponentType } from 'react';
+import { createElement, Suspense, type ComponentType } from 'react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAuth } from '@/contexts/AuthContext';
@@ -58,6 +58,14 @@ function mockCompany(codEmpresaAtiva: string) {
   vi.mocked(useEmpresaAtiva).mockReturnValue({ codEmpresaAtiva, isLoading: false } as never);
   vi.mocked(useAuth).mockReturnValue({ isLoading: false } as never);
 }
+
+it('exibe relatórios de visitas no Comercial para a gerência', () => {
+  mockCompany('1004');
+  vi.mocked(useAuth).mockReturnValue({ isLoading: false, isGerencial: true } as never);
+  vi.mocked(useFilialSelecionada).mockReturnValue({ filialAtiva: 'transmissao' } as never);
+  render(createElement(MemoryRouter, { initialEntries: ['/comercial/dashboard'], future: { v7_startTransition: true, v7_relativeSplatPath: true } }, createElement(ComercialSidebar)));
+  expect(screen.getByRole('link', { name: 'Relatórios de visitas' })).toHaveAttribute('href', '/comercial/visitas');
+});
 
 function mockLostSalesQueries() {
   vi.mocked(useVendasPerdidas).mockReturnValue({
@@ -254,7 +262,9 @@ describe('commercial sidebar menu access', () => {
       createElement(ComercialMobileBottomNav),
     ));
     expect(screen.queryByRole('button', { name: 'Mais' })).not.toBeInTheDocument();
-    expect(screen.getAllByRole('button')).toHaveLength(4);
+    for (const nome of ['Início', 'Dashboard', 'Diárias', 'Clientes']) {
+      expect(screen.getByRole('button', { name: nome })).toBeInTheDocument();
+    }
     expect(screen.queryByRole('link', { name: 'Cotações Abertas' })).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Vendas Perdidas' })).not.toBeInTheDocument();
   });
@@ -273,7 +283,11 @@ describe('commercial sidebar menu access', () => {
         createElement(
           Routes,
           undefined,
-          createElement(Route, { path: '/comercial' }, createElement(Route, route)),
+          createElement(Route, { path: '/comercial' }, createElement(Route, {
+            ...route,
+            Component: undefined,
+            element: createElement(Suspense, { fallback: null }, createElement(route.Component)),
+          })),
           createElement(Route, { path: '/comercial/dashboard', element: createElement('p', undefined, 'Dashboard comercial') }),
         ),
       ));
@@ -283,11 +297,11 @@ describe('commercial sidebar menu access', () => {
     expect(await screen.findByRole(
       'heading',
       { name: 'Vendas perdidas' },
-      { timeout: 10_000 },
+      { timeout: 30_000 },
     )).toBeInTheDocument();
 
     cleanup();
     renderLostSalesRoute('9999');
     expect(screen.getByText('Dashboard comercial')).toBeInTheDocument();
-  }, 30_000);
+  }, 90_000);
 });

@@ -261,6 +261,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Obter permissões do role principal
   const getCurrentRolePermissions = (): RolePermissions => {
+    if (roles.includes('visitador')) return ROLE_PERMISSIONS.visitador;
     if (isMaster) return ROLE_PERMISSIONS.master;
     if (isGerencial) return ROLE_PERMISSIONS.gerencial;
     return ROLE_PERMISSIONS.vendedor;
@@ -268,6 +269,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Verificar acesso a rotas específicas
   const canAccessRoute = (route: string): boolean => {
+    if (roles.includes('visitador')) return route === '/visitas';
     // Master pode acessar tudo
     if (isMaster) return true;
 
@@ -299,6 +301,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Rota inicial baseada no perfil
   const getInitialRoute = (): string => {
+    if (roles.includes('visitador')) return '/visitas';
     if (isMaster) return '/';
     if (isGerencial) return '/';
     if (isVendedor) return '/whatsapp';

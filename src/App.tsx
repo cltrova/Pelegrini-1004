@@ -35,6 +35,7 @@ const ProdutosPage = lazy(() => import('./pages/comercial/ProdutosPage'));
 const ComissaoPage = lazy(() => import('./pages/comercial/ComissaoPage'));
 const CotacoesAbertasPage = lazy(() => import('./pages/comercial/CotacoesAbertasPage'));
 const VendasPerdidasPage = lazy(() => import('./pages/comercial/VendasPerdidasPage'));
+const VisitasPage = lazy(() => import('./pages/visitas/VisitasPage'));
 const ProdutividadePage = lazy(() => import('./pages/operacional/ProdutividadePage'));
 const EstoquePage = lazy(() => import('./pages/operacional/EstoquePage'));
 const DistribuidoresPage = lazy(() => import('./pages/operacional/DistribuidoresPage'));
@@ -152,6 +153,15 @@ export function PasswordGate({ children }: { children: React.ReactNode }) {
   );
 }
 
+function VisitadorGate({ children }: { children: React.ReactNode }) {
+  const { roles } = useAuth();
+  const { pathname } = useLocation();
+  if (roles?.includes('visitador') && pathname.replace(/\/$/, '') !== '/visitas') {
+    return <Navigate to="/visitas" replace />;
+  }
+  return <>{children}</>;
+}
+
 const App = () => (
   <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
     <QueryClientProvider client={queryClient}>
@@ -165,9 +175,13 @@ const App = () => (
             <BrowserRouter>
               <PasswordGate>
               <Suspense fallback={<GuardSpinner />}>
+              <VisitadorGate>
               <Routes>
 
               <Route path="/" element={<HomePage />} />
+              <Route path="/visitas" element={
+                <RequireRole allowedRoles={['visitador']}><VisitasPage /></RequireRole>
+              } />
 
               <Route path="/mobile" element={<Navigate to="/comercial/dashboard" replace />} />
 
@@ -236,6 +250,9 @@ const App = () => (
                 } />
                 <Route path="metas-diarias" element={<Navigate to="/comercial/dashboard" replace />} />
                 <Route path="clientes" element={<ClientesAnalysePage />} />
+                <Route path="visitas" element={
+                  <RequireRole allowedRoles={['gerencial', 'master']}><VisitasPage gerencial /></RequireRole>
+                } />
                 <Route path="produtos" element={<ProdutosPage />} />
                 <Route path="marcas" element={<Navigate to="/comercial/produtos" replace />} />
                 <Route path="queda-clientes" element={<Navigate to="/comercial/clientes" replace />} />
@@ -296,6 +313,7 @@ const App = () => (
               {/* 404 */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
+              </VisitadorGate>
               </Suspense>
               </PasswordGate>
 

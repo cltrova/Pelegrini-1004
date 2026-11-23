@@ -1,6 +1,6 @@
 // Tipos para autenticação e perfis de usuário
 
-export type AppRole = 'master' | 'gerencial' | 'vendedor';
+export type AppRole = 'master' | 'gerencial' | 'vendedor' | 'visitador';
 
 export interface Profile {
   id: string;
@@ -65,6 +65,19 @@ export const ROLE_PERMISSIONS = {
     canManageUsers: false,
     canManageEmpresas: false,
     canViewAllConversations: false, // apenas próprias
+    canViewDashboards: false,
+    canViewReports: false,
+    requiresCompany: true,
+  },
+  visitador: {
+    label: 'Visitador',
+    description: 'Registra visitas a clientes e consulta seus próprios relatórios',
+    color: 'text-violet-600',
+    bgColor: 'bg-violet-500/10',
+    canAccessSettings: false,
+    canManageUsers: false,
+    canManageEmpresas: false,
+    canViewAllConversations: false,
     canViewDashboards: false,
     canViewReports: false,
     requiresCompany: true,

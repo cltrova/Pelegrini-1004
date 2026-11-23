@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import {
   BadgeDollarSign,
+  ClipboardList,
   Clock,
   LayoutDashboard,
   Package,
@@ -10,6 +11,7 @@ import {
 import { useEmpresaAtiva } from '@/hooks/useEmpresaAtiva';
 import { resolvePelegriniTheme } from '@/config/pelegriniTheme';
 import { useFilialSelecionada } from '@/contexts/FilialSelecionadaContext';
+import { useAuth } from '@/contexts/AuthContext';
 import {
   PelegriniModuleSidebar,
   type PelegriniSidebarItem,
@@ -45,9 +47,13 @@ export function ComercialSidebar() {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const { codEmpresaAtiva } = useEmpresaAtiva();
   const { filialAtiva } = useFilialSelecionada();
+  const { isMaster, isGerencial } = useAuth();
   const theme = resolvePelegriniTheme(filialAtiva || codEmpresaAtiva);
   const comercialMenuItems = getComercialMenuItems(codEmpresaAtiva || '');
   const showFutureItems = !hasCotacoesComerciais(codEmpresaAtiva || '');
+  if (!showFutureItems && (isMaster || isGerencial)) {
+    comercialMenuItems.push({ label: 'Relatórios de visitas', icon: ClipboardList, path: '/comercial/visitas' });
+  }
 
   return (
     <PelegriniModuleSidebar
