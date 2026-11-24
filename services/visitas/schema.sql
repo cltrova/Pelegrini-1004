@@ -1,4 +1,5 @@
 -- Execute no banco interno de visitas selecionado pelo administrador.
+-- A API valida o JSON para manter compatibilidade com SQL Server anterior a 2016.
 IF OBJECT_ID(N'dbo.RelatoriosVisitas', N'U') IS NULL
 BEGIN
     CREATE TABLE dbo.RelatoriosVisitas (
@@ -15,7 +16,7 @@ BEGIN
         diesel nvarchar(200) NOT NULL,
         responsaveis_compras nvarchar(200) NOT NULL,
         funcao nvarchar(200) NOT NULL,
-        avaliacoes nvarchar(max) NOT NULL CONSTRAINT CK_RelatoriosVisitas_Avaliacoes CHECK (ISJSON(avaliacoes) = 1),
+        avaliacoes nvarchar(max) NOT NULL,
         CONSTRAINT CK_RelatoriosVisitas_Filial CHECK (
             (cod_empresa_bi = '1004' AND filial_id IN ('transmissao', 'chevrolet'))
             OR (cod_empresa_bi = '10041' AND filial_id = 'chevrolet')

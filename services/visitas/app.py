@@ -95,6 +95,7 @@ def auth_get(path: str, token: str):
         with urlopen(request, timeout=8) as response:
             return json.load(response)
     except HTTPError as exc:
+        exc.close()
         if exc.code in (401, 403):
             raise HTTPException(401, "Sessão inválida ou expirada.") from None
     except (KeyError, URLError, TimeoutError, ValueError):
@@ -161,7 +162,7 @@ def connect():
             server=os.environ["VISITAS_SQL_SERVER"], port=os.getenv("VISITAS_SQL_PORT", "1433"),
             database=os.environ["VISITAS_SQL_DATABASE"],
             user=os.environ["VISITAS_SQL_USER"], password=os.environ["VISITAS_SQL_PASSWORD"],
-            login_timeout=5, timeout=15,
+            login_timeout=5, timeout=15, encryption="require",
         )
     except KeyError as exc:
         raise HTTPException(503, "Banco de visitas indisponível.") from exc
