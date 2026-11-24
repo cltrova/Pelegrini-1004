@@ -1,11 +1,10 @@
 """Contrato da API com a sessão principal do Pelegrini."""
-import io
 import json
 import unittest
 from datetime import date
-from urllib.error import HTTPError
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
+from fastapi import HTTPException
 from fastapi.testclient import TestClient
 
 from app import app
@@ -14,7 +13,7 @@ from test_api import BODY, CHEVROLET, PATH
 
 SESSION_PATH = "/operacional/visitas/sessao"
 USER_ID = "225ca065-b924-4b0a-b95e-b1f04c152cce"
-HEADERS = {"Authorization": "Bearer token-de-teste"}
+HEADERS = {"Authorization": "Bearer conta.portal.teste"}
 
 
 class PelegriniSessionTest(unittest.TestCase):
@@ -22,8 +21,8 @@ class PelegriniSessionTest(unittest.TestCase):
         self.client = TestClient(app)
         self.addCleanup(self.client.close)
         config = patch.dict("os.environ", {
-            "VISITAS_PELEGRINI_AUTH_URL": "https://contas.example.test",
-            "VISITAS_PELEGRINI_AUTH_PUBLISHABLE_KEY": "publishable-example",
+            "VISITAS_PORTAL_AUTH_HOST": "contas.supabase.co",
+            "VISITAS_PORTAL_ANON_KEY": "publishable-example",
         })
         config.start()
         self.addCleanup(config.stop)
@@ -36,12 +35,30 @@ class PelegriniSessionTest(unittest.TestCase):
         }
 
     def provider(self, payload, headers=HEADERS):
-        def reply(request, **kwargs):
-            self.assertEqual(request.full_url, "https://contas.example.test/rest/v1/rpc/visitas_identidade")
-            self.assertEqual(request.get_header("Authorization"), headers["Authorization"])
-            self.assertEqual(request.get_header("Apikey"), "publishable-example")
-            return io.BytesIO(json.dumps(payload).encode())
-        return patch("auth.pelegrini_auth_opener.open", side_effect=reply)
+        def connection(host, *, timeout):
+            self.assertEqual(host, "contas.supabase.co")
+            conn = MagicMock()
+
+            def request(method, path, *, body, headers: dict):
+                self.assertEqual(headers["Authorization"], expected["Authorization"])
+                self.assertEqual(headers["apikey"], "publishable-example")
+                if path == "/auth/v1/user":
+                    self.assertEqual(method, "GET")
+                    result = {"id": payload["id"], "email": "teste@example.test", "email_confirmed_at": "2026-11-24"}
+                else:
+                    self.assertEqual(path, "/rest/v1/rpc/visitas_identidade")
+                    self.assertEqual(method, "POST")
+                    self.assertEqual(body, b"{}")
+                    result = payload
+                response = conn.getresponse.return_value
+                response.status = 200
+                response.read.return_value = json.dumps(result).encode()
+
+            conn.request.side_effect = request
+            return conn
+
+        expected = headers
+        return patch("auth.http.client.HTTPSConnection", side_effect=connection)
 
     def test_portal_visitador_uses_same_identity_and_only_assigned_branch(self):
         with self.provider(self.perfil(["visitador"])):
@@ -85,8 +102,8 @@ class PelegriniSessionTest(unittest.TestCase):
                 self.assertEqual(self.client.get(SESSION_PATH, headers=HEADERS).status_code, 403)
 
     def test_expired_portal_token_does_not_fall_back_to_visitas_cookie(self):
-        error = HTTPError("https://contas.example.test", 401, "Expired", {}, None)
-        with patch("auth.pelegrini_auth_opener.open", side_effect=error), patch("auth.connect") as connect:
+        error = HTTPException(401, "Sessão expirada.")
+        with patch("auth.portal_request", side_effect=error), patch("auth.connect") as connect:
             response = self.client.get(
                 SESSION_PATH, headers={**HEADERS, "Cookie": f"pelegrini_visitas={'a' * 43}"},
             )
@@ -116,7 +133,7 @@ class PelegriniSessionTest(unittest.TestCase):
             self.assertEqual(cursor.execute.call_args.args[1][0], USER_ID)
 
         manager = {**self.perfil(["gerencial"], commercial=True), "id": "6e643341-d380-4f38-af18-70a18b984bb7"}
-        manager_headers = {"Authorization": "Bearer token-gerencia-de-teste"}
+        manager_headers = {"Authorization": "Bearer gerencia.portal.teste"}
         with self.provider(manager, manager_headers), patch("app.connect", return_value=connection):
             management = self.client.get(PATH, params={"escopo": "gerencia", **CHEVROLET}, headers=manager_headers)
             self.assertEqual(management.status_code, 200, management.text)

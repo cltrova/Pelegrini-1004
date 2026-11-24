@@ -1,16 +1,15 @@
 """Validação da sessão Pelegrini e compatibilidade com contas legadas de Visitas."""
 import hashlib
 import hmac
+import http.client
 import json
 import os
+import re
 import secrets
 from contextlib import closing
 from dataclasses import dataclass
 from threading import BoundedSemaphore
 from typing import Annotated, Literal
-from urllib.error import HTTPError, URLError
-from urllib.parse import urlsplit
-from urllib.request import HTTPRedirectHandler, Request, build_opener
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Response
@@ -42,14 +41,6 @@ class Identity:
         return "master" in self.roles or ("gerencial" in self.roles and self.commercial)
 
 
-class NoAuthRedirect(HTTPRedirectHandler):
-    def redirect_request(self, req, fp, code, msg, headers, newurl):
-        return None
-
-
-pelegrini_auth_opener = build_opener(NoAuthRedirect())
-
-
 def chave_filial(company, branch):
     if branch == "chevrolet" and company in ("1004", "10041"):
         return "10041"
@@ -75,56 +66,61 @@ def carregar_filiais(cursor, row):
                     row["perfil"] == "gerencial")
 
 
-def pelegrini_identity(authorization: str) -> Identity:
+def portal_request(path, token, *, method="GET"):
+    host = os.environ.get("VISITAS_PORTAL_AUTH_HOST", "")
+    key = os.environ.get("VISITAS_PORTAL_ANON_KEY", "")
+    if not re.fullmatch(r"[a-z0-9]+\.supabase\.co", host) or not key:
+        raise HTTPException(503, "Identificação do portal indisponível.")
+    headers = {"Authorization": f"Bearer {token}", "apikey": key, "Accept": "application/json"}
+    body = None
+    if method == "POST":
+        body = b"{}"
+        headers["Content-Type"] = "application/json"
+    try:
+        with closing(http.client.HTTPSConnection(host, timeout=5)) as conn:
+            conn.request(method, path, body=body, headers=headers)
+            response = conn.getresponse()
+            if response.status in (400, 401) or (response.status == 403 and path == "/auth/v1/user"):
+                raise HTTPException(401, "Sessão do portal inválida ou expirada.")
+            if response.status == 403:
+                raise HTTPException(403, "Acesso aos relatórios de visitas não autorizado.")
+            if response.status != 200:
+                raise HTTPException(503, "Identificação do portal indisponível.")
+            return json.loads(response.read(64 * 1024))
+    except (OSError, http.client.HTTPException, ValueError):
+        raise HTTPException(503, "Identificação do portal indisponível.") from None
+
+
+def identity_from_portal(authorization: str) -> Identity:
     scheme, _, token = authorization.partition(" ")
-    if scheme.lower() != "bearer" or not token or any(char.isspace() for char in token):
-        raise HTTPException(401, "Autenticação obrigatória.")
+    if scheme.lower() != "bearer" or len(token) > 8192 or not re.fullmatch(r"[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+", token):
+        raise HTTPException(401, "Sessão do portal inválida ou expirada.")
 
-    base_url = os.getenv("VISITAS_PELEGRINI_AUTH_URL", "").rstrip("/")
-    api_key = os.getenv("VISITAS_PELEGRINI_AUTH_PUBLISHABLE_KEY")
-    url = urlsplit(base_url)
-    if url.scheme != "https" or not url.hostname or (url.path or url.query or url.fragment or url.username) or not api_key:
-        raise HTTPException(503, "A validação da sessão do Pelegrini está indisponível.")
-
-    request = Request(f"{base_url}/rest/v1/rpc/visitas_identidade", data=b"{}", headers={
-        "Authorization": f"Bearer {token}",
-        "apikey": api_key,
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-    })
+    account = portal_request("/auth/v1/user", token)
     try:
-        with pelegrini_auth_opener.open(request, timeout=6) as response:
-            profile = json.load(response)
-    except HTTPError as error:
-        error.close()
-        if error.code == 401:
-            raise HTTPException(401, "Sessão inválida ou expirada.") from None
-        if error.code == 403:
-            raise HTTPException(403, "Acesso aos relatórios de visitas não autorizado.") from None
-        raise HTTPException(503, "Não foi possível validar a sessão do Pelegrini.") from None
-    except (URLError, OSError, ValueError):
-        raise HTTPException(503, "Não foi possível validar a sessão do Pelegrini.") from None
-
-    if profile is None:
-        raise HTTPException(401, "Sessão inválida ou expirada.")
-    try:
-        user_id = str(UUID(profile["id"]))
-        name = profile["nome"]
-        roles = set(profile["roles"])
+        user_id = str(UUID(account["id"]))
+        email = account["email"].strip().lower()
     except (KeyError, TypeError, ValueError, AttributeError):
-        raise HTTPException(503, "Não foi possível validar a sessão do Pelegrini.") from None
+        raise HTTPException(401, "Sessão do portal inválida ou expirada.") from None
+    if not email or len(email) > 254 or not account.get("email_confirmed_at"):
+        raise HTTPException(403, "Use a conta confirmada do portal.")
 
+    profile = portal_request("/rest/v1/rpc/visitas_identidade", token, method="POST")
+    if not isinstance(profile, dict) or profile.get("id") != user_id or not isinstance(profile.get("roles"), list):
+        raise HTTPException(503, "Não foi possível verificar o perfil do portal.")
+    roles = {role for role in profile["roles"] if isinstance(role, str)}
+    name = profile.get("nome")
     if profile.get("must_change_password"):
         raise HTTPException(403, "Troque sua senha no Pelegrini para continuar.")
-    company = profile.get("empresa") or ""
-    assigned = profile.get("filiais")
-    branches = ("chevrolet", "transmissao") if "master" in roles else (
-        assigned if isinstance(assigned, list) else [profile.get("filial_padrao")]
-    )
     if "master" in roles:
-        company = "1004"
-    branches = {branch for branch in branches if chave_filial(company, branch)}
-    user = Identity(user_id, name, roles, company, branches, profile.get("comercial") is True)
+        company, assigned = "1004", ["chevrolet", "transmissao"]
+    else:
+        company, assigned = profile.get("empresa") or "", profile.get("filiais")
+        if not isinstance(assigned, list):
+            assigned = [profile.get("filial_padrao")]
+    branches = {branch for branch in assigned if isinstance(branch, str) and chave_filial(company, branch)}
+    user = Identity(user_id, name if isinstance(name, str) and name.strip() else email, roles, company, branches,
+                    profile.get("comercial") is True)
     if not branches or not ("visitador" in roles or user.manages_reports):
         raise HTTPException(403, "Acesso aos relatórios de visitas não autorizado.")
     return user
@@ -132,7 +128,7 @@ def pelegrini_identity(authorization: str) -> Identity:
 
 def identity(token: SessionCookie, authorization: Annotated[str | None, Header()] = None) -> Identity:
     if authorization is not None:
-        return pelegrini_identity(authorization)
+        return identity_from_portal(authorization)
     if not token or len(token) != 43:
         raise HTTPException(401, "Autenticação obrigatória.")
     try:

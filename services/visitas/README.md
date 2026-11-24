@@ -82,7 +82,7 @@ Use um banco SQL Server isolado para o teste completo. A suíte de API pode ser 
 ## Implantação após o aceite
 
 1. Aplique `20261124150000_visitas_perfil_visitador.sql` e depois `20261124150100_visitas_identidade_pelegrini.sql` no projeto de identidade do portal, em transações separadas. Publique as funções atualizadas `create-user`, `delete-user` e `reset-user-password`.
-2. No serviço de Visitas do RSYS, configure `VISITAS_PELEGRINI_AUTH_URL` e `VISITAS_PELEGRINI_AUTH_PUBLISHABLE_KEY` com a URL HTTPS e a chave pública do mesmo projeto de identidade usado pelo portal. A conexão existente com o SQL Server e o esquema de relatórios já implantado atendem à atualização.
+2. No serviço de Visitas do RSYS, mantenha `VISITAS_PORTAL_AUTH_HOST` e `VISITAS_PORTAL_ANON_KEY` com o domínio de autenticação e a chave pública do portal. A conexão existente com o SQL Server e o esquema de relatórios já implantado atendem à atualização.
 3. Atualize o serviço de Visitas e confira que os proxies preservam `Authorization`, método, corpo e parâmetros. No Vite, o proxy usa `VISITAS_API_TARGET`.
 4. Valide uma conta Visitador com a senha já definida, um responsável Gerencial com acesso ao Comercial na mesma filial e um Gerencial de outra filial. Confira o mesmo ID após o envio, no histórico e na gerência, e o HTTP `403` ao consultar a outra filial.
 5. Publique o portal depois de validar a API com a sessão principal do Pelegrini.

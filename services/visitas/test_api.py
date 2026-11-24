@@ -18,6 +18,52 @@ BODY = {
 PATH = "/operacional/visitas/relatorios"
 
 
+class PortalManagerTest(unittest.TestCase):
+    def setUp(self):
+        self.client = TestClient(app)
+        self.user_id = "5c20479e-084d-453a-ac9d-ca63907dbb24"
+        self.headers = {"Authorization": "Bearer header.payload.signature"}
+        self.role = "gerencial"
+        self.branches = ["chevrolet"]
+
+    def portal(self, path, _token, *, method="GET"):
+        if path == "/auth/v1/user":
+            self.assertEqual(method, "GET")
+            return {"id": self.user_id, "email": "gerente@visitas.example", "email_confirmed_at": "2026-11-24",
+                    "app_metadata": {"cod_empresa_bi": "1004", "filiais_permitidas": ["chevrolet", "transmissao"]},
+                    "user_metadata": {"cod_empresa_bi": "1004", "filiais_permitidas": ["chevrolet", "transmissao"]}}
+        if path == "/rest/v1/rpc/visitas_identidade":
+            self.assertEqual(method, "POST")
+            return {"id": self.user_id, "roles": [self.role], "empresa": "10041", "filiais": self.branches,
+                    "comercial": True}
+        raise AssertionError(path)
+
+    def test_existing_portal_session_uses_server_approved_branches(self):
+        with patch("auth.portal_request", self.portal):
+            response = self.client.get("/operacional/visitas/sessao", headers=self.headers)
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.json()["id"], self.user_id)
+            self.assertEqual(response.json()["filiais"], [CHEVROLET])
+            other = self.client.get(PATH, params={"escopo": "gerencia", "cod_empresa_bi": "1004", "filial_id": "transmissao"}, headers=self.headers)
+            self.assertEqual(other.status_code, 403)
+
+    def test_portal_user_without_role_or_approved_branch_is_denied(self):
+        with patch("auth.portal_request", self.portal):
+            self.branches = []
+            self.assertEqual(self.client.get("/operacional/visitas/sessao", headers=self.headers).status_code, 403)
+            self.branches = ["chevrolet"]
+            self.role = "vendedor"
+            self.assertEqual(self.client.get("/operacional/visitas/sessao", headers=self.headers).status_code, 403)
+
+    def test_master_keeps_access_to_both_branches(self):
+        self.role = "master"
+        self.branches = []
+        with patch("auth.portal_request", self.portal):
+            response = self.client.get("/operacional/visitas/sessao", headers=self.headers)
+        self.assertEqual(response.status_code, 200)
+        self.assertCountEqual(response.json()["filiais"], [CHEVROLET, {"cod_empresa_bi": "1004", "filial_id": "transmissao"}])
+
+
 class OdbcTest(unittest.TestCase):
     def test_windows_connection_uses_encryption_and_bound_queries(self):
         from database import connect

@@ -111,9 +111,10 @@ describe('Relatórios de visitas', () => {
     expect(screen.queryByLabelText('Senha')).not.toBeInTheDocument();
     expect(screen.queryByRole('combobox', { name: 'Filial' })).not.toBeInTheDocument();
     expect(screen.getByRole('region', { name: 'Conteúdo dos relatórios de visitas' })).toHaveClass('overflow-y-auto');
-    const [[sessionPath, sessionRequest], [reportsPath]] = mock.fetch.mock.calls;
+    const [[sessionPath, sessionRequest], [reportsPath, reportsRequest]] = mock.fetch.mock.calls;
     expect(sessionPath).toBe('/operacional/visitas/sessao');
     expect(sessionRequest.headers.get('Authorization')).toBe('Bearer token-portal');
+    expect(reportsRequest.headers.get('Authorization')).toBe('Bearer token-portal');
     expect(new URL(reportsPath, 'http://localhost').searchParams.get('filial_id')).toBe('transmissao');
   });
 
