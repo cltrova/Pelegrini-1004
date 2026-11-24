@@ -224,8 +224,8 @@ export function UserFormDialog({
 
   const isEditing = !!userId;
 
-  const availableRoles: AppRole[] = isMaster 
-    ? ['master', 'gerencial', 'vendedor'] 
+  const availableRoles: AppRole[] = isMaster
+    ? ['master', 'gerencial', 'vendedor', 'visitador']
     : ['vendedor'];
 
   const selectedCompany = empresas.find(e => e.cod_empresa_bi === codEmpresaBi);
@@ -310,7 +310,7 @@ export function UserFormDialog({
           ? 'master'
           : account.roles.includes('gerencial')
             ? 'gerencial'
-            : 'vendedor';
+            : account.roles.includes('visitador') ? 'visitador' : 'vendedor';
         setSelectedRole(role);
         setModulePermissions({
           modulo_dre: account.permissions.modulo_dre ?? false,
@@ -365,6 +365,8 @@ export function UserFormDialog({
         setSelectedRole('master');
       } else if (userRoles.includes('gerencial')) {
         setSelectedRole('gerencial');
+      } else if (userRoles.includes('visitador')) {
+        setSelectedRole('visitador');
       } else {
         setSelectedRole('vendedor');
       }
@@ -447,7 +449,7 @@ export function UserFormDialog({
     if (selectedRole !== 'master' && !codEmpresaBi) {
       toast({
         title: 'Erro',
-        description: 'Código da empresa é obrigatório para usuários Gerencial e Vendedor.',
+        description: 'Selecione a empresa do usuário.',
         variant: 'destructive',
       });
       return;
@@ -458,16 +460,24 @@ export function UserFormDialog({
     try {
       const filiaisParaSalvar = selectedRole === 'master'
         ? []
-        : filiaisDisponiveis.length > 0
-          ? filiaisPermitidas
-          : [];
+        : filiaisPermitidas.filter((id) => filialIdsDisponiveis.includes(id));
+      if (selectedRole === 'visitador' && !filiaisParaSalvar.length) {
+        toast({ title: 'Selecione a filial do Visitador', variant: 'destructive' });
+        return;
+      }
       const filialPadraoParaSalvar = filiaisParaSalvar.length === 1 ? filiaisParaSalvar[0] : null;
+      const permissionsWithPages = {
+        ...modulePermissions,
+        permissoes_paginas: pagePermissions,
+      };
+      if (selectedRole === 'visitador') {
+        for (const key of Object.keys(modulePermissions) as (keyof ModulePermissions)[]) {
+          permissionsWithPages[key] = false;
+        }
+        permissionsWithPages.permissoes_paginas = {};
+      }
 
       if (localPreview) {
-        const permissionsWithPages = {
-          ...modulePermissions,
-          permissoes_paginas: pagePermissions,
-        } as ModulePermissions;
         const account = createLocalPreviewUserAccount({
           email,
           nome,
@@ -521,14 +531,9 @@ export function UserFormDialog({
           salvouComFallbackFilial = true;
         }
 
-        await supabase
-          .from('user_roles')
-          .delete()
-          .eq('user_id', userId);
-
         const { error: roleError } = await supabase
           .from('user_roles')
-          .insert({ user_id: userId, role: selectedRole });
+          .upsert({ user_id: userId, role: selectedRole }, { onConflict: 'user_id,role', ignoreDuplicates: true });
 
         if (roleError) throw roleError;
 
@@ -536,8 +541,7 @@ export function UserFormDialog({
           .from('user_module_permissions')
           .upsert({
             user_id: userId,
-            ...modulePermissions,
-            permissoes_paginas: pagePermissions,
+            ...permissionsWithPages,
             updated_at: new Date().toISOString(),
           } as any, { onConflict: 'user_id' });
 
@@ -545,6 +549,10 @@ export function UserFormDialog({
           console.error('Erro ao atualizar permissões:', permError);
           throw new Error('Não foi possível salvar as permissões do usuário.');
         }
+
+        const { error: oldRoleError } = await supabase.from('user_roles').delete()
+          .eq('user_id', userId).neq('role', selectedRole);
+        if (oldRoleError) throw oldRoleError;
 
         toast({
           title: 'Usuário atualizado',
@@ -560,10 +568,7 @@ export function UserFormDialog({
           filial_id: filialPadraoParaSalvar,
           filiais_permitidas: filiaisParaSalvar,
           role: selectedRole,
-          module_permissions: {
-            ...modulePermissions,
-            permissoes_paginas: pagePermissions,
-          },
+          module_permissions: permissionsWithPages,
         };
 
         const { data, error } = await supabase.functions.invoke('create-user', {
@@ -610,6 +615,8 @@ export function UserFormDialog({
         return <Shield className="h-4 w-4 text-blue-500" />;
       case 'vendedor':
         return <User className="h-4 w-4 text-green-500" />;
+      case 'visitador':
+        return <User className="h-4 w-4 text-violet-500" />;
     }
   };
 
@@ -742,6 +749,7 @@ export function UserFormDialog({
                 <SelectContent>
                   {empresas
                     .filter(e => e.ativo && e.cod_empresa_bi !== 'MASTER')
+                    .filter(e => selectedRole !== 'visitador' || getFiliaisDaEmpresa(e.cod_empresa_bi).length > 0)
                     .map((empresa) => (
                       <SelectItem key={empresa.id} value={empresa.cod_empresa_bi}>
                         {empresa.nome}
@@ -794,7 +802,10 @@ export function UserFormDialog({
 
 
             {/* Permissões Hierárquicas de Módulos */}
-            {selectedRole !== 'master' && (
+            {selectedRole === 'visitador' && (
+              <p className="text-xs text-muted-foreground">O Visitador usa a conta do Pelegrini para enviar relatórios de visita e consultar o próprio histórico.</p>
+            )}
+            {selectedRole !== 'master' && selectedRole !== 'visitador' && (
               <div className="space-y-3">
                 <Label>Permissões de Módulos</Label>
                 <p className="text-xs text-muted-foreground">

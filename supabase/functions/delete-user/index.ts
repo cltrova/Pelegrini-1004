@@ -121,7 +121,8 @@ Deno.serve(async (req) => {
         .eq('user_id', user_id);
 
       const targetRolesList = targetRoles?.map(r => r.role) || [];
-      if (targetRolesList.includes('master') || targetRolesList.includes('gerencial')) {
+      if (!targetRolesList.includes('vendedor') ||
+          targetRolesList.some(role => ['master', 'gerencial', 'visitador'].includes(role))) {
         return new Response(
           JSON.stringify({ error: 'You can only delete vendedor users' }),
           { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

@@ -81,6 +81,15 @@ Deno.serve(async (req) => {
 
     // Escopo por empresa para gerencial
     if (!isMaster && isGerencial) {
+      const { data: targetRoles } = await admin
+        .from('user_roles').select('role').eq('user_id', user_id);
+      const permittedTarget = targetRoles?.some(({ role }) => role === 'vendedor') &&
+        !targetRoles.some(({ role }) => ['master', 'gerencial', 'visitador'].includes(role));
+      if (!permittedTarget) {
+        return new Response(JSON.stringify({ error: 'Você só pode redefinir a senha de vendedores.' }), {
+          status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
       const { data: callerProfile } = await admin
         .from('profiles').select('cod_empresa_bi').eq('user_id', callerId).single();
       const { data: targetProfile } = await admin

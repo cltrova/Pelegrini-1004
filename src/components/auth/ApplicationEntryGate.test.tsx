@@ -1,14 +1,19 @@
-import { act, createEvent, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, createEvent, fireEvent, render as renderWithWrapper, screen, waitFor } from '@testing-library/react';
+import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import type { ReactElement } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PasswordGate } from '@/App';
 
 const authState = vi.hoisted(() => ({
   isAuthenticated: false,
   isLoading: false,
+  isVisitadorExclusivo: false,
   mustChangePassword: false,
   login: vi.fn(),
   signup: vi.fn(),
 }));
+
+const render = (element: ReactElement) => renderWithWrapper(element, { wrapper: MemoryRouter });
 
 vi.mock('@/contexts/AuthContext', async () => {
   const actual = await vi.importActual<typeof import('@/contexts/AuthContext')>('@/contexts/AuthContext');
@@ -22,6 +27,7 @@ describe('Application entry gate', () => {
   beforeEach(() => {
     authState.isAuthenticated = false;
     authState.isLoading = false;
+    authState.isVisitadorExclusivo = false;
     authState.mustChangePassword = false;
     authState.login.mockReset();
     authState.signup.mockReset();
@@ -67,6 +73,23 @@ describe('Application entry gate', () => {
 
     expect(screen.getByText('Conteudo protegido')).toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: 'Acesso ao sistema' })).not.toBeInTheDocument();
+  });
+
+  it('opens the Visitador area after the normal login and limits other routes', async () => {
+    authState.isAuthenticated = true;
+    authState.isVisitadorExclusivo = true;
+    renderWithWrapper(
+      <MemoryRouter initialEntries={['/comercial/dashboard']}>
+        <PasswordGate>
+          <Routes>
+            <Route path="/visitas" element={<p>Área do Visitador</p>} />
+            <Route path="/comercial/dashboard" element={<p>Dashboard comercial</p>} />
+          </Routes>
+        </PasswordGate>
+      </MemoryRouter>,
+    );
+    expect(await screen.findByText('Área do Visitador')).toBeInTheDocument();
+    expect(screen.queryByText('Dashboard comercial')).not.toBeInTheDocument();
   });
 
   it('shows the standardized application loading state before exposing protected content', () => {

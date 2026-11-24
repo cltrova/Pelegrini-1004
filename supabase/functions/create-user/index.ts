@@ -12,7 +12,7 @@ interface CreateUserPayload {
   cod_empresa_bi?: string;
   filial_id?: string | null;
   filiais_permitidas?: string[];
-  role: 'master' | 'gerencial' | 'vendedor';
+  role: 'master' | 'gerencial' | 'vendedor' | 'visitador';
   module_permissions: {
     modulo_dre: boolean;
     modulo_variacao: boolean;
@@ -251,7 +251,7 @@ Deno.serve(async (req) => {
     const { email, nome, cod_empresa_bi, filial_id, filiais_permitidas, role, module_permissions } = payload;
 
     // Validate required fields
-    if (!email || !role) {
+    if (!email || !['master', 'gerencial', 'vendedor', 'visitador'].includes(role)) {
       return new Response(
         JSON.stringify({ error: 'Email and role are required' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -294,6 +294,15 @@ Deno.serve(async (req) => {
         : filial_id
           ? [filial_id]
           : [];
+    if (role === 'visitador') {
+      const filiaisDaEmpresa = cod_empresa_bi === '1004' ? ['transmissao', 'chevrolet']
+        : cod_empresa_bi === '10041' ? ['chevrolet'] : [];
+      if (!filiaisPermitidas.length || filiaisPermitidas.some(id => !filiaisDaEmpresa.includes(id))) {
+        return new Response(JSON.stringify({ error: 'Selecione uma filial Pelegrini válida para o Visitador.' }), {
+          status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+    }
     const filialPadrao = filiaisPermitidas.length === 1 ? filiaisPermitidas[0] : null;
 
     step = 'create_auth_user';
@@ -358,7 +367,7 @@ Deno.serve(async (req) => {
     step = 'upsert_module_permissions';
     // Add module permissions
     try {
-      await upsertModulePermissions(supabaseAdmin, userId, module_permissions);
+      await upsertModulePermissions(supabaseAdmin, userId, role === 'visitador' ? undefined : module_permissions);
     } catch (permError) {
       console.error('Error adding module permissions:', permError);
       throw new Error('Failed to save module permissions');

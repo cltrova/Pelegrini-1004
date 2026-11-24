@@ -22,6 +22,7 @@ interface AuthContextType {
   isMaster: boolean;
   isGerencial: boolean;
   isVendedor: boolean;
+  isVisitadorExclusivo: boolean;
   
   // Permission helpers
   canAccessSettings: boolean;
@@ -68,6 +69,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const isMaster = roles.includes('master');
   const isGerencial = roles.includes('gerencial');
   const isVendedor = roles.includes('vendedor');
+  const isVisitadorExclusivo = !isMaster && !isGerencial && roles.includes('visitador');
   
   // Empresa do usuário
   const codEmpresa = profile?.cod_empresa_bi || null;
@@ -263,6 +265,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const getCurrentRolePermissions = (): RolePermissions => {
     if (isMaster) return ROLE_PERMISSIONS.master;
     if (isGerencial) return ROLE_PERMISSIONS.gerencial;
+    if (isVisitadorExclusivo) return ROLE_PERMISSIONS.visitador;
     return ROLE_PERMISSIONS.vendedor;
   };
 
@@ -270,6 +273,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const canAccessRoute = (route: string): boolean => {
     // Master pode acessar tudo
     if (isMaster) return true;
+    if (isVisitadorExclusivo) return route === '/visitas' || route === '/visitas/';
 
     // Rotas bloqueadas para não-masters
     const masterOnlyRoutes = [
@@ -301,6 +305,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const getInitialRoute = (): string => {
     if (isMaster) return '/';
     if (isGerencial) return '/';
+    if (isVisitadorExclusivo) return '/visitas';
     if (isVendedor) return '/whatsapp';
     return '/';
   };
@@ -316,6 +321,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         isGerencial,
         isVendedor,
+        isVisitadorExclusivo,
         canAccessSettings,
         canManageUsers,
         canManageEmpresas,

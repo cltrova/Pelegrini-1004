@@ -30,6 +30,7 @@ const SaldoAVencerPage = lazy(() => import('./pages/financeiro/SaldoAVencerPage'
 
 // ComercialDashboardPage removido do roteamento: layout antigo (MetasVendedoresPage) restaurado para todas as empresas.
 const MetasVendedoresPage = lazy(() => import('./pages/comercial/MetasVendedoresPage'));
+const VisitasRoute = lazy(() => import('./pages/visitas/VisitasRoute'));
 const ClientesAnalysePage = lazy(() => import('./pages/comercial/ClientesAnalysePage'));
 const ProdutosPage = lazy(() => import('./pages/comercial/ProdutosPage'));
 const ComissaoPage = lazy(() => import('./pages/comercial/ComissaoPage'));
@@ -139,14 +140,17 @@ function FinanceiroIndexRedirect() {
 
 export function PasswordGate({ children }: { children: React.ReactNode }) {
 
-  const { isAuthenticated, mustChangePassword, isLoading } = useAuth();
+  const { isAuthenticated, isVisitadorExclusivo, mustChangePassword, isLoading } = useAuth();
+  const { pathname } = useLocation();
 
   if (isLoading) return <GuardSpinner />;
   if (!isAuthenticated) return <PelegriniLoginPage />;
 
   return (
     <>
-      {children}
+      {isVisitadorExclusivo && pathname.replace(/\/$/, '') !== '/visitas'
+        ? <Navigate to="/visitas" replace />
+        : children}
       {mustChangePassword && <ForceChangePassword />}
     </>
   );
@@ -168,6 +172,11 @@ const App = () => (
               <Routes>
 
               <Route path="/" element={<HomePage />} />
+              <Route path="/visitas" element={
+                <RequireRole allowedRoles={['visitador', 'master', 'gerencial']}>
+                  <VisitasRoute />
+                </RequireRole>
+              } />
 
               <Route path="/mobile" element={<Navigate to="/comercial/dashboard" replace />} />
 
@@ -225,6 +234,11 @@ const App = () => (
               }>
                 <Route index element={<Navigate to="/comercial/dashboard" replace />} />
                 <Route path="dashboard" element={<ComercialDashboardByEmpresa />} />
+                <Route path="visitas" element={
+                  <RequireRole allowedRoles={['master', 'gerencial']}>
+                    <VisitasRoute gerencial />
+                  </RequireRole>
+                } />
                 <Route path="cotacoes" element={
                   <RequireCotacoesPelegrini redirectTo="/comercial/dashboard">
                     <CotacoesAbertasPage />

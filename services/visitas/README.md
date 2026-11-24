@@ -1,6 +1,6 @@
 # Relatórios de Visitas a Oficinas
 
-A API grava e consulta em `dbo.RelatoriosVisitas` no SQL Server interno. O portal usa a sessão própria de Visitas, enviada pelo navegador em cookie.
+A API grava e consulta em `dbo.RelatoriosVisitas` no SQL Server interno. As telas de Visitas usam a mesma sessão do portal Pelegrini.
 
 ## Contrato HTTP
 
@@ -65,8 +65,9 @@ No GET, `cliente` e `visitador` procuram trechos do nome. `inicio` e `fim` são 
 
 ### Sessão e acesso
 
-- O endpoint `POST /operacional/visitas/sessao` recebe `{"email":"visitador@empresa.com.br","senha":"..."}`. A API verifica a senha e inicia uma sessão de oito horas em cookie `HttpOnly` e `SameSite=Strict`, com `Secure` no ambiente HTTPS. A listagem de sessão é `GET /operacional/visitas/sessao` e a saída é `DELETE /operacional/visitas/sessao`.
-- A API consulta o perfil e as filiais autorizadas diretamente no banco de Visitas. O visitador grava apenas na filial autorizada e consulta o próprio histórico. O gerente consulta as filiais autorizadas na tela `/comercial/visitas`. O usuário não informa o autor ao gravar.
+- O portal envia `Authorization: Bearer <token da sessão principal>` na consulta de sessão e nas chamadas de relatórios. A API valida o token no serviço de identidade do Pelegrini. Esse serviço consulta as permissões e filiais da conta autenticada. Uma requisição com token inválido recebe `401`.
+- O Master cadastra o perfil **Visitador** em **Configurações → Usuários** e libera pelo menos uma filial. O visitador envia relatórios para uma filial autorizada e consulta o próprio histórico. Master e Gerencial com acesso ao Comercial consultam os relatórios da filial ativa em **Comercial → Relatórios de visitas**. A API obtém a autoria da sessão.
+- Durante a atualização, os endpoints `POST` e `DELETE /operacional/visitas/sessao` continuam atendendo ao portal anterior pelo cookie `pelegrini_visitas`.
 - Para a Casa do Chevrolet, envie `cod_empresa_bi: "10041"` e `filial_id: "chevrolet"`. A Casa da Transmissão usa `"1004"` e `"transmissao"`.
 - A API devolve `401` para sessão ausente ou inválida, `403` para acesso negado, `422` para parâmetros inválidos e `503` para falha de banco. As respostas usam `Cache-Control: private, no-store`.
 
@@ -76,14 +77,14 @@ No GET, `cliente` e `visitador` procuram trechos do nome. `inicio` e `fim` são 
 - Comercial — `http://127.0.0.1:4317/comercial/visitas`
 - OpenAPI — `http://127.0.0.1:4318/docs`
 
-O ambiente local usa SQL Server com banco isolado e três perfis fictícios. Use o arquivo de acessos entregue à parte. A variável `VISITAS_HTTP_LOCAL=1` habilita o cookie em HTTP na interface de loopback durante o teste.
+Use um banco SQL Server isolado para o teste completo. A suíte de API pode ser executada com `python -m unittest -v` em `services/visitas` com `httpx` e os pacotes de `requirements.txt`. Com `VISITAS_SQL_DATABASE=PelegriniVisitasHomolog`, ela também grava um relatório de teste no banco isolado.
 
 ## Implantação após o aceite
 
-1. Execute `schema.sql` e `auth_schema.sql` no banco interno de Visitas. A conta da API precisa de `SELECT, INSERT` em `RelatoriosVisitas`, `SELECT` em `VisitasUsuarios` e `VisitasFiliais`, `UPDATE` apenas nas colunas `VisitasUsuarios.falhas` e `VisitasUsuarios.bloqueado_ate`, e `SELECT, INSERT, DELETE` em `VisitasSessoes`.
-2. Configure `VISITAS_SQL_SERVER`, `VISITAS_SQL_PORT` (opcional), `VISITAS_SQL_DATABASE`, `VISITAS_SQL_USER` e `VISITAS_SQL_PASSWORD` para o serviço.
-3. Com a conexão administrativa do banco de Visitas, execute `python administrar.py --email email@empresa.com.br --nome "Nome do visitador" --perfil visitador --empresa 10041 --filial chevrolet`. A senha é solicitada no terminal. Use `--perfil gerencial` para gerência. Para atualizar uma conta, repita o comando com o mesmo e-mail e as filiais que devem ficar autorizadas.
-4. Instale `requirements.txt` e inicie com `python -m uvicorn app:app --host 127.0.0.1 --port 4318` a partir de `services/visitas`. Encaminhe `/operacional/visitas/sessao` e `/operacional/visitas/relatorios` no proxy HTTPS do site, preservando cookies, método, corpo e parâmetros. No Vite, o proxy usa `VISITAS_API_TARGET`.
-5. Teste com perfis autorizados. Confira o mesmo ID no histórico e na gerência e o HTTP `403` para um gerente da Transmissão consultando o escopo da Chevrolet.
+1. Aplique `20261124150000_visitas_perfil_visitador.sql` e depois `20261124150100_visitas_identidade_pelegrini.sql` no projeto de identidade do portal, em transações separadas. Publique as funções atualizadas `create-user`, `delete-user` e `reset-user-password`.
+2. No serviço de Visitas do RSYS, configure `VISITAS_PELEGRINI_AUTH_URL` e `VISITAS_PELEGRINI_AUTH_PUBLISHABLE_KEY` com a URL HTTPS e a chave pública do mesmo projeto de identidade usado pelo portal. A conexão existente com o SQL Server e o esquema de relatórios já implantado atendem à atualização.
+3. Atualize o serviço de Visitas e confira que os proxies preservam `Authorization`, método, corpo e parâmetros. No Vite, o proxy usa `VISITAS_API_TARGET`.
+4. Valide uma conta Visitador com a senha já definida, um responsável Gerencial com acesso ao Comercial na mesma filial e um Gerencial de outra filial. Confira o mesmo ID após o envio, no histórico e na gerência, e o HTTP `403` ao consultar a outra filial.
+5. Publique o portal depois de validar a API com a sessão principal do Pelegrini.
 
 No Windows do Pelegrini, o pacote usa o SQL Server Native Client 11.0. O instalador valida a conexão criptografada no endereço local do servidor e testa o retorno de texto Unicode e data antes de iniciar os serviços de Visitas.

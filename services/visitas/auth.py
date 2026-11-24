@@ -1,14 +1,19 @@
-"""Contas e sessões internas de Visitas."""
+"""Validação da sessão Pelegrini e compatibilidade com contas legadas de Visitas."""
 import hashlib
 import hmac
+import json
 import os
 import secrets
 from contextlib import closing
 from dataclasses import dataclass
 from threading import BoundedSemaphore
 from typing import Annotated, Literal
+from urllib.error import HTTPError, URLError
+from urllib.parse import urlsplit
+from urllib.request import HTTPRedirectHandler, Request, build_opener
+from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi import APIRouter, Depends, Header, HTTPException, Response
 from fastapi.security import APIKeyCookie
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -31,6 +36,18 @@ class Identity:
     company: str
     branches: set[str]
     commercial: bool = False
+
+    @property
+    def manages_reports(self):
+        return "master" in self.roles or ("gerencial" in self.roles and self.commercial)
+
+
+class NoAuthRedirect(HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        return None
+
+
+pelegrini_auth_opener = build_opener(NoAuthRedirect())
 
 
 def chave_filial(company, branch):
@@ -58,7 +75,64 @@ def carregar_filiais(cursor, row):
                     row["perfil"] == "gerencial")
 
 
-def identity(token: SessionCookie) -> Identity:
+def pelegrini_identity(authorization: str) -> Identity:
+    scheme, _, token = authorization.partition(" ")
+    if scheme.lower() != "bearer" or not token or any(char.isspace() for char in token):
+        raise HTTPException(401, "Autenticação obrigatória.")
+
+    base_url = os.getenv("VISITAS_PELEGRINI_AUTH_URL", "").rstrip("/")
+    api_key = os.getenv("VISITAS_PELEGRINI_AUTH_PUBLISHABLE_KEY")
+    url = urlsplit(base_url)
+    if url.scheme != "https" or not url.hostname or (url.path or url.query or url.fragment or url.username) or not api_key:
+        raise HTTPException(503, "A validação da sessão do Pelegrini está indisponível.")
+
+    request = Request(f"{base_url}/rest/v1/rpc/visitas_identidade", data=b"{}", headers={
+        "Authorization": f"Bearer {token}",
+        "apikey": api_key,
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+    })
+    try:
+        with pelegrini_auth_opener.open(request, timeout=6) as response:
+            profile = json.load(response)
+    except HTTPError as error:
+        error.close()
+        if error.code == 401:
+            raise HTTPException(401, "Sessão inválida ou expirada.") from None
+        if error.code == 403:
+            raise HTTPException(403, "Acesso aos relatórios de visitas não autorizado.") from None
+        raise HTTPException(503, "Não foi possível validar a sessão do Pelegrini.") from None
+    except (URLError, OSError, ValueError):
+        raise HTTPException(503, "Não foi possível validar a sessão do Pelegrini.") from None
+
+    if profile is None:
+        raise HTTPException(401, "Sessão inválida ou expirada.")
+    try:
+        user_id = str(UUID(profile["id"]))
+        name = profile["nome"]
+        roles = set(profile["roles"])
+    except (KeyError, TypeError, ValueError, AttributeError):
+        raise HTTPException(503, "Não foi possível validar a sessão do Pelegrini.") from None
+
+    if profile.get("must_change_password"):
+        raise HTTPException(403, "Troque sua senha no Pelegrini para continuar.")
+    company = profile.get("empresa") or ""
+    assigned = profile.get("filiais")
+    branches = ("chevrolet", "transmissao") if "master" in roles else (
+        assigned if isinstance(assigned, list) else [profile.get("filial_padrao")]
+    )
+    if "master" in roles:
+        company = "1004"
+    branches = {branch for branch in branches if chave_filial(company, branch)}
+    user = Identity(user_id, name, roles, company, branches, profile.get("comercial") is True)
+    if not branches or not ("visitador" in roles or user.manages_reports):
+        raise HTTPException(403, "Acesso aos relatórios de visitas não autorizado.")
+    return user
+
+
+def identity(token: SessionCookie, authorization: Annotated[str | None, Header()] = None) -> Identity:
+    if authorization is not None:
+        return pelegrini_identity(authorization)
     if not token or len(token) != 43:
         raise HTTPException(401, "Autenticação obrigatória.")
     try:
@@ -96,7 +170,7 @@ class Sessao(BaseModel):
 
 def dados_sessao(user):
     return {
-        "id": user.id, "nome": user.name, "perfil": next(iter(user.roles)),
+        "id": user.id, "nome": user.name, "perfil": "gerencial" if user.manages_reports else "visitador",
         "filiais": [{"cod_empresa_bi": chave_filial(user.company, branch), "filial_id": branch}
                    for branch in sorted(user.branches)],
     }

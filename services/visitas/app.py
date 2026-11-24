@@ -81,7 +81,7 @@ async def prevent_cache(request, call_next):
     else:
         response = await call_next(request)
     response.headers["Cache-Control"] = "private, no-store"
-    response.headers["Vary"] = "Cookie"
+    response.headers["Vary"] = "Cookie, Authorization"
     return response
 
 
@@ -145,7 +145,7 @@ def listar(
         conditions = ["visitador_id = %s"]
         params = [user.id]
     else:
-        if "gerencial" not in user.roles or not user.commercial:
+        if not user.manages_reports:
             raise HTTPException(403, "Perfil gerencial obrigatório.")
         if not cod_empresa_bi or not filial_id:
             raise HTTPException(422, "Informe cod_empresa_bi e filial_id.")

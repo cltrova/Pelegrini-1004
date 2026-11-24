@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PelegriniFilterBar } from '@/components/pelegrini/PelegriniFilterBar';
+import { ThemeToggle } from '@/components/common/ThemeToggle';
 import { getFilialPorId } from '@/config/filiaisEmpresa';
 import { enviarVisita, listarVisitas, type SessaoVisitas } from './visitasApi';
 
@@ -40,7 +41,7 @@ function Formulario({ escopo, onEnviado }: { escopo: Escopo; onEnviado: () => vo
       const avaliacoes = Object.fromEntries(itens.map((item) => [
         item, campos.map((campo) => valor(`${item}:${campo}`)),
       ]));
-      await enviarVisita({
+      await enviarVisita(escopo.usuario, {
         cod_empresa_bi: escopo.empresa,
         filial_id: escopo.filial,
         nome_cliente: valor('nome_cliente'),
@@ -127,7 +128,7 @@ function Historico({ escopo, gerencial }: { escopo: Escopo; gerencial: boolean }
       for (const [key, value] of Object.entries(filtros)) {
         if (value) params.set(key, value);
       }
-      return listarVisitas(params, signal);
+      return listarVisitas(escopo.usuario, params, signal);
     },
   });
 
@@ -157,19 +158,19 @@ function Historico({ escopo, gerencial }: { escopo: Escopo; gerencial: boolean }
         </PelegriniFilterBar>
       </form>
       <div className="flex flex-wrap items-center justify-between gap-2 border-b pb-2">
-        <p className="text-sm text-muted-foreground">{query.data && (query.data.total === 1 ? '1 relatório' : `${query.data.total} relatórios`)}</p>
+        <p className="text-sm text-muted-foreground">{query.isSuccess && (query.data.total === 1 ? '1 relatório' : `${query.data.total} relatórios`)}</p>
         <Button type="button" variant="outline" size="icon" className="h-8 w-8" aria-label="Atualizar relatórios"
           disabled={query.isFetching} onClick={() => void query.refetch()}><RefreshCw aria-hidden="true" className="h-4 w-4" /></Button>
       </div>
       {query.isPending && <p role="status" className="p-4 text-sm text-muted-foreground">Carregando relatórios…</p>}
       {query.isError && (
         <div className="flex flex-wrap items-center gap-3 rounded-lg border p-4">
-          <p role="alert" className="text-sm text-destructive">Não foi possível carregar os relatórios.</p>
+          <p role="alert" className="text-sm text-destructive">{query.error.message}</p>
           <Button variant="outline" size="sm" onClick={() => void query.refetch()}>Tentar novamente</Button>
         </div>
       )}
-      {query.data?.total === 0 && <p className="rounded-lg border p-4 text-sm text-muted-foreground">Nenhum relatório encontrado.</p>}
-      {query.data?.rows.map((relatorio) => (
+      {query.isSuccess && query.data.total === 0 && <p className="rounded-lg border p-4 text-sm text-muted-foreground">Nenhum relatório encontrado.</p>}
+      {query.isSuccess && query.data.rows.map((relatorio) => (
         <details key={relatorio.id} className="group min-w-0 rounded-sm border bg-card">
           <summary className="grid cursor-pointer list-none grid-cols-[minmax(0,1fr)_auto] items-center gap-2 px-3 py-2.5 hover:bg-muted/50 [&::-webkit-details-marker]:hidden">
             <span className="min-w-0 space-y-0.5">
@@ -203,7 +204,7 @@ function Historico({ escopo, gerencial }: { escopo: Escopo; gerencial: boolean }
           </div>
         </details>
       ))}
-      {!!query.data?.total && query.data.total > porPagina && (
+      {query.isSuccess && query.data.total > porPagina && (
         <div className="flex items-center justify-end gap-2 text-sm">
           <Button variant="outline" size="sm" disabled={pagina === 0} onClick={() => setPagina(pagina - 1)}>Anterior</Button>
           <span>Página {pagina + 1} de {Math.ceil(query.data.total / porPagina)}</span>
@@ -241,7 +242,7 @@ function AreaVisitas({ escopo, gerencial }: { escopo: Escopo; gerencial: boolean
   );
 }
 
-export default function VisitasPage({ sessao, logout }: { sessao: SessaoVisitas; logout: () => Promise<void> }) {
+export default function VisitasPage({ sessao, logout }: { sessao: SessaoVisitas; logout?: () => Promise<void> }) {
   const gerencial = sessao.perfil === 'gerencial';
   const [filialEscolhida, setFilialEscolhida] = useState('');
   const filiais = sessao.filiais;
@@ -252,7 +253,7 @@ export default function VisitasPage({ sessao, logout }: { sessao: SessaoVisitas;
   const [erroSaida, setErroSaida] = useState(false);
 
   return (
-    <div className={`flex min-h-0 min-w-0 flex-col overflow-hidden bg-background h-dvh`}>
+    <div className={`flex min-h-0 min-w-0 flex-col overflow-hidden bg-background ${gerencial ? 'flex-1' : 'h-dvh'}`}>
       <header className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-b bg-card px-3 py-2.5 md:px-4">
         <div className="min-w-0">
           <h1 className="break-words text-lg font-bold leading-tight">Relatórios de visitas</h1>
@@ -260,10 +261,13 @@ export default function VisitasPage({ sessao, logout }: { sessao: SessaoVisitas;
           {unidade && <p className="break-words text-xs text-muted-foreground">{unidade}</p>}
         </div>
         {erroSaida && <p role="alert" className="text-sm text-destructive">Não foi possível encerrar a sessão. Tente de novo.</p>}
-        <Button size="sm" variant="outline" onClick={() => void logout().catch(() => setErroSaida(true))}><LogOut className="mr-2 h-4 w-4" />Sair</Button>
+        {!gerencial && logout && <div className="flex items-center gap-2">
+          <ThemeToggle />
+          <Button size="sm" variant="outline" onClick={() => void logout().catch(() => setErroSaida(true))}><LogOut className="mr-2 h-4 w-4" />Sair</Button>
+        </div>}
       </header>
       <section aria-label="Conteúdo dos relatórios de visitas" tabIndex={0}
-        className="min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring">
+        className="min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring">
       <div className="mx-auto w-full max-w-6xl space-y-3 p-3 pb-6 md:p-4 md:pb-6">
         {filiais.length > 1 && (
           <div className="flex flex-wrap items-center gap-2">
@@ -279,7 +283,9 @@ export default function VisitasPage({ sessao, logout }: { sessao: SessaoVisitas;
         {empresa && filial ? (
           <AreaVisitas key={`${sessao.id}:${empresa}:${filial}:${gerencial}`} gerencial={gerencial}
             escopo={{ empresa, filial, usuario: sessao.id }} />
-        ) : <p className="rounded-lg border p-4 text-sm text-muted-foreground">É necessário ter uma filial atribuída para acessar os relatórios de visitas.</p>}
+        ) : <p className="rounded-lg border p-4 text-sm text-muted-foreground">
+          {gerencial ? 'Selecione uma filial Pelegrini autorizada para consultar as visitas.' : 'É necessário ter uma filial atribuída para acessar os relatórios de visitas.'}
+        </p>}
       </div>
       </section>
     </div>

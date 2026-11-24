@@ -1810,7 +1810,7 @@ export type Database = {
       normalize_phone_e164: { Args: { phone: string }; Returns: string }
     }
     Enums: {
-      app_role: "master" | "client" | "gerencial" | "vendedor"
+      app_role: "master" | "client" | "gerencial" | "vendedor" | "visitador"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1938,7 +1938,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["master", "client", "gerencial", "vendedor"],
+      app_role: ["master", "client", "gerencial", "vendedor", "visitador"],
     },
   },
 } as const

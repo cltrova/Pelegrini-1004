@@ -202,6 +202,14 @@ export function UserList({ onEdit, filterByCompany }: UserListProps) {
         </Badge>
       );
     }
+    if (roles.includes('visitador')) {
+      return (
+        <Badge className="gap-1 border-violet-500/20 bg-violet-500/10 text-violet-600 hover:bg-violet-500/20">
+          <User className="h-3 w-3" />
+          Visitador
+        </Badge>
+      );
+    }
     return (
       <Badge className="gap-1 bg-green-500/10 text-green-600 hover:bg-green-500/20 border-green-500/20">
         <User className="h-3 w-3" />
