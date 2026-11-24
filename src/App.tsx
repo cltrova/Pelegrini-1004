@@ -153,11 +153,14 @@ export function PasswordGate({ children }: { children: React.ReactNode }) {
   );
 }
 
-function VisitadorGate({ children }: { children: React.ReactNode }) {
+function VisitasGate({ children }: { children: React.ReactNode }) {
   const { roles } = useAuth();
   const { pathname } = useLocation();
-  if (roles?.includes('visitador') && pathname.replace(/\/$/, '') !== '/visitas') {
-    return <Navigate to="/visitas" replace />;
+  const isVisitas = pathname.replace(/\/$/, '') === '/visitas';
+  const isVisitador = roles?.includes('visitador');
+  if (isVisitador && !isVisitas) return <Navigate to="/visitas" replace />;
+  if (isVisitas && !isVisitador && (roles?.includes('gerencial') || roles?.includes('master'))) {
+    return <Navigate to="/comercial/visitas" replace />;
   }
   return <>{children}</>;
 }
@@ -175,7 +178,7 @@ const App = () => (
             <BrowserRouter>
               <PasswordGate>
               <Suspense fallback={<GuardSpinner />}>
-              <VisitadorGate>
+              <VisitasGate>
               <Routes>
 
               <Route path="/" element={<HomePage />} />
@@ -313,7 +316,7 @@ const App = () => (
               {/* 404 */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
-              </VisitadorGate>
+              </VisitasGate>
               </Suspense>
               </PasswordGate>
 
