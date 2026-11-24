@@ -8,24 +8,12 @@ const mock = vi.hoisted(() => ({
   logout: vi.fn(),
 }));
 
-vi.mock('@/integrations/supabase/client', () => ({
-  supabase: { auth: { getSession: async () => ({ data: { session: { access_token: 'sessao-teste' } } }) } },
-}));
-vi.mock('@/contexts/AuthContext', () => ({
-  useAuth: () => ({
-    user: { id: 'usuario-1' }, logout: mock.logout, codEmpresa: '10041',
-    profile: { filiais_permitidas: ['chevrolet'] },
-  }),
-}));
-vi.mock('@/contexts/FilialSelecionadaContext', () => ({
-  useFilialSelecionada: () => ({
-    filialAtiva: 'chevrolet', codEmpresaContexto: '10041', filialNome: 'Casa da Chevrolet',
-  }),
-}));
-
 function renderPage(gerencial = false) {
   const client = new QueryClient();
-  render(<QueryClientProvider client={client}><VisitasPage gerencial={gerencial} /></QueryClientProvider>);
+  render(<QueryClientProvider client={client}><VisitasPage logout={mock.logout} sessao={{
+    id: 'usuario-1', nome: 'Visitador de teste', perfil: gerencial ? 'gerencial' : 'visitador',
+    filiais: [{ cod_empresa_bi: '10041', filial_id: 'chevrolet' }],
+  }} /></QueryClientProvider>);
 }
 
 describe('Relatórios de visitas', () => {
@@ -52,7 +40,7 @@ describe('Relatórios de visitas', () => {
     expect(screen.getByRole('tab', { name: 'Meus relatórios' })).toHaveAttribute('aria-selected', 'true');
     const [url, post] = mock.fetch.mock.calls.find(([, init]) => init.method === 'POST')!;
     expect(url).toBe('/operacional/visitas/relatorios');
-    expect(post.headers.get('Authorization')).toBe('Bearer sessao-teste');
+    expect(post.credentials).toBe('same-origin');
     const payload = JSON.parse(post.body);
     expect(payload).toEqual(expect.objectContaining({
       cod_empresa_bi: '10041', filial_id: 'chevrolet', nome_cliente: 'Oficina Central',

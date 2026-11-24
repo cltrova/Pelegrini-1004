@@ -14,28 +14,6 @@ export type Database = {
   }
   public: {
     Tables: {
-      relatorios_visitas: {
-        Row: {
-          id: string
-          cod_empresa_bi: string
-          filial_id: string
-          visitador_id: string | null
-          visitador_nome: string
-          criado_em: string
-          data_visita: string
-          nome_cliente: string
-          cnpj: string
-          cidade: string
-          segmento: string
-          diesel: string
-          responsaveis_compras: string
-          funcao: string
-          avaliacoes: Json
-        }
-        Insert: Omit<Database["public"]["Tables"]["relatorios_visitas"]["Row"], "id" | "visitador_id" | "visitador_nome" | "criado_em">
-        Update: never
-        Relationships: []
-      }
       assignment_rules: {
         Row: {
           company_id: string

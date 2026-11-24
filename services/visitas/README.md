@@ -1,6 +1,6 @@
 # Relatórios de Visitas a Oficinas
 
-A API grava e consulta em `dbo.RelatoriosVisitas` no SQL Server interno. O portal envia o token da sessão atual no cabeçalho `Authorization: Bearer <token>`.
+A API grava e consulta em `dbo.RelatoriosVisitas` no SQL Server interno. O portal usa a sessão própria de Visitas, enviada pelo navegador em cookie.
 
 ## Contrato HTTP
 
@@ -65,10 +65,10 @@ No GET, `cliente` e `visitador` procuram trechos do nome. `inicio` e `fim` são 
 
 ### Sessão e acesso
 
-- A API valida a sessão em `/auth/v1/user` no Supabase, obtém o UUID autenticado e consulta `user_roles` e `profiles` com o mesmo token. Identificador e nome do autor vêm dessa consulta.
-- O perfil `visitador` grava apenas para uma filial autorizada e só lista seus próprios registros. O perfil `gerencial` precisa de acesso ao Comercial em `user_module_permissions` e à filial indicada em `profiles.filiais_permitidas`. Perfis sem a lista usam `profiles.filial_id`. O perfil `master` usa o escopo administrativo do portal.
-- Para Casa do Chevrolet, envie `cod_empresa_bi: "10041"` e `filial_id: "chevrolet"`. Perfis legados de empresa `"1004"` podem acessar o escopo Chevrolet quando têm a filial `chevrolet` autorizada. A Casa da Transmissão usa `"1004"` e `"transmissao"`.
-- A API devolve `401` para sessão ausente ou inválida, `403` para acesso negado, `422` para parâmetros inválidos e `503` se a validação de sessão ou a operação no banco falhar. As respostas têm `Cache-Control: private, no-store`.
+- O endpoint `POST /operacional/visitas/sessao` recebe `{"email":"visitador@empresa.com.br","senha":"..."}`. A API verifica a senha e inicia uma sessão de oito horas em cookie `HttpOnly` e `SameSite=Strict`, com `Secure` no ambiente HTTPS. A listagem de sessão é `GET /operacional/visitas/sessao` e a saída é `DELETE /operacional/visitas/sessao`.
+- A API consulta o perfil e as filiais autorizadas diretamente no banco de Visitas. O visitador grava apenas na filial autorizada e consulta o próprio histórico. O gerente consulta as filiais autorizadas na tela `/comercial/visitas`. O usuário não informa o autor ao gravar.
+- Para a Casa do Chevrolet, envie `cod_empresa_bi: "10041"` e `filial_id: "chevrolet"`. A Casa da Transmissão usa `"1004"` e `"transmissao"`.
+- A API devolve `401` para sessão ausente ou inválida, `403` para acesso negado, `422` para parâmetros inválidos e `503` para falha de banco. As respostas usam `Cache-Control: private, no-store`.
 
 ## Homologação local
 
@@ -76,12 +76,12 @@ No GET, `cliente` e `visitador` procuram trechos do nome. `inicio` e `fim` são 
 - Comercial — `http://127.0.0.1:4317/comercial/visitas`
 - OpenAPI — `http://127.0.0.1:4318/docs`
 
-O ambiente local usa SQL Server com banco isolado e um provedor de sessão de teste com três perfis fictícios. A API faz as mesmas consultas HTTP de sessão, perfil e permissões que fará ao Supabase. Use o arquivo de acessos entregue à parte para autenticar na tela.
+O ambiente local usa SQL Server com banco isolado e três perfis fictícios. Use o arquivo de acessos entregue à parte. A variável `VISITAS_HTTP_LOCAL=1` habilita o cookie em HTTP na interface de loopback durante o teste.
 
 ## Implantação após o aceite
 
-1. Selecione o banco interno de visitas, execute `schema.sql` e dê ao usuário da API somente `SELECT` e `INSERT` nessa tabela. Use credenciais exclusivas para esse banco.
-2. Configure `VISITAS_SQL_SERVER`, `VISITAS_SQL_PORT` (opcional), `VISITAS_SQL_DATABASE`, `VISITAS_SQL_USER`, `VISITAS_SQL_PASSWORD`, `VISITAS_SUPABASE_URL` e `VISITAS_SUPABASE_KEY` no servidor. A chave é a publicável do mesmo projeto do portal.
-3. Aplique primeiro a migração do perfil `visitador` no Supabase e depois a proteção de empresa e filial do perfil. Se a tabela legada `public.relatorios_visitas` já tiver registros, verifique a transferência desses registros antes de mudar o portal para o SQL Server.
-4. Instale `requirements.txt` e inicie com `python -m uvicorn app:app --host 127.0.0.1 --port 4318`, a partir de `services/visitas`. Encaminhe a rota exata `/operacional/visitas/relatorios` no proxy HTTPS do site para o serviço interno, preservando método, corpo, query e `Authorization`. No Vite, o proxy usa `VISITAS_API_TARGET`.
-5. Teste com as contas de homologação do Supabase, confirme o mesmo ID no histórico e na gerência e valide o HTTP `403` para um gerente de outra filial consultando o escopo Chevrolet.
+1. Execute `schema.sql` e `auth_schema.sql` no banco interno de Visitas. A conta da API precisa de `SELECT, INSERT` em `RelatoriosVisitas`, `SELECT` em `VisitasUsuarios` e `VisitasFiliais`, `UPDATE` apenas nas colunas `VisitasUsuarios.falhas` e `VisitasUsuarios.bloqueado_ate`, e `SELECT, INSERT, DELETE` em `VisitasSessoes`.
+2. Configure `VISITAS_SQL_SERVER`, `VISITAS_SQL_PORT` (opcional), `VISITAS_SQL_DATABASE`, `VISITAS_SQL_USER` e `VISITAS_SQL_PASSWORD` para o serviço.
+3. Com a conexão administrativa do banco de Visitas, execute `python administrar.py --email email@empresa.com.br --nome "Nome do visitador" --perfil visitador --empresa 10041 --filial chevrolet`. A senha é solicitada no terminal. Use `--perfil gerencial` para gerência. Para atualizar uma conta, repita o comando com o mesmo e-mail e as filiais que devem ficar autorizadas.
+4. Instale `requirements.txt` e inicie com `python -m uvicorn app:app --host 127.0.0.1 --port 4318` a partir de `services/visitas`. Encaminhe `/operacional/visitas/sessao` e `/operacional/visitas/relatorios` no proxy HTTPS do site, preservando cookies, método, corpo e parâmetros. No Vite, o proxy usa `VISITAS_API_TARGET`.
+5. Teste com perfis autorizados. Confira o mesmo ID no histórico e na gerência e o HTTP `403` para um gerente da Transmissão consultando o escopo da Chevrolet.

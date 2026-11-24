@@ -17,6 +17,7 @@ export interface PelegriniSidebarItem {
   icon: React.ComponentType<{ className?: string }>;
   disabled?: boolean;
   badge?: string;
+  reloadDocument?: boolean;
 }
 
 export interface PelegriniModuleSidebarProps {
@@ -81,6 +82,7 @@ function SidebarLink({ item, active, onNavigate }: SidebarLinkProps) {
   return (
     <NavLink
       to={item.path}
+      reloadDocument={item.reloadDocument}
       aria-label={item.label}
       onClick={(event) => {
         event.currentTarget.blur();

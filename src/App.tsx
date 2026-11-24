@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { lazy, Suspense } from "react";
 import { ThemeProvider } from "next-themes";
 import { AuthProvider } from "@/contexts/AuthContext";
@@ -35,7 +35,6 @@ const ProdutosPage = lazy(() => import('./pages/comercial/ProdutosPage'));
 const ComissaoPage = lazy(() => import('./pages/comercial/ComissaoPage'));
 const CotacoesAbertasPage = lazy(() => import('./pages/comercial/CotacoesAbertasPage'));
 const VendasPerdidasPage = lazy(() => import('./pages/comercial/VendasPerdidasPage'));
-const VisitasPage = lazy(() => import('./pages/visitas/VisitasPage'));
 const ProdutividadePage = lazy(() => import('./pages/operacional/ProdutividadePage'));
 const EstoquePage = lazy(() => import('./pages/operacional/EstoquePage'));
 const DistribuidoresPage = lazy(() => import('./pages/operacional/DistribuidoresPage'));
@@ -153,18 +152,6 @@ export function PasswordGate({ children }: { children: React.ReactNode }) {
   );
 }
 
-function VisitasGate({ children }: { children: React.ReactNode }) {
-  const { roles } = useAuth();
-  const { pathname } = useLocation();
-  const isVisitas = pathname.replace(/\/$/, '') === '/visitas';
-  const isVisitador = roles?.includes('visitador');
-  if (isVisitador && !isVisitas) return <Navigate to="/visitas" replace />;
-  if (isVisitas && !isVisitador && (roles?.includes('gerencial') || roles?.includes('master'))) {
-    return <Navigate to="/comercial/visitas" replace />;
-  }
-  return <>{children}</>;
-}
-
 const App = () => (
   <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
     <QueryClientProvider client={queryClient}>
@@ -178,13 +165,9 @@ const App = () => (
             <BrowserRouter>
               <PasswordGate>
               <Suspense fallback={<GuardSpinner />}>
-              <VisitasGate>
               <Routes>
 
               <Route path="/" element={<HomePage />} />
-              <Route path="/visitas" element={
-                <RequireRole allowedRoles={['visitador']}><VisitasPage /></RequireRole>
-              } />
 
               <Route path="/mobile" element={<Navigate to="/comercial/dashboard" replace />} />
 
@@ -253,9 +236,6 @@ const App = () => (
                 } />
                 <Route path="metas-diarias" element={<Navigate to="/comercial/dashboard" replace />} />
                 <Route path="clientes" element={<ClientesAnalysePage />} />
-                <Route path="visitas" element={
-                  <RequireRole allowedRoles={['gerencial', 'master']}><VisitasPage gerencial /></RequireRole>
-                } />
                 <Route path="produtos" element={<ProdutosPage />} />
                 <Route path="marcas" element={<Navigate to="/comercial/produtos" replace />} />
                 <Route path="queda-clientes" element={<Navigate to="/comercial/clientes" replace />} />
@@ -316,7 +296,6 @@ const App = () => (
               {/* 404 */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
-              </VisitasGate>
               </Suspense>
               </PasswordGate>
 

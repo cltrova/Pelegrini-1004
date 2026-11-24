@@ -68,6 +68,7 @@ class ApiTest(unittest.TestCase):
     def test_missing_session(self):
         app.dependency_overrides.clear()
         self.assertEqual(self.client.get(PATH, params={"escopo": "meus"}).status_code, 401)
+        self.assertEqual(self.client.get("/operacional/visitas/sessao").status_code, 401)
 
 
 if __name__ == "__main__":

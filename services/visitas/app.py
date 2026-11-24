@@ -1,22 +1,20 @@
-"""API de relatórios de visitas com sessão Supabase e armazenamento SQL Server."""
+"""API de relatórios de visitas com contas internas no SQL Server."""
 import json
 import logging
-import os
 from contextlib import closing
-from dataclasses import dataclass
 from datetime import date
 from typing import Annotated, Literal
-from urllib.error import HTTPError, URLError
-from urllib.parse import urlencode
-from urllib.request import Request, urlopen
 
 import pymssql
 from fastapi import Depends, FastAPI, HTTPException, Query
-from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints, field_validator
 
+from auth import Identity, chave_filial, connect, identity, router
+
 app = FastAPI(title="Pelegrini — Relatórios de visitas")
-bearer = HTTPBearer(auto_error=False)
+app.include_router(router)
 Empresa = Literal["1004", "10041"]
 Filial = Literal["chevrolet", "transmissao"]
 Texto = Annotated[str, StringConstraints(max_length=200)]
@@ -67,105 +65,33 @@ class Gravado(BaseModel):
     id: str
 
 
-@dataclass(frozen=True)
-class Identity:
-    id: str
-    name: str
-    roles: set[str]
-    company: str
-    branches: set[str]
-    commercial: bool = False
+@app.exception_handler(RequestValidationError)
+async def invalid_request(_request, error):
+    return JSONResponse(
+        status_code=422,
+        content={"detail": [{"loc": item["loc"], "msg": item["msg"]} for item in error.errors()]},
+    )
 
 
 @app.middleware("http")
 async def prevent_cache(request, call_next):
-    response = await call_next(request)
+    if (request.method in ("POST", "DELETE")
+            and request.headers.get("sec-fetch-site") in ("same-site", "cross-site")):
+        response = JSONResponse(status_code=403, content={"detail": "Origem da requisição não autorizada."})
+    else:
+        response = await call_next(request)
     response.headers["Cache-Control"] = "private, no-store"
-    response.headers["Vary"] = "Authorization"
+    response.headers["Vary"] = "Cookie"
     return response
-
-
-def auth_get(path: str, token: str):
-    try:
-        request = Request(os.environ["VISITAS_SUPABASE_URL"].rstrip("/") + path, headers={
-            "Authorization": f"Bearer {token}",
-            "apikey": os.environ["VISITAS_SUPABASE_KEY"],
-            "Accept": "application/json",
-        })
-        with urlopen(request, timeout=8) as response:
-            return json.load(response)
-    except HTTPError as exc:
-        exc.close()
-        if exc.code in (401, 403):
-            raise HTTPException(401, "Sessão inválida ou expirada.") from None
-    except (KeyError, URLError, TimeoutError, ValueError):
-        pass
-    raise HTTPException(503, "Não foi possível validar a sessão.")
-
-
-def identity(credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(bearer)]) -> Identity:
-    if not credentials or not credentials.credentials or len(credentials.credentials) > 8192:
-        raise HTTPException(401, "Autenticação obrigatória.")
-    token = credentials.credentials
-    user = auth_get("/auth/v1/user", token)
-    user_id = user.get("id") if isinstance(user, dict) else None
-    if not isinstance(user_id, str) or not user_id or len(user_id) > 36:
-        raise HTTPException(401, "Sessão inválida.")
-    user_filter = {"user_id": f"eq.{user_id}"}
-    roles = auth_get("/rest/v1/user_roles?" + urlencode({**user_filter, "select": "role"}), token)
-    profiles = auth_get("/rest/v1/profiles?" + urlencode({
-        **user_filter, "select": "nome,cod_empresa_bi,filiais_permitidas,filial_id,must_change_password",
-    }), token)
-    if not isinstance(roles, list) or not isinstance(profiles, list):
-        raise HTTPException(503, "Não foi possível verificar as permissões.")
-    if len(profiles) != 1 or not isinstance(profiles[0], dict) or profiles[0].get("must_change_password") is not False:
-        raise HTTPException(403, "Perfil sem acesso ou com troca de senha pendente.")
-    profile = profiles[0]
-    branches = profile.get("filiais_permitidas")
-    if not isinstance(branches, list):
-        branches = [profile.get("filial_id")]
-    name = (profile.get("nome") or "").strip() or "Visitador"
-    role_names = {r.get("role") for r in roles if isinstance(r, dict)}
-    commercial = "master" in role_names
-    if "gerencial" in role_names and not commercial:
-        permissions = auth_get("/rest/v1/user_module_permissions?" + urlencode({
-            **user_filter, "select": "modulo_comercial",
-        }), token)
-        commercial = (isinstance(permissions, list) and len(permissions) == 1
-                      and isinstance(permissions[0], dict) and permissions[0].get("modulo_comercial") is True)
-    return Identity(
-        user_id, name[:200], role_names, str(profile.get("cod_empresa_bi") or ""),
-        {branch for branch in branches if isinstance(branch, str)}, commercial,
-    )
 
 
 CurrentUser = Annotated[Identity, Depends(identity)]
 
 
-def chave_filial(company, branch):
-    if branch == "chevrolet" and company in ("1004", "10041"):
-        return "10041"
-    if branch == "transmissao" and company == "1004":
-        return "1004"
-    return None
-
-
-def check_branch(user, company, branch, *, is_master=False):
+def check_branch(user, company, branch):
     key = chave_filial(company, branch)
-    if not key or (not is_master and (branch not in user.branches or chave_filial(user.company, branch) != key)):
+    if not key or branch not in user.branches or chave_filial(user.company, branch) != key:
         raise HTTPException(403, "Acesso à empresa ou filial não autorizado.")
-
-
-def connect():
-    try:
-        return pymssql.connect(
-            server=os.environ["VISITAS_SQL_SERVER"], port=os.getenv("VISITAS_SQL_PORT", "1433"),
-            database=os.environ["VISITAS_SQL_DATABASE"],
-            user=os.environ["VISITAS_SQL_USER"], password=os.environ["VISITAS_SQL_PASSWORD"],
-            login_timeout=5, timeout=15, encryption="require",
-        )
-    except KeyError as exc:
-        raise HTTPException(503, "Banco de visitas indisponível.") from exc
 
 
 
@@ -219,11 +145,11 @@ def listar(
         conditions = ["visitador_id = %s"]
         params = [user.id]
     else:
-        if "visitador" in user.roles or not user.commercial or not user.roles.intersection({"gerencial", "master"}):
+        if "gerencial" not in user.roles or not user.commercial:
             raise HTTPException(403, "Perfil gerencial obrigatório.")
         if not cod_empresa_bi or not filial_id:
             raise HTTPException(422, "Informe cod_empresa_bi e filial_id.")
-        check_branch(user, cod_empresa_bi, filial_id, is_master="master" in user.roles)
+        check_branch(user, cod_empresa_bi, filial_id)
         conditions = ["filial_id = %s"]
         params = [filial_id]
         if filial_id == "chevrolet":
