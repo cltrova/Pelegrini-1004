@@ -52,7 +52,7 @@ export function ComercialSidebar() {
   const comercialMenuItems = getComercialMenuItems(codEmpresaAtiva || '');
   const showFutureItems = !hasCotacoesComerciais(codEmpresaAtiva || '');
   if (!showFutureItems && (isMaster || isGerencial)) {
-    comercialMenuItems.push({ label: 'Relatórios de visitas', icon: ClipboardList, path: '/comercial/visitas', reloadDocument: true });
+    comercialMenuItems.push({ label: 'Relatórios de visitas', icon: ClipboardList, path: '/comercial/visitas' });
   }
 
   return (

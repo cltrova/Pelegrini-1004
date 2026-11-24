@@ -14,18 +14,10 @@ function VisitasEntrada() {
   const [pending, setPending] = useState(false);
   const [erro, setErro] = useState('');
 
-  function iniciarSessao(value: SessaoVisitas | null) {
-    if (value) {
-      const path = value.perfil === 'gerencial' ? '/comercial/visitas' : '/visitas';
-      if (window.location.pathname !== path) window.history.replaceState(null, '', path);
-    }
-    setSessao(value);
-  }
-
   useEffect(() => {
     let active = true;
     void consultarSessaoVisitas().then(value => {
-      if (active) iniciarSessao(value);
+      if (active) setSessao(value);
     }).catch(() => {
       if (!active) return;
       setErro('Não foi possível verificar a sessão. Tente entrar novamente.');
@@ -41,7 +33,7 @@ function VisitasEntrada() {
     setErro('');
     const form = new FormData(event.currentTarget);
     try {
-      iniciarSessao(await entrarVisitas(String(form.get('email')), String(form.get('senha'))));
+      setSessao(await entrarVisitas(String(form.get('email')), String(form.get('senha'))));
     } catch (error) {
       setErro(error instanceof Error ? error.message : 'Não foi possível entrar.');
     } finally {

@@ -1,15 +1,19 @@
 """Contas e sessões internas de Visitas."""
 import hashlib
 import hmac
+import http.client
+import json
 import os
+import re
 import secrets
 from contextlib import closing
 from dataclasses import dataclass
 from threading import BoundedSemaphore
 from typing import Annotated, Literal
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Response
-from fastapi.security import APIKeyCookie
+from fastapi.security import APIKeyCookie, HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel, ConfigDict, Field
 
 from database import DatabaseError, connect
@@ -20,6 +24,7 @@ COOKIE_PATH = "/operacional/visitas"
 TOKEN_SECONDS = 8 * 60 * 60
 cookie = APIKeyCookie(name=COOKIE, auto_error=False)
 SessionCookie = Annotated[str | None, Depends(cookie)]
+PortalBearer = Annotated[HTTPAuthorizationCredentials | None, Depends(HTTPBearer(auto_error=False))]
 password_workers = BoundedSemaphore(2)
 
 
@@ -58,7 +63,69 @@ def carregar_filiais(cursor, row):
                     row["perfil"] == "gerencial")
 
 
-def identity(token: SessionCookie) -> Identity:
+def portal_get(path, token):
+    host = os.environ.get("VISITAS_PORTAL_AUTH_HOST", "")
+    key = os.environ.get("VISITAS_PORTAL_ANON_KEY", "")
+    if not re.fullmatch(r"[a-z0-9]+\.supabase\.co", host) or not key:
+        raise HTTPException(503, "Identificação do portal indisponível.")
+    try:
+        with closing(http.client.HTTPSConnection(host, timeout=5)) as conn:
+            conn.request("GET", path, headers={
+                "Authorization": f"Bearer {token}", "apikey": key, "Accept": "application/json",
+            })
+            response = conn.getresponse()
+            if response.status in (400, 401, 403):
+                raise HTTPException(401, "Sessão do portal inválida ou expirada.")
+            if response.status != 200:
+                raise HTTPException(503, "Identificação do portal indisponível.")
+            return json.loads(response.read(64 * 1024))
+    except (OSError, http.client.HTTPException, ValueError):
+        raise HTTPException(503, "Identificação do portal indisponível.") from None
+
+
+def identity_from_portal(token):
+    if len(token) > 8192 or not re.fullmatch(r"[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+", token):
+        raise HTTPException(401, "Sessão do portal inválida ou expirada.")
+    account = portal_get("/auth/v1/user", token)
+    try:
+        user_id = str(UUID(account["id"]))
+        email = account["email"].strip().lower()
+    except (ValueError, KeyError, TypeError, AttributeError):
+        raise HTTPException(401, "Sessão do portal inválida ou expirada.") from None
+    if not email or len(email) > 254 or not account.get("email_confirmed_at"):
+        raise HTTPException(403, "Use a conta confirmada do portal.")
+
+    roles = portal_get(f"/rest/v1/user_roles?user_id=eq.{user_id}&select=role", token)
+    if not isinstance(roles, list):
+        raise HTTPException(503, "Não foi possível verificar o perfil do portal.")
+    role_names = [row.get("role") for row in roles if isinstance(row, dict)]
+    if "master" in role_names:
+        return Identity(user_id, email, {"gerencial"}, "1004", {"chevrolet", "transmissao"}, commercial=True)
+    if "gerencial" not in role_names:
+        raise HTTPException(403, "Perfil gerencial obrigatório.")
+
+    permissions = portal_get(f"/rest/v1/user_module_permissions?user_id=eq.{user_id}&select=modulo_comercial", token)
+    if (not isinstance(permissions, list) or len(permissions) != 1
+            or not isinstance(permissions[0], dict) or permissions[0].get("modulo_comercial") is not True):
+        raise HTTPException(403, "Acesso ao Comercial obrigatório.")
+
+    # Somente os metadados administrados pelo Auth podem conceder acesso a uma filial.
+    metadata = account.get("app_metadata")
+    if not isinstance(metadata, dict):
+        metadata = {}
+    company = str(metadata.get("cod_empresa_bi", ""))
+    allowed = metadata.get("filiais_permitidas")
+    if not isinstance(allowed, list):
+        allowed = [metadata.get("filial_id")]
+    branches = {branch for branch in allowed if isinstance(branch, str) and chave_filial(company, branch)}
+    if not branches:
+        raise HTTPException(403, "Nenhuma filial autorizada para os relatórios de visitas.")
+    return Identity(user_id, email, {"gerencial"}, company, branches, commercial=True)
+
+
+def identity(token: SessionCookie, credentials: PortalBearer) -> Identity:
+    if credentials:
+        return identity_from_portal(credentials.credentials)
     if not token or len(token) != 43:
         raise HTTPException(401, "Autenticação obrigatória.")
     try:

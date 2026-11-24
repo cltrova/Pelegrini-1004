@@ -81,7 +81,7 @@ async def prevent_cache(request, call_next):
     else:
         response = await call_next(request)
     response.headers["Cache-Control"] = "private, no-store"
-    response.headers["Vary"] = "Cookie"
+    response.headers["Vary"] = "Cookie, Authorization"
     return response
 
 

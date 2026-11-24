@@ -35,6 +35,7 @@ const ProdutosPage = lazy(() => import('./pages/comercial/ProdutosPage'));
 const ComissaoPage = lazy(() => import('./pages/comercial/ComissaoPage'));
 const CotacoesAbertasPage = lazy(() => import('./pages/comercial/CotacoesAbertasPage'));
 const VendasPerdidasPage = lazy(() => import('./pages/comercial/VendasPerdidasPage'));
+const VisitasGerenciaPage = lazy(() => import('./pages/visitas/VisitasGerenciaPage'));
 const ProdutividadePage = lazy(() => import('./pages/operacional/ProdutividadePage'));
 const EstoquePage = lazy(() => import('./pages/operacional/EstoquePage'));
 const DistribuidoresPage = lazy(() => import('./pages/operacional/DistribuidoresPage'));
@@ -231,6 +232,11 @@ const App = () => (
                   </RequireCotacoesPelegrini>
                 } />
                 <Route {...VENDAS_PERDIDAS_ROUTE} />
+                <Route path="visitas" element={
+                  <RequireRole allowedRoles={['master', 'gerencial']}>
+                    <VisitasGerenciaPage />
+                  </RequireRole>
+                } />
                 <Route path="progresso-vendedor" element={
                   <Navigate to="/comercial/dashboard" replace />
                 } />

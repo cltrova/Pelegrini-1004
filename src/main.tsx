@@ -13,6 +13,6 @@ installStaleBundleRecovery(window, {
 // Sync marker to trigger external preview rebuilds when needed.
 const root = createRoot(document.getElementById("root")!);
 const pathname = window.location.pathname.replace(/\/$/, "");
-const isVisitas = pathname === "/visitas" || pathname === "/comercial/visitas";
+const isVisitas = pathname === "/visitas";
 const entry = isVisitas ? import("./pages/visitas/VisitasApp") : import("./App");
 void entry.then(({ default: App }) => root.render(<App />));

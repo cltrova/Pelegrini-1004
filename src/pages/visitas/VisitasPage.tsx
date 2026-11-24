@@ -106,7 +106,11 @@ function Formulario({ escopo, onEnviado }: { escopo: Escopo; onEnviado: () => vo
   );
 }
 
-function Historico({ escopo, gerencial }: { escopo: Escopo; gerencial: boolean }) {
+function Historico({ escopo, gerencial, carregar = listarVisitas }: {
+  escopo: Escopo;
+  gerencial: boolean;
+  carregar?: typeof listarVisitas;
+}) {
   const [pagina, setPagina] = useState(0);
   const [filtros, setFiltros] = useState(filtrosVazios);
   const ativos = Object.values(filtros).filter(Boolean).length;
@@ -127,7 +131,7 @@ function Historico({ escopo, gerencial }: { escopo: Escopo; gerencial: boolean }
       for (const [key, value] of Object.entries(filtros)) {
         if (value) params.set(key, value);
       }
-      return listarVisitas(params, signal);
+      return carregar(params, signal);
     },
   });
 
@@ -215,11 +219,15 @@ function Historico({ escopo, gerencial }: { escopo: Escopo; gerencial: boolean }
   );
 }
 
-function AreaVisitas({ escopo, gerencial }: { escopo: Escopo; gerencial: boolean }) {
+function AreaVisitas({ escopo, gerencial, carregar }: {
+  escopo: Escopo;
+  gerencial: boolean;
+  carregar?: typeof listarVisitas;
+}) {
   const [aba, setAba] = useState('novo');
   const [enviado, setEnviado] = useState(false);
   const queryClient = useQueryClient();
-  if (gerencial) return <Historico escopo={escopo} gerencial />;
+  if (gerencial) return <Historico escopo={escopo} gerencial carregar={carregar} />;
   return (
     <Tabs value={aba} onValueChange={(tab) => { setAba(tab); setEnviado(false); }}>
       <TabsList className="flex h-auto w-fit max-w-full flex-wrap justify-start rounded-sm">
@@ -241,9 +249,14 @@ function AreaVisitas({ escopo, gerencial }: { escopo: Escopo; gerencial: boolean
   );
 }
 
-export default function VisitasPage({ sessao, logout }: { sessao: SessaoVisitas; logout: () => Promise<void> }) {
+export default function VisitasPage({ sessao, logout, filialInicial, carregar }: {
+  sessao: SessaoVisitas;
+  logout?: () => Promise<void>;
+  filialInicial?: string | null;
+  carregar?: typeof listarVisitas;
+}) {
   const gerencial = sessao.perfil === 'gerencial';
-  const [filialEscolhida, setFilialEscolhida] = useState('');
+  const [filialEscolhida, setFilialEscolhida] = useState(filialInicial ?? '');
   const filiais = sessao.filiais;
   const selecionada = filiais.find((item) => item.filial_id === filialEscolhida) ?? filiais[0];
   const empresa = selecionada?.cod_empresa_bi;
@@ -252,15 +265,15 @@ export default function VisitasPage({ sessao, logout }: { sessao: SessaoVisitas;
   const [erroSaida, setErroSaida] = useState(false);
 
   return (
-    <div className={`flex min-h-0 min-w-0 flex-col overflow-hidden bg-background h-dvh`}>
+    <div className={`flex min-h-0 min-w-0 flex-col bg-background ${logout ? 'h-dvh overflow-hidden' : ''}`}>
       <header className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-b bg-card px-3 py-2.5 md:px-4">
         <div className="min-w-0">
           <h1 className="break-words text-lg font-bold leading-tight">Relatórios de visitas</h1>
-          {gerencial && <span className="text-xs text-muted-foreground">Comercial</span>}
+          {gerencial && logout && <span className="text-xs text-muted-foreground">Comercial</span>}
           {unidade && <p className="break-words text-xs text-muted-foreground">{unidade}</p>}
         </div>
         {erroSaida && <p role="alert" className="text-sm text-destructive">Não foi possível encerrar a sessão. Tente de novo.</p>}
-        <Button size="sm" variant="outline" onClick={() => void logout().catch(() => setErroSaida(true))}><LogOut className="mr-2 h-4 w-4" />Sair</Button>
+        {logout && <Button size="sm" variant="outline" onClick={() => void logout().catch(() => setErroSaida(true))}><LogOut className="mr-2 h-4 w-4" />Sair</Button>}
       </header>
       <section aria-label="Conteúdo dos relatórios de visitas" tabIndex={0}
         className="min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring">
@@ -277,7 +290,7 @@ export default function VisitasPage({ sessao, logout }: { sessao: SessaoVisitas;
           </div>
         )}
         {empresa && filial ? (
-          <AreaVisitas key={`${sessao.id}:${empresa}:${filial}:${gerencial}`} gerencial={gerencial}
+          <AreaVisitas key={`${sessao.id}:${empresa}:${filial}:${gerencial}`} gerencial={gerencial} carregar={carregar}
             escopo={{ empresa, filial, usuario: sessao.id }} />
         ) : <p className="rounded-lg border p-4 text-sm text-muted-foreground">É necessário ter uma filial atribuída para acessar os relatórios de visitas.</p>}
       </div>

@@ -19,7 +19,7 @@ const rota = '/operacional/visitas/relatorios';
 async function request<T>(path: string, init: RequestInit, status: number): Promise<T> {
   const headers = new Headers(init.headers);
   headers.set('Accept', 'application/json');
-  const response = await fetch(path, { ...init, headers, credentials: 'same-origin', cache: 'no-store' });
+  const response = await fetch(path, { ...init, headers, credentials: headers.has('Authorization') ? 'omit' : 'same-origin', cache: 'no-store' });
   if (response.status !== status) {
     if (response.status === 401) throw new VisitasAuthError('Sua sessão expirou. Entre novamente.');
     if (response.status === 403) throw new Error('Seu perfil não tem acesso à empresa ou à filial selecionada.');
@@ -36,8 +36,9 @@ export async function enviarVisita(payload: Visita) {
   return result.id;
 }
 
-export async function listarVisitas(params: URLSearchParams, signal: AbortSignal) {
-  const result = await request<Pagina>(`${rota}?${params}`, { signal }, 200);
+export async function listarVisitas(params: URLSearchParams, signal: AbortSignal, accessToken?: string) {
+  const headers = accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined;
+  const result = await request<Pagina>(`${rota}?${params}`, { signal, headers }, 200);
   if (!Array.isArray(result.relatorios) || !Number.isInteger(result.total) || result.total < 0) {
     throw new Error('Resposta inválida ao consultar os relatórios.');
   }
@@ -56,9 +57,10 @@ export type SessaoVisitas = {
 
 const sessao = '/operacional/visitas/sessao';
 
-export async function consultarSessaoVisitas() {
+export async function consultarSessaoVisitas(accessToken?: string, signal?: AbortSignal) {
   try {
-    return await request<SessaoVisitas>(sessao, {}, 200);
+    const headers = accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined;
+    return await request<SessaoVisitas>(sessao, { signal, headers }, 200);
   } catch (error) {
     if (error instanceof VisitasAuthError) return null;
     throw error;
