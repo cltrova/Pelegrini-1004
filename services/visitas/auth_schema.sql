@@ -32,3 +32,20 @@ BEGIN
     );
     CREATE INDEX IX_VisitasSessoes_Expiracao ON dbo.VisitasSessoes(expira_em);
 END;
+
+IF OBJECT_ID(N'dbo.VisitasGerenciaPortal', N'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.VisitasGerenciaPortal (
+        usuario_id varchar(36) NOT NULL CONSTRAINT PK_VisitasGerenciaPortal PRIMARY KEY,
+        cod_empresa_bi varchar(5) NOT NULL,
+        chevrolet bit NOT NULL,
+        transmissao bit NOT NULL,
+        versao_comercial varchar(64) NOT NULL,
+        aprovado_por varchar(36) NOT NULL,
+        aprovado_em datetime2(0) NOT NULL DEFAULT SYSUTCDATETIME(),
+        CONSTRAINT CK_VisitasGerenciaPortal_Filiais CHECK (
+            (cod_empresa_bi = '1004' AND (chevrolet = 1 OR transmissao = 1))
+            OR (cod_empresa_bi = '10041' AND chevrolet = 1 AND transmissao = 0)
+        )
+    );
+END;

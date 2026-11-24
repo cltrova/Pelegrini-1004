@@ -23,9 +23,21 @@ async function request<T>(path: string, init: RequestInit, status: number): Prom
   if (response.status !== status) {
     if (response.status === 401) throw new VisitasAuthError('Sua sessão expirou. Entre novamente.');
     if (response.status === 403) throw new Error('Seu perfil não tem acesso à empresa ou à filial selecionada.');
+    if (response.status === 409) throw new Error('Confira o perfil e as filiais salvas no Comercial.');
     throw new Error('Não foi possível acessar os relatórios de visitas.');
   }
   return status === 204 ? undefined as T : response.json() as Promise<T>;
+}
+
+export function confirmarGerenciaVisitas(
+  payload: { usuario_id: string; cod_empresa_bi: string; filiais: string[] },
+  accessToken: string,
+) {
+  return request<void>('/operacional/visitas/gerencia/permissoes', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  }, 204);
 }
 
 export async function enviarVisita(payload: Visita) {

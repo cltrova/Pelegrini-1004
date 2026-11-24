@@ -3,6 +3,7 @@ import os
 import unittest
 from contextlib import closing
 from unittest.mock import MagicMock, patch
+from uuid import uuid4
 
 from fastapi.testclient import TestClient
 
@@ -22,23 +23,32 @@ class PortalManagerTest(unittest.TestCase):
     def setUp(self):
         self.client = TestClient(app)
         self.user_id = "5c20479e-084d-453a-ac9d-ca63907dbb24"
+        self.master_id = "cb98de9f-8ea4-471e-91ca-1d12054ac03a"
         self.headers = {"Authorization": "Bearer header.payload.signature"}
+        self.master_headers = {"Authorization": "Bearer header.master.signature"}
         self.role = "gerencial"
-        self.metadata = {"cod_empresa_bi": "10041", "filiais_permitidas": ["chevrolet"]}
+        self.profile = {"cod_empresa_bi": "1004", "filiais_permitidas": ["chevrolet"], "filial_id": "chevrolet"}
+        self.version = "2026-11-24T17:00:00+00:00"
+        self.approved = {"cod_empresa_bi": "1004", "chevrolet": True, "transmissao": False, "versao_comercial": self.version}
 
-    def portal(self, path, _token):
+    def portal(self, path, token):
+        actor = self.master_id if token == "header.master.signature" else self.user_id
         if path == "/auth/v1/user":
-            return {"id": self.user_id, "email": "gerente@visitas.example", "email_confirmed_at": "2026-11-24",
-                    "app_metadata": self.metadata,
+            return {"id": actor, "email": "gerente@visitas.example", "email_confirmed_at": "2026-11-24",
+                    "app_metadata": {},
                     "user_metadata": {"cod_empresa_bi": "1004", "filiais_permitidas": ["chevrolet", "transmissao"]}}
+        if path == f"/rest/v1/user_roles?user_id=eq.{self.master_id}&select=role":
+            return [{"role": "master"}]
         if path == f"/rest/v1/user_roles?user_id=eq.{self.user_id}&select=role":
             return [{"role": self.role}]
-        if path == f"/rest/v1/user_module_permissions?user_id=eq.{self.user_id}&select=modulo_comercial":
-            return [{"modulo_comercial": True}]
+        if path == f"/rest/v1/profiles?user_id=eq.{self.user_id}&select=cod_empresa_bi,filiais_permitidas,filial_id":
+            return [self.profile]
+        if path == f"/rest/v1/user_module_permissions?user_id=eq.{self.user_id}&select=modulo_comercial,updated_at":
+            return [{"modulo_comercial": True, "updated_at": self.version}]
         raise AssertionError(path)
 
     def test_existing_portal_session_uses_server_approved_branches(self):
-        with patch("auth.portal_get", self.portal):
+        with patch("auth.portal_get", self.portal), patch("auth.permissao_gerencia", return_value=self.approved):
             response = self.client.get("/operacional/visitas/sessao", headers=self.headers)
             self.assertEqual(response.status_code, 200)
             self.assertEqual(response.json()["id"], self.user_id)
@@ -47,18 +57,52 @@ class PortalManagerTest(unittest.TestCase):
             self.assertEqual(other.status_code, 403)
 
     def test_portal_user_without_role_or_approved_branch_is_denied(self):
-        with patch("auth.portal_get", self.portal):
-            self.metadata = {}
+        with patch("auth.portal_get", self.portal), patch("auth.permissao_gerencia", return_value=None):
             self.assertEqual(self.client.get("/operacional/visitas/sessao", headers=self.headers).status_code, 403)
-            self.metadata = {"cod_empresa_bi": "10041", "filiais_permitidas": ["chevrolet"]}
+        with patch("auth.portal_get", self.portal), patch("auth.permissao_gerencia", return_value=self.approved):
             self.role = "vendedor"
             self.assertEqual(self.client.get("/operacional/visitas/sessao", headers=self.headers).status_code, 403)
 
-    def test_master_keeps_access_to_both_branches(self):
-        self.role = "master"
-        self.metadata = {}
+    def test_profile_cannot_expand_scope_and_permission_changes_invalidate_approval(self):
+        self.profile["filiais_permitidas"] = ["chevrolet", "transmissao"]
+        with patch("auth.portal_get", self.portal), patch("auth.permissao_gerencia", return_value=self.approved):
+            self.assertEqual(self.client.get("/operacional/visitas/sessao", headers=self.headers).json()["filiais"], [CHEVROLET])
+            self.version = "2026-11-24T17:01:00+00:00"
+            self.assertEqual(self.client.get("/operacional/visitas/sessao", headers=self.headers).status_code, 403)
+
+    def test_only_master_can_approve_current_commercial_permissions(self):
+        path = "/operacional/visitas/gerencia/permissoes"
+        payload = {"usuario_id": self.user_id, "cod_empresa_bi": "1004", "filiais": ["chevrolet"]}
+        with patch("auth.portal_get", self.portal), patch("auth.salvar_permissao_gerencia") as save:
+            self.assertEqual(self.client.post(path, json=payload).status_code, 401)
+            self.assertEqual(self.client.post(path, headers=self.headers, json=payload).status_code, 403)
+            self.assertEqual(self.client.post(path, headers=self.master_headers,
+                                             json={**payload, "filiais": ["transmissao"]}).status_code, 409)
+            save.assert_not_called()
+            self.assertEqual(self.client.post(path, headers=self.master_headers, json=payload).status_code, 204)
+            save.assert_called_once_with(self.user_id, "1004", {"chevrolet"}, self.version, self.master_id)
+
+    @unittest.skipUnless(os.getenv("VISITAS_SQL_DATABASE") == "PelegriniVisitasHomolog", "SQL isolado requerido")
+    def test_master_approval_persists_and_can_change_branches(self):
+        self.user_id = str(uuid4())
+        path = "/operacional/visitas/gerencia/permissoes"
+        payload = {"usuario_id": self.user_id, "cod_empresa_bi": "1004"}
         with patch("auth.portal_get", self.portal):
-            response = self.client.get("/operacional/visitas/sessao", headers=self.headers)
+            for branch in (CHEVROLET, {"cod_empresa_bi": "1004", "filial_id": "transmissao"}):
+                self.profile["filiais_permitidas"] = [branch["filial_id"]]
+                response = self.client.post(path, headers=self.master_headers,
+                                            json={**payload, "filiais": self.profile["filiais_permitidas"]})
+                self.assertEqual(response.status_code, 204, response.text)
+                session = self.client.get("/operacional/visitas/sessao", headers=self.headers)
+                self.assertEqual(session.json()["filiais"], [branch])
+                reports = self.client.get(PATH, params={**branch, "escopo": "gerencia"}, headers=self.headers)
+                self.assertEqual(reports.status_code, 200, reports.text)
+            self.assertEqual(self.client.get(PATH, params={**CHEVROLET, "escopo": "gerencia"},
+                                             headers=self.headers).status_code, 403)
+
+    def test_master_keeps_access_to_both_branches(self):
+        with patch("auth.portal_get", self.portal):
+            response = self.client.get("/operacional/visitas/sessao", headers=self.master_headers)
         self.assertEqual(response.status_code, 200)
         self.assertCountEqual(response.json()["filiais"], [CHEVROLET, {"cod_empresa_bi": "1004", "filial_id": "transmissao"}])
 
@@ -128,8 +172,6 @@ class ApiTest(unittest.TestCase):
     @unittest.skipUnless(os.getenv("VISITAS_SQL_DATABASE") == "PelegriniVisitasHomolog", "SQL isolado requerido")
     def test_commit_history_pagination_and_manager_scope(self):
         from app import Identity
-        from uuid import uuid4
-
         name = f"Oficina teste {uuid4().hex}"
         payload = {**BODY, "nome_cliente": name}
         res = self.client.post(PATH, json=payload)

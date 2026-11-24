@@ -10,13 +10,11 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints, field_validator
 
-from auth import Identity, chave_filial, identity, router
+from auth import Empresa, Filial, Identity, chave_filial, identity, router
 from database import DatabaseError, connect
 
 app = FastAPI(title="Pelegrini — Relatórios de visitas")
 app.include_router(router)
-Empresa = Literal["1004", "10041"]
-Filial = Literal["chevrolet", "transmissao"]
 Texto = Annotated[str, StringConstraints(max_length=200)]
 Avaliacao = tuple[Annotated[str, StringConstraints(max_length=3000)], ...]
 ITENS = {"Atendimento", "Entrega", "Preço", "Prazo"}

@@ -25,6 +25,8 @@ TOKEN_SECONDS = 8 * 60 * 60
 cookie = APIKeyCookie(name=COOKIE, auto_error=False)
 SessionCookie = Annotated[str | None, Depends(cookie)]
 PortalBearer = Annotated[HTTPAuthorizationCredentials | None, Depends(HTTPBearer(auto_error=False))]
+Empresa = Literal["1004", "10041"]
+Filial = Literal["chevrolet", "transmissao"]
 password_workers = BoundedSemaphore(2)
 
 
@@ -83,7 +85,7 @@ def portal_get(path, token):
         raise HTTPException(503, "Identificação do portal indisponível.") from None
 
 
-def identity_from_portal(token):
+def portal_account(token):
     if len(token) > 8192 or not re.fullmatch(r"[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+", token):
         raise HTTPException(401, "Sessão do portal inválida ou expirada.")
     account = portal_get("/auth/v1/user", token)
@@ -94,30 +96,88 @@ def identity_from_portal(token):
         raise HTTPException(401, "Sessão do portal inválida ou expirada.") from None
     if not email or len(email) > 254 or not account.get("email_confirmed_at"):
         raise HTTPException(403, "Use a conta confirmada do portal.")
+    return user_id, email
 
+
+def portal_roles(user_id, token):
     roles = portal_get(f"/rest/v1/user_roles?user_id=eq.{user_id}&select=role", token)
     if not isinstance(roles, list):
         raise HTTPException(503, "Não foi possível verificar o perfil do portal.")
-    role_names = [row.get("role") for row in roles if isinstance(row, dict)]
+    return [row.get("role") for row in roles if isinstance(row, dict)]
+
+
+def portal_gerencia(user_id, token):
+    permissions = portal_get(f"/rest/v1/user_module_permissions?user_id=eq.{user_id}&select=modulo_comercial,updated_at", token)
+    if (not isinstance(permissions, list) or len(permissions) != 1
+            or not isinstance(permissions[0], dict) or permissions[0].get("modulo_comercial") is not True):
+        raise HTTPException(403, "Acesso ao Comercial obrigatório.")
+    version = permissions[0].get("updated_at")
+    if not isinstance(version, str) or not 1 <= len(version) <= 64:
+        raise HTTPException(403, "Permissões do Comercial incompletas.")
+
+    profiles = portal_get(f"/rest/v1/profiles?user_id=eq.{user_id}&select=cod_empresa_bi,filiais_permitidas,filial_id", token)
+    if not isinstance(profiles, list) or len(profiles) != 1 or not isinstance(profiles[0], dict):
+        raise HTTPException(403, "Sem filial autorizada no Comercial.")
+    profile = profiles[0]
+    company = str(profile.get("cod_empresa_bi", ""))
+    allowed = profile.get("filiais_permitidas")
+    if not isinstance(allowed, list):
+        allowed = [profile.get("filial_id")]
+    branches = {branch for branch in allowed if isinstance(branch, str) and chave_filial(company, branch)}
+    return company, branches, version
+
+
+def permissao_gerencia(user_id):
+    try:
+        with closing(connect()) as db, db.cursor(as_dict=True) as cursor:
+            cursor.execute("""
+                SELECT cod_empresa_bi, chevrolet, transmissao, versao_comercial
+                FROM dbo.VisitasGerenciaPortal WHERE usuario_id=%s
+            """, (user_id,))
+            return cursor.fetchone()
+    except DatabaseError:
+        raise HTTPException(503, "Não foi possível verificar a liberação de Visitas.") from None
+
+
+def salvar_permissao_gerencia(user_id, company, branches, version, master_id):
+    params = (company, "chevrolet" in branches, "transmissao" in branches, version, master_id, user_id)
+    try:
+        with closing(connect()) as db, db.cursor() as cursor:
+            cursor.execute("""
+                SELECT usuario_id FROM dbo.VisitasGerenciaPortal WITH (UPDLOCK, HOLDLOCK) WHERE usuario_id=%s
+            """, (user_id,))
+            if cursor.fetchone():
+                cursor.execute("""
+                    UPDATE dbo.VisitasGerenciaPortal
+                    SET cod_empresa_bi=%s, chevrolet=%s, transmissao=%s, versao_comercial=%s,
+                        aprovado_por=%s, aprovado_em=SYSUTCDATETIME()
+                    WHERE usuario_id=%s
+                """, params)
+            else:
+                cursor.execute("""
+                    INSERT INTO dbo.VisitasGerenciaPortal
+                        (cod_empresa_bi, chevrolet, transmissao, versao_comercial, aprovado_por, usuario_id)
+                    VALUES (%s,%s,%s,%s,%s,%s)
+                """, params)
+            db.commit()
+    except DatabaseError:
+        raise HTTPException(503, "Não foi possível confirmar a liberação de Visitas.") from None
+
+
+def identity_from_portal(token):
+    user_id, email = portal_account(token)
+    role_names = portal_roles(user_id, token)
     if "master" in role_names:
         return Identity(user_id, email, {"gerencial"}, "1004", {"chevrolet", "transmissao"}, commercial=True)
     if "gerencial" not in role_names:
         raise HTTPException(403, "Perfil gerencial obrigatório.")
 
-    permissions = portal_get(f"/rest/v1/user_module_permissions?user_id=eq.{user_id}&select=modulo_comercial", token)
-    if (not isinstance(permissions, list) or len(permissions) != 1
-            or not isinstance(permissions[0], dict) or permissions[0].get("modulo_comercial") is not True):
-        raise HTTPException(403, "Acesso ao Comercial obrigatório.")
-
-    # Somente os metadados administrados pelo Auth podem conceder acesso a uma filial.
-    metadata = account.get("app_metadata")
-    if not isinstance(metadata, dict):
-        metadata = {}
-    company = str(metadata.get("cod_empresa_bi", ""))
-    allowed = metadata.get("filiais_permitidas")
-    if not isinstance(allowed, list):
-        allowed = [metadata.get("filial_id")]
-    branches = {branch for branch in allowed if isinstance(branch, str) and chave_filial(company, branch)}
+    company, branches, version = portal_gerencia(user_id, token)
+    approved = permissao_gerencia(user_id)
+    if not approved or approved["cod_empresa_bi"] != company or approved["versao_comercial"] != version:
+        raise HTTPException(403, "A liberação de Visitas precisa ser confirmada no Comercial.")
+    # O perfil do Comercial pode restringir a liberação aprovada pelo Master.
+    branches = {branch for branch in branches if approved[branch]}
     if not branches:
         raise HTTPException(403, "Nenhuma filial autorizada para os relatórios de visitas.")
     return Identity(user_id, email, {"gerencial"}, company, branches, commercial=True)
@@ -159,6 +219,33 @@ class Sessao(BaseModel):
     nome: str
     perfil: Literal["visitador", "gerencial"]
     filiais: list[FilialSessao]
+
+
+class PermissaoGerencia(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    usuario_id: UUID
+    cod_empresa_bi: Empresa
+    filiais: list[Filial] = Field(min_length=1, max_length=2)
+
+
+@router.post("/gerencia/permissoes", status_code=204)
+def aprovar_gerencia(payload: PermissaoGerencia, credentials: PortalBearer):
+    if not credentials:
+        raise HTTPException(401, "Sessão do Comercial obrigatória.")
+    token = credentials.credentials
+    master_id, _ = portal_account(token)
+    if "master" not in portal_roles(master_id, token):
+        raise HTTPException(403, "Perfil Master obrigatório.")
+
+    user_id = str(payload.usuario_id)
+    roles = portal_roles(user_id, token)
+    if "gerencial" not in roles or "master" in roles:
+        raise HTTPException(409, "A conta precisa ter o perfil Gerencial.")
+    company, branches, version = portal_gerencia(user_id, token)
+    if company != payload.cod_empresa_bi or branches != set(payload.filiais) or len(branches) != len(payload.filiais):
+        raise HTTPException(409, "Confirme as filiais salvas no Comercial antes de liberar Visitas.")
+    salvar_permissao_gerencia(user_id, company, branches, version, master_id)
+    return Response(status_code=204)
 
 
 def dados_sessao(user):

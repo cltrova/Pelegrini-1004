@@ -67,7 +67,8 @@ No GET, `cliente` e `visitador` procuram trechos do nome. `inicio` e `fim` são 
 
 - O endpoint `POST /operacional/visitas/sessao` recebe `{"email":"visitador@empresa.com.br","senha":"..."}`. A API verifica a senha e inicia uma sessão de oito horas em cookie `HttpOnly` e `SameSite=Strict`, com `Secure` no ambiente HTTPS. A listagem de sessão é `GET /operacional/visitas/sessao` e a saída é `DELETE /operacional/visitas/sessao`.
 - O visitador grava na filial autorizada e consulta o próprio histórico. A API identifica o autor pela sessão.
-- A gerência envia o token da sessão do Comercial em `Authorization: Bearer <token>`. A API confirma a identidade e o perfil no serviço de autenticação que o portal já usa. Para o perfil gerencial, ela exige acesso ao Comercial e lê `cod_empresa_bi` e `filiais_permitidas` (ou `filial_id`) nos metadados `app_metadata` administrados pelo Auth. A conta master tem acesso às duas filiais.
+- A gerência envia o token da sessão do Comercial em `Authorization: Bearer <token>`. A API verifica a identidade, o perfil e a permissão vigente do Comercial. Gerentes consultam as filiais que constam nas permissões do portal e na liberação registrada pelo Master no SQL de Visitas. O Master tem acesso às duas filiais.
+- Ao salvar um gerente no Comercial, o portal registra a liberação no SQL de Visitas. Para contas existentes, o Master pode usar **Confirmar acesso a Visitas** na edição do usuário. A API recebe `POST /operacional/visitas/gerencia/permissoes` com `usuario_id`, `cod_empresa_bi` e `filiais`. Ela exige a sessão de um Master e confirma que as filiais correspondem à seleção salva. A resposta é `204`.
 - Para a Casa do Chevrolet, envie `cod_empresa_bi: "10041"` e `filial_id: "chevrolet"`. A Casa da Transmissão usa `"1004"` e `"transmissao"`.
 - A API devolve `401` para sessão ausente ou inválida, `403` para acesso negado, `422` para parâmetros inválidos e `503` para falha de banco. As respostas usam `Cache-Control: private, no-store`.
 
@@ -81,10 +82,10 @@ O ambiente local usa SQL Server com banco isolado e três perfis fictícios. Use
 
 ## Implantação após o aceite
 
-1. Execute `schema.sql` e `auth_schema.sql` no banco interno de Visitas. A conta da API precisa de `SELECT, INSERT` em `RelatoriosVisitas`, `SELECT` em `VisitasUsuarios` e `VisitasFiliais`, `UPDATE` apenas nas colunas `VisitasUsuarios.falhas` e `VisitasUsuarios.bloqueado_ate`, e `SELECT, INSERT, DELETE` em `VisitasSessoes`.
+1. Execute `schema.sql` e `auth_schema.sql` no banco interno de Visitas. A conta da API precisa de `SELECT, INSERT` em `RelatoriosVisitas`, `SELECT` em `VisitasUsuarios` e `VisitasFiliais`, `UPDATE` apenas nas colunas `VisitasUsuarios.falhas` e `VisitasUsuarios.bloqueado_ate`, `SELECT, INSERT, DELETE` em `VisitasSessoes` e `SELECT, INSERT, UPDATE` em `VisitasGerenciaPortal`.
 2. Configure `VISITAS_SQL_SERVER`, `VISITAS_SQL_PORT` (opcional), `VISITAS_SQL_DATABASE`, `VISITAS_SQL_USER` e `VISITAS_SQL_PASSWORD` para o serviço. Para a gerência, configure `VISITAS_PORTAL_AUTH_HOST` e `VISITAS_PORTAL_ANON_KEY` com o domínio de autenticação e a chave pública que o portal já usa.
 3. Para o visitador, execute `python administrar.py --email email@empresa.com.br --nome "Nome do visitador" --perfil visitador --empresa 10041 --filial chevrolet` com a conexão administrativa do banco de Visitas. A senha é solicitada no terminal. A gerência usa a conta do Comercial com as permissões configuradas no autenticador do portal.
-4. Instale `requirements.txt` e inicie com `python -m uvicorn app:app --host 127.0.0.1 --port 4318` a partir de `services/visitas`. Encaminhe `/operacional/visitas/sessao` e `/operacional/visitas/relatorios` no proxy HTTPS do site, preservando cookies, método, corpo e parâmetros. No Vite, o proxy usa `VISITAS_API_TARGET`.
+4. Instale `requirements.txt` e inicie com `python -m uvicorn app:app --host 127.0.0.1 --port 4318` a partir de `services/visitas`. Encaminhe `/operacional/visitas/sessao`, `/operacional/visitas/relatorios` e `/operacional/visitas/gerencia/permissoes` no proxy HTTPS do site, preservando cookies, método, corpo e parâmetros. No Vite, o proxy usa `VISITAS_API_TARGET`.
 5. Teste com perfis autorizados. Confira o mesmo ID no histórico e na gerência e o HTTP `403` para um gerente da Transmissão consultando o escopo da Chevrolet.
 
 No Windows do Pelegrini, o pacote usa o SQL Server Native Client 11.0. O instalador valida a conexão criptografada no endereço local do servidor e testa o retorno de texto Unicode e data antes de iniciar os serviços de Visitas.

@@ -28,6 +28,7 @@ import type { AppRole } from '@/types/auth';
 import { ROLE_PERMISSIONS } from '@/types/auth';
 import { useEmpresas } from '@/hooks/useEmpresaConfig';
 import { getFiliaisDaEmpresa } from '@/config/filiaisEmpresa';
+import { confirmarGerenciaVisitas } from '@/pages/visitas/visitasApi';
 import {
   createLocalPreviewUserAccount,
   isLocalPreviewEnabled,
@@ -231,6 +232,10 @@ export function UserFormDialog({
   const selectedCompany = empresas.find(e => e.cod_empresa_bi === codEmpresaBi);
   const filiaisDisponiveis = getFiliaisDaEmpresa(codEmpresaBi);
   const filialIdsDisponiveis = filiaisDisponiveis.map((filial) => filial.id);
+  const [confirmandoVisitas, setConfirmandoVisitas] = useState(false);
+  const habilitarVisitas = isMaster && !localPreview && selectedRole === 'gerencial'
+    && modulePermissions.modulo_comercial && filiaisPermitidas.length > 0
+    && (codEmpresaBi === '1004' || codEmpresaBi === '10041');
 
   useEffect(() => {
     if (open) {
@@ -441,6 +446,24 @@ export function UserFormDialog({
     );
   };
 
+  const sincronizarVisitas = async (id: string, filiais: string[], mostrarConfirmacao = false) => {
+    setConfirmandoVisitas(true);
+    try {
+      const { data } = await supabase.auth.getSession();
+      if (!data.session) throw new Error('Sua sessão expirou. Entre novamente.');
+      await confirmarGerenciaVisitas({ usuario_id: id, cod_empresa_bi: codEmpresaBi, filiais }, data.session.access_token);
+      if (mostrarConfirmacao) toast({ title: 'Acesso a Visitas confirmado' });
+    } catch (error) {
+      toast({
+        title: 'Acesso a Visitas pendente',
+        description: error instanceof Error ? error.message : 'Tente confirmar novamente.',
+        variant: 'destructive',
+      });
+    } finally {
+      setConfirmandoVisitas(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -552,6 +575,7 @@ export function UserFormDialog({
             ? 'Dados salvos. A liberação por múltiplas filiais ficará ativa após aplicar a migração do banco.'
             : 'Os dados do usuário foram atualizados com sucesso.',
         });
+        if (habilitarVisitas) await sincronizarVisitas(userId, filiaisParaSalvar);
       } else {
         const createPayload = {
           email,
@@ -572,6 +596,8 @@ export function UserFormDialog({
 
         if (error) throw new Error(await getEdgeFunctionErrorMessage(error));
         if (data?.error) throw new Error(data.error);
+
+        if (habilitarVisitas && data?.user_id) await sincronizarVisitas(data.user_id, filiaisParaSalvar);
 
         if (data?.temp_password) {
           setTempPassword(data.temp_password);
@@ -875,16 +901,28 @@ export function UserFormDialog({
               </p>
             )}
 
+            {userId && habilitarVisitas && (
+              <Button
+                type="button"
+                variant="outline"
+                disabled={loading || confirmandoVisitas}
+                aria-busy={confirmandoVisitas || undefined}
+                onClick={() => void sincronizarVisitas(userId, filiaisPermitidas, true)}
+              >
+                {confirmandoVisitas ? 'Confirmando acesso…' : 'Confirmar acesso a Visitas'}
+              </Button>
+            )}
+
             <DialogFooter>
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => onOpenChange(false)}
-                disabled={loading}
+                disabled={loading || confirmandoVisitas}
               >
                 Cancelar
               </Button>
-              <Button type="submit" disabled={loading} aria-busy={loading || undefined} className="w-36 gap-2">
+              <Button type="submit" disabled={loading || confirmandoVisitas} aria-busy={loading || undefined} className="w-36 gap-2">
                 <span aria-hidden="true" className="inline-flex h-4 w-4 shrink-0 items-center justify-center">
                   {loading && <LoadingIndicator size="sm" />}
                 </span>
