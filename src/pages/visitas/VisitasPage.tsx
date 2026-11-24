@@ -11,8 +11,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useFilialSelecionada } from '@/contexts/FilialSelecionadaContext';
 import { getFilialAccessState } from '@/utils/filialAccess';
 import { getFilialPorId } from '@/config/filiaisEmpresa';
-import { supabase } from '@/integrations/supabase/client';
-import type { Json } from '@/integrations/supabase/types';
+import { enviarVisita, listarVisitas } from './visitasApi';
 
 const dadosCliente = [
   { key: 'nome_cliente', label: 'Nome do cliente', required: true },
@@ -44,7 +43,7 @@ function Formulario({ escopo, onEnviado }: { escopo: Escopo; onEnviado: () => vo
       const avaliacoes = Object.fromEntries(itens.map((item) => [
         item, campos.map((campo) => valor(`${item}:${campo}`)),
       ]));
-      const { error } = await supabase.from('relatorios_visitas').insert({
+      await enviarVisita({
         cod_empresa_bi: escopo.empresa,
         filial_id: escopo.filial,
         nome_cliente: valor('nome_cliente'),
@@ -57,7 +56,6 @@ function Formulario({ escopo, onEnviado }: { escopo: Escopo; onEnviado: () => vo
         funcao: valor('funcao'),
         avaliacoes,
       });
-      if (error) throw error;
     },
     onSuccess: onEnviado,
     onError: (error) => setErro(error instanceof Error ? error.message :
@@ -120,23 +118,19 @@ function Historico({ escopo, gerencial }: { escopo: Escopo; gerencial: boolean }
     retry: false,
     refetchOnWindowFocus: gerencial,
     queryFn: async ({ signal }) => {
-      let consulta = supabase.from('relatorios_visitas').select('*', { count: 'exact' });
+      const params = new URLSearchParams({
+        escopo: gerencial ? 'gerencia' : 'meus',
+        offset: String(pagina * porPagina),
+        limit: String(porPagina),
+      });
       if (gerencial) {
-        const empresas = escopo.filial === 'chevrolet' ? ['1004', '10041'] : [escopo.empresa];
-        consulta = consulta.eq('filial_id', escopo.filial).in('cod_empresa_bi', empresas);
-      } else {
-        consulta = consulta.eq('visitador_id', escopo.usuario);
+        params.set('cod_empresa_bi', escopo.empresa);
+        params.set('filial_id', escopo.filial);
       }
-      const contem = (termo: string) => `%${termo.replace(/[\\%_]/g, '\\$&')}%`;
-      if (filtros.cliente) consulta = consulta.ilike('nome_cliente', contem(filtros.cliente));
-      if (filtros.visitador) consulta = consulta.ilike('visitador_nome', contem(filtros.visitador));
-      if (filtros.inicio) consulta = consulta.gte('data_visita', filtros.inicio);
-      if (filtros.fim) consulta = consulta.lte('data_visita', filtros.fim);
-      const { data, count, error } = await consulta.order('data_visita', { ascending: false })
-        .order('criado_em', { ascending: false }).order('id')
-        .range(pagina * porPagina, (pagina + 1) * porPagina - 1).abortSignal(signal);
-      if (error) throw error;
-      return { rows: data ?? [], total: count ?? 0 };
+      for (const [key, value] of Object.entries(filtros)) {
+        if (value) params.set(key, value);
+      }
+      return listarVisitas(params, signal);
     },
   });
 
@@ -198,8 +192,7 @@ function Historico({ escopo, gerencial }: { escopo: Escopo; gerencial: boolean }
             </dl>
             <div className="grid gap-3 md:grid-cols-2">
               {itens.map((item) => {
-                const avaliacoes = relatorio.avaliacoes as Record<string, Json>;
-                const detalhes = avaliacoes[item];
+                const detalhes = relatorio.avaliacoes[item];
                 return <div key={item} className="min-w-0 rounded-sm border p-3 text-sm">
                   <h3 className="mb-2 font-semibold">{item}</h3>
                   <dl className="space-y-2">{campos.map((campo, index) => {

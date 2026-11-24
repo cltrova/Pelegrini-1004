@@ -129,6 +129,9 @@ export default defineConfig(async ({ command, mode }) => {
   server: {
     host: "::",
     port: 8080,
+    proxy: process.env.VISITAS_API_TARGET ? {
+      '/operacional/visitas/relatorios': process.env.VISITAS_API_TARGET,
+    } : undefined,
   },
   plugins: [react(), localApiProxyPlugin(), release.plugin],
   resolve: {
