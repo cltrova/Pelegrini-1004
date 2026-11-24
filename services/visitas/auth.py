@@ -8,10 +8,11 @@ from dataclasses import dataclass
 from threading import BoundedSemaphore
 from typing import Annotated, Literal
 
-import pymssql
 from fastapi import APIRouter, Depends, HTTPException, Response
 from fastapi.security import APIKeyCookie
 from pydantic import BaseModel, ConfigDict, Field
+
+from database import DatabaseError, connect
 
 router = APIRouter(prefix="/operacional/visitas")
 COOKIE = "pelegrini_visitas"
@@ -30,18 +31,6 @@ class Identity:
     company: str
     branches: set[str]
     commercial: bool = False
-
-
-def connect():
-    try:
-        return pymssql.connect(
-            server=os.environ["VISITAS_SQL_SERVER"], port=os.getenv("VISITAS_SQL_PORT", "1433"),
-            database=os.environ["VISITAS_SQL_DATABASE"],
-            user=os.environ["VISITAS_SQL_USER"], password=os.environ["VISITAS_SQL_PASSWORD"],
-            login_timeout=5, timeout=15, encryption="require",
-        )
-    except KeyError as exc:
-        raise HTTPException(503, "Banco de visitas indisponível.") from exc
 
 
 def chave_filial(company, branch):
@@ -83,7 +72,7 @@ def identity(token: SessionCookie) -> Identity:
             if not row:
                 raise HTTPException(401, "Sessão inválida ou expirada.")
             return carregar_filiais(c,row)
-    except pymssql.Error:
+    except DatabaseError:
         raise HTTPException(503, "Não foi possível validar a sessão.") from None
 
 
@@ -148,7 +137,7 @@ def entrar(login: Login, response: Response, token: SessionCookie):
                       (token_hash(access), row["id"], TOKEN_SECONDS))
             user = carregar_filiais(c,row)
             db.commit()
-    except pymssql.Error:
+    except DatabaseError:
         raise HTTPException(503, "Não foi possível abrir a sessão.") from None
     finally:
         password_workers.release()
@@ -169,7 +158,7 @@ def sair(token: SessionCookie):
             with closing(connect()) as db, db.cursor() as c:
                 c.execute("DELETE FROM dbo.VisitasSessoes WHERE token_hash=%s", (token_hash(token),))
                 db.commit()
-        except pymssql.Error:
+        except DatabaseError:
             raise HTTPException(503, "Não foi possível encerrar a sessão.") from None
     response = Response(status_code=204)
     response.delete_cookie(COOKIE, path=COOKIE_PATH, httponly=True,

@@ -4,7 +4,8 @@ from contextlib import closing
 from getpass import getpass
 from uuid import uuid4
 
-from auth import chave_filial, connect, senha_hash
+from auth import chave_filial, senha_hash
+from database import connect
 
 
 def main():

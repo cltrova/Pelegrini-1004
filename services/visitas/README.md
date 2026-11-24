@@ -85,3 +85,5 @@ O ambiente local usa SQL Server com banco isolado e três perfis fictícios. Use
 3. Com a conexão administrativa do banco de Visitas, execute `python administrar.py --email email@empresa.com.br --nome "Nome do visitador" --perfil visitador --empresa 10041 --filial chevrolet`. A senha é solicitada no terminal. Use `--perfil gerencial` para gerência. Para atualizar uma conta, repita o comando com o mesmo e-mail e as filiais que devem ficar autorizadas.
 4. Instale `requirements.txt` e inicie com `python -m uvicorn app:app --host 127.0.0.1 --port 4318` a partir de `services/visitas`. Encaminhe `/operacional/visitas/sessao` e `/operacional/visitas/relatorios` no proxy HTTPS do site, preservando cookies, método, corpo e parâmetros. No Vite, o proxy usa `VISITAS_API_TARGET`.
 5. Teste com perfis autorizados. Confira o mesmo ID no histórico e na gerência e o HTTP `403` para um gerente da Transmissão consultando o escopo da Chevrolet.
+
+No Windows do Pelegrini, o pacote usa o SQL Server Native Client 11.0. O instalador valida a conexão criptografada no endereço local do servidor e testa o retorno de texto Unicode e data antes de iniciar os serviços de Visitas.

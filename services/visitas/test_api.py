@@ -1,6 +1,8 @@
 """HTTP acceptance contract, against SQL Server when configured."""
 import os
 import unittest
+from contextlib import closing
+from unittest.mock import MagicMock, patch
 
 from fastapi.testclient import TestClient
 
@@ -14,6 +16,42 @@ BODY = {
     "avaliacoes": {k: ["Observação", "Ação", "Responsável"] for k in ("Atendimento", "Entrega", "Preço", "Prazo")},
 }
 PATH = "/operacional/visitas/relatorios"
+
+
+class OdbcTest(unittest.TestCase):
+    def test_windows_connection_uses_encryption_and_bound_queries(self):
+        from database import connect
+
+        driver = MagicMock()
+        native = driver.connect.return_value
+        cursor = native.cursor.return_value
+        cursor.description = [("id",), ("nome",)]
+        cursor.fetchone.side_effect = [(123, "Oficina São José"), None]
+        cursor.fetchall.return_value = [(456, "Oficina União")]
+        config = {
+            "VISITAS_SQL_SERVER": "127.0.0.1",
+            "VISITAS_SQL_DATABASE": "PelegriniVisitasHomolog",
+            "VISITAS_SQL_USER": "test-user",
+            "VISITAS_SQL_PASSWORD": "test;password}",
+        }
+
+        with patch("database.pyodbc", driver), patch.dict(os.environ, config):
+            with closing(connect()) as db, db.cursor(as_dict=True) as c:
+                c.execute("SELECT id,nome FROM dbo.VisitasUsuarios WHERE nome=%s", ("Oficina São José",))
+                self.assertEqual(c.fetchone(), {"id": 123, "nome": "Oficina São José"})
+                self.assertIsNone(c.fetchone())
+                self.assertEqual(c.fetchall(), [{"id": 456, "nome": "Oficina União"}])
+                db.commit()
+
+        conn_string, = driver.connect.call_args.args
+        self.assertIn("DRIVER={SQL Server Native Client 11.0};", conn_string)
+        self.assertIn("Encrypt=yes;", conn_string)
+        self.assertIn("PWD={test;password}}};", conn_string)
+        self.assertFalse(driver.connect.call_args.kwargs["autocommit"])
+        cursor.execute.assert_called_once_with("SELECT id,nome FROM dbo.VisitasUsuarios WHERE nome=?", ("Oficina São José",))
+        cursor.close.assert_called_once()
+        native.commit.assert_called_once()
+        native.close.assert_called_once()
 
 
 class ApiTest(unittest.TestCase):

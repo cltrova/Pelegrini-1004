@@ -5,13 +5,13 @@ from contextlib import closing
 from datetime import date
 from typing import Annotated, Literal
 
-import pymssql
 from fastapi import Depends, FastAPI, HTTPException, Query
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints, field_validator
 
-from auth import Identity, chave_filial, connect, identity, router
+from auth import Identity, chave_filial, identity, router
+from database import DatabaseError, connect
 
 app = FastAPI(title="Pelegrini — Relatórios de visitas")
 app.include_router(router)
@@ -118,7 +118,7 @@ def criar(relatorio: Visita, user: CurrentUser):
             )
             id_, = cursor.fetchone()
             db.commit()
-    except pymssql.Error:
+    except DatabaseError:
         logging.getLogger(__name__).error("Falha na gravação do relatório de visita no SQL Server.")
         raise HTTPException(503, "Não foi possível confirmar a gravação do relatório.") from None
     return {"id": str(id_)}
@@ -182,7 +182,7 @@ def listar(
                 )
                 rows = cur.fetchall()
             db.commit()
-    except pymssql.Error:
+    except DatabaseError:
         logging.getLogger(__name__).error("Falha ao consultar relatórios de visitas no SQL Server.")
         raise HTTPException(503, "Não foi possível consultar os relatórios.") from None
     reports = []
