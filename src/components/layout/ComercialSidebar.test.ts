@@ -59,12 +59,17 @@ function mockCompany(codEmpresaAtiva: string) {
   vi.mocked(useAuth).mockReturnValue({ isLoading: false } as never);
 }
 
-it('exibe relatórios de visitas no Comercial para a gerência', () => {
+it.each([
+  ['chevrolet', true],
+  ['transmissao', false],
+] as const)('mostra Visitas no Comercial da filial %s conforme o escopo', (filialAtiva, visivel) => {
   mockCompany('1004');
   vi.mocked(useAuth).mockReturnValue({ isLoading: false, isGerencial: true } as never);
-  vi.mocked(useFilialSelecionada).mockReturnValue({ filialAtiva: 'transmissao' } as never);
+  vi.mocked(useFilialSelecionada).mockReturnValue({ filialAtiva } as never);
   render(createElement(MemoryRouter, { initialEntries: ['/comercial/dashboard'], future: { v7_startTransition: true, v7_relativeSplatPath: true } }, createElement(ComercialSidebar)));
-  expect(screen.getByRole('link', { name: 'Relatórios de visitas' })).toHaveAttribute('href', '/comercial/visitas');
+  const link = screen.queryByRole('link', { name: 'Relatórios de visitas' });
+  if (visivel) expect(link).toHaveAttribute('href', '/comercial/visitas');
+  else expect(link).not.toBeInTheDocument();
 });
 
 function mockLostSalesQueries() {

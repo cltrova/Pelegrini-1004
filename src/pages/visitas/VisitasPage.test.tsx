@@ -2,17 +2,21 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/rea
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import VisitasPage from './VisitasPage';
+import type { SessaoVisitas } from './visitasApi';
 
 const mock = vi.hoisted(() => ({
   fetch: vi.fn(),
   logout: vi.fn(),
 }));
 
-function renderPage(gerencial = false) {
+const chevrolet = { cod_empresa_bi: '10041', filial_id: 'chevrolet' };
+const transmissao = { cod_empresa_bi: '1004', filial_id: 'transmissao' };
+
+function renderPage(gerencial = false, filiais: SessaoVisitas['filiais'] = [chevrolet]) {
   const client = new QueryClient();
   render(<QueryClientProvider client={client}><VisitasPage logout={mock.logout} sessao={{
     id: 'usuario-1', nome: 'Visitador de teste', perfil: gerencial ? 'gerencial' : 'visitador',
-    filiais: [{ cod_empresa_bi: '10041', filial_id: 'chevrolet' }],
+    filiais,
   }} /></QueryClientProvider>);
 }
 
@@ -31,7 +35,10 @@ describe('Relatórios de visitas', () => {
   afterEach(() => vi.unstubAllGlobals());
 
   it('registra a visita no escopo do visitador e abre seu histórico', async () => {
-    renderPage();
+    renderPage(false, [transmissao, chevrolet]);
+    expect(screen.queryByRole('banner')).not.toBeInTheDocument();
+    expect(screen.queryByRole('combobox', { name: 'Filial' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Sair' })).toBeVisible();
     fireEvent.change(screen.getByLabelText('Nome do cliente'), { target: { value: ' Oficina Central ' } });
     const atendimento = screen.getByRole('group', { name: 'Atendimento' });
     fireEvent.change(within(atendimento).getByLabelText('Ações'), { target: { value: 'Enviar orçamento' } });
@@ -48,6 +55,12 @@ describe('Relatórios de visitas', () => {
     }));
     expect(payload).not.toHaveProperty('visitador_id');
     expect(mock.fetch.mock.calls.some(([path]) => path.includes('escopo=meus'))).toBe(true);
+  });
+
+  it('aguarda a liberação de Visitas quando a sessão não inclui a Chevrolet', async () => {
+    renderPage(true, [transmissao]);
+    expect(await screen.findByRole('alert')).toHaveTextContent('Seu acesso a Visitas precisa ser liberado.');
+    expect(mock.fetch).not.toHaveBeenCalled();
   });
 
   it('preserva o formulário quando o envio falha', async () => {
