@@ -61,7 +61,8 @@ function mockCompany(codEmpresaAtiva: string) {
 
 it.each([
   ['chevrolet', true],
-  ['transmissao', false],
+  ['transmissao', true],
+  [null, false],
 ] as const)('mostra Visitas no Comercial da filial %s conforme o escopo', (filialAtiva, visivel) => {
   mockCompany('1004');
   vi.mocked(useAuth).mockReturnValue({ isLoading: false, isGerencial: true } as never);

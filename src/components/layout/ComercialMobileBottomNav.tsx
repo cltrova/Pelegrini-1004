@@ -93,7 +93,7 @@
                  <XCircle aria-hidden="true" className="h-4 w-4" />
                  Vendas Perdidas
                </NavLink>
-               {filialAtiva === 'chevrolet' && (isMaster || isGerencial) && (
+               {(filialAtiva === 'chevrolet' || filialAtiva === 'transmissao') && (isMaster || isGerencial) && (
                  <NavLink to="/comercial/visitas" className="flex h-11 items-center gap-2 rounded-sm px-2 text-sm hover:bg-accent">
                    <ClipboardList aria-hidden="true" className="h-4 w-4" />
                    Relatórios de visitas

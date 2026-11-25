@@ -1,6 +1,5 @@
 import { render, screen } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { afterEach, expect, it, vi } from 'vitest';
 import VisitasGerenciaPage from './VisitasGerenciaPage';
 
@@ -51,19 +50,17 @@ it('consulta a Chevrolet em largura integral, com os filtros no topo e sem cabe�
   expect([params.get('escopo'), params.get('cod_empresa_bi'), params.get('filial_id')]).toEqual(['gerencia', '10041', 'chevrolet']);
 });
 
-it('redireciona da Transmissão sem consultar a API de visitas', async () => {
+it('consulta a Transmissão quando é a filial ativa e autorizada', async () => {
   contexto.filialAtiva = 'transmissao';
-  const fetcher = vi.fn(async () => Response.json({ relatorios: [], total: 0 }));
+  const fetcher = vi.fn(async (url: string, _init: RequestInit) => url.endsWith('/sessao')
+    ? Response.json({ id: 'gerente-portal', nome: 'Gerente', perfil: 'gerencial', filiais: [
+      { cod_empresa_bi: '1004', filial_id: 'transmissao' },
+    ] })
+    : Response.json({ relatorios: [], total: 0 }));
   vi.stubGlobal('fetch', fetcher);
-  render(<QueryClientProvider client={new QueryClient()}>
-    <MemoryRouter initialEntries={['/comercial/visitas']}>
-      <Routes>
-        <Route path="/comercial/visitas" element={<VisitasGerenciaPage />} />
-        <Route path="/comercial/dashboard" element={<span>Dashboard Comercial</span>} />
-      </Routes>
-    </MemoryRouter>
-  </QueryClientProvider>);
+  render(<QueryClientProvider client={new QueryClient()}><VisitasGerenciaPage /></QueryClientProvider>);
 
-  expect(await screen.findByText('Dashboard Comercial')).toBeVisible();
-  expect(fetcher).not.toHaveBeenCalled();
+  expect(await screen.findByText('Nenhum relatório encontrado.')).toBeVisible();
+  const params = new URL(fetcher.mock.calls[1][0], 'http://localhost').searchParams;
+  expect([params.get('escopo'), params.get('cod_empresa_bi'), params.get('filial_id')]).toEqual(['gerencia', '1004', 'transmissao']);
 });

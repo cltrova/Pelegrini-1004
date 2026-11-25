@@ -11,10 +11,10 @@ import { tokenPortal } from './portalSession';
 export default function VisitasGerenciaPage() {
   const { user } = useAuth();
   const { filialAtiva } = useFilialSelecionada();
-  const chevroletAtiva = filialAtiva === 'chevrolet';
+  const filialComVisitas = filialAtiva === 'chevrolet' || filialAtiva === 'transmissao';
   const session = useQuery({
     queryKey: ['sessao-visitas-gerencia', user?.id],
-    enabled: !!user?.id && chevroletAtiva,
+    enabled: !!user?.id && filialComVisitas,
     staleTime: 0,
     retry: false,
     queryFn: async ({ signal }) => {
@@ -26,7 +26,7 @@ export default function VisitasGerenciaPage() {
     },
   });
 
-  if (!chevroletAtiva) return <Navigate to="/comercial/dashboard" replace />;
+  if (!filialComVisitas) return <Navigate to="/comercial/dashboard" replace />;
   if (session.isPending) {
     return <LoadingState message="Carregando relatórios de visitas" variant="content" className="flex-1" />;
   }
@@ -37,6 +37,6 @@ export default function VisitasGerenciaPage() {
     </div>
   );
 
-  return <VisitasPage key={session.data.id} sessao={session.data}
+  return <VisitasPage key={session.data.id} sessao={session.data} filialAtiva={filialAtiva}
     carregar={async (params, signal) => listarVisitas(params, signal, await tokenPortal(user?.id))} />;
 }

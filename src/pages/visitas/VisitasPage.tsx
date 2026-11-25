@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { CLIENTE_COD_EMPRESA_BI_CHEVROLET, isCliente1004 } from '@/config/cliente1004';
+import { getFilialPorId } from '@/config/filiaisEmpresa';
 import { enviarVisita, listarVisitas, type SessaoVisitas } from './visitasApi';
 
 const dadosCliente = [
@@ -26,12 +26,12 @@ const dadosCliente = [
 const itens = ['Atendimento', 'Entrega', 'Preço', 'Prazo'] as const;
 const campos = ['Observações / oportunidades', 'Ações', 'Responsáveis'] as const;
 const filtrosVazios = { cliente: '', visitador: '', inicio: '', fim: '' };
-const chevrolet = { cod_empresa_bi: CLIENTE_COD_EMPRESA_BI_CHEVROLET, filial_id: 'chevrolet' };
+type FilialVisitas = SessaoVisitas['filiais'][number];
 const porPagina = 20;
 const dataHoje = () => new Intl.DateTimeFormat('sv-SE', { timeZone: 'America/Sao_Paulo' }).format(new Date());
 const dataBr = (data: string) => data.split('-').reverse().join('/');
 
-function Formulario({ onEnviado }: { onEnviado: () => void }) {
+function Formulario({ filial, onEnviado }: { filial: FilialVisitas; onEnviado: () => void }) {
   const [erro, setErro] = useState('');
   const mutation = useMutation({
     retry: false,
@@ -42,7 +42,7 @@ function Formulario({ onEnviado }: { onEnviado: () => void }) {
         item, campos.map((campo) => valor(`${item}:${campo}`)),
       ]));
       await enviarVisita({
-        ...chevrolet,
+        ...filial,
         nome_cliente: valor('nome_cliente'),
         data_visita: valor('data_visita'),
         cnpj: valor('cnpj'),
@@ -106,17 +106,18 @@ function Formulario({ onEnviado }: { onEnviado: () => void }) {
   );
 }
 
-function Historico({ usuario, gerencial, carregar = listarVisitas, acoes }: {
+function Historico({ usuario, filial, carregar = listarVisitas, acoes }: {
   usuario: string;
-  gerencial: boolean;
+  filial?: FilialVisitas;
   carregar?: typeof listarVisitas;
   acoes?: ReactNode;
 }) {
+  const gerencial = !!filial;
   const [pagina, setPagina] = useState(0);
   const [filtros, setFiltros] = useState(filtrosVazios);
   const ativos = Object.values(filtros).filter(Boolean).length;
   const query = useQuery({
-    queryKey: ['relatorios-visitas', usuario, gerencial, filtros, pagina],
+    queryKey: ['relatorios-visitas', usuario, filial, filtros, pagina],
     retry: false,
     refetchOnWindowFocus: gerencial,
     queryFn: async ({ signal }) => {
@@ -124,7 +125,7 @@ function Historico({ usuario, gerencial, carregar = listarVisitas, acoes }: {
         escopo: gerencial ? 'gerencia' : 'meus',
         offset: String(pagina * porPagina),
         limit: String(porPagina),
-        ...(gerencial ? chevrolet : {}),
+        ...filial,
       });
       for (const [key, value] of Object.entries(filtros)) {
         if (value) params.set(key, value);
@@ -275,8 +276,9 @@ function Historico({ usuario, gerencial, carregar = listarVisitas, acoes }: {
   );
 }
 
-function AreaVisitas({ usuario, gerencial, carregar, acoes }: {
+function AreaVisitas({ usuario, filial, gerencial, carregar, acoes }: {
   usuario: string;
+  filial: FilialVisitas;
   gerencial: boolean;
   carregar?: typeof listarVisitas;
   acoes?: ReactNode;
@@ -284,7 +286,7 @@ function AreaVisitas({ usuario, gerencial, carregar, acoes }: {
   const [aba, setAba] = useState('novo');
   const [enviado, setEnviado] = useState(false);
   const queryClient = useQueryClient();
-  if (gerencial) return <Historico usuario={usuario} gerencial carregar={carregar} acoes={acoes} />;
+  if (gerencial) return <Historico usuario={usuario} filial={filial} carregar={carregar} acoes={acoes} />;
   return (
     <Tabs className="flex min-h-0 flex-1 flex-col overflow-hidden" value={aba}
       onValueChange={(tab) => { setAba(tab); setEnviado(false); }}>
@@ -296,7 +298,7 @@ function AreaVisitas({ usuario, gerencial, carregar, acoes }: {
         {acoes}
       </div>
       <TabsContent value="novo" className="mt-0 min-h-0 flex-1 overflow-y-auto px-3 py-3 sm:px-4">
-        <Formulario onEnviado={() => {
+        <Formulario filial={filial} onEnviado={() => {
           void queryClient.invalidateQueries({ queryKey: ['relatorios-visitas'] });
           setEnviado(true);
           setAba('historico');
@@ -304,32 +306,49 @@ function AreaVisitas({ usuario, gerencial, carregar, acoes }: {
       </TabsContent>
       <TabsContent value="historico" className="mt-0 flex min-h-0 flex-1 flex-col data-[state=inactive]:hidden">
         {enviado && <p role="status" className="shrink-0 px-3 pt-2 text-sm text-primary sm:px-4">Relatório enviado. Ele já está disponível para a gerência.</p>}
-        <Historico usuario={usuario} gerencial={false} />
+        <Historico usuario={usuario} />
       </TabsContent>
     </Tabs>
   );
 }
 
-export default function VisitasPage({ sessao, logout, carregar }: {
+export default function VisitasPage({ sessao, logout, carregar, filialAtiva }: {
   sessao: SessaoVisitas;
   logout?: () => Promise<void>;
   carregar?: typeof listarVisitas;
+  filialAtiva?: string;
 }) {
   const gerencial = sessao.perfil === 'gerencial';
-  const podeAcessar = sessao.filiais.some(({ cod_empresa_bi, filial_id }) =>
-    filial_id === chevrolet.filial_id && isCliente1004(cod_empresa_bi));
+  const [filialEscolhida, setFilialEscolhida] = useState('');
+  const filiais = sessao.filiais.filter(({ cod_empresa_bi, filial_id }) => getFilialPorId(cod_empresa_bi, filial_id));
+  const filial = filiais.find((item) => item.filial_id === (filialAtiva ?? filialEscolhida)) ??
+    (filialAtiva ? undefined : filiais[0]);
   const [erroSaida, setErroSaida] = useState(false);
   const sair = logout && (
     <Button size="sm" variant="outline" onClick={() => void logout().catch(() => setErroSaida(true))}>
       <LogOut aria-hidden="true" className="mr-2 h-4 w-4" />Sair
     </Button>
   );
+  const acoes = logout && (
+    <div className="flex flex-wrap items-center gap-2">
+      {filial && filiais.length > 1 && (
+        <select aria-label="Filial" className="h-9 rounded-sm border bg-background px-2 text-sm"
+          value={filial.filial_id} onChange={(event) => setFilialEscolhida(event.target.value)}>
+          {filiais.map(({ cod_empresa_bi, filial_id }) => (
+            <option key={filial_id} value={filial_id}>{getFilialPorId(cod_empresa_bi, filial_id)?.nome}</option>
+          ))}
+        </select>
+      )}
+      {sair}
+    </div>
+  );
 
   return (
     <section aria-label="Conteúdo dos relatórios de visitas"
       className={`flex min-h-0 w-full min-w-0 flex-col overflow-hidden bg-background ${logout ? 'h-dvh' : 'h-[calc(100dvh-5rem)] md:h-auto md:flex-1'}`}>
-      {podeAcessar ? (
-        <AreaVisitas key={`${sessao.id}:${sessao.perfil}`} usuario={sessao.id} gerencial={gerencial} carregar={carregar} acoes={sair} />
+      {filial ? (
+        <AreaVisitas key={`${sessao.id}:${sessao.perfil}:${gerencial ? filial.filial_id : ''}`}
+          usuario={sessao.id} filial={filial} gerencial={gerencial} carregar={carregar} acoes={acoes} />
       ) : (
         <div className="flex flex-wrap items-center justify-between gap-3 p-4">
           <p role="alert" className="text-sm text-muted-foreground">Seu acesso a Visitas precisa ser liberado.</p>

@@ -12,9 +12,9 @@ const mock = vi.hoisted(() => ({
 const chevrolet = { cod_empresa_bi: '10041', filial_id: 'chevrolet' };
 const transmissao = { cod_empresa_bi: '1004', filial_id: 'transmissao' };
 
-function renderPage(gerencial = false, filiais: SessaoVisitas['filiais'] = [chevrolet]) {
+function renderPage(gerencial = false, filiais: SessaoVisitas['filiais'] = [chevrolet], filialAtiva?: string) {
   const client = new QueryClient();
-  render(<QueryClientProvider client={client}><VisitasPage logout={mock.logout} sessao={{
+  render(<QueryClientProvider client={client}><VisitasPage logout={mock.logout} filialAtiva={filialAtiva} sessao={{
     id: 'usuario-1', nome: 'Visitador de teste', perfil: gerencial ? 'gerencial' : 'visitador',
     filiais,
   }} /></QueryClientProvider>);
@@ -37,7 +37,7 @@ describe('Relatórios de visitas', () => {
   it('registra a visita no escopo do visitador e abre seu histórico', async () => {
     renderPage(false, [transmissao, chevrolet]);
     expect(screen.queryByRole('banner')).not.toBeInTheDocument();
-    expect(screen.queryByRole('combobox', { name: 'Filial' })).not.toBeInTheDocument();
+    fireEvent.change(screen.getByRole('combobox', { name: 'Filial' }), { target: { value: 'chevrolet' } });
     expect(screen.getByRole('button', { name: 'Sair' })).toBeVisible();
     fireEvent.change(screen.getByLabelText('Nome do cliente'), { target: { value: ' Oficina Central ' } });
     const atendimento = screen.getByRole('group', { name: 'Atendimento' });
@@ -57,8 +57,8 @@ describe('Relatórios de visitas', () => {
     expect(mock.fetch.mock.calls.some(([path]) => path.includes('escopo=meus'))).toBe(true);
   });
 
-  it('aguarda a liberação de Visitas quando a sessão não inclui a Chevrolet', async () => {
-    renderPage(true, [transmissao]);
+  it('aguarda a liberação de Visitas quando a sessão não inclui a filial ativa', async () => {
+    renderPage(true, [transmissao], 'chevrolet');
     expect(await screen.findByRole('alert')).toHaveTextContent('Seu acesso a Visitas precisa ser liberado.');
     expect(mock.fetch).not.toHaveBeenCalled();
   });
