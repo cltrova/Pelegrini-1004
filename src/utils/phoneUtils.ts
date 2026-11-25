@@ -27,31 +27,18 @@ export function normalizePhoneE164(phone: string): string | null {
   return null;
 }
 
-/**
- * Formata um número E.164 para exibição amigável
- * @param phoneE164 - Número no formato E.164 (+5511999999999)
- * @returns Número formatado ((11) 99999-9999) ou o original se não reconhecido
- */
-export function formatPhoneDisplay(phoneE164: string | null | undefined): string {
-  if (!phoneE164) return '';
-  
-  // Remove o + e verifica se é brasileiro
-  const clean = phoneE164.replace(/^\+/, '');
-  
-  if (clean.startsWith('55') && clean.length >= 12) {
-    const ddd = clean.substring(2, 4);
-    const number = clean.substring(4);
-    
-    if (number.length === 9) {
-      // Celular: 99999-9999
-      return `(${ddd}) ${number.substring(0, 5)}-${number.substring(5)}`;
-    } else if (number.length === 8) {
-      // Fixo: 9999-9999
-      return `(${ddd}) ${number.substring(0, 4)}-${number.substring(4)}`;
-    }
-  }
-  
-  return phoneE164;
+/** Formata telefones brasileiros com DDD, incluindo números recebidos com DDI 55. */
+export function formatPhoneDisplay(phone: string | null | undefined): string {
+  if (!phone) return '';
+
+  const value = phone.trim();
+  if (!/^\+?[\d\s().-]+$/.test(value)) return phone;
+
+  const digits = value.replace(/\D/g, '');
+  if (/^55\d{10,11}$/.test(digits)) return applyPhoneMask(digits.slice(2));
+  if (!value.startsWith('+') && /^\d{10,11}$/.test(digits)) return applyPhoneMask(digits);
+
+  return phone;
 }
 
 /**

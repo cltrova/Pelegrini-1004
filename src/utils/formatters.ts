@@ -1,5 +1,20 @@
 // Formatadores de valores para exibição
 
+export function applyCnpjMask(value: string): string {
+  const characters = value.replace(/[^a-z0-9]/gi, '').toUpperCase();
+  const root = [characters.slice(0, 2), characters.slice(2, 5), characters.slice(5, 8)]
+    .filter(Boolean).join('.');
+  const branch = characters.slice(8, 12);
+  const checkDigits = characters.slice(12).replace(/\D/g, '').slice(0, 2);
+  const registration = [root, branch].filter(Boolean).join('/');
+  return [registration, checkDigits].filter(Boolean).join('-');
+}
+
+export function formatCnpjDisplay(value?: string | null): string {
+  const characters = value?.replace(/[./\s-]/g, '') ?? '';
+  return /^[a-z0-9]{12}\d{2}$/i.test(characters) ? applyCnpjMask(characters) : value ?? '';
+}
+
 export function formatCurrency(value: number, showSign = false): string {
   const formatted = new Intl.NumberFormat('pt-BR', {
     style: 'currency',

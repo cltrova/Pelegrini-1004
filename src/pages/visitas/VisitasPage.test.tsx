@@ -28,7 +28,7 @@ describe('Relatórios de visitas', () => {
       ? Response.json({ id: '1' }, { status: 201 })
       : Response.json({ total: 1, relatorios: [{
         id: '1', nome_cliente: 'Oficina Central', data_visita: '2026-11-23',
-        cod_empresa_bi: '10041', filial_id: 'chevrolet', cidade: 'Uberlândia',
+        cod_empresa_bi: '10041', filial_id: 'chevrolet', cidade: 'Uberlândia', cnpj: '01234567000189',
         visitador_nome: 'Visitador da equipe', avaliacoes: { Atendimento: ['Solicitou retorno', '', ''] },
       }] }));
   });
@@ -40,6 +40,7 @@ describe('Relatórios de visitas', () => {
     fireEvent.change(screen.getByRole('combobox', { name: 'Filial' }), { target: { value: 'chevrolet' } });
     expect(screen.getByRole('button', { name: 'Sair' })).toBeVisible();
     fireEvent.change(screen.getByLabelText('Nome do cliente'), { target: { value: ' Oficina Central ' } });
+    fireEvent.change(screen.getByLabelText('CNPJ'), { target: { value: '01.234.567/0001-89' } });
     const atendimento = screen.getByRole('group', { name: 'Atendimento' });
     fireEvent.change(within(atendimento).getByLabelText('Ações'), { target: { value: 'Enviar orçamento' } });
     fireEvent.click(screen.getByRole('button', { name: 'Enviar relatório' }));
@@ -51,16 +52,65 @@ describe('Relatórios de visitas', () => {
     const payload = JSON.parse(post.body);
     expect(payload).toEqual(expect.objectContaining({
       cod_empresa_bi: '10041', filial_id: 'chevrolet', nome_cliente: 'Oficina Central',
+      cnpj: '01.234.567/0001-89',
       avaliacoes: { Atendimento: ['', 'Enviar orçamento', ''], Entrega: ['', '', ''], 'Preço': ['', '', ''], Prazo: ['', '', ''] },
     }));
     expect(payload).not.toHaveProperty('visitador_id');
     expect(mock.fetch.mock.calls.some(([path]) => path.includes('escopo=meus'))).toBe(true);
+    fireEvent.click(screen.getByText('Oficina Central'));
+    expect(screen.getByText('01.234.567/0001-89')).toBeVisible();
+  });
+
+  it('formata o CNPJ durante a digitação e ao colar um CNPJ alfanumérico', () => {
+    renderPage();
+    const campo = screen.getByLabelText<HTMLInputElement>('CNPJ');
+
+    fireEvent.change(campo, { target: { value: '012' } });
+    expect(campo).toHaveValue('01.2');
+    fireEvent.change(campo, { target: { value: '012345670001890' } });
+    expect(campo).toHaveValue('01.234.567/0001-89');
+    fireEvent.change(campo, { target: { value: ' 12abc34501de67 ' } });
+    expect(campo).toHaveValue('12.ABC.345/01DE-67');
+
+    fireEvent.input(campo, {
+      inputType: 'deleteContentForward',
+      target: { value: '12ABC.345/01DE-67', selectionStart: 2, selectionEnd: 2 },
+    });
+    expect(campo).toHaveValue('12.ABC.345/01DE-67');
+    expect(campo.selectionStart).toBe(3);
   });
 
   it('aguarda a liberação de Visitas quando a sessão não inclui a filial ativa', async () => {
     renderPage(true, [transmissao], 'chevrolet');
     expect(await screen.findByRole('alert')).toHaveTextContent('Seu acesso a Visitas precisa ser liberado.');
     expect(mock.fetch).not.toHaveBeenCalled();
+  });
+
+  it('atualiza Meus relatórios pelo botão ao lado dos filtros e mantém o filtro aplicado', async () => {
+    renderPage();
+    fireEvent.mouseDown(screen.getByRole('tab', { name: 'Meus relatórios' }), { button: 0, ctrlKey: false });
+    expect(await screen.findByText('Oficina Central')).toBeVisible();
+
+    const filtros = screen.getByRole('button', { name: 'Filtros' });
+    const atualizar = screen.getByRole('button', { name: 'Atualizar relatórios' });
+    expect(filtros.nextElementSibling).toBe(atualizar);
+
+    fireEvent.click(filtros);
+    fireEvent.change(screen.getByRole('searchbox', { name: 'Cliente' }), { target: { value: 'Central' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Aplicar' }));
+    await waitFor(() => expect(atualizar).toBeEnabled());
+    const [consultaFiltrada] = mock.fetch.mock.lastCall!;
+    expect(consultaFiltrada).toContain('escopo=meus');
+    expect(consultaFiltrada).toContain('cliente=Central');
+
+    mock.fetch.mockResolvedValueOnce(Response.json({ total: 1, relatorios: [{
+      id: '2', nome_cliente: 'Oficina Central Peças', data_visita: '2026-11-23', avaliacoes: {},
+    }] }));
+    fireEvent.click(atualizar);
+
+    expect(await screen.findByText('Oficina Central Peças')).toBeVisible();
+    expect(mock.fetch.mock.lastCall?.[0]).toBe(consultaFiltrada);
+    expect(filtros).toHaveAttribute('aria-expanded', 'true');
   });
 
   it('preserva o formulário quando o envio falha', async () => {
@@ -75,6 +125,8 @@ describe('Relatórios de visitas', () => {
   it('consulta os relatórios e mostra a autoria no Comercial sem liberar o formulário', async () => {
     renderPage(true);
     expect(await screen.findByText(/Visitador da equipe/)).toBeVisible();
+    fireEvent.click(screen.getByText('Oficina Central'));
+    expect(screen.getByText('01.234.567/0001-89')).toBeVisible();
     expect(screen.queryByRole('button', { name: 'Enviar relatório' })).not.toBeInTheDocument();
     const query = new URL(mock.fetch.mock.calls[0][0], 'http://localhost').searchParams;
     expect(query.get('escopo')).toBe('gerencia');

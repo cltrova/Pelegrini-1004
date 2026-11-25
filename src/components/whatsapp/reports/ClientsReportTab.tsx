@@ -20,6 +20,7 @@ import { useWhatsappClientReports, ClientReport, ReportFilters } from '@/hooks/u
 import { useAnalyzeSentiment } from '@/hooks/useWhatsappData';
 import { LoadingIndicator, LoadingState } from '@/components/common/LoadingState';
 import { EmptyState } from '@/components/common/EmptyState';
+import { formatPhoneDisplay } from '@/utils/phoneUtils';
 import { 
   Search, 
   Users, 
@@ -66,9 +67,13 @@ export function ClientsReportTab({ filters }: ClientsReportTabProps) {
     );
   }
 
-  const filteredClients = clients.filter(client => 
-    client.contactName.toLowerCase().includes(search.toLowerCase()) ||
-    client.phoneNumber.includes(search)
+  const searchTerm = search.trim().toLowerCase();
+  const phoneSearch = searchTerm.replace(/[+().\s-]/g, '');
+  const isPhoneSearch = /^\d+$/.test(phoneSearch);
+  const filteredClients = clients.filter(client =>
+    client.contactName.toLowerCase().includes(searchTerm) ||
+    client.phoneNumber.includes(searchTerm) ||
+    (isPhoneSearch && client.phoneNumber.replace(/\D/g, '').includes(phoneSearch))
   );
 
   const toggleExpanded = (clientId: string) => {
@@ -181,7 +186,8 @@ export function ClientsReportTab({ filters }: ClientsReportTabProps) {
             <div className="relative w-full sm:w-64">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Buscar cliente..."
+                aria-label="Buscar por nome ou telefone"
+                placeholder="Buscar por nome ou telefone"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="pl-9 h-9"
@@ -215,7 +221,7 @@ export function ClientsReportTab({ filters }: ClientsReportTabProps) {
                       <>
                         <TableRow className="group">
                           <TableCell className="font-medium">{client.contactName}</TableCell>
-                          <TableCell className="text-muted-foreground">{client.phoneNumber}</TableCell>
+                          <TableCell className="text-muted-foreground">{formatPhoneDisplay(client.phoneNumber)}</TableCell>
                           <TableCell className="text-center">{client.conversationsCount}</TableCell>
                           <TableCell className="text-muted-foreground">
                             {client.lastContact 
@@ -314,7 +320,7 @@ export function ClientsReportTab({ filters }: ClientsReportTabProps) {
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
                         <p className="font-medium text-sm truncate">{client.contactName}</p>
-                        <p className="text-xs text-muted-foreground">{client.phoneNumber}</p>
+                        <p className="text-xs text-muted-foreground">{formatPhoneDisplay(client.phoneNumber)}</p>
                       </div>
                       <div className="text-right flex-shrink-0">
                         <p className="text-xs text-muted-foreground">

@@ -1,4 +1,4 @@
-import { useState, type FormEvent, type ReactNode } from 'react';
+import { useState, type ChangeEvent, type FormEvent, type ReactNode } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ChevronDown, Filter, LogOut, RefreshCw, Send } from 'lucide-react';
 import { LoadingState } from '@/components/common/LoadingState';
@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { getFilialPorId } from '@/config/filiaisEmpresa';
+import { applyCnpjMask, formatCnpjDisplay } from '@/utils/formatters';
 import { enviarVisita, listarVisitas, type SessaoVisitas } from './visitasApi';
 
 const dadosCliente = [
@@ -31,6 +32,19 @@ const porPagina = 20;
 const dataHoje = () => new Intl.DateTimeFormat('sv-SE', { timeZone: 'America/Sao_Paulo' }).format(new Date());
 const dataBr = (data: string) => data.split('-').reverse().join('/');
 
+function formatarCampoCnpj({ currentTarget, nativeEvent }: ChangeEvent<HTMLInputElement>) {
+  const { value, selectionStart } = currentTarget;
+  const formatado = applyCnpjMask(value);
+  if (formatado === value) return;
+
+  let cursor = applyCnpjMask(value.slice(0, selectionStart ?? value.length)).length;
+  if ((nativeEvent as InputEvent).inputType === 'deleteContentForward' && /[./-]/.test(formatado.charAt(cursor))) {
+    cursor += 1;
+  }
+  currentTarget.value = formatado;
+  currentTarget.setSelectionRange(cursor, cursor);
+}
+
 function Formulario({ filial, onEnviado }: { filial: FilialVisitas; onEnviado: () => void }) {
   const [erro, setErro] = useState('');
   const mutation = useMutation({
@@ -45,7 +59,7 @@ function Formulario({ filial, onEnviado }: { filial: FilialVisitas; onEnviado: (
         ...filial,
         nome_cliente: valor('nome_cliente'),
         data_visita: valor('data_visita'),
-        cnpj: valor('cnpj'),
+        cnpj: formatCnpjDisplay(valor('cnpj')),
         cidade: valor('cidade'),
         segmento: valor('segmento'),
         diesel: valor('diesel'),
@@ -76,6 +90,9 @@ function Formulario({ filial, onEnviado }: { filial: FilialVisitas; onEnviado: (
               <Input id={key} name={key} required={'required' in field}
                 type={key === 'data_visita' ? 'date' : 'text'}
                 defaultValue={key === 'data_visita' ? dataHoje() : undefined}
+                placeholder={key === 'cnpj' ? '00.000.000/0000-00' : undefined}
+                autoCapitalize={key === 'cnpj' ? 'characters' : undefined}
+                onChange={key === 'cnpj' ? formatarCampoCnpj : undefined}
                 maxLength={key === 'cnpj' ? 24 : 200} />
             </div>
           ))}
@@ -142,6 +159,13 @@ function Historico({ usuario, filial, carregar = listarVisitas, acoes }: {
     setFiltros({ cliente: campo('cliente'), visitador: campo('visitador'), inicio: campo('inicio'), fim: campo('fim') });
   }
 
+  const atualizar = (
+    <Button type="button" variant="outline" size="icon" className="h-9 w-9" aria-label="Atualizar relatórios"
+      disabled={query.isFetching} onClick={() => void query.refetch()}>
+      <RefreshCw aria-hidden="true" className="h-4 w-4" />
+    </Button>
+  );
+
   return (
     <Collapsible asChild>
       <section aria-label="Histórico de visitas" className="flex min-h-0 min-w-0 flex-1 flex-col">
@@ -150,16 +174,19 @@ function Historico({ usuario, filial, carregar = listarVisitas, acoes }: {
           className="shrink-0 !grid-cols-[minmax(0,1fr)_auto] !items-center px-3 sm:px-4"
           search={
             <div className="flex min-w-0 flex-wrap items-center gap-2">
-              <CollapsibleTrigger asChild>
-                <Button type="button" variant="outline" size="sm" className="group gap-2">
-                  <Filter aria-hidden="true" className="h-3.5 w-3.5" />
-                  Filtros
-                  {ativos > 0 && <span className="rounded-sm bg-primary/10 px-1.5 text-xs text-primary">
-                    {ativos === 1 ? '1 ativo' : `${ativos} ativos`}
-                  </span>}
-                  <ChevronDown aria-hidden="true" className="h-3.5 w-3.5 group-data-[state=open]:rotate-180" />
-                </Button>
-              </CollapsibleTrigger>
+              <div className="flex items-center gap-2">
+                <CollapsibleTrigger asChild>
+                  <Button type="button" variant="outline" size="sm" className="group gap-2">
+                    <Filter aria-hidden="true" className="h-3.5 w-3.5" />
+                    Filtros
+                    {ativos > 0 && <span className="rounded-sm bg-primary/10 px-1.5 text-xs text-primary">
+                      {ativos === 1 ? '1 ativo' : `${ativos} ativos`}
+                    </span>}
+                    <ChevronDown aria-hidden="true" className="h-3.5 w-3.5 group-data-[state=open]:rotate-180" />
+                  </Button>
+                </CollapsibleTrigger>
+                {!gerencial && atualizar}
+              </div>
               {query.isSuccess && (
                 <p className="text-xs text-muted-foreground" role="status">
                   {query.data.total === 1 ? '1 relatório' : `${query.data.total} relatórios`}
@@ -167,15 +194,12 @@ function Historico({ usuario, filial, carregar = listarVisitas, acoes }: {
               )}
             </div>
           }
-          actions={
+          actions={gerencial && (
             <>
-              <Button type="button" variant="outline" size="icon" className="h-9 w-9" aria-label="Atualizar relatórios"
-                disabled={query.isFetching} onClick={() => void query.refetch()}>
-                <RefreshCw aria-hidden="true" className="h-4 w-4" />
-              </Button>
+              {atualizar}
               {acoes}
             </>
-          }
+          )}
         />
         <CollapsibleContent asChild forceMount>
           <form onSubmit={buscar} onReset={() => { setPagina(0); setFiltros(filtrosVazios); }}
@@ -234,7 +258,7 @@ function Historico({ usuario, filial, carregar = listarVisitas, acoes }: {
                   {dadosCliente.filter(({ key }) => key !== 'nome_cliente' && key !== 'data_visita').map(({ key, label }) => (
                     <div key={key} className="min-w-0">
                       <dt className="text-muted-foreground">{label}</dt>
-                      <dd className="break-words">{relatorio[key] || '—'}</dd>
+                      <dd className="break-words">{(key === 'cnpj' ? formatCnpjDisplay(relatorio.cnpj) : relatorio[key]) || '—'}</dd>
                     </div>
                   ))}
                 </dl>
