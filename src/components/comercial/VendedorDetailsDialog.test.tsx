@@ -2,12 +2,12 @@ import { fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { VendedorDetailsDialog } from './VendedorDetailsDialog';
 
-const { invoke } = vi.hoisted(() => ({
-  invoke: vi.fn(() => new Promise(() => undefined)),
+const { postAiJson } = vi.hoisted(() => ({
+  postAiJson: vi.fn(() => new Promise(() => undefined)),
 }));
 
-vi.mock('@/integrations/supabase/client', () => ({
-  supabase: { functions: { invoke } },
+vi.mock('@/lib/aiApi', () => ({
+  postAiJson,
 }));
 
 vi.mock('@/hooks/useEmpresaAtiva', () => ({
@@ -81,6 +81,10 @@ describe('VendedorDetailsDialog', () => {
     fireEvent.click(action);
 
     const busyAction = await screen.findByRole('button', { name: 'Analisando...' });
+    expect(postAiJson).toHaveBeenCalledWith('comercial-ai-chat', expect.objectContaining({
+      messages: [{ role: 'user', content: expect.any(String) }],
+      contexto: expect.any(Object),
+    }));
     expect(within(busyAction).getByTestId('loading-indicator')).toHaveClass('h-3.5', 'w-3.5', 'mr-2');
   });
 });
