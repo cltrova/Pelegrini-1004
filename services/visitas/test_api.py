@@ -17,6 +17,8 @@ BODY = {
     "avaliacoes": {k: ["Observação", "Ação", "Responsável"] for k in ("Atendimento", "Entrega", "Preço", "Prazo")},
 }
 PATH = "/operacional/visitas/relatorios"
+SESSAO = "/operacional/visitas/sessao"
+VISITADORES = "/operacional/visitas/visitadores"
 
 
 class PortalManagerTest(unittest.TestCase):
@@ -105,6 +107,83 @@ class PortalManagerTest(unittest.TestCase):
             response = self.client.get("/operacional/visitas/sessao", headers=self.master_headers)
         self.assertEqual(response.status_code, 200)
         self.assertCountEqual(response.json()["filiais"], [CHEVROLET, {"cod_empresa_bi": "1004", "filial_id": "transmissao"}])
+
+    def test_visitador_administration_requires_master(self):
+        payload = {"email": "visitador@example.test", "nome": "Visitador", "cod_empresa_bi": "10041",
+                   "filiais": ["chevrolet"]}
+        with patch("auth.portal_get", self.portal):
+            self.assertEqual(self.client.get(VISITADORES).status_code, 401)
+            self.assertEqual(self.client.post(VISITADORES, json=payload, headers=self.headers).status_code, 403)
+            self.assertEqual(self.client.get(VISITADORES, headers=self.headers).status_code, 403)
+            self.assertEqual(self.client.post(f"{VISITADORES}/{self.user_id}/senha", headers=self.headers).status_code, 403)
+            self.assertEqual(self.client.post(VISITADORES, headers=self.master_headers,
+                                              json={**payload, "filiais": ["transmissao"]}).status_code, 422)
+
+    @unittest.skipUnless(os.getenv("VISITAS_SQL_DATABASE") == "PelegriniVisitasHomolog", "SQL isolado requerido")
+    def test_first_login_and_recovery_keep_reports_scoped(self):
+        client = TestClient(app, base_url="https://visitas.example.test")
+        other = TestClient(app, base_url="https://visitas.example.test")
+        account = {"email": f"visita-{uuid4().hex}@example.test", "nome": "Visitador de teste",
+                   "cod_empresa_bi": "10041", "filiais": ["chevrolet"]}
+        report = {**BODY, "nome_cliente": f"Oficina de teste {uuid4().hex}"}
+        mine = {"escopo": "meus", "cliente": report["nome_cliente"]}
+        manage = {**CHEVROLET, "escopo": "gerencia", "cliente": report["nome_cliente"]}
+        with patch("auth.portal_get", self.portal), patch("auth.permissao_gerencia", return_value=self.approved):
+            created = self.client.post(VISITADORES, headers=self.master_headers, json=account)
+            self.assertEqual(created.status_code, 201)
+            self.assertIn("no-store", created.headers["Cache-Control"])
+            actor = created.json()
+            password = actor["senha_temporaria"]
+            credentials = {"email": account["email"], "senha": password}
+            duplicate = self.client.post(VISITADORES, headers=self.master_headers,
+                                         json={**account, "email": account["email"].upper()})
+            self.assertEqual(duplicate.status_code, 409)
+            listed = self.client.get(VISITADORES, headers=self.master_headers)
+            self.assertEqual(listed.status_code, 200)
+            record = next(row for row in listed.json()["visitadores"] if row["id"] == actor["id"])
+            self.assertEqual(record["filiais"], ["chevrolet"])
+            self.assertNotIn("senha_temporaria", record)
+
+            self.assertIs(client.post(SESSAO, json=credentials).json()["troca_senha_pendente"], True)
+            self.assertIs(other.post(SESSAO, json=credentials).json()["troca_senha_pendente"], True)
+            self.assertEqual(client.get(VISITADORES).status_code, 401)
+            self.assertEqual(client.post(PATH, json=report).status_code, 403)
+            self.assertEqual(client.get(PATH, params=mine).status_code, 403)
+            self.assertEqual(client.post(f"{SESSAO}/senha", json={"senha": password}).status_code, 422)
+            changed = client.post(f"{SESSAO}/senha", json={"senha": f"Pessoal-{uuid4().hex}"})
+            self.assertEqual(changed.status_code, 200)
+            self.assertIs(changed.json()["troca_senha_pendente"], False)
+            self.assertEqual(other.get(SESSAO).status_code, 401)
+            self.assertEqual(other.post(SESSAO, json=credentials).status_code, 401)
+            self.assertEqual(client.post(PATH, json={**report, "cod_empresa_bi": "1004",
+                                                      "filial_id": "transmissao"}).status_code, 403)
+            submitted = client.post(PATH, json=report)
+            self.assertEqual(submitted.status_code, 201)
+            expected = {"total": 1, "relatorios": [{**report, **submitted.json(), "visitador_nome": account["nome"]}]}
+            self.assertEqual(client.get(PATH, params=mine).json(), expected)
+            self.assertEqual(client.get(PATH, params=manage).status_code, 403)
+            for headers in (self.headers, self.master_headers):
+                self.assertEqual(self.client.get(PATH, params=manage, headers=headers).json(), expected)
+                self.assertEqual(self.client.post(PATH, headers=headers, json=report).status_code, 403)
+
+            self.profile["filiais_permitidas"] = ["transmissao"]
+            self.approved.update(chevrolet=False, transmissao=True)
+            self.assertEqual(self.client.get(PATH, params=manage, headers=self.headers).status_code, 403)
+
+            another = {**account, "email": f"visita-{uuid4().hex}@example.test"}
+            registered = self.client.post(VISITADORES, headers=self.master_headers, json=another)
+            self.assertEqual(registered.status_code, 201)
+            self.assertEqual(other.post(SESSAO, json={"email": another["email"],
+                             "senha": registered.json()["senha_temporaria"]}).status_code, 200)
+            self.assertEqual(other.post(f"{SESSAO}/senha", json={"senha": f"Pessoal-{uuid4().hex}"}).status_code, 200)
+            self.assertEqual(other.get(PATH, params=mine).json(), {"total": 0, "relatorios": []})
+
+            reset = self.client.post(f"{VISITADORES}/{actor['id']}/senha", headers=self.master_headers)
+            self.assertEqual(reset.status_code, 200)
+            self.assertEqual(client.get(SESSAO).status_code, 401)
+            again = client.post(SESSAO, json={**credentials, "senha": reset.json()["senha_temporaria"]})
+            self.assertIs(again.json()["troca_senha_pendente"], True)
+            self.assertEqual(client.get(PATH, params=mine).status_code, 403)
 
 
 class OdbcTest(unittest.TestCase):

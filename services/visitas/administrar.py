@@ -31,7 +31,8 @@ def main():
         if row:
             identifier, = row
             cursor.execute("""UPDATE dbo.VisitasUsuarios SET nome=%s,perfil=%s,cod_empresa_bi=%s,senha_hash=%s,
-                ativo=1,falhas=0,bloqueado_ate=NULL WHERE id=%s""", (nome,args.perfil,args.empresa,hashed,identifier))
+                ativo=1,falhas=0,bloqueado_ate=NULL,troca_senha_pendente=0 WHERE id=%s""",
+                (nome,args.perfil,args.empresa,hashed,identifier))
             cursor.execute("DELETE FROM dbo.VisitasSessoes WHERE usuario_id=%s", (identifier,))
             cursor.execute("DELETE FROM dbo.VisitasFiliais WHERE usuario_id=%s", (identifier,))
         else:

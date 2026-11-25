@@ -14,6 +14,12 @@ BEGIN
     );
 END;
 
+IF COL_LENGTH(N'dbo.VisitasUsuarios', N'troca_senha_pendente') IS NULL
+BEGIN
+    ALTER TABLE dbo.VisitasUsuarios ADD troca_senha_pendente bit NOT NULL
+        CONSTRAINT DF_VisitasUsuarios_TrocaSenha DEFAULT (0);
+END;
+
 IF OBJECT_ID(N'dbo.VisitasFiliais', N'U') IS NULL
 BEGIN
     CREATE TABLE dbo.VisitasFiliais (

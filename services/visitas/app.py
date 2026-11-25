@@ -12,9 +12,11 @@ from pydantic import BaseModel, ConfigDict, Field, StringConstraints, field_vali
 
 from auth import Empresa, Filial, Identity, chave_filial, identity, router
 from database import DatabaseError, connect
+from visitadores import router as visitadores_router
 
 app = FastAPI(title="Pelegrini — Relatórios de visitas")
 app.include_router(router)
+app.include_router(visitadores_router)
 Texto = Annotated[str, StringConstraints(max_length=200)]
 Avaliacao = tuple[Annotated[str, StringConstraints(max_length=3000)], ...]
 ITENS = {"Atendimento", "Entrega", "Preço", "Prazo"}

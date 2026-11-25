@@ -6,7 +6,7 @@ import json
 import os
 import re
 import secrets
-from contextlib import closing
+from contextlib import closing, contextmanager
 from dataclasses import dataclass
 from threading import BoundedSemaphore
 from typing import Annotated, Literal
@@ -38,6 +38,7 @@ class Identity:
     company: str
     branches: set[str]
     commercial: bool = False
+    troca_senha_pendente: bool = False
 
 
 def chave_filial(company, branch):
@@ -54,6 +55,21 @@ def senha_hash(password, salt=None):
     return salt.hex() + "$" + value.hex()
 
 
+@contextmanager
+def durante_hash():
+    if not password_workers.acquire(blocking=False):
+        raise HTTPException(429, "Aguarde um momento e tente novamente.")
+    try:
+        yield
+    finally:
+        password_workers.release()
+
+
+def confere_senha(password, stored_hash):
+    salt = bytes.fromhex(stored_hash.split("$", 1)[0])
+    return hmac.compare_digest(stored_hash, senha_hash(password, salt))
+
+
 def token_hash(token):
     return hashlib.sha256(token.encode()).hexdigest()
 
@@ -62,7 +78,7 @@ def carregar_filiais(cursor, row):
     cursor.execute("SELECT filial_id FROM dbo.VisitasFiliais WHERE usuario_id=%s ORDER BY filial_id", (row["id"],))
     branches = {r["filial_id"] for r in cursor.fetchall() if chave_filial(row["cod_empresa_bi"], r["filial_id"])}
     return Identity(row["id"], row["nome"], {row["perfil"]}, row["cod_empresa_bi"], branches,
-                    row["perfil"] == "gerencial")
+                    commercial=row["perfil"] == "gerencial", troca_senha_pendente=bool(row["troca_senha_pendente"]))
 
 
 def portal_get(path, token):
@@ -104,6 +120,19 @@ def portal_roles(user_id, token):
     if not isinstance(roles, list):
         raise HTTPException(503, "Não foi possível verificar o perfil do portal.")
     return [row.get("role") for row in roles if isinstance(row, dict)]
+
+
+def exigir_master(credentials: PortalBearer):
+    if not credentials:
+        raise HTTPException(401, "Sessão do Comercial obrigatória.")
+    token = credentials.credentials
+    master_id, _ = portal_account(token)
+    if "master" not in portal_roles(master_id, token):
+        raise HTTPException(403, "Perfil Master obrigatório.")
+    return master_id, token
+
+
+PortalMaster = Annotated[tuple[str, str], Depends(exigir_master)]
 
 
 def portal_gerencia(user_id, token):
@@ -183,7 +212,7 @@ def identity_from_portal(token):
     return Identity(user_id, email, {"gerencial"}, company, branches, commercial=True)
 
 
-def identity(token: SessionCookie, credentials: PortalBearer) -> Identity:
+def identidade_sessao(token: SessionCookie, credentials: PortalBearer) -> Identity:
     if credentials:
         return identity_from_portal(credentials.credentials)
     if not token or len(token) != 43:
@@ -191,7 +220,7 @@ def identity(token: SessionCookie, credentials: PortalBearer) -> Identity:
     try:
         with closing(connect()) as db, db.cursor(as_dict=True) as c:
             c.execute("""
-                SELECT u.id,u.nome,u.perfil,u.cod_empresa_bi
+                SELECT u.id,u.nome,u.perfil,u.cod_empresa_bi,u.troca_senha_pendente
                 FROM dbo.VisitasUsuarios u JOIN dbo.VisitasSessoes s ON s.usuario_id=u.id
                 WHERE s.token_hash=%s AND s.expira_em>SYSUTCDATETIME() AND u.ativo=1
             """, (token_hash(token),))
@@ -201,6 +230,12 @@ def identity(token: SessionCookie, credentials: PortalBearer) -> Identity:
             return carregar_filiais(c,row)
     except DatabaseError:
         raise HTTPException(503, "Não foi possível validar a sessão.") from None
+
+
+def identity(user: Annotated[Identity, Depends(identidade_sessao)]) -> Identity:
+    if user.troca_senha_pendente:
+        raise HTTPException(403, "Defina sua senha para acessar os relatórios.")
+    return user
 
 
 class Login(BaseModel):
@@ -219,6 +254,7 @@ class Sessao(BaseModel):
     nome: str
     perfil: Literal["visitador", "gerencial"]
     filiais: list[FilialSessao]
+    troca_senha_pendente: bool
 
 
 class PermissaoGerencia(BaseModel):
@@ -229,14 +265,8 @@ class PermissaoGerencia(BaseModel):
 
 
 @router.post("/gerencia/permissoes", status_code=204)
-def aprovar_gerencia(payload: PermissaoGerencia, credentials: PortalBearer):
-    if not credentials:
-        raise HTTPException(401, "Sessão do Comercial obrigatória.")
-    token = credentials.credentials
-    master_id, _ = portal_account(token)
-    if "master" not in portal_roles(master_id, token):
-        raise HTTPException(403, "Perfil Master obrigatório.")
-
+def aprovar_gerencia(payload: PermissaoGerencia, master: PortalMaster):
+    master_id, token = master
     user_id = str(payload.usuario_id)
     roles = portal_roles(user_id, token)
     if "gerencial" not in roles or "master" in roles:
@@ -251,19 +281,31 @@ def aprovar_gerencia(payload: PermissaoGerencia, credentials: PortalBearer):
 def dados_sessao(user):
     return {
         "id": user.id, "nome": user.name, "perfil": next(iter(user.roles)),
+        "troca_senha_pendente": user.troca_senha_pendente,
         "filiais": [{"cod_empresa_bi": chave_filial(user.company, branch), "filial_id": branch}
                    for branch in sorted(user.branches)],
     }
 
 
+def criar_sessao(cursor, user_id):
+    access = secrets.token_urlsafe(32)
+    cursor.execute("INSERT INTO dbo.VisitasSessoes (token_hash,usuario_id,expira_em) VALUES (%s,%s,DATEADD(second,%s,SYSUTCDATETIME()))",
+                   (token_hash(access), user_id, TOKEN_SECONDS))
+    return access
+
+
+def responder_sessao(response, access, user):
+    response.set_cookie(COOKIE, access, httponly=True, secure=os.getenv("VISITAS_HTTP_LOCAL") != "1",
+                        samesite="strict", path=COOKIE_PATH, max_age=TOKEN_SECONDS)
+    return dados_sessao(user)
+
+
 @router.post("/sessao", response_model=Sessao)
 def entrar(login: Login, response: Response, token: SessionCookie):
-    if not password_workers.acquire(blocking=False):
-        raise HTTPException(429, "Aguarde um momento e tente novamente.")
     try:
-        with closing(connect()) as db, db.cursor(as_dict=True) as c:
+        with durante_hash(), closing(connect()) as db, db.cursor(as_dict=True) as c:
             c.execute("""
-                SELECT id,nome,perfil,cod_empresa_bi,senha_hash,falhas,
+                SELECT id,nome,perfil,cod_empresa_bi,senha_hash,falhas,troca_senha_pendente,
                   CASE WHEN bloqueado_ate>SYSUTCDATETIME() THEN 1 ELSE 0 END bloqueado,
                   CASE WHEN bloqueado_ate IS NOT NULL THEN 1 ELSE 0 END ja_bloqueou
                 FROM dbo.VisitasUsuarios WITH (UPDLOCK, ROWLOCK) WHERE email=%s AND ativo=1
@@ -274,8 +316,7 @@ def entrar(login: Login, response: Response, token: SessionCookie):
             if not row:
                 senha_hash(login.senha, bytes(16))
                 raise HTTPException(401, "E-mail ou senha inválidos.")
-            valid = hmac.compare_digest(row["senha_hash"], senha_hash(login.senha,bytes.fromhex(row["senha_hash"].split("$")[0])))
-            if not valid:
+            if not confere_senha(login.senha, row["senha_hash"]):
                 attempts = 1 if row["ja_bloqueou"] else row["falhas"] + 1
                 c.execute("""UPDATE dbo.VisitasUsuarios SET falhas=%s, bloqueado_ate=
                            CASE WHEN %s>=5 THEN DATEADD(minute,15,SYSUTCDATETIME()) ELSE NULL END WHERE id=%s""",
@@ -286,23 +327,65 @@ def entrar(login: Login, response: Response, token: SessionCookie):
             c.execute("DELETE FROM dbo.VisitasSessoes WHERE expira_em<=SYSUTCDATETIME()")
             if token and len(token)==43:
                 c.execute("DELETE FROM dbo.VisitasSessoes WHERE token_hash=%s", (token_hash(token),))
-            access = secrets.token_urlsafe(32)
-            c.execute("INSERT INTO dbo.VisitasSessoes (token_hash,usuario_id,expira_em) VALUES (%s,%s,DATEADD(second,%s,SYSUTCDATETIME()))",
-                      (token_hash(access), row["id"], TOKEN_SECONDS))
+            access = criar_sessao(c, row["id"])
             user = carregar_filiais(c,row)
             db.commit()
     except DatabaseError:
         raise HTTPException(503, "Não foi possível abrir a sessão.") from None
-    finally:
-        password_workers.release()
-    response.set_cookie(COOKIE, access, httponly=True, secure=os.getenv("VISITAS_HTTP_LOCAL") != "1",
-                        samesite="strict", path=COOKIE_PATH, max_age=TOKEN_SECONDS)
-    return dados_sessao(user)
+    return responder_sessao(response, access, user)
 
 
 @router.get("/sessao", response_model=Sessao)
-def consultar(user: Annotated[Identity, Depends(identity)]):
+def consultar(user: Annotated[Identity, Depends(identidade_sessao)]):
     return dados_sessao(user)
+
+
+class NovaSenha(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    senha: str = Field(min_length=12, max_length=256)
+
+
+def dono_sessao(cursor, access_hash):
+    cursor.execute("SELECT usuario_id FROM dbo.VisitasSessoes WHERE token_hash=%s AND expira_em>SYSUTCDATETIME()",
+                   (access_hash,))
+    row = cursor.fetchone()
+    if not row:
+        raise HTTPException(401, "Sessão inválida ou expirada.")
+    return row["usuario_id"]
+
+
+@router.post("/sessao/senha", response_model=Sessao)
+def trocar_senha(payload: NovaSenha, token: SessionCookie, response: Response):
+    if not token or len(token) != 43:
+        raise HTTPException(401, "Autenticação obrigatória.")
+    access_hash = token_hash(token)
+    try:
+        with durante_hash(), closing(connect()) as db, db.cursor(as_dict=True) as c:
+            user_id = dono_sessao(c, access_hash)
+            c.execute("""
+                SELECT id,nome,perfil,cod_empresa_bi,senha_hash,troca_senha_pendente
+                FROM dbo.VisitasUsuarios WITH (UPDLOCK,ROWLOCK)
+                WHERE id=%s AND perfil='visitador' AND ativo=1
+            """, (user_id,))
+            row = c.fetchone()
+            if not row:
+                raise HTTPException(403, "Perfil de visitador obrigatório.")
+            # O Master pode revogar o token enquanto esta requisição aguarda o usuário.
+            dono_sessao(c, access_hash)
+            if not row["troca_senha_pendente"]:
+                raise HTTPException(409, "A senha inicial já foi alterada.")
+            if confere_senha(payload.senha, row["senha_hash"]):
+                raise HTTPException(422, "Escolha uma senha diferente da temporária.")
+            c.execute("UPDATE dbo.VisitasUsuarios SET senha_hash=%s,troca_senha_pendente=0 WHERE id=%s",
+                      (senha_hash(payload.senha), user_id))
+            c.execute("DELETE FROM dbo.VisitasSessoes WHERE usuario_id=%s", (user_id,))
+            access = criar_sessao(c, user_id)
+            row["troca_senha_pendente"] = False
+            user = carregar_filiais(c, row)
+            db.commit()
+    except DatabaseError:
+        raise HTTPException(503, "Não foi possível confirmar a troca de senha.") from None
+    return responder_sessao(response, access, user)
 
 
 @router.delete("/sessao", status_code=204)

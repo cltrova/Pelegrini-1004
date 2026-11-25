@@ -7,7 +7,9 @@ import { useAuth } from '@/contexts/AuthContext';
 import { RequireRole } from '@/components/auth/RequireRole';
 import { UserList } from '@/components/configuracoes/UserList';
 import { UserFormDialog } from '@/components/configuracoes/UserFormDialog';
+import { VisitadoresList } from '@/components/configuracoes/VisitadoresList';
 import { CLIENTE_COD_EMPRESA_BI_PADRAO } from '@/config/cliente1004';
+import { isLocalPreviewEnabled } from '@/config/localPreview';
 
 function UsuariosPageContent() {
   const navigate = useNavigate();
@@ -98,6 +100,7 @@ function UsuariosPageContent() {
           onEdit={handleEdit}
           filterByCompany={CLIENTE_COD_EMPRESA_BI_PADRAO}
         />
+        {isMaster && !isLocalPreviewEnabled() && <VisitadoresList />}
       </div>
 
       {/* Form Dialog */}

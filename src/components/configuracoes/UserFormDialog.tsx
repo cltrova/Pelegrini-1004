@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Crown, Shield, User, Building2, Eye, EyeOff, MessageSquare, DollarSign, BarChart3, Bot, TrendingUp, Package, ChevronDown, ChevronRight } from 'lucide-react';
+import { Crown, Shield, User, Building2, Eye, EyeOff, MessageSquare, DollarSign, BarChart3, Bot, TrendingUp, Package, ChevronDown, ChevronRight, ClipboardList } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { LoadingIndicator, LoadingState } from '@/components/common/LoadingState';
 import {
@@ -28,7 +29,10 @@ import type { AppRole } from '@/types/auth';
 import { ROLE_PERMISSIONS } from '@/types/auth';
 import { useEmpresas } from '@/hooks/useEmpresaConfig';
 import { getFiliaisDaEmpresa } from '@/config/filiaisEmpresa';
-import { confirmarGerenciaVisitas } from '@/pages/visitas/visitasApi';
+import { isCliente1004 } from '@/config/cliente1004';
+import { cadastrarVisitador, confirmarGerenciaVisitas } from '@/pages/visitas/visitasApi';
+import { tokenPortal } from '@/pages/visitas/portalSession';
+import { SenhaTemporariaVisitas } from './SenhaTemporariaVisitas';
 import {
   createLocalPreviewUserAccount,
   isLocalPreviewEnabled,
@@ -44,6 +48,8 @@ interface UserFormDialogProps {
   defaultRole?: AppRole;
   defaultCodEmpresa?: string;
 }
+
+type TipoCadastro = AppRole | 'visitador';
 
 interface ModulePermissions {
   modulo_dre: boolean;
@@ -206,7 +212,7 @@ export function UserFormDialog({
   const [codEmpresaBi, setCodEmpresaBi] = useState('');
   const [filialId, setFilialId] = useState<string>('');
   const [filiaisPermitidas, setFiliaisPermitidas] = useState<string[]>([]);
-  const [selectedRole, setSelectedRole] = useState<AppRole>('vendedor');
+  const [selectedRole, setSelectedRole] = useState<TipoCadastro>('vendedor');
   const [modulePermissions, setModulePermissions] = useState<ModulePermissions>({
     modulo_dre: false,
     modulo_variacao: false,
@@ -219,15 +225,18 @@ export function UserFormDialog({
   const [pagePermissions, setPagePermissions] = useState<PagePermissions>({});
   const [expandedModules, setExpandedModules] = useState<Set<string>>(new Set());
   const { toast } = useToast();
-  const { isMaster, isGerencial, codEmpresa } = useAuth();
+  const { user, isMaster, isGerencial, codEmpresa } = useAuth();
+  const queryClient = useQueryClient();
   const { data: empresas = [], isLoading: loadingEmpresas } = useEmpresas();
   const localPreview = isLocalPreviewEnabled();
 
   const isEditing = !!userId;
+  const cadastrandoVisitador = selectedRole === 'visitador';
 
-  const availableRoles: AppRole[] = isMaster 
+  const availableRoles: TipoCadastro[] = isMaster
     ? ['master', 'gerencial', 'vendedor'] 
     : ['vendedor'];
+  if (isMaster && !isEditing && !localPreview) availableRoles.push('visitador');
 
   const selectedCompany = empresas.find(e => e.cod_empresa_bi === codEmpresaBi);
   const filiaisDisponiveis = getFiliaisDaEmpresa(codEmpresaBi);
@@ -244,6 +253,8 @@ export function UserFormDialog({
       } else {
         resetForm();
       }
+    } else {
+      setTempPassword(null);
     }
   }, [userId, open]);
 
@@ -449,9 +460,7 @@ export function UserFormDialog({
   const sincronizarVisitas = async (id: string, filiais: string[], mostrarConfirmacao = false) => {
     setConfirmandoVisitas(true);
     try {
-      const { data } = await supabase.auth.getSession();
-      if (!data.session) throw new Error('Sua sessão expirou. Entre novamente.');
-      await confirmarGerenciaVisitas({ usuario_id: id, cod_empresa_bi: codEmpresaBi, filiais }, data.session.access_token);
+      await confirmarGerenciaVisitas({ usuario_id: id, cod_empresa_bi: codEmpresaBi, filiais }, await tokenPortal(user?.id));
       if (mostrarConfirmacao) toast({ title: 'Acesso a Visitas confirmado' });
     } catch (error) {
       toast({
@@ -470,7 +479,7 @@ export function UserFormDialog({
     if (selectedRole !== 'master' && !codEmpresaBi) {
       toast({
         title: 'Erro',
-        description: 'Código da empresa é obrigatório para usuários Gerencial e Vendedor.',
+        description: 'Selecione a empresa do usuário.',
         variant: 'destructive',
       });
       return;
@@ -485,6 +494,19 @@ export function UserFormDialog({
           ? filiaisPermitidas
           : [];
       const filialPadraoParaSalvar = filiaisParaSalvar.length === 1 ? filiaisParaSalvar[0] : null;
+
+      if (selectedRole === 'visitador') {
+        if (!isMaster || isEditing || localPreview) throw new Error('Apenas o Master pode cadastrar um visitador.');
+        if (!nome.trim() || !isCliente1004(codEmpresaBi) || filiaisParaSalvar.length === 0) {
+          throw new Error('Informe o nome, a empresa e pelo menos uma filial para o visitador.');
+        }
+        const cadastro = await cadastrarVisitador({
+          nome: nome.trim(), email: email.trim(), cod_empresa_bi: codEmpresaBi, filiais: filiaisParaSalvar,
+        }, await tokenPortal(user?.id));
+        setTempPassword(cadastro.senha_temporaria);
+        void queryClient.invalidateQueries({ queryKey: ['visitas-visitadores', user?.id] });
+        return;
+      }
 
       if (localPreview) {
         const permissionsWithPages = {
@@ -628,7 +650,7 @@ export function UserFormDialog({
     }
   };
 
-  const getRoleIcon = (role: AppRole) => {
+  const getRoleIcon = (role: TipoCadastro) => {
     switch (role) {
       case 'master':
         return <Crown className="h-4 w-4 text-yellow-500" />;
@@ -636,11 +658,13 @@ export function UserFormDialog({
         return <Shield className="h-4 w-4 text-blue-500" />;
       case 'vendedor':
         return <User className="h-4 w-4 text-green-500" />;
+      case 'visitador':
+        return <ClipboardList className="h-4 w-4 text-primary" />;
     }
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={(next) => { if (!loading) onOpenChange(next); }}>
       <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
@@ -657,29 +681,31 @@ export function UserFormDialog({
           <LoadingState message="Carregando usuário" variant="content" />
         ) : tempPassword ? (
           <div className="space-y-4 py-2">
-            <div className="rounded-md border border-primary/30 bg-primary/5 p-4">
-              <p className="text-sm font-medium mb-2">Senha temporária gerada</p>
-              <div className="flex items-center gap-2">
-                <code className="flex-1 select-all rounded bg-background px-3 py-2 font-mono text-sm border">
-                  {tempPassword}
-                </code>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  onClick={async () => {
-                    await navigator.clipboard.writeText(tempPassword);
-                    setCopied(true);
-                    setTimeout(() => setCopied(false), 2000);
-                  }}
-                >
-                  {copied ? 'Copiado!' : 'Copiar'}
-                </Button>
+            {cadastrandoVisitador ? <SenhaTemporariaVisitas senha={tempPassword} /> : (
+              <div className="rounded-md border border-primary/30 bg-primary/5 p-4">
+                <p className="text-sm font-medium mb-2">Senha temporária gerada</p>
+                <div className="flex items-center gap-2">
+                  <code className="flex-1 select-all rounded bg-background px-3 py-2 font-mono text-sm border">
+                    {tempPassword}
+                  </code>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={async () => {
+                      await navigator.clipboard.writeText(tempPassword);
+                      setCopied(true);
+                      setTimeout(() => setCopied(false), 2000);
+                    }}
+                  >
+                    {copied ? 'Copiado!' : 'Copiar'}
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground mt-3">
+                  ⚠️ Esta senha é apenas para o primeiro login. O usuário será obrigado a definir uma nova senha ao entrar. Ela não será mostrada novamente.
+                </p>
               </div>
-              <p className="text-xs text-muted-foreground mt-3">
-                ⚠️ Esta senha é apenas para o primeiro login. O usuário será obrigado a definir uma nova senha ao entrar. Ela não será mostrada novamente.
-              </p>
-            </div>
+            )}
             <DialogFooter>
               <Button type="button" onClick={() => onSuccess()}>
                 Concluir
@@ -714,15 +740,17 @@ export function UserFormDialog({
                 value={nome}
                 onChange={(e) => setNome(e.target.value)}
                 placeholder="Nome do usuário"
+                required={cadastrandoVisitador}
+                maxLength={cadastrandoVisitador ? 200 : undefined}
               />
             </div>
 
             {/* Seletor de Tipo/Role */}
             <div className="space-y-2">
-              <Label>Tipo de Usuário</Label>
+              <Label htmlFor="tipo-usuario">Tipo de Usuário</Label>
               <Select
                 value={selectedRole}
-                onValueChange={(value: AppRole) => {
+                onValueChange={(value: TipoCadastro) => {
                   setSelectedRole(value);
                   if (value === 'master') {
                     setCodEmpresaBi('');
@@ -730,7 +758,7 @@ export function UserFormDialog({
                 }}
                 disabled={!isMaster && isEditing}
               >
-                <SelectTrigger>
+                <SelectTrigger id="tipo-usuario">
                   <SelectValue placeholder="Selecione o tipo" />
                 </SelectTrigger>
                 <SelectContent>
@@ -739,7 +767,7 @@ export function UserFormDialog({
                       <div className="flex items-center gap-2">
                         {getRoleIcon(role)}
                         <span className="font-medium">
-                          {ROLE_PERMISSIONS[role].label}
+                          {role === 'visitador' ? 'Visitador' : ROLE_PERMISSIONS[role].label}
                         </span>
                       </div>
                     </SelectItem>
@@ -747,7 +775,9 @@ export function UserFormDialog({
                 </SelectContent>
               </Select>
               <p className="text-xs text-muted-foreground">
-                {ROLE_PERMISSIONS[selectedRole].description}
+                {cadastrandoVisitador
+                  ? 'Cria relatórios de visitas e consulta o próprio histórico.'
+                  : ROLE_PERMISSIONS[selectedRole].description}
               </p>
             </div>
 
@@ -762,12 +792,12 @@ export function UserFormDialog({
                 onValueChange={(value) => setCodEmpresaBi(value)}
                 disabled={selectedRole === 'master' || (!isMaster && isGerencial) || loadingEmpresas}
               >
-                <SelectTrigger>
+                <SelectTrigger id="codEmpresa">
                   <SelectValue placeholder="Selecione a empresa" />
                 </SelectTrigger>
                 <SelectContent>
                   {empresas
-                    .filter(e => e.ativo && e.cod_empresa_bi !== 'MASTER')
+                    .filter(e => e.ativo && e.cod_empresa_bi !== 'MASTER' && (!cadastrandoVisitador || isCliente1004(e.cod_empresa_bi)))
                     .map((empresa) => (
                       <SelectItem key={empresa.id} value={empresa.cod_empresa_bi}>
                         {empresa.nome}
@@ -820,7 +850,7 @@ export function UserFormDialog({
 
 
             {/* Permissões Hierárquicas de Módulos */}
-            {selectedRole !== 'master' && (
+            {selectedRole !== 'master' && !cadastrandoVisitador && (
               <div className="space-y-3">
                 <Label>Permissões de Módulos</Label>
                 <p className="text-xs text-muted-foreground">

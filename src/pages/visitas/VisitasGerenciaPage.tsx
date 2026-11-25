@@ -2,17 +2,9 @@ import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFilialSelecionada } from '@/contexts/FilialSelecionadaContext';
-import { supabase } from '@/integrations/supabase/client';
 import VisitasPage from './VisitasPage';
 import { consultarSessaoVisitas, listarVisitas } from './visitasApi';
-
-async function tokenPortal(userId: string | undefined) {
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session?.access_token || session.user.id !== userId) {
-    throw new Error('Sua sessão expirou. Entre novamente pelo portal.');
-  }
-  return session.access_token;
-}
+import { tokenPortal } from './portalSession';
 
 export default function VisitasGerenciaPage() {
   const { user } = useAuth();
