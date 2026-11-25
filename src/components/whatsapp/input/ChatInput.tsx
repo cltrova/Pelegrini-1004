@@ -10,39 +10,42 @@ import { AIComposer } from './AIComposer';
 import { MacroSelector } from './MacroSelector';
 import { AudioRecorder } from './AudioRecorder';
 import { useWhatsappMacros } from '@/hooks/useWhatsappData';
-import { supabase } from '@/integrations/supabase/client';
+import { postAiJson } from '@/lib/aiApi';
 import { toast } from 'sonner';
 import { useQuery } from '@tanstack/react-query';
+
+type ReplyMessage = { content: string | null; from_me: boolean; message_type: string };
 
 interface ChatInputProps {
   onSend: (content: string, type?: 'text' | 'audio') => Promise<void>;
   isSending?: boolean;
   conversationId: string;
+  messages?: ReplyMessage[];
 }
 
 // Hook for fetching dynamic smart replies
-function useSmartReplies(conversationId: string, enabled: boolean) {
+function useSmartReplies(conversationId: string, messages: ReplyMessage[] | undefined, enabled: boolean) {
   return useQuery({
     queryKey: ['smart-replies', conversationId],
     queryFn: async () => {
-      const { data, error } = await supabase.functions.invoke('smart-replies', {
-        body: { conversationId }
-      });
-      
-      if (error) {
+      try {
+        const recent = (messages ?? []).slice(-10).reverse().map(({ content, from_me, message_type }) => ({
+          content, from_me, message_type,
+        }));
+        const data = await postAiJson<{ replies: string[] }>('smart-replies', { messages: recent });
+        return data.replies || ['Entendi!', 'Vou verificar.', 'Obrigado!'];
+      } catch (error) {
         console.error('Smart replies error:', error);
         return ['Entendi, vou verificar.', 'Agradeço o contato!', 'Um momento, por favor.'];
       }
-      
-      return data?.replies || ['Entendi!', 'Vou verificar.', 'Obrigado!'];
     },
-    enabled: enabled && !!conversationId,
+    enabled: enabled && !!conversationId && messages !== undefined,
     staleTime: 30000, // Cache for 30 seconds
     refetchOnWindowFocus: false,
   });
 }
 
-export function ChatInput({ onSend, isSending, conversationId }: ChatInputProps) {
+export function ChatInput({ onSend, isSending, conversationId, messages }: ChatInputProps) {
   const [message, setMessage] = useState('');
   const [isRecording, setIsRecording] = useState(false);
   const [showMacros, setShowMacros] = useState(false);
@@ -53,7 +56,8 @@ export function ChatInput({ onSend, isSending, conversationId }: ChatInputProps)
   
   // Dynamic smart replies from AI
   const { data: smartReplies = [], isLoading: isLoadingReplies } = useSmartReplies(
-    conversationId, 
+    conversationId,
+    messages,
     !message.trim() // Only fetch when input is empty
   );
   

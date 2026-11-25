@@ -1,3 +1,5 @@
+import { serveLegacyAi, getChatProvider } from "../_shared/ai-provider.ts";
+
 // Edge function: gera insights estratégicos sobre marcas usando OpenAI (gpt-5-mini)
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -14,7 +16,7 @@ interface MarcaPayload {
   quantidade: number;
 }
 
-Deno.serve(async (req) => {
+export async function handleAiRequest(req: Request): Promise<Response> {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -33,8 +35,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    const AI_GATEWAY_URL = Deno.env.get("AI_GATEWAY_URL") || "https://api.openai.com/v1/chat/completions";
-const AI_GATEWAY_API_KEY = Deno.env.get("AI_GATEWAY_API_KEY") || Deno.env.get("OPENAI_API_KEY");
+    const { url: AI_GATEWAY_URL, apiKey: AI_GATEWAY_API_KEY, model: providerModel } = getChatProvider();
     if (!AI_GATEWAY_API_KEY) {
       return new Response(
         JSON.stringify({ error: "AI_GATEWAY_API_KEY ou OPENAI_API_KEY não configurada" }),
@@ -129,7 +130,6 @@ Dados completos: ${JSON.stringify(focoData, null, 2)}
 Marcas (benchmark${marcaFoco ? ' apenas' : ''}):
 ${JSON.stringify(top, null, 2)}`;
 
-
     const callOpenAI = () => fetch(AI_GATEWAY_URL, {
       method: "POST",
       headers: {
@@ -137,7 +137,7 @@ ${JSON.stringify(top, null, 2)}`;
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
+        model: providerModel,
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt },
@@ -209,8 +209,8 @@ ${JSON.stringify(top, null, 2)}`;
       );
     }
     if (!response.ok) {
-      const txt = await response.text();
-      console.error("OpenAI error", response.status, txt);
+      await response.body?.cancel();
+      console.error("OpenAI error", response.status, response.headers.get("x-request-id"));
       return new Response(
         JSON.stringify({ error: "Falha ao gerar insights" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -239,4 +239,6 @@ ${JSON.stringify(top, null, 2)}`;
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
-});
+}
+
+serveLegacyAi(handleAiRequest);

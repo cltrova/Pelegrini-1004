@@ -1,3 +1,5 @@
+import { serveLegacyAi, getChatProvider } from "../_shared/ai-provider.ts";
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -20,12 +22,11 @@ interface Body {
   messages: Msg[];
 }
 
-Deno.serve(async (req) => {
+export async function handleAiRequest(req: Request): Promise<Response> {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
 
   try {
-    const AI_GATEWAY_URL = Deno.env.get("AI_GATEWAY_URL") || "https://api.openai.com/v1/chat/completions";
-    const apiKey = Deno.env.get("AI_GATEWAY_API_KEY") || Deno.env.get("OPENAI_API_KEY");
+    const { url: AI_GATEWAY_URL, apiKey: apiKey, model: providerModel } = getChatProvider();
     if (!apiKey) {
       return new Response(JSON.stringify({ error: 'AI_GATEWAY_API_KEY or OPENAI_API_KEY missing' }), {
         status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -98,7 +99,7 @@ Deno.serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
+        model: providerModel,
         messages: aiMessages,
         temperature: 0.7,
       }),
@@ -115,8 +116,9 @@ Deno.serve(async (req) => {
       });
     }
     if (!res.ok) {
-      const t = await res.text();
-      return new Response(JSON.stringify({ error: 'AI error', details: t.slice(0, 500) }), {
+      await res.body?.cancel();
+      console.error('Falha da OpenAI na simulação de cobrança:', res.status, res.headers.get('x-request-id'));
+      return new Response(JSON.stringify({ error: 'A IA está indisponível para simular a cobrança.' }), {
         status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
@@ -133,4 +135,6 @@ Deno.serve(async (req) => {
       status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }
-});
+}
+
+serveLegacyAi(handleAiRequest);

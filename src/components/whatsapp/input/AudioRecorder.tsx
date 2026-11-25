@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, forwardRef } from 'react';
 import { Mic, X, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { LoadingIndicator } from '@/components/common/LoadingState';
-import { supabase } from '@/integrations/supabase/client';
+import { postAiJson } from '@/lib/aiApi';
 import { toast } from 'sonner';
 
 interface AudioRecorderProps {
@@ -120,18 +120,11 @@ export const AudioRecorder = forwardRef<HTMLButtonElement, AudioRecorderProps>(
           new Uint8Array(arrayBuffer).reduce((data, byte) => data + String.fromCharCode(byte), '')
         );
         
-        const { data, error } = await supabase.functions.invoke('transcribe-audio', {
-          body: { 
-            audio: base64Audio,
-            mimeType: 'audio/webm'
-          }
+        const data = await postAiJson<{ text?: string }>('transcribe-audio', {
+          audio: base64Audio,
+          mimeType: 'audio/webm',
         });
-        
-        if (error) {
-          console.error('Transcription API error:', error);
-          return undefined;
-        }
-        
+
         return data?.text;
       } catch (error) {
         console.error('Transcription failed:', error);

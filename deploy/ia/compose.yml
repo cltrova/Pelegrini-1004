@@ -1,0 +1,21 @@
+name: pelegrini-ia
+
+services:
+  pelegrini-ia:
+    build:
+      context: ../..
+      dockerfile: deploy/ia/Dockerfile
+    env_file:
+      - ${PELEGRINI_PORTAL_ENV_FILE:-/etc/pelegrini/ia/portal.env}
+      - ${PELEGRINI_OPENAI_ENV_FILE:-/etc/pelegrini/ia/openai.env}
+    environment:
+      PELEGRINI_AI_HOST: '0.0.0.0'
+      PELEGRINI_AI_PORT: '4319'
+    networks:
+      - pelegrini
+    restart: unless-stopped
+
+networks:
+  pelegrini:
+    external: true
+    name: pelegrini-web-vps

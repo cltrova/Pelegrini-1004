@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import { formatCurrency, formatNumber } from '@/utils/formatters';
 import { cn } from '@/lib/utils';
-import { supabase } from '@/integrations/supabase/client';
+import { postAiJson } from '@/lib/aiApi';
 import { toast } from 'sonner';
 import type { TopProdutoAgg, ResumoVendaLinha } from '@/types/comercialProdutos';
 import { LoadingIndicator, LoadingState } from '@/components/common/LoadingState';
@@ -148,10 +148,10 @@ export function PremiumTopProdutos({
         faturamento: p.faturamento,
         quantidade: p.quantidade,
       }));
-      const { data, error } = await supabase.functions.invoke('produtos-insights', {
-        body: { produtos: payload, marcaFoco: selectedMarca },
+      const data = await postAiJson<{ insights?: AIInsight[]; error?: string }>('produtos-insights', {
+        produtos: payload,
+        marcaFoco: selectedMarca,
       });
-      if (error) throw error;
       if (data?.error) throw new Error(data.error);
       if (Array.isArray(data?.insights) && data.insights.length > 0) {
         setAiInsights(data.insights);

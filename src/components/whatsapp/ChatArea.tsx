@@ -186,6 +186,7 @@ export function ChatArea({ conversationId, onBack, onOpenDetails, isMobile }: Ch
       <div className="flex-shrink-0">
         <ChatInput
           conversationId={conversationId}
+          messages={messages}
           onSend={handleSend}
           isSending={sendMessage.isPending}
         />

@@ -34,7 +34,7 @@ npm test
 
 ## Ambiente
 
-Copie `.env.example` para `.env` e preencha as variaveis do Supabase e de IA.
+Para o frontend local, copie `.env.example` para `.env.local` e preencha as variáveis que o portal usa no navegador.
 
 Variaveis principais:
 
@@ -43,9 +43,22 @@ Variaveis principais:
 - `SUPABASE_URL`
 - `SUPABASE_ANON_KEY`
 - `SUPABASE_SERVICE_ROLE_KEY`
-- `OPENAI_API_KEY`
-- `AI_GATEWAY_URL`
-- `AI_GATEWAY_API_KEY`
+
+### Inteligência artificial
+
+As funções de IA servidas por `/api/ia/` usam a chave `OPENAI_API_KEY` no backend da Pelegrini. Essa variável fica no arquivo de ambiente do serviço.
+
+Para rodar localmente com Node.js 24.12 ou superior, use um arquivo `.env.ai.local` e execute:
+
+```sh
+node --env-file=.env.ai.local services/ia/server.ts
+```
+
+O arquivo de ambiente precisa de `OPENAI_API_KEY`, `PORTAL_AUTH_URL` e `PORTAL_PUBLIC_KEY`. Os dois valores do portal correspondem ao endereço e à chave pública que o login atual já usa. O Vite encaminha `/api/ia/` para `127.0.0.1:4319` por padrão.
+
+Na VPS, o `deploy/ia/compose.yml` lê `OPENAI_API_KEY` de `/etc/pelegrini/ia/openai.env`. Restrinja o arquivo aos administradores do servidor. Guarde `PORTAL_AUTH_URL` e `PORTAL_PUBLIC_KEY` em `/etc/pelegrini/ia/portal.env`. O serviço usa a rede Docker privada do site e recebe as chamadas do proxy HTTPS configurado em `deploy/produtividade/site.conf`.
+
+Para cadastrar a chave pela primeira vez em uma máquina com acesso SSH ao servidor, execute `pwsh -File deploy/ia/configurar-chave.ps1`. A chave é solicitada com entrada oculta.
 
 ## Escopo
 

@@ -1,16 +1,16 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { serveLegacyAi, getOpenAiApiKey, OPENAI_CHAT_URL } from "../_shared/ai-provider.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-serve(async (req) => {
+export async function handleAiRequest(req: Request): Promise<Response> {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   try {
     const { campanhas } = await req.json();
-    const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
+    const OPENAI_API_KEY = getOpenAiApiKey();
     if (!OPENAI_API_KEY) throw new Error("OPENAI_API_KEY não configurada");
 
     if (!Array.isArray(campanhas) || campanhas.length === 0) {
@@ -37,7 +37,7 @@ ${JSON.stringify(resumo, null, 2)}
 
 Responda APENAS com JSON válido no formato: {"insights":[{"tipo":"alerta|oportunidade|info","titulo":"...","descricao":"..."}]}`;
 
-    const resp = await fetch("https://api.openai.com/v1/chat/completions", {
+    const resp = await fetch(OPENAI_CHAT_URL, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${OPENAI_API_KEY}`,
@@ -52,8 +52,8 @@ Responda APENAS com JSON válido no formato: {"insights":[{"tipo":"alerta|oportu
     });
 
     if (!resp.ok) {
-      const t = await resp.text();
-      console.error("OpenAI error:", resp.status, t);
+      await resp.body?.cancel();
+      console.error("OpenAI error:", resp.status, resp.headers.get("x-request-id"));
       return new Response(JSON.stringify({ insights: [], error: "AI indisponível" }), {
         status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -74,4 +74,6 @@ Responda APENAS com JSON válido no formato: {"insights":[{"tipo":"alerta|oportu
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
-});
+}
+
+serveLegacyAi(handleAiRequest);

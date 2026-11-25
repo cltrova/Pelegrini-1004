@@ -1,3 +1,5 @@
+import { serveLegacyAi, getOpenAiApiKey, OPENAI_CHAT_URL } from "../_shared/ai-provider.ts";
+
 // Edge function: gera insights estratégicos sobre CATEGORIAS/GRUPOS de produtos usando OpenAI
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -12,7 +14,7 @@ interface CategoriaPayload {
   participacao?: number;
 }
 
-Deno.serve(async (req) => {
+export async function handleAiRequest(req: Request): Promise<Response> {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -31,7 +33,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
+    const OPENAI_API_KEY = getOpenAiApiKey();
     if (!OPENAI_API_KEY) {
       return new Response(
         JSON.stringify({ error: "OPENAI_API_KEY não configurada" }),
@@ -89,7 +91,7 @@ ${JSON.stringify(top, null, 2)}
 Cauda (8 menores):
 ${JSON.stringify(cauda, null, 2)}`;
 
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+    const response = await fetch(OPENAI_CHAT_URL, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${OPENAI_API_KEY}`,
@@ -151,8 +153,8 @@ ${JSON.stringify(cauda, null, 2)}`;
         { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
     if (!response.ok) {
-      const txt = await response.text();
-      console.error("OpenAI error", response.status, txt);
+      await response.body?.cancel();
+      console.error("OpenAI error", response.status, response.headers.get("x-request-id"));
       return new Response(JSON.stringify({ error: "Falha ao gerar insights" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
@@ -175,4 +177,6 @@ ${JSON.stringify(cauda, null, 2)}`;
     return new Response(JSON.stringify({ error: e instanceof Error ? e.message : "Erro desconhecido" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   }
-});
+}
+
+serveLegacyAi(handleAiRequest);

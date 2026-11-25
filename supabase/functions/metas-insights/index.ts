@@ -1,17 +1,16 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { serveLegacyAi, getChatProvider } from "../_shared/ai-provider.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-serve(async (req) => {
+export async function handleAiRequest(req: Request): Promise<Response> {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   try {
     const { vendedores, kpis } = await req.json();
-    const AI_GATEWAY_URL = Deno.env.get("AI_GATEWAY_URL") || "https://api.openai.com/v1/chat/completions";
-const AI_GATEWAY_API_KEY = Deno.env.get("AI_GATEWAY_API_KEY") || Deno.env.get("OPENAI_API_KEY");
+    const { url: AI_GATEWAY_URL, apiKey: AI_GATEWAY_API_KEY, model: providerModel } = getChatProvider();
     if (!AI_GATEWAY_API_KEY) throw new Error("AI_GATEWAY_API_KEY ou OPENAI_API_KEY não configurada");
 
     if (!Array.isArray(vendedores) || vendedores.length === 0) {
@@ -46,15 +45,15 @@ Responda APENAS com JSON válido no formato: {"insights":[{"tipo":"alerta|oportu
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
+        model: providerModel,
         messages: [{ role: "user", content: prompt }],
         response_format: { type: "json_object" },
       }),
     });
 
     if (!resp.ok) {
-      const t = await resp.text();
-      console.error("AI Gateway error:", resp.status, t);
+      await resp.body?.cancel();
+      console.error("AI Gateway error:", resp.status, resp.headers.get("x-request-id"));
       if (resp.status === 429) {
         return new Response(JSON.stringify({ insights: [], error: "Limite de requisições. Tente novamente em instantes." }), {
           status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -84,4 +83,6 @@ Responda APENAS com JSON válido no formato: {"insights":[{"tipo":"alerta|oportu
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
-});
+}
+
+serveLegacyAi(handleAiRequest);

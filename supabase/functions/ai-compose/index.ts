@@ -1,4 +1,4 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { serveLegacyAi, getOpenAiApiKey, OPENAI_CHAT_URL } from "../_shared/ai-provider.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -43,7 +43,7 @@ const getSystemPrompt = (action: ActionType): string => {
   return prompts[action] || prompts.rewrite;
 };
 
-serve(async (req) => {
+export async function handleAiRequest(req: Request): Promise<Response> {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -58,12 +58,12 @@ serve(async (req) => {
       );
     }
 
-    const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
+    const OPENAI_API_KEY = getOpenAiApiKey();
     if (!OPENAI_API_KEY) {
       throw new Error("OPENAI_API_KEY is not configured");
     }
 
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+    const response = await fetch(OPENAI_CHAT_URL, {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${OPENAI_API_KEY}`,
@@ -81,8 +81,8 @@ serve(async (req) => {
     });
 
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error("OpenAI API error:", response.status, errorText);
+      await response.body?.cancel();
+      console.error("OpenAI API error:", response.status, response.headers.get("x-request-id"));
       
       if (response.status === 429) {
         return new Response(
@@ -116,4 +116,6 @@ serve(async (req) => {
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
-});
+}
+
+serveLegacyAi(handleAiRequest);

@@ -1,0 +1,10 @@
+**
+!package.json
+!services/
+!services/ia/
+!services/ia/*.ts
+!supabase/
+!supabase/functions/
+!supabase/functions/**/
+!supabase/functions/**/*.ts
+**/*.test.ts

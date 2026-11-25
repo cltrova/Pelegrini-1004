@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { postAiJson } from '@/lib/aiApi';
 import { Sparkles, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { ComercialAIContext } from '@/utils/comercialAIContext';
@@ -41,10 +41,7 @@ export function AIInsightsFeed({ contexto }: Props) {
         }
       }
 
-      const { data, error: err } = await supabase.functions.invoke('comercial-ai-feed', {
-        body: { contexto },
-      });
-      if (err) throw err;
+      const data = await postAiJson<{ insights?: FeedInsight[] }>('comercial-ai-feed', { contexto });
       const arr: FeedInsight[] = data?.insights || [];
       if (arr.length === 0) {
         setError(true);

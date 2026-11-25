@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { formatCurrency, formatPercent } from '@/utils/formatters';
-import { supabase } from '@/integrations/supabase/client';
+import { postAiJson } from '@/lib/aiApi';
 import { cn } from '@/lib/utils';
 import ReactMarkdown from 'react-markdown';
 import { useEmpresaAtiva } from '@/hooks/useEmpresaAtiva';
@@ -176,10 +176,10 @@ export function VendedorDetailsDialog({ vendedor, ranking, pedidos, devolucoes, 
 
 Sem introduções, sem rodeios, sem repetir dados óbvios. Use números apenas quando essenciais.`;
 
-      const { data, error } = await supabase.functions.invoke('comercial-ai-chat', {
-        body: { messages: [{ role: 'user', content: prompt }], contexto },
+      const data = await postAiJson<{ reply?: string }>('comercial-ai-chat', {
+        messages: [{ role: 'user', content: prompt }],
+        contexto,
       });
-      if (error) throw error;
       setAiInsights(data?.reply || 'Sem resposta.');
     } catch (e: unknown) {
       setAiError(e instanceof Error ? e.message : String(e));

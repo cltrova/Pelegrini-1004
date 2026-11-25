@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { toast } from 'sonner';
+import { streamAi } from '@/lib/aiApi';
 import { ResponseChart, parseChartData, userRequestedChart } from '@/components/assistente/ResponseChart';
 import {
   Send,
@@ -84,111 +85,6 @@ const suggestedQuestions = [
     description: "Recomendar ajustes"
   },
 ];
-
-// Streaming function
-async function streamChat({
-  messages,
-  variacaoData,
-  gruposInverterSinal,
-  gruposAtivosOperacionais,
-  onDelta,
-  onToolAction,
-  onDone,
-  onError,
-}: {
-  messages: Array<{ role: string; content: string; imageBase64?: string }>;
-  variacaoData: any[];
-  gruposInverterSinal: string[];
-  gruposAtivosOperacionais: string[];
-  onDelta: (deltaText: string) => void;
-  onToolAction: (action: ToolAction) => void;
-  onDone: () => void;
-  onError: (error: string) => void;
-}) {
-  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-  const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-  const CHAT_URL = `${supabaseUrl}/functions/v1/assistente-variacao`;
-  
-  try {
-    const resp = await fetch(CHAT_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${supabaseKey}`,
-      },
-      body: JSON.stringify({ messages, variacaoData, gruposInverterSinal, gruposAtivosOperacionais }),
-    });
-
-    if (resp.status === 429) { onError("Limite de requisições excedido. Aguarde um momento."); return; }
-    if (resp.status === 402) { onError("Créditos esgotados. Adicione créditos à sua conta."); return; }
-    if (!resp.ok || !resp.body) {
-      const errorData = await resp.json().catch(() => ({ error: "Erro ao conectar com o assistente" }));
-      onError(errorData.error || "Erro ao conectar com o assistente");
-      return;
-    }
-
-    const reader = resp.body.getReader();
-    const decoder = new TextDecoder();
-    let textBuffer = "";
-    let streamDone = false;
-
-    while (!streamDone) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      textBuffer += decoder.decode(value, { stream: true });
-
-      let newlineIndex: number;
-      while ((newlineIndex = textBuffer.indexOf("\n")) !== -1) {
-        let line = textBuffer.slice(0, newlineIndex);
-        textBuffer = textBuffer.slice(newlineIndex + 1);
-
-        if (line.endsWith("\r")) line = line.slice(0, -1);
-        if (line.startsWith(":") || line.trim() === "") continue;
-        if (!line.startsWith("data: ")) continue;
-
-        const jsonStr = line.slice(6).trim();
-        if (jsonStr === "[DONE]") { streamDone = true; break; }
-
-        try {
-          const parsed = JSON.parse(jsonStr);
-          // Check for tool action
-          if (parsed.tool_action) {
-            onToolAction(parsed.tool_action);
-            continue;
-          }
-          const content = parsed.choices?.[0]?.delta?.content as string | undefined;
-          if (content) onDelta(content);
-        } catch {
-          textBuffer = line + "\n" + textBuffer;
-          break;
-        }
-      }
-    }
-
-    // Final flush
-    if (textBuffer.trim()) {
-      for (let raw of textBuffer.split("\n")) {
-        if (!raw) continue;
-        if (raw.endsWith("\r")) raw = raw.slice(0, -1);
-        if (raw.startsWith(":") || raw.trim() === "") continue;
-        if (!raw.startsWith("data: ")) continue;
-        const jsonStr = raw.slice(6).trim();
-        if (jsonStr === "[DONE]") continue;
-        try {
-          const parsed = JSON.parse(jsonStr);
-          if (parsed.tool_action) { onToolAction(parsed.tool_action); continue; }
-          const content = parsed.choices?.[0]?.delta?.content as string | undefined;
-          if (content) onDelta(content);
-        } catch { /* ignore */ }
-      }
-    }
-
-    onDone();
-  } catch (error) {
-    console.error("Stream error:", error);
-    onError("Erro de conexão. Tente novamente.");
-  }
-}
 
 const ToolActionCard = ({
   action,
@@ -441,11 +337,12 @@ export function VariacaoAssistant({
 
     setMessages(prev => [...prev, assistantMessage]);
 
-    await streamChat({
+    await streamAi<ToolAction>('assistente-variacao', {
       messages: apiMessages,
       variacaoData: variacaoData || [],
       gruposInverterSinal: Array.from(gruposInverterSinal),
       gruposAtivosOperacionais: Array.from(gruposAtivosOperacionais),
+    }, {
       onDelta: (chunk) => {
         assistantContent += chunk;
         setMessages(prev => prev.map(m => m.id === assistantMessageId ? { ...m, content: assistantContent } : m));

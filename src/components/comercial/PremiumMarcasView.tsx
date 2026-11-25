@@ -10,7 +10,7 @@ import {
 import { formatCurrency, formatNumber } from '@/utils/formatters';
 import { cn } from '@/lib/utils';
 import { LoadingIndicator, LoadingState } from '@/components/common/LoadingState';
-import { supabase } from '@/integrations/supabase/client';
+import { postAiJson } from '@/lib/aiApi';
 import { toast } from 'sonner';
 import type { MarcaAgg } from '@/types/comercialProdutos';
 
@@ -231,10 +231,11 @@ export function PremiumMarcasView({
         produtos: m.produtos,
         quantidade: m.quantidade,
       }));
-      const { data, error } = await supabase.functions.invoke('marcas-insights', {
-        body: { marcas: payload, periodo: periodoLabel, marcaFoco: selectedMarca },
+      const data = await postAiJson<{ insights?: AIInsight[]; error?: string }>('marcas-insights', {
+        marcas: payload,
+        periodo: periodoLabel,
+        marcaFoco: selectedMarca,
       });
-      if (error) throw error;
       if (data?.error) throw new Error(data.error);
       if (Array.isArray(data?.insights) && data.insights.length > 0) {
         setAiInsights(data.insights);

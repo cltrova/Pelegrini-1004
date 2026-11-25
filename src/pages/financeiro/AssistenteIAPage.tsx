@@ -15,6 +15,7 @@ import { useDreData, extractFilterOptions, calculateIndicators, calculateGroupSu
 import { useVariacaoData } from '@/hooks/useVariacaoData';
 import { formatCurrency } from '@/utils/formatters';
 import { toast } from 'sonner';
+import { streamAi } from '@/lib/aiApi';
 import { ResponseChart, parseChartData, userRequestedChart } from '@/components/assistente/ResponseChart';
 import {
   Send,
@@ -110,112 +111,6 @@ const categoryLabels: Record<string, string> = {
   detalhamento: 'Detalhamento',
   tendencia: 'Tendência',
 };
-
-// Função para streaming do chat com a Edge Function
-async function streamChat({
-  messages,
-  dreData,
-  variacaoData,
-  onDelta,
-  onDone,
-  onError,
-}: {
-  messages: Array<{ role: string; content: string }>;
-  dreData: any[];
-  variacaoData: any[];
-  onDelta: (deltaText: string) => void;
-  onDone: () => void;
-  onError: (error: string) => void;
-}) {
-  const supabaseUrl = "https://jegjihccrjqakqdodcrj.supabase.co";
-  const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImplZ2ppaGNjcmpxYWtxZG9kY3JqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3NzIwOTcsImV4cCI6MjA4MzM0ODA5N30.CeZN5HoBEk65AC8avP4jWukboE9fSpWuUJOymUrTres";
-  const CHAT_URL = `${supabaseUrl}/functions/v1/assistente-financeiro`;
-  
-  try {
-    const resp = await fetch(CHAT_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${supabaseKey}`,
-      },
-      body: JSON.stringify({ messages, dreData, variacaoData }),
-    });
-
-    if (resp.status === 429) {
-      onError("Limite de requisições excedido. Aguarde um momento.");
-      return;
-    }
-    
-    if (resp.status === 402) {
-      onError("Créditos esgotados. Por favor, adicione créditos à sua conta.");
-      return;
-    }
-
-    if (!resp.ok || !resp.body) {
-      const errorData = await resp.json().catch(() => ({ error: "Erro ao conectar com o assistente" }));
-      onError(errorData.error || "Erro ao conectar com o assistente");
-      return;
-    }
-
-    const reader = resp.body.getReader();
-    const decoder = new TextDecoder();
-    let textBuffer = "";
-    let streamDone = false;
-
-    while (!streamDone) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      textBuffer += decoder.decode(value, { stream: true });
-
-      let newlineIndex: number;
-      while ((newlineIndex = textBuffer.indexOf("\n")) !== -1) {
-        let line = textBuffer.slice(0, newlineIndex);
-        textBuffer = textBuffer.slice(newlineIndex + 1);
-
-        if (line.endsWith("\r")) line = line.slice(0, -1);
-        if (line.startsWith(":") || line.trim() === "") continue;
-        if (!line.startsWith("data: ")) continue;
-
-        const jsonStr = line.slice(6).trim();
-        if (jsonStr === "[DONE]") {
-          streamDone = true;
-          break;
-        }
-
-        try {
-          const parsed = JSON.parse(jsonStr);
-          const content = parsed.choices?.[0]?.delta?.content as string | undefined;
-          if (content) onDelta(content);
-        } catch {
-          textBuffer = line + "\n" + textBuffer;
-          break;
-        }
-      }
-    }
-
-    // Final flush
-    if (textBuffer.trim()) {
-      for (let raw of textBuffer.split("\n")) {
-        if (!raw) continue;
-        if (raw.endsWith("\r")) raw = raw.slice(0, -1);
-        if (raw.startsWith(":") || raw.trim() === "") continue;
-        if (!raw.startsWith("data: ")) continue;
-        const jsonStr = raw.slice(6).trim();
-        if (jsonStr === "[DONE]") continue;
-        try {
-          const parsed = JSON.parse(jsonStr);
-          const content = parsed.choices?.[0]?.delta?.content as string | undefined;
-          if (content) onDelta(content);
-        } catch { /* ignore */ }
-      }
-    }
-
-    onDone();
-  } catch (error) {
-    console.error("Stream error:", error);
-    onError("Erro de conexão. Tente novamente.");
-  }
-}
 
 // Componente de mensagem (fora do componente principal para evitar re-renders)
 const MessageBubble = ({ 
@@ -434,10 +329,12 @@ export default function AssistenteIAPage() {
     // Adicionar mensagem vazia do assistente
     setMessages(prev => [...prev, assistantMessage]);
 
-    await streamChat({
+    await streamAi('assistente-financeiro', {
       messages: apiMessages,
       dreData: filteredDreData || [],  // Enviar dados já filtrados
       variacaoData: variacaoData || [],
+    }, {
+      creditError: 'Créditos esgotados. Por favor, adicione créditos à sua conta.',
       onDelta: (chunk) => {
         assistantContent += chunk;
         setMessages(prev => 

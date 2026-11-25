@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { LoadingIndicator, LoadingState } from '@/components/common/LoadingState';
 import { supabase } from '@/integrations/supabase/client';
+import { postAiJson } from '@/lib/aiApi';
 
 interface EstoqueAssistantSettingsProps {
   codEmpresaBi: string;
@@ -94,22 +95,11 @@ export function EstoqueAssistantSettings({ codEmpresaBi }: EstoqueAssistantSetti
     setSuggestion(null);
 
     try {
-      const { data: sessionData } = await supabase.auth.getSession();
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/assistente-estoque-brain`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${sessionData?.session?.access_token ?? ''}`,
-            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-          },
-          body: JSON.stringify({ currentPrompt: prompt, userRequest: request.trim() }),
-        },
-      );
-
-      if (!response.ok) throw new Error(`Erro: ${response.status}`);
-      setSuggestion(await response.json());
+      const result = await postAiJson<PromptSuggestion>('assistente-estoque-brain', {
+        currentPrompt: prompt,
+        userRequest: request.trim(),
+      });
+      setSuggestion(result);
     } catch (error) {
       console.error('Erro ao consultar assistente:', error);
       toast.error('Não foi possível gerar uma sugestão');

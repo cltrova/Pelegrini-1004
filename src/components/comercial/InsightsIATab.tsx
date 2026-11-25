@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { BarChart3, AlertTriangle, TrendingUp, Info, CheckCircle2, RefreshCw } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { postAiJson } from '@/lib/aiApi';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { LoadingIndicator, LoadingState } from '@/components/common/LoadingState';
@@ -34,10 +34,7 @@ export function InsightsIATab({ vendedores, kpis }: Props) {
   const gerarInsights = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke('metas-insights', {
-        body: { vendedores, kpis },
-      });
-      if (error) throw error;
+      const data = await postAiJson<{ insights?: Insight[]; error?: string }>('metas-insights', { vendedores, kpis });
       if (data?.error) {
         toast.error(data.error);
       }

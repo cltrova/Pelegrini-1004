@@ -18,7 +18,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
+import { postAiJson } from '@/lib/aiApi';
 
 interface AIComposerProps {
   text: string;
@@ -51,14 +51,10 @@ export function AIComposer({ text, onTextTransform, disabled }: AIComposerProps)
     setProcessingAction(action);
 
     try {
-      const { data, error } = await supabase.functions.invoke('ai-compose', {
-        body: { text: text.trim(), action }
+      const data = await postAiJson<{ transformedText?: string; error?: string }>('ai-compose', {
+        text: text.trim(),
+        action,
       });
-
-      if (error) {
-        console.error('AI Compose error:', error);
-        throw new Error(error.message || 'Erro ao processar texto');
-      }
 
       if (data?.error) {
         throw new Error(data.error);

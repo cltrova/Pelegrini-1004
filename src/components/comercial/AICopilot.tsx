@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Sparkles, Send, X, MessageSquare, Lightbulb } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { postAiJson } from '@/lib/aiApi';
 import { cn } from '@/lib/utils';
 import ReactMarkdown from 'react-markdown';
 import type { ComercialAIContext } from '@/utils/comercialAIContext';
@@ -45,10 +45,10 @@ export function AICopilot({ contexto }: Props) {
     setInput('');
     setLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke('comercial-ai-chat', {
-        body: { messages: next, contexto },
+      const data = await postAiJson<{ reply?: string }>('comercial-ai-chat', {
+        messages: next,
+        contexto,
       });
-      if (error) throw error;
       setMessages([...next, { role: 'assistant', content: data?.reply || 'Sem resposta.' }]);
     } catch (e) {
       setMessages([...next, { role: 'assistant', content: 'Erro ao consultar a IA. Tente novamente.' }]);

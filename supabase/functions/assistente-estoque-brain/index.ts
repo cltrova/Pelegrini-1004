@@ -1,17 +1,20 @@
+import { serveLegacyAi, getChatProvider } from "../_shared/ai-provider.ts";
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
-const AI_GATEWAY_URL = Deno.env.get("AI_GATEWAY_URL") || "https://api.openai.com/v1/chat/completions";
-const AI_GATEWAY_API_KEY = Deno.env.get("AI_GATEWAY_API_KEY") || Deno.env.get("OPENAI_API_KEY");
-
-Deno.serve(async (req) => {
+export async function handleAiRequest(req: Request): Promise<Response> {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
 
   try {
+    const { url: AI_GATEWAY_URL, apiKey: AI_GATEWAY_API_KEY, model: providerModel } = getChatProvider();
+    if (!AI_GATEWAY_API_KEY) {
+      return Response.json({ error: "A IA do Estoque precisa ser configurada no servidor." }, { status: 503, headers: corsHeaders });
+    }
     const { currentPrompt, userRequest } = await req.json();
 
     const systemPrompt = `Você é um especialista em engenharia de prompts para assistentes de gestão de estoque.
@@ -43,7 +46,7 @@ Sugira a alteração usando a tool.`;
         Authorization: `Bearer ${AI_GATEWAY_API_KEY}`,
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
+        model: providerModel,
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt },
@@ -79,8 +82,8 @@ Sugira a alteração usando a tool.`;
 
     if (!aiResponse.ok) {
       const status = aiResponse.status;
-      const errText = await aiResponse.text();
-      console.error("AI error:", status, errText);
+      await aiResponse.body?.cancel();
+      console.error("AI error:", status, aiResponse.headers.get("x-request-id"));
       if (status === 429) {
         return new Response(JSON.stringify({ error: "Limite de requisições excedido." }), {
           status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -120,4 +123,6 @@ Sugira a alteração usando a tool.`;
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
-});
+}
+
+serveLegacyAi(handleAiRequest);

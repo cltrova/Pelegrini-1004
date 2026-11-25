@@ -129,9 +129,12 @@ export default defineConfig(async ({ command, mode }) => {
   server: {
     host: "::",
     port: 8080,
-    proxy: process.env.VISITAS_API_TARGET ? {
-      '/operacional/visitas/': process.env.VISITAS_API_TARGET,
-    } : undefined,
+    proxy: {
+      '/api/ia/': process.env.PELEGRINI_AI_TARGET || 'http://127.0.0.1:4319',
+      ...(process.env.VISITAS_API_TARGET && {
+        '/operacional/visitas/': process.env.VISITAS_API_TARGET,
+      }),
+    },
   },
   plugins: [react(), localApiProxyPlugin(), release.plugin],
   resolve: {

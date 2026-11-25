@@ -1,5 +1,4 @@
-import "https://deno.land/x/xhr@0.1.0/mod.ts";
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { serveLegacyAi, getChatProvider } from "../_shared/ai-provider.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -68,7 +67,7 @@ const tools = [
   }
 ];
 
-serve(async (req) => {
+export async function handleAiRequest(req: Request): Promise<Response> {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -76,8 +75,7 @@ serve(async (req) => {
   try {
     const { messages, variacaoData, gruposInverterSinal, gruposAtivosOperacionais } = await req.json();
     
-    const AI_GATEWAY_URL = Deno.env.get("AI_GATEWAY_URL") || "https://api.openai.com/v1/chat/completions";
-const AI_GATEWAY_API_KEY = Deno.env.get("AI_GATEWAY_API_KEY") || Deno.env.get("OPENAI_API_KEY");
+    const { url: AI_GATEWAY_URL, apiKey: AI_GATEWAY_API_KEY, model: providerModel } = getChatProvider();
     if (!AI_GATEWAY_API_KEY) {
       throw new Error("AI_GATEWAY_API_KEY ou OPENAI_API_KEY não está configurada");
     }
@@ -141,7 +139,7 @@ const AI_GATEWAY_API_KEY = Deno.env.get("AI_GATEWAY_API_KEY") || Deno.env.get("O
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
+        model: providerModel,
         messages: apiMessages,
         tools,
         tool_choice: "auto",
@@ -150,8 +148,8 @@ const AI_GATEWAY_API_KEY = Deno.env.get("AI_GATEWAY_API_KEY") || Deno.env.get("O
     });
 
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error("AI gateway error:", response.status, errorText);
+      await response.body?.cancel();
+      console.error("AI gateway error:", response.status, response.headers.get("x-request-id"));
       
       if (response.status === 429) {
         return new Response(
@@ -251,7 +249,7 @@ const AI_GATEWAY_API_KEY = Deno.env.get("AI_GATEWAY_API_KEY") || Deno.env.get("O
               "Content-Type": "application/json",
             },
             body: JSON.stringify({
-              model: "google/gemini-2.5-flash",
+              model: providerModel,
               messages: followUpMessages,
               stream: true,
             }),
@@ -300,4 +298,6 @@ const AI_GATEWAY_API_KEY = Deno.env.get("AI_GATEWAY_API_KEY") || Deno.env.get("O
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
-});
+}
+
+serveLegacyAi(handleAiRequest);

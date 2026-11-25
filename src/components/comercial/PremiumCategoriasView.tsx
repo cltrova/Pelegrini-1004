@@ -10,7 +10,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { formatCurrency, formatNumber } from '@/utils/formatters';
-import { supabase } from '@/integrations/supabase/client';
+import { postAiJson } from '@/lib/aiApi';
 import { toast } from 'sonner';
 import { LoadingIndicator, LoadingState } from '@/components/common/LoadingState';
 import {
@@ -163,10 +163,11 @@ export function PremiumCategoriasView({
         produtos: c.produtos,
         participacao: c.participacao,
       }));
-      const { data, error } = await supabase.functions.invoke('categorias-insights', {
-        body: { categorias: payload, categoriaFoco: selectedCategoria, periodo: periodoLabel },
+      const data = await postAiJson<{ insights?: AIInsight[]; error?: string }>('categorias-insights', {
+        categorias: payload,
+        categoriaFoco: selectedCategoria,
+        periodo: periodoLabel,
       });
-      if (error) throw error;
       if (data?.error) throw new Error(data.error);
       if (Array.isArray(data?.insights) && data.insights.length > 0) {
         setAiInsights(data.insights);

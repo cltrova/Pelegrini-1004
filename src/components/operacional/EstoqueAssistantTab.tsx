@@ -9,6 +9,7 @@ import { Bot, Send, User, Lightbulb, MessageSquare, RefreshCw, TrendingUp, Trend
 import { LoadingIndicator, LoadingState } from '@/components/common/LoadingState';
 import { EstoqueRecord, GiroRecord } from '@/types/estoque';
 import { supabase } from '@/integrations/supabase/client';
+import { postAiJson } from '@/lib/aiApi';
 import ReactMarkdown from 'react-markdown';
 import { useEmpresaAtiva } from '@/hooks/useEmpresaAtiva';
 import { useFilialSelecionada } from '@/contexts/FilialSelecionadaContext';
@@ -316,23 +317,7 @@ function InsightsTab({ estoqueData, giroData, now }: Props) {
     setIsLoading(true);
     try {
       const context = buildContext(estoqueData, giroData, now);
-      const { data: sessionData } = await supabase.auth.getSession();
-      const token = sessionData?.session?.access_token;
-
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/assistente-estoque-insights`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-          },
-          body: JSON.stringify({ context }),
-        }
-      );
-      if (!response.ok) throw new Error(`Erro: ${response.status}`);
-      const result = await response.json();
+      const result = await postAiJson<{ insights?: Insight[] }>('assistente-estoque-insights', { context });
       setInsights(result.insights || []);
       setLastGenerated(new Date().toLocaleString('pt-BR'));
     } catch (error) {
@@ -507,23 +492,7 @@ function ChatTab({ estoqueData, giroData, now, customPrompt, codEmpresaBi, credi
           const formData = new FormData();
           formData.append('file', blob, 'audio.webm');
 
-          const { data: sessionData } = await supabase.auth.getSession();
-          const token = sessionData?.session?.access_token;
-
-          const response = await fetch(
-            `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/transcribe-audio`,
-            {
-              method: 'POST',
-              headers: {
-                Authorization: `Bearer ${token}`,
-                apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-              },
-              body: formData,
-            }
-          );
-
-          if (!response.ok) throw new Error('Erro na transcrição');
-          const result = await response.json();
+          const result = await postAiJson<{ text?: string }>('transcribe-audio', formData);
           if (result.text) {
             setInput(prev => prev ? `${prev} ${result.text}` : result.text);
           }
@@ -574,30 +543,11 @@ function ChatTab({ estoqueData, giroData, now, customPrompt, codEmpresaBi, credi
 
     try {
       const context = buildContext(estoqueData, giroData, now);
-      const { data: sessionData } = await supabase.auth.getSession();
-      const token = sessionData?.session?.access_token;
-
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/assistente-estoque`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-          },
-          body: JSON.stringify({
-            messages: conversation.map(({ role, content }) => ({ role, content })),
-            context,
-            customPrompt,
-          }),
-        }
-      );
-      if (!response.ok) {
-        const errData = await response.json().catch(() => ({}));
-        throw new Error(errData.error || `Erro: ${response.status}`);
-      }
-      const result = await response.json();
+      const result = await postAiJson<{ response: string; document?: DocumentData }>('assistente-estoque', {
+        messages: conversation.map(({ role, content }) => ({ role, content })),
+        context,
+        customPrompt,
+      });
       if (!isActiveRef.current) return;
       setMessages(prev => [...prev, { 
         role: 'assistant', 
@@ -841,27 +791,10 @@ function BrainTab({ codEmpresaBi }: { codEmpresaBi: string }) {
     setAiSuggestion(null);
 
     try {
-      const { data: sessionData } = await supabase.auth.getSession();
-      const token = sessionData?.session?.access_token;
-
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/assistente-estoque-brain`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-          },
-          body: JSON.stringify({
-            currentPrompt: prompt,
-            userRequest: aiRequest.trim(),
-          }),
-        }
-      );
-
-      if (!response.ok) throw new Error(`Erro: ${response.status}`);
-      const result = await response.json();
+      const result = await postAiJson<{ suggested_prompt: string; explanation: string }>('assistente-estoque-brain', {
+        currentPrompt: prompt,
+        userRequest: aiRequest.trim(),
+      });
       setAiSuggestion(result);
     } catch (error) {
       console.error('Erro:', error);

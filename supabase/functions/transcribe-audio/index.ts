@@ -1,37 +1,37 @@
-import "https://deno.land/x/xhr@0.1.0/mod.ts";
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { serveLegacyAi, getOpenAiApiKey, OPENAI_TRANSCRIPTION_URL } from "../_shared/ai-provider.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-serve(async (req) => {
+export async function handleAiRequest(req: Request): Promise<Response> {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
+    const OPENAI_API_KEY = getOpenAiApiKey();
     if (!OPENAI_API_KEY) {
       console.error('OPENAI_API_KEY not configured');
       throw new Error('OpenAI API key not configured');
     }
 
-    const { audio, mimeType = 'audio/webm' } = await req.json();
-    
-    if (!audio) {
-      throw new Error('No audio data provided');
+    let audioBlob: Blob | null = null;
+    if (req.headers.get('Content-Type')?.toLowerCase().startsWith('multipart/form-data;')) {
+      const file = (await req.formData()).get('file');
+      if (file instanceof Blob) audioBlob = file;
+    } else {
+      const { audio, mimeType = 'audio/webm' } = await req.json();
+      if (typeof audio === 'string' && audio) {
+        const binary = atob(audio);
+        const bytes = Uint8Array.from(binary, char => char.charCodeAt(0));
+        audioBlob = new Blob([bytes], { type: mimeType });
+      }
     }
-
-    console.log('Received audio for transcription, mimeType:', mimeType);
-    
-    // Decode base64 audio
-    const binaryString = atob(audio);
-    const bytes = new Uint8Array(binaryString.length);
-    for (let i = 0; i < binaryString.length; i++) {
-      bytes[i] = binaryString.charCodeAt(i);
+    if (!audioBlob?.size) {
+      return Response.json({ error: 'Envie um arquivo de áudio.', success: false }, { status: 400, headers: corsHeaders });
     }
     
     // Determine file extension from mime type
@@ -43,34 +43,33 @@ serve(async (req) => {
       'audio/ogg': 'ogg',
       'audio/m4a': 'm4a',
     };
+    const mimeType = audioBlob.type.split(';', 1)[0];
     const extension = extensionMap[mimeType] || 'webm';
     
     // Create form data for Whisper API
     const formData = new FormData();
-    const audioBlob = new Blob([bytes], { type: mimeType });
     formData.append('file', audioBlob, `audio.${extension}`);
     formData.append('model', 'whisper-1');
     formData.append('language', 'pt');
     formData.append('response_format', 'json');
     
-    console.log('Calling Whisper API...');
     
-    const response = await fetch('https://api.openai.com/v1/audio/transcriptions', {
+    const response = await fetch(OPENAI_TRANSCRIPTION_URL, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${OPENAI_API_KEY}`,
       },
       body: formData,
+      signal: req.signal,
     });
     
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Whisper API error:', response.status, errorText);
+      await response.body?.cancel();
+      console.error('Whisper API error:', response.status, response.headers.get("x-request-id"));
       throw new Error(`Whisper API error: ${response.status}`);
     }
     
     const result = await response.json();
-    console.log('Transcription result:', result);
     
     return new Response(
       JSON.stringify({ 
@@ -96,4 +95,6 @@ serve(async (req) => {
       }
     );
   }
-});
+}
+
+serveLegacyAi(handleAiRequest);

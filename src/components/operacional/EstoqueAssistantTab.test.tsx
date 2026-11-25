@@ -22,7 +22,7 @@ vi.mock('@/contexts/FilialSelecionadaContext', () => ({
 
 vi.mock('@/integrations/supabase/client', () => ({
   supabase: {
-    auth: { getSession: vi.fn(async () => ({ data: { session: null } })) },
+    auth: { getSession: vi.fn(async () => ({ data: { session: { access_token: 'portal-token' } } })) },
     from: vi.fn(() => ({
       select: vi.fn(() => ({ eq: vi.fn((_column: string, value: string) => {
         queriedCompanies.push(value);
@@ -105,7 +105,7 @@ describe('EstoqueAssistantTab', () => {
   });
 
   it('expoe seis sugestoes acessiveis e envia pelo fluxo existente', async () => {
-    const fetchMock = vi.fn(async () => ({ ok: true, json: async () => ({ response: 'Resumo pronto' }) }));
+    const fetchMock = vi.fn<typeof fetch>().mockResolvedValueOnce(Response.json({ response: 'Resumo pronto' }));
     vi.stubGlobal('fetch', fetchMock);
     render(<EstoqueAssistantTab estoqueData={estoqueFixture} giroData={giroFixture} />);
 
@@ -114,7 +114,10 @@ describe('EstoqueAssistantTab', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Resumo diario' }));
 
     await waitFor(() => expect(fetchMock).toHaveBeenCalledOnce());
-    expect(JSON.parse(String(fetchMock.mock.calls[0][1]?.body)).messages.at(-1).content).toMatch(/resumo/i);
+    const [url, request] = fetchMock.mock.calls[0];
+    expect(url).toBe('/api/ia/assistente-estoque');
+    expect(new Headers(request?.headers).get('Authorization')).toBe('Bearer portal-token');
+    expect(JSON.parse(String(request?.body)).messages.at(-1).content).toMatch(/resumo/i);
   });
 
   it('bloqueia envio duplicado durante processamento e mantem o composer visivel', async () => {

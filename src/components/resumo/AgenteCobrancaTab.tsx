@@ -17,6 +17,7 @@ import {
   useCobrancaConfig, useCobrancaTelefones, useEnviarCobranca, CobrancaConfig,
 } from '@/hooks/useCobrancaAgente';
 import { supabase } from '@/integrations/supabase/client';
+import { postAiJson } from '@/lib/aiApi';
 import { useToast } from '@/hooks/use-toast';
 import { LoadingIndicator, LoadingState } from '@/components/common/LoadingState';
 
@@ -430,25 +431,21 @@ function SimuladorPanel({ cfg, duplicatas }: { cfg: CobrancaConfig; duplicatas: 
   const callAgent = async (history: SimMsg[]) => {
     setLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke('cobranca-simulate', {
-        body: {
-          persona_prompt: cfg.persona_prompt,
-          agente_nome: cfg.agente_nome,
-          gatilho,
-          cenario: {
-            cliente,
-            valor: Number(valor) || 0,
-            vencimento: vencimento ? new Date(vencimento).toLocaleDateString('pt-BR') : '',
-            dias_atraso: Number(diasAtraso) || 0,
-          },
-          templates: {
-            d3: cfg.template_d3, d1: cfg.template_d1, d0: cfg.template_d0, atrasado: cfg.template_atrasado,
-          },
-          messages: history.map(m => ({ role: m.role, content: m.content })),
+      const response = await postAiJson<SimuladorResponse | null>('cobranca-simulate', {
+        persona_prompt: cfg.persona_prompt,
+        agente_nome: cfg.agente_nome,
+        gatilho,
+        cenario: {
+          cliente,
+          valor: Number(valor) || 0,
+          vencimento: vencimento ? new Date(vencimento).toLocaleDateString('pt-BR') : '',
+          dias_atraso: Number(diasAtraso) || 0,
         },
+        templates: {
+          d3: cfg.template_d3, d1: cfg.template_d1, d0: cfg.template_d0, atrasado: cfg.template_atrasado,
+        },
+        messages: history.map(m => ({ role: m.role, content: m.content })),
       });
-      if (error) throw error;
-      const response = data as SimuladorResponse | null;
       if (response?.error) throw new Error(response.error);
       const reply = response?.reply || '';
       setMessages(prev => [...prev, { id: crypto.randomUUID(), role: 'assistant', content: reply, ts: Date.now() }]);

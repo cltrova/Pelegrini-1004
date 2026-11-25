@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState, useEffect } from 'react';
 import { useCampanhas, type Campanha, type CampanhaInput, type CampanhaMarca } from '@/hooks/useCampanhas';
 import { useComercialProdutos } from '@/hooks/useComercialProdutos';
-import { supabase } from '@/integrations/supabase/client';
+import { postAiJson } from '@/lib/aiApi';
 import { keepPreviousData, useIsFetching, useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -614,9 +614,11 @@ export function CampanhasTab({ periodoFiltro }: CampanhasTabProps = {}) {
           realizado: m.realizado, progresso: m.progresso,
         })),
       }));
-      const { data, error } = await supabase.functions.invoke('campanhas-insights', { body: { campanhas: payload } });
-      if (error) throw error;
-      return (data?.insights || []) as Array<{ tipo: string; titulo: string; descricao: string }>;
+      const data = await postAiJson<{ insights?: Array<{ tipo: string; titulo: string; descricao: string }> }>(
+        'campanhas-insights',
+        { campanhas: payload },
+      );
+      return data?.insights || [];
     },
   });
 
