@@ -26,6 +26,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { LoadingIndicator, LoadingState } from '@/components/common/LoadingState';
 import type { Profile, AppRole } from '@/types/auth';
+import { CLIENTE_CODIGOS_EMPRESA_BI, isCliente1004 } from '@/config/cliente1004';
 import {
   deleteLocalPreviewUserAccount,
   getActiveLocalPreviewUserAccount,
@@ -59,6 +60,9 @@ export function UserList({ onEdit, filterByCompany }: UserListProps) {
   const loadUsers = async () => {
     try {
       setLoading(true);
+      const empresasDoCliente: readonly string[] = isMaster && isCliente1004(filterByCompany)
+        ? CLIENTE_CODIGOS_EMPRESA_BI
+        : filterByCompany ? [filterByCompany] : [];
 
       if (localPreview) {
         const localUsers = readLocalPreviewUserAccounts()
@@ -66,7 +70,7 @@ export function UserList({ onEdit, filterByCompany }: UserListProps) {
             ...account.profile,
             roles: account.roles,
           }))
-          .filter((user) => !filterByCompany || !user.cod_empresa_bi || user.cod_empresa_bi === filterByCompany);
+          .filter((user) => empresasDoCliente.length === 0 || !user.cod_empresa_bi || empresasDoCliente.includes(user.cod_empresa_bi));
 
         setUsers(localUsers);
         return;
@@ -84,8 +88,8 @@ export function UserList({ onEdit, filterByCompany }: UserListProps) {
       }
 
       // Se foi passado filtro específico
-      if (filterByCompany) {
-        query = query.eq('cod_empresa_bi', filterByCompany);
+      if (empresasDoCliente.length > 0) {
+        query = query.in('cod_empresa_bi', empresasDoCliente);
       }
 
       const { data: profiles, error: profilesError } = await query;
@@ -122,7 +126,7 @@ export function UserList({ onEdit, filterByCompany }: UserListProps) {
 
   useEffect(() => {
     loadUsers();
-  }, [filterByCompany]);
+  }, [filterByCompany, isMaster, codEmpresa]);
 
   const handleDelete = async () => {
     if (!deleteUserId) return;
