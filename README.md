@@ -90,3 +90,7 @@ Use `npm run build` normalmente. Nao recompile entre a publicacao em um dominio
 e no outro. Sem uma versao publicada acessivel o build para, evitando repetir
 numeros. `PELEGRINI_VERSION_BOOTSTRAP=1` serve exclusivamente para a primeira
 publicacao, quando nenhum dos dominios ainda possui o manifesto.
+
+O build de produção exige `VITE_SUPABASE_URL` e `VITE_SUPABASE_PUBLISHABLE_KEY`
+do serviço de contas do portal. Configure essas variáveis no ambiente de build
+ou no arquivo local `.env.production.local`, ignorado pelo Git. Use uma chave pública.

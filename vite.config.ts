@@ -1,8 +1,9 @@
-import { defineConfig } from "vite";
+import { defineConfig, loadEnv, type ViteDevServer } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import type { IncomingMessage, ServerResponse } from "http";
 import { releaseVersionConfig } from './scripts/releaseVersion';
+import { assertProductionSupabaseConfig } from './scripts/validateSupabaseConfig';
 
 async function readRequestBody(req: IncomingMessage): Promise<Buffer | undefined> {
   const chunks: Buffer[] = [];
@@ -63,7 +64,7 @@ function isJsonResponse(body: string) {
 function localApiProxyPlugin() {
   return {
     name: "local-api-proxy",
-    configureServer(server: any) {
+    configureServer(server: ViteDevServer) {
       server.middlewares.use("/api-proxy", async (req: IncomingMessage, res: ServerResponse) => {
         try {
           const requestUrl = new URL(req.url || "", "http://localhost");
@@ -123,7 +124,9 @@ function localApiProxyPlugin() {
 
 // https://vitejs.dev/config/
 export default defineConfig(async ({ command, mode }) => {
-  const release = await releaseVersionConfig(command === 'build' && mode === 'production');
+  const productionBuild = command === 'build' && mode === 'production';
+  if (productionBuild) assertProductionSupabaseConfig(loadEnv(mode, process.cwd(), 'VITE_'));
+  const release = await releaseVersionConfig(productionBuild);
   return {
   define: release.define,
   server: {

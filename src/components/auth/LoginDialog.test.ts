@@ -2,9 +2,15 @@ import { describe, expect, it } from 'vitest';
 import { formatAuthDialogError, getAuthDialogDescription } from './LoginDialog';
 
 describe('LoginDialog auth messages', () => {
-  it('explica falha de conexao quando o Supabase local esta em modo preview', () => {
+  it('exibe uma mensagem de indisponibilidade em falhas de conexão', () => {
     expect(formatAuthDialogError('Failed to fetch')).toBe(
-      'Nao foi possivel conectar ao Supabase. Configure VITE_SUPABASE_URL e VITE_SUPABASE_PUBLISHABLE_KEY reais no .env.local para testar cadastro e login.'
+      'O serviço de login está indisponível no momento. Tente novamente em instantes.'
+    );
+  });
+
+  it('orienta o usuário a procurar suporte se a configuração da aplicação estiver ausente', () => {
+    expect(formatAuthDialogError('AUTH_CONFIGURATION_MISSING')).toBe(
+      'O acesso ao sistema está indisponível. Entre em contato com o suporte.'
     );
   });
 
