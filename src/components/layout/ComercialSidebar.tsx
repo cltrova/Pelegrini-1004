@@ -51,7 +51,7 @@ export function ComercialSidebar() {
   const theme = resolvePelegriniTheme(filialAtiva || codEmpresaAtiva);
   const comercialMenuItems = getComercialMenuItems(codEmpresaAtiva || '');
   const showFutureItems = !hasCotacoesComerciais(codEmpresaAtiva || '');
-  if (!showFutureItems && (isMaster || isGerencial)) {
+  if (!showFutureItems && filialAtiva === 'chevrolet' && (isMaster || isGerencial)) {
     comercialMenuItems.push({ label: 'Relatórios de visitas', icon: ClipboardList, path: '/comercial/visitas' });
   }
 

@@ -5,6 +5,7 @@
  import { ThemeToggle } from '@/components/common/ThemeToggle';
  import { cn } from '@/lib/utils';
  import { useAuth } from '@/contexts/AuthContext';
+ import { useFilialSelecionada } from '@/contexts/FilialSelecionadaContext';
  
  interface NavItem {
    icon: React.ComponentType<{ className?: string }>;
@@ -25,6 +26,7 @@
    const navigate = useNavigate();
    const { codEmpresaAtiva } = useEmpresaAtiva();
    const { isMaster, isGerencial } = useAuth();
+   const { filialAtiva } = useFilialSelecionada();
    const showQuoteNavigation = codEmpresaAtiva === '1004' || codEmpresaAtiva === '10041';
    const isQuoteRoute = location.pathname === '/comercial/cotacoes'
      || location.pathname === '/comercial/perdidas'
@@ -91,7 +93,7 @@
                  <XCircle aria-hidden="true" className="h-4 w-4" />
                  Vendas Perdidas
                </NavLink>
-               {(isMaster || isGerencial) && (
+               {filialAtiva === 'chevrolet' && (isMaster || isGerencial) && (
                  <NavLink to="/comercial/visitas" className="flex h-11 items-center gap-2 rounded-sm px-2 text-sm hover:bg-accent">
                    <ClipboardList aria-hidden="true" className="h-4 w-4" />
                    Relatórios de visitas
