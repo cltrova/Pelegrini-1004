@@ -11,6 +11,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { getFilialPorId } from '@/config/filiaisEmpresa';
 import { applyCnpjMask, formatCnpjDisplay } from '@/utils/formatters';
+import { CidadeVisitaCampo } from './CidadeVisitaCampo';
 import { enviarVisita, listarVisitas, type SessaoVisitas } from './visitasApi';
 
 const dadosCliente = [
@@ -87,13 +88,15 @@ function Formulario({ filial, onEnviado }: { filial: FilialVisitas; onEnviado: (
           {dadosCliente.map(({ key, label, ...field }) => (
             <div key={key} className="min-w-0 space-y-1.5">
               <Label htmlFor={key}>{label}</Label>
-              <Input id={key} name={key} required={'required' in field}
-                type={key === 'data_visita' ? 'date' : 'text'}
-                defaultValue={key === 'data_visita' ? dataHoje() : undefined}
-                placeholder={key === 'cnpj' ? '00.000.000/0000-00' : undefined}
-                autoCapitalize={key === 'cnpj' ? 'characters' : undefined}
-                onChange={key === 'cnpj' ? formatarCampoCnpj : undefined}
-                maxLength={key === 'cnpj' ? 24 : 200} />
+              {key === 'cidade' ? <CidadeVisitaCampo /> : (
+                <Input id={key} name={key} required={'required' in field}
+                  type={key === 'data_visita' ? 'date' : 'text'}
+                  defaultValue={key === 'data_visita' ? dataHoje() : undefined}
+                  placeholder={key === 'cnpj' ? '00.000.000/0000-00' : undefined}
+                  autoCapitalize={key === 'cnpj' ? 'characters' : undefined}
+                  onChange={key === 'cnpj' ? formatarCampoCnpj : undefined}
+                  maxLength={key === 'cnpj' ? 24 : 200} />
+              )}
             </div>
           ))}
         </div>

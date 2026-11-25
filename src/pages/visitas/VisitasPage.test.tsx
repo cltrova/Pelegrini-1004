@@ -11,6 +11,7 @@ const mock = vi.hoisted(() => ({
 
 const chevrolet = { cod_empresa_bi: '10041', filial_id: 'chevrolet' };
 const transmissao = { cod_empresa_bi: '1004', filial_id: 'transmissao' };
+const scrollIntoView = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'scrollIntoView');
 
 function renderPage(gerencial = false, filiais: SessaoVisitas['filiais'] = [chevrolet], filialAtiva?: string) {
   const client = new QueryClient();
@@ -23,6 +24,12 @@ function renderPage(gerencial = false, filiais: SessaoVisitas['filiais'] = [chev
 describe('Relatórios de visitas', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.stubGlobal('ResizeObserver', class {
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+    });
+    if (!scrollIntoView) Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', { configurable: true, value: vi.fn() });
     vi.stubGlobal('fetch', mock.fetch);
     mock.fetch.mockImplementation(async (_url, init) => init.method === 'POST'
       ? Response.json({ id: '1' }, { status: 201 })
@@ -32,7 +39,10 @@ describe('Relatórios de visitas', () => {
         visitador_nome: 'Visitador da equipe', avaliacoes: { Atendimento: ['Solicitou retorno', '', ''] },
       }] }));
   });
-  afterEach(() => vi.unstubAllGlobals());
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    if (!scrollIntoView) Reflect.deleteProperty(HTMLElement.prototype, 'scrollIntoView');
+  });
 
   it('registra a visita no escopo do visitador e abre seu histórico', async () => {
     renderPage(false, [transmissao, chevrolet]);
@@ -57,6 +67,7 @@ describe('Relatórios de visitas', () => {
     }));
     expect(payload).not.toHaveProperty('visitador_id');
     expect(mock.fetch.mock.calls.some(([path]) => path.includes('escopo=meus'))).toBe(true);
+    expect(screen.getByText('23/11/2026 · Uberlândia')).toBeVisible();
     fireEvent.click(screen.getByText('Oficina Central'));
     expect(screen.getByText('01.234.567/0001-89')).toBeVisible();
   });
@@ -78,6 +89,52 @@ describe('Relatórios de visitas', () => {
     });
     expect(campo).toHaveValue('12.ABC.345/01DE-67');
     expect(campo.selectionStart).toBe(3);
+  });
+
+  it('busca cidades sem acento, diferencia estados e salva o município com a UF escolhida', async () => {
+    renderPage();
+    fireEvent.change(screen.getByLabelText('Nome do cliente'), { target: { value: 'Oficina Central' } });
+    const campo = screen.getByRole('button', { name: 'Cidade' });
+    fireEvent.click(campo);
+    expect(campo).toHaveAttribute('aria-expanded', 'true');
+    const busca = screen.getByRole('combobox', { name: 'Buscar cidade ou UF' });
+    expect(await screen.findByRole('option', { name: 'Abadia de Goiás - GO' })).toBeVisible();
+
+    fireEvent.change(busca, { target: { value: 'uberlandia mg' } });
+    expect(await screen.findByRole('option', { name: 'Uberlândia - MG' })).toBeVisible();
+    fireEvent.change(busca, { target: { value: 'Santa Luzia' } });
+    expect(screen.getByRole('option', { name: 'Santa Luzia - BA' })).toBeVisible();
+    expect(screen.getByRole('option', { name: 'Santa Luzia - MG' })).toBeVisible();
+    fireEvent.change(busca, { target: { value: 'Santa Luzia BA' } });
+    expect(screen.queryByRole('option', { name: 'Santa Luzia - MG' })).not.toBeInTheDocument();
+    fireEvent.keyDown(busca, { key: 'Enter' });
+    expect(campo).toHaveTextContent('Santa Luzia - BA');
+    expect(campo).toHaveAttribute('aria-expanded', 'false');
+
+    mock.fetch.mockImplementation(async (_url, init) => {
+      if (init.method === 'POST') return Response.json({ id: '2' }, { status: 201 });
+      return Response.json({ total: 1, relatorios: [{
+        id: '2', nome_cliente: 'Oficina Central', data_visita: '2026-11-25', cidade: 'Santa Luzia - BA', avaliacoes: {},
+      }] });
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Enviar relatório' }));
+    expect(await screen.findByText('25/11/2026 · Santa Luzia - BA')).toBeVisible();
+    const [, post] = mock.fetch.mock.calls.find(([, init]) => init.method === 'POST')!;
+    expect(JSON.parse(post.body)).toMatchObject({ cidade: 'Santa Luzia - BA' });
+  });
+
+  it('permite informar e limpar uma cidade fora do catálogo', async () => {
+    renderPage();
+    const campo = screen.getByRole('button', { name: 'Cidade' });
+    fireEvent.click(campo);
+    const busca = screen.getByRole('combobox', { name: 'Buscar cidade ou UF' });
+    fireEvent.change(busca, { target: { value: 'Distrito Industrial Teste' } });
+    fireEvent.click(await screen.findByRole('option', { name: /Usar.*Distrito Industrial Teste/ }));
+    expect(campo).toHaveTextContent('Distrito Industrial Teste');
+
+    fireEvent.click(campo);
+    fireEvent.click(screen.getByRole('option', { name: 'Limpar cidade' }));
+    expect(campo).toHaveTextContent('Selecionar cidade');
   });
 
   it('aguarda a liberação de Visitas quando a sessão não inclui a filial ativa', async () => {
