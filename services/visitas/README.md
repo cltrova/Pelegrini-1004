@@ -74,7 +74,7 @@ No GET, `cliente` e `visitador` procuram trechos do nome. `inicio` e `fim` são 
 
 ### Cadastro de visitadores
 
-Em **Configurações → Usuários → Novo Usuário**, o Master seleciona **Visitador** e informa nome, e-mail, empresa e filiais. A conta fica no SQL interno. O visitador entra em `/visitas` e define a própria senha no primeiro login.
+Em **Configurações → Usuários → Novo Usuário**, o Master seleciona **Visitador** e informa nome, e-mail, empresa e filiais. A conta fica no SQL interno. O visitador usa o login principal do Pelegrini, define a própria senha no primeiro acesso e segue para `/visitas`. Uma sessão de Visitas volta a essa tela ao abrir outro endereço do portal.
 
 | Método | Rota | Resultado |
 |---|---|---|
@@ -87,7 +87,7 @@ O cadastro recebe `nome`, `email`, `cod_empresa_bi` e `filiais`. O e-mail é ún
 
 ## Homologação local
 
-- Visitador — `http://127.0.0.1:4317/visitas`
+- Entrada do visitador — `http://127.0.0.1:4317/`
 - Comercial — `http://127.0.0.1:4317/comercial/visitas`
 - OpenAPI — `http://127.0.0.1:4318/docs`
 

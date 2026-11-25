@@ -111,10 +111,10 @@ export async function consultarSessaoVisitas(accessToken?: string, signal?: Abor
   }
 }
 
-export async function entrarVisitas(email: string, senha: string) {
+export async function entrarVisitas(email: string, senha: string, signal?: AbortSignal) {
   try {
     return await request<SessaoVisitas>(sessao, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, senha }),
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, senha }), signal,
     }, 200);
   } catch (error) {
     if (error instanceof VisitasAuthError) throw new Error('E-mail ou senha inválidos.');

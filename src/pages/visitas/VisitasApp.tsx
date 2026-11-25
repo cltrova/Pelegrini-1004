@@ -5,41 +5,27 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import VisitasPage from './VisitasPage';
-import { consultarSessaoVisitas, entrarVisitas, sairVisitas, trocarSenhaVisitas, type SessaoVisitas } from './visitasApi';
+import { consultarSessaoVisitas, sairVisitas, trocarSenhaVisitas, type SessaoVisitas } from './visitasApi';
 
 const queries = new QueryClient();
 
 function VisitasEntrada() {
-  const [sessao, setSessao] = useState<SessaoVisitas | null | undefined>();
+  const [sessao, setSessao] = useState<SessaoVisitas>();
   const [pending, setPending] = useState(false);
   const [erro, setErro] = useState('');
 
   useEffect(() => {
     let active = true;
     void consultarSessaoVisitas().then(value => {
-      if (active) setSessao(value);
+      if (!active) return;
+      if (value) setSessao(value);
+      else window.location.replace('/');
     }).catch(() => {
       if (!active) return;
       setErro('Não foi possível verificar a sessão. Tente entrar novamente.');
-      setSessao(null);
     });
     return () => { active = false; };
   }, []);
-
-  async function login(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (pending) return;
-    setPending(true);
-    setErro('');
-    const form = new FormData(event.currentTarget);
-    try {
-      setSessao(await entrarVisitas(String(form.get('email')), String(form.get('senha'))));
-    } catch (error) {
-      setErro(error instanceof Error ? error.message : 'Não foi possível entrar.');
-    } finally {
-      setPending(false);
-    }
-  }
 
   async function definirSenha(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -64,12 +50,17 @@ function VisitasEntrada() {
   async function logout() {
     await sairVisitas();
     queries.clear();
-    setSessao(null);
-    setErro('');
+    window.location.replace('/');
   }
 
-  if (sessao === undefined) return <p className="p-6" role="status">Carregando Visitas…</p>;
-  if (sessao?.troca_senha_pendente) return (
+  if (!sessao) return erro ? (
+    <main className="space-y-3 p-6">
+      <p role="alert" className="text-sm text-destructive">{erro}</p>
+      <Button asChild variant="outline"><a href="/">Voltar ao login</a></Button>
+    </main>
+  ) : <p className="p-6" role="status">Carregando Visitas…</p>;
+
+  if (sessao.troca_senha_pendente) return (
     <main className="grid min-h-dvh place-items-center bg-background p-4 text-foreground">
       <form onSubmit={definirSenha} className="w-full max-w-sm space-y-4 rounded-lg border bg-card p-6">
         <h1 className="text-xl font-semibold">Defina sua senha</h1>
@@ -91,25 +82,7 @@ function VisitasEntrada() {
       </form>
     </main>
   );
-  if (sessao) return <VisitasPage key={sessao.id} sessao={sessao} logout={logout} />;
-
-  return (
-    <main className="grid min-h-dvh place-items-center bg-background p-4 text-foreground">
-      <form onSubmit={login} className="w-full max-w-sm space-y-4 rounded-lg border bg-card p-6">
-        <h1 className="text-xl font-semibold">Relatórios de visitas</h1>
-        <div className="space-y-1.5">
-          <Label htmlFor="visitas-email">Email</Label>
-          <Input type="email" id="visitas-email" name="email" autoComplete="username" maxLength={254} required />
-        </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="visitas-senha">Senha</Label>
-          <Input type="password" id="visitas-senha" name="senha" autoComplete="current-password" maxLength={256} required />
-        </div>
-        {erro && <p role="alert" className="text-sm text-destructive">{erro}</p>}
-        <Button type="submit" className="w-full" disabled={pending}>{pending ? 'Entrando…' : 'Entrar no sistema'}</Button>
-      </form>
-    </main>
-  );
+  return <VisitasPage key={sessao.id} sessao={sessao} logout={logout} />;
 }
 
 export default function VisitasApp() {

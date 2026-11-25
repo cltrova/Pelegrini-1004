@@ -5,6 +5,8 @@ import { Check, Eye, EyeOff, Keyboard, LockKeyhole, LogIn, Mail } from 'lucide-r
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { useAuth } from '@/contexts/AuthContext';
+import { isLocalPreviewEnabled } from '@/config/localPreview';
+import { entrarVisitas } from '@/pages/visitas/visitasApi';
 import { formatAuthDialogError } from '@/components/auth/LoginDialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -72,6 +74,13 @@ export function PelegriniLoginPage() {
 
   const handleLogin = async ({ email, password }: LoginFormValues) => {
     setMessage(null);
+    if (!isLocalPreviewEnabled()) {
+      const sessao = await entrarVisitas(email, password, AbortSignal.timeout?.(3500)).catch(() => null);
+      if (sessao) {
+        window.location.replace('/visitas');
+        return;
+      }
+    }
     const result = await login(email, password);
     if (!result?.success) {
       setMessage({ type: 'error', text: formatAuthDialogError(result?.error || 'Email ou senha incorretos.') });

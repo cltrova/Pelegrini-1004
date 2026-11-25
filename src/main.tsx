@@ -4,6 +4,8 @@ import "./styles/operacional-square.css";
 import "./styles/comercial-square.css";
 import "./styles/financeiro-square.css";
 import { installStaleBundleRecovery } from "./utils/staleBundleRecovery";
+import { isLocalPreviewEnabled } from "./config/localPreview";
+import { consultarSessaoVisitas } from "./pages/visitas/visitasApi";
 
 installStaleBundleRecovery(window, {
   reload: () => window.location.reload(),
@@ -14,5 +16,18 @@ installStaleBundleRecovery(window, {
 const root = createRoot(document.getElementById("root")!);
 const pathname = window.location.pathname.replace(/\/$/, "");
 const isVisitas = pathname === "/visitas";
-const entry = isVisitas ? import("./pages/visitas/VisitasApp") : import("./App");
-void entry.then(({ default: App }) => root.render(<App />));
+
+async function iniciar() {
+  if (!isVisitas && !isLocalPreviewEnabled()) {
+    const sessao = await consultarSessaoVisitas(undefined, AbortSignal.timeout?.(1500)).catch(() => null);
+    if (sessao) {
+      window.location.replace('/visitas');
+      return;
+    }
+  }
+
+  const { default: App } = await (isVisitas ? import("./pages/visitas/VisitasApp") : import("./App"));
+  root.render(<App />);
+}
+
+void iniciar();

@@ -19,8 +19,8 @@ export function SenhaTemporariaVisitas({ senha }: { senha: string }) {
         {aviso && <span className="text-xs text-muted-foreground" role="status">{aviso}</span>}
       </div>
       <p className="text-sm text-muted-foreground">Compartilhe o endereço e a senha com o visitador. Ele vai definir a própria senha no primeiro acesso.</p>
-      <a href="/visitas" target="_blank" rel="noreferrer" className="break-all text-sm font-medium text-primary underline">
-        {window.location.origin}/visitas
+      <a href="/" target="_blank" rel="noreferrer" className="break-all text-sm font-medium text-primary underline">
+        {window.location.origin}
       </a>
     </div>
   );

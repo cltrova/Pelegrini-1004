@@ -25,10 +25,13 @@ describe('Application entry gate', () => {
     authState.mustChangePassword = false;
     authState.login.mockReset();
     authState.signup.mockReset();
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(null, { status: 401 })));
   });
 
   afterEach(() => {
     vi.useRealTimers();
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
   });
 
   it('shows the CT and CCH login experience before exposing the application', () => {
@@ -110,6 +113,29 @@ describe('Application entry gate', () => {
 
     await waitFor(() => expect(authState.login).toHaveBeenCalledWith('gestor@pelegrini.com.br', 'senha123'));
     expect(screen.getByRole('alert')).toHaveTextContent('Credenciais inválidas');
+  });
+
+  it('usa o login principal para entrar como visitador com a sessão interna', async () => {
+    const fetcher = vi.fn().mockResolvedValue(Response.json({
+      id: 'visitador-1', perfil: 'visitador', filiais: [], troca_senha_pendente: true,
+    }));
+    vi.stubGlobal('fetch', fetcher);
+    const logError = console.error;
+    vi.spyOn(console, 'error').mockImplementation((...args) => {
+      if (!String(args[0]).includes('Not implemented: navigation')) logError(...args);
+    });
+    render(<PasswordGate><p>Conteudo protegido</p></PasswordGate>);
+
+    fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'visitador@example.test' } });
+    fireEvent.change(screen.getByLabelText('Senha'), { target: { value: 'senha-de-teste' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Entrar no sistema' }));
+
+    await waitFor(() => expect(fetcher).toHaveBeenCalledWith('/operacional/visitas/sessao', expect.objectContaining({
+      method: 'POST', credentials: 'same-origin', body: JSON.stringify({ email: 'visitador@example.test', senha: 'senha-de-teste' }),
+    })));
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Entrar no sistema' })).toBeEnabled());
+    expect(authState.login).not.toHaveBeenCalled();
+    expect(screen.queryByText('Conteudo protegido')).not.toBeInTheDocument();
   });
 
   it('shows actionable validation before calling authentication', async () => {
