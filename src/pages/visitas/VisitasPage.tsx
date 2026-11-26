@@ -314,23 +314,25 @@ function AreaVisitas({ usuario, filial, gerencial, carregar, carregarOficinas, a
 }) {
   const [aba, setAba] = useState('novo');
   const [enviado, setEnviado] = useState(false);
+  const [acoesOficinas, setAcoesOficinas] = useState<HTMLDivElement | null>(null);
   const queryClient = useQueryClient();
   if (gerencial) {
     const historico = <Historico usuario={usuario} filial={filial} carregar={carregar} acoes={acoes} />;
     if (!carregarOficinas) return historico;
     return (
       <Tabs defaultValue="relatorios" className="flex min-h-0 flex-1 flex-col overflow-hidden">
-        <div className="shrink-0 px-3 py-2 sm:px-4">
+        <div className="flex shrink-0 flex-wrap items-center gap-x-2 gap-y-1.5 border-b px-3 py-2 sm:px-4">
           <TabsList aria-label="Relatórios de visitas" className="h-auto flex-wrap justify-start rounded-sm">
             <TabsTrigger value="relatorios">Relatórios</TabsTrigger>
             <TabsTrigger value="oficinas">Oficinas</TabsTrigger>
           </TabsList>
+          <div ref={setAcoesOficinas} className="ml-auto shrink-0 empty:hidden" />
         </div>
         <TabsContent value="relatorios" className="mt-0 flex min-h-0 flex-1 flex-col data-[state=inactive]:hidden">
           {historico}
         </TabsContent>
         <TabsContent value="oficinas" className="mt-0 flex min-h-0 flex-1 flex-col data-[state=inactive]:hidden">
-          <OficinasVisitas usuario={usuario} filial={filial} carregar={carregarOficinas} />
+          <OficinasVisitas usuario={usuario} filial={filial} carregar={carregarOficinas} acoesContainer={acoesOficinas} />
         </TabsContent>
       </Tabs>
     );

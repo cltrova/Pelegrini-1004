@@ -95,11 +95,23 @@ it('busca oficinas na filial ativa, separa os status e aplica os filtros de loca
   expect(within(row).getByText('01.234.567/0001-89')).toBeVisible();
   expect(screen.getByText(/Uberlândia.*MG/)).toBeVisible();
 
-  fireEvent.click(screen.getByRole('button', { name: 'Sem visita registrada', exact: true }));
+  const barraDeAbas = screen.getByRole('tablist', { name: 'Relatórios de visitas' });
+  const acoes = screen.getByRole('group', { name: 'Ações de oficinas' });
+  const situacao = screen.getByRole('group', { name: 'Situação da visita' });
+  expect(barraDeAbas.parentElement).toContainElement(acoes);
+  expect(barraDeAbas.parentElement).not.toContainElement(situacao);
+  expect(within(situacao).getByRole('button', { name: 'Todas', pressed: true })).toBeVisible();
+
+  const semVisita = within(situacao).getByRole('button', { name: 'Sem visita registrada', exact: true });
+  fireEvent.click(semVisita);
   await waitFor(() => expect(screen.queryByRole('row', { name: /Oficina Visitada/ })).not.toBeInTheDocument());
   expect(await screen.findByRole('row', { name: /Oficina Horizonte/ })).toBeVisible();
+  expect(semVisita).toHaveAttribute('aria-pressed', 'true');
 
-  fireEvent.click(screen.getByRole('button', { name: 'Filtros', exact: true }));
+  const filtros = within(acoes).getByRole('button', { name: 'Filtros', exact: true });
+  expect(filtros).toHaveAttribute('aria-expanded', 'false');
+  fireEvent.click(filtros);
+  expect(filtros).toHaveAttribute('aria-expanded', 'true');
   expect(screen.getByRole('combobox', { name: 'UF' })).toHaveValue('MG');
   expect(screen.getByRole('combobox', { name: 'Cidade' })).toHaveValue('Uberlândia');
   fireEvent.change(screen.getByRole('searchbox', { name: 'Nome ou CNPJ' }), { target: { value: '01.012.345/0001-99' } });
@@ -112,4 +124,15 @@ it('busca oficinas na filial ativa, separa os status e aplica os filtros de loca
     expect(new Headers(init.headers).get('Authorization')).toBe('Bearer token-do-portal');
     expect(init.credentials).toBe('omit');
   });
+
+  const atualizar = within(acoes).getByRole('button', { name: 'Atualizar oficinas' });
+  await waitFor(() => expect(atualizar).toBeEnabled());
+  const ultimaUrl = fetcher.mock.lastCall?.[0];
+  const consultas = fetcher.mock.calls.length;
+  fireEvent.click(atualizar);
+  await waitFor(() => expect(fetcher).toHaveBeenCalledTimes(consultas + 1));
+  expect(fetcher.mock.lastCall?.[0]).toBe(ultimaUrl);
+
+  fireEvent.mouseDown(within(barraDeAbas).getByRole('tab', { name: 'Relatórios' }), { button: 0, ctrlKey: false });
+  expect(screen.queryByRole('button', { name: 'Atualizar oficinas' })).not.toBeInTheDocument();
 });

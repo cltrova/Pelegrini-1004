@@ -1,7 +1,8 @@
 import { useEffect, useState, type FormEvent } from 'react';
+import { createPortal } from 'react-dom';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { ChevronDown, Filter, RefreshCw } from 'lucide-react';
-import { ComercialDataViewport, ComercialFilterBar } from '@/components/comercial/compact';
+import { ComercialDataViewport } from '@/components/comercial/compact';
 import { LoadingState } from '@/components/common/LoadingState';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -25,9 +26,10 @@ type Props = {
   usuario: string;
   filial: SessaoVisitas['filiais'][number];
   carregar: CarregarOficinas;
+  acoesContainer: HTMLDivElement | null;
 };
 
-export function OficinasVisitas({ usuario, filial, carregar }: Props) {
+export function OficinasVisitas({ usuario, filial, carregar, acoesContainer }: Props) {
   const [status, setStatus] = useState<(typeof statusVisiveis)[number]>('todas');
   const [filtros, setFiltros] = useState(filtrosVazios);
   const [pagina, setPagina] = useState(0);
@@ -61,65 +63,68 @@ export function OficinasVisitas({ usuario, filial, carregar }: Props) {
   return (
     <Collapsible asChild>
       <section aria-label="Busca de oficinas" className="flex min-h-0 min-w-0 flex-1 flex-col">
-        <ComercialFilterBar ariaLabel="Filtros de oficinas" className="shrink-0 !grid-cols-[minmax(0,1fr)] !items-center px-3 sm:px-4"
-          search={(
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-              <div className="flex items-center gap-2">
-                <CollapsibleTrigger asChild>
-                  <Button type="button" variant="outline" size="sm" className="group gap-2" disabled={!catalogo}>
-                    <Filter aria-hidden="true" /> Filtros
-                    <ChevronDown aria-hidden="true" className="group-data-[state=open]:rotate-180" />
-                  </Button>
-                </CollapsibleTrigger>
-                <Button type="button" aria-label="Atualizar oficinas" variant="outline" size="icon" className="h-9 w-9"
-                  disabled={query.isFetching} onClick={() => void query.refetch()}>
-                  <RefreshCw aria-hidden="true" />
-                </Button>
-              </div>
-              <div role="group" aria-label="Situação da visita" className="flex flex-wrap gap-1">
-                {statusVisiveis.map((opcao) => (
-                  <Button key={opcao} type="button" size="sm" variant={status === opcao ? 'secondary' : 'ghost'}
-                    aria-pressed={status === opcao} onClick={() => { setStatus(opcao); setPagina(0); }}>
-                    {filtrosStatus[opcao]}
-                  </Button>
-                ))}
-              </div>
-              {catalogo && (
-                <span className="text-xs text-muted-foreground sm:ml-auto">
-                  {catalogo.cidade} · {catalogo.uf} · <a className="underline-offset-2 hover:underline focus:underline"
-                    href={catalogo.fonte} target="_blank" rel="noreferrer">Receita Federal · {formatPeriod(catalogo.competencia)}</a>
-                </span>
-              )}
-            </div>
-          )}
-        />
+        {acoesContainer && createPortal(
+          <div role="group" aria-label="Ações de oficinas" className="flex items-center gap-1.5">
+            <CollapsibleTrigger asChild>
+              <Button type="button" variant="outline" size="sm" disabled={!catalogo}
+                className="group h-8 gap-1.5 px-2.5 text-xs data-[state=open]:border-primary/35 data-[state=open]:text-primary [&_svg]:size-3.5">
+                <Filter aria-hidden="true" /> Filtros
+                <ChevronDown aria-hidden="true" className="group-data-[state=open]:rotate-180" />
+              </Button>
+            </CollapsibleTrigger>
+            <Button type="button" aria-label="Atualizar oficinas" aria-busy={query.isFetching || undefined}
+              variant="outline" size="icon" className="size-8 [&_svg]:size-3.5"
+              disabled={query.isFetching} onClick={() => void query.refetch()}>
+              <RefreshCw aria-hidden="true" className={query.isFetching ? 'motion-safe:animate-spin' : undefined} />
+            </Button>
+          </div>,
+          acoesContainer,
+        )}
         {catalogo && (
           <CollapsibleContent asChild forceMount>
-            <form onSubmit={aplicar} onReset={() => { setFiltros(filtrosVazios); setPagina(0); }}
-              className="grid max-h-[45dvh] shrink-0 gap-2 overflow-y-auto border-b bg-card px-3 py-2 data-[state=closed]:hidden sm:grid-cols-[5.5rem_minmax(8rem,0.75fr)_minmax(10rem,1fr)_auto] sm:items-end sm:px-4">
+            <form aria-label="Filtros de oficinas" onSubmit={aplicar} onReset={() => { setFiltros(filtrosVazios); setPagina(0); }}
+              className="grid max-h-[45dvh] shrink-0 grid-cols-[4.5rem_minmax(0,1fr)] gap-2 overflow-y-auto border-b bg-card px-3 py-2 data-[state=closed]:hidden sm:px-4 md:grid-cols-[5rem_minmax(0,11rem)_minmax(0,24rem)_auto] md:items-end md:justify-end">
               <div className="space-y-1">
                 <Label htmlFor="oficina-uf">UF</Label>
-                <select id="oficina-uf" name="uf" className="h-10 w-full rounded-sm border bg-background px-2 text-sm">
+                <select id="oficina-uf" name="uf" className="h-8 w-full rounded-sm border bg-background px-2 text-sm">
                   <option value={catalogo.uf}>{catalogo.uf}</option>
                 </select>
               </div>
               <div className="space-y-1">
                 <Label htmlFor="oficina-cidade">Cidade</Label>
-                <select id="oficina-cidade" name="cidade" className="h-10 w-full rounded-sm border bg-background px-2 text-sm">
+                <select id="oficina-cidade" name="cidade" className="h-8 w-full rounded-sm border bg-background px-2 text-sm">
                   <option value={catalogo.cidade}>{catalogo.cidade}</option>
                 </select>
               </div>
-              <div className="space-y-1">
+              <div className="col-span-2 space-y-1 md:col-span-1">
                 <Label htmlFor="oficina-busca">Nome ou CNPJ</Label>
-                <Input id="oficina-busca" type="search" name="busca" maxLength={200} />
+                <Input id="oficina-busca" type="search" name="busca" maxLength={200} className="h-8" />
               </div>
-              <div className="flex justify-end gap-2">
-                <Button type="reset" variant="ghost" size="sm">Limpar</Button>
-                <Button type="submit" size="sm">Aplicar</Button>
+              <div className="col-span-2 flex justify-end gap-2 md:col-span-1">
+                <Button type="reset" variant="ghost" size="sm" className="h-8">Limpar</Button>
+                <Button type="submit" size="sm" className="h-8">Aplicar</Button>
               </div>
             </form>
           </CollapsibleContent>
         )}
+        <div className="flex shrink-0 flex-wrap items-center gap-x-3 gap-y-1.5 border-b px-3 py-1.5 sm:px-4">
+          <div role="group" aria-label="Situação da visita"
+            className="inline-grid min-w-0 max-w-full grid-cols-[auto_repeat(2,minmax(0,1fr))] gap-0.5 rounded-md border bg-muted/60 p-0.5">
+            {statusVisiveis.map((opcao) => (
+              <Button key={opcao} type="button" size="sm" variant="ghost" aria-pressed={status === opcao}
+                className="h-auto min-h-8 whitespace-normal rounded-sm border border-transparent px-2 py-1 text-xs leading-tight text-muted-foreground hover:bg-background/70 hover:text-foreground focus-visible:z-10 focus-visible:ring-offset-0 aria-pressed:border-primary/25 aria-pressed:bg-background aria-pressed:text-foreground aria-pressed:shadow-sm sm:min-h-7 sm:px-2.5"
+                onClick={() => { setStatus(opcao); setPagina(0); }}>
+                {filtrosStatus[opcao]}
+              </Button>
+            ))}
+          </div>
+          {catalogo && (
+            <span className="text-xs text-muted-foreground sm:ml-auto">
+              {catalogo.cidade} · {catalogo.uf} · <a className="underline-offset-2 hover:underline focus:underline"
+                href={catalogo.fonte} target="_blank" rel="noreferrer">Receita Federal · {formatPeriod(catalogo.competencia)}</a>
+            </span>
+          )}
+        </div>
         <ComercialDataViewport ariaLabel="Resultados da busca de oficinas" className="flex-1 px-3 py-2 sm:px-4">
           {carregando && <LoadingState message="Carregando oficinas" variant="content" className="min-h-full" />}
           {query.isError && <p role="alert" className="rounded-sm border bg-card p-3 text-sm text-destructive">{query.error.message}</p>}
