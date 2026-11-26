@@ -74,11 +74,10 @@ export function RankingVendedoresChart({ data, periodo, onClick, variant = 'defa
       .map((v, i) => ({ ...v, rank: i + 1 }));
   }, [data, modo, periodo]);
 
-  const maxVal = useMemo(() => {
-    if (!enriched.length) return 1;
-    return modo === 'faturamento'
-      ? Math.max(...enriched.map(e => e.mes)) || 1
-      : Math.max(100, ...enriched.map(e => e.pctMeta)) || 100;
+  const minColumnWidth = useMemo(() => {
+    if (modo === 'meta') return 84;
+    // Reserva espaço para cada caractere do valor em fonte monoespaçada e uma margem entre os rótulos.
+    return enriched.reduce((width, row) => Math.max(width, 8 * formatCurrency(row.mes || 0).length + 12), 84);
   }, [enriched, modo]);
 
   const totalGeral = enriched.reduce((s, v) => s + v.mes, 0);
@@ -162,7 +161,7 @@ export function RankingVendedoresChart({ data, periodo, onClick, variant = 'defa
           </div>
         ) : (
           <div className="w-full min-w-0 overflow-x-auto pb-2" tabIndex={0} aria-label="Ranking de vendedores; deslize para ver todos">
-            <div className="min-w-0" style={{ minWidth: Math.max(300, enriched.length * 84 + (isBlue ? 64 : 84)) }}>
+            <div style={{ minWidth: Math.max(300, enriched.length * minColumnWidth + (isBlue ? 70 : 84)) }}>
               <div className={cn(isBlue ? 'h-[160px]' : 'h-[280px] sm:h-[320px]')}>
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart

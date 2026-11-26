@@ -20,20 +20,28 @@ describe('RankingVendedoresLabels', () => {
     expect(valor.closest('svg')).toBeNull();
     expect(nome).toHaveStyle({ fontSize: '11px', fontWeight: '700' });
     expect(valor).toHaveStyle({ fontSize: '13px', fontWeight: '750' });
-    expect(nome).toHaveClass('truncate', 'sm:whitespace-normal');
+    expect(nome).toHaveClass('truncate');
     expect(nome.parentElement).toHaveAttribute('title', 'DANIEL');
   });
 
-  it('usa valor compacto no mobile e preserva o valor completo para leitores de tela', () => {
+  it('exibe os valores completos mesmo com mais de seis vendedores', () => {
     render(
       <RankingVendedoresLabels
-        data={[{ codigo: 1, nome: 'VENDEDOR COM NOME LONGO', mes: 223000, pctMeta: 88 }]}
+        data={[
+          { codigo: 1, nome: 'Fernando M', mes: 182345.67, pctMeta: 88 },
+          { codigo: 2, nome: 'Maria', mes: 1234567.89, pctMeta: 110 },
+          { codigo: 3, nome: 'Paulo', mes: -1578.21, pctMeta: 0 },
+          ...Array.from({ length: 4 }, (_, i) => ({ codigo: i + 4, nome: `Vendedor ${i + 4}`, mes: 0, pctMeta: 0 })),
+        ]}
         modo="faturamento"
+        variant="pelegriniBlue"
       />,
     );
 
-    expect(screen.getByText('R$ 223k')).toHaveClass('sm:hidden');
-    expect(screen.getByLabelText('R$ 223.000,00')).toHaveTextContent('R$ 223k');
-    expect(screen.getByText('R$ 223.000,00')).toHaveClass('hidden', 'sm:block');
+    expect(screen.getByText('R$ 182.345,67')).toBeVisible();
+    expect(screen.getByText('R$ 1.234.567,89')).toBeVisible();
+    expect(screen.getByText('-R$ 1.578,21')).toBeVisible();
+    expect(screen.queryByText(/R\$\s*\d+(?:\.\d+)?[KM]$/i)).not.toBeInTheDocument();
+    expect(screen.getByText('R$ 182.345,67')).not.toHaveClass('truncate');
   });
 });
