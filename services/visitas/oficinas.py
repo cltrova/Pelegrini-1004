@@ -161,3 +161,14 @@ def filtrar_oficinas(oficinas: list[Oficina], busca: str, status: FiltroSituacao
             continue
         resultados.append(oficina)
     return sorted(resultados, key=lambda row: (normalizar_texto(row.nome), row.id))
+
+
+def catalogo_cobre(catalogo, uf: str | None, cidade: str | None) -> bool:
+    return ((not uf or uf.upper() == catalogo["uf"])
+            and (not cidade or normalizar_texto(cidade) == normalizar_texto(catalogo["cidade"])))
+
+
+def pagina_oficinas(catalogo, rows, busca: str, status: FiltroSituacao, offset: int, limit: int):
+    resultados = filtrar_oficinas(classificar_oficinas(catalogo, rows), busca.strip(), status)
+    cobertura = {key: catalogo[key] for key in CoberturaCatalogo.model_fields}
+    return {"catalogo": cobertura, "oficinas": resultados[offset:offset + limit], "total": len(resultados)}

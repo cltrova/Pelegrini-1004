@@ -12,7 +12,7 @@ from pydantic import BaseModel, ConfigDict, Field, StringConstraints, field_vali
 
 from auth import Empresa, Filial, Identity, chave_filial, identity, router
 from database import DatabaseError, connect
-from oficinas import FiltroSituacao, PaginaOficinas, carregar_catalogo, classificar_oficinas, filtrar_oficinas, normalizar_texto
+from oficinas import FiltroSituacao, PaginaOficinas, carregar_catalogo, catalogo_cobre, pagina_oficinas
 from visitadores import router as visitadores_router
 
 app = FastAPI(title="Pelegrini — Relatórios de visitas")
@@ -211,8 +211,7 @@ def listar_oficinas(
     except (OSError, ValueError):
         logging.getLogger(__name__).error("Catálogo de oficinas indisponível.")
         raise HTTPException(503, "Não foi possível carregar o catálogo de oficinas.") from None
-    if ((uf and uf.upper() != catalogo["uf"])
-            or (cidade and normalizar_texto(cidade) != normalizar_texto(catalogo["cidade"]))):
+    if not catalogo_cobre(catalogo, uf, cidade):
         raise HTTPException(422, f"O catálogo de oficinas cobre {catalogo['cidade']} - {catalogo['uf']}.")
 
     try:
@@ -225,6 +224,4 @@ def listar_oficinas(
         logging.getLogger(__name__).error("Falha ao cruzar oficinas com o histórico de visitas.")
         raise HTTPException(503, "Não foi possível consultar o histórico das oficinas.") from None
 
-    resultados = filtrar_oficinas(classificar_oficinas(catalogo, rows), busca.strip(), status)
-    cobertura = {key: catalogo[key] for key in ("uf", "cidade", "competencia", "fonte")}
-    return {"catalogo": cobertura, "oficinas": resultados[offset:offset + limit], "total": len(resultados)}
+    return pagina_oficinas(catalogo, rows, busca, status, offset, limit)

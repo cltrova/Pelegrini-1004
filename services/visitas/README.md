@@ -72,6 +72,8 @@ A API aceita `uf`, `cidade`, `busca` (nome ou CNPJ), `status`, `offset` e `limit
 
 O serviço lê `catalogo_oficinas.json` da pasta da API. Para renovar o recorte, gere um catálogo a partir de um espelho fiel dos dados abertos com `python scripts/importar_catalogo_oficinas.py AAAA-MM publicador/dataset` na raiz do repositório. O importador usa DuckDB e a extensão `httpfs`. A aplicação lê o JSON gerado e o histórico interno. A publicação deve incluir o JSON, `oficinas.py` e a nova rota nos dois proxies de Visitas.
 
+No VPS, a rota também pode usar `oficinas_gateway.py` quando o RSYS fornece o histórico pelo túnel em `127.0.0.1:15005`. O serviço `deploy/visitas/pelegrini-oficinas.service` lê a sessão do Comercial e a encaminha à listagem de relatórios do RSYS, que aplica as permissões de gerência. O serviço roda em `127.0.0.1:15006` e usa `requirements-oficinas.txt`. Para essa instalação, inclua `oficinas-gateway-location.conf` dentro do `server` do gateway de Visitas. A rota responde `503` se o histórico paginado estiver incompleto.
+
 ### Sessão e acesso
 
 - O endpoint `POST /operacional/visitas/sessao` recebe `{"email":"visitador@empresa.com.br","senha":"..."}`. A API verifica a senha e inicia uma sessão de oito horas em cookie `HttpOnly` e `SameSite=Strict`, com `Secure` no ambiente HTTPS. A listagem de sessão é `GET /operacional/visitas/sessao` e a saída é `DELETE /operacional/visitas/sessao`.

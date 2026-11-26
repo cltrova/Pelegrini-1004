@@ -1,0 +1,19 @@
+[Unit]
+Description=Pelegrini Oficinas
+After=network-online.target
+
+[Service]
+WorkingDirectory=/opt/pelegrini-oficinas/current
+ExecStart=/opt/pelegrini-oficinas/current/.venv/bin/python -m uvicorn oficinas_gateway:app --host 127.0.0.1 --port 15006 --no-access-log
+Environment=PYTHONDONTWRITEBYTECODE=1
+Restart=on-failure
+RestartSec=3s
+DynamicUser=yes
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=yes
+RestrictAddressFamilies=AF_UNIX AF_INET
+
+[Install]
+WantedBy=multi-user.target
