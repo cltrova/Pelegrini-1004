@@ -9,6 +9,7 @@ A API grava e consulta em `dbo.RelatoriosVisitas` no SQL Server interno. O visit
 | POST | `/operacional/visitas/relatorios` | `201` com `{"id":"123"}` após o commit |
 | GET | `/operacional/visitas/relatorios?escopo=meus` | `200` com os relatórios do visitador autenticado |
 | GET | `/operacional/visitas/relatorios?escopo=gerencia&cod_empresa_bi=10041&filial_id=chevrolet` | `200` com relatórios da filial autorizada |
+| GET | `/operacional/visitas/oficinas?cod_empresa_bi=10041&filial_id=chevrolet` | `200` com o catálogo de oficinas e a situação no histórico da filial autorizada |
 
 O POST recebe `Content-Type: application/json`. Exemplo de corpo:
 
@@ -62,6 +63,14 @@ No GET, `cliente` e `visitador` procuram trechos do nome. `inicio` e `fim` são 
   "total": 1
 }
 ```
+
+### Busca de oficinas
+
+Em **Comercial → Relatórios de Visitas → Oficinas**, o piloto cobre Uberlândia–MG. O catálogo usa estabelecimentos ativos dos Dados Abertos do CNPJ da Receita Federal com o CNAE `4520-0/01` na atividade principal ou secundária.
+
+A API aceita `uf`, `cidade`, `busca` (nome ou CNPJ), `status`, `offset` e `limit`. `status` aceita `todas`, `visitada`, `sem_visita` ou `a_conferir`. A resposta traz `catalogo` (cidade, UF, competência e fonte), `oficinas` e `total` antes da paginação. O cruzamento usa o CNPJ completo, com dígitos verificadores válidos, e a filial selecionada. Relatórios sem CNPJ válido geram casos **A conferir**. O total de resultados inclui os registros marcados como **Só no histórico**, cuja origem é o relatório de visita. O critério de situação cadastral e CNAE se aplica aos registros da Receita.
+
+O serviço lê `catalogo_oficinas.json` da pasta da API. Para renovar o recorte, gere um catálogo a partir de um espelho fiel dos dados abertos com `python scripts/importar_catalogo_oficinas.py AAAA-MM publicador/dataset` na raiz do repositório. O importador usa DuckDB e a extensão `httpfs`. A aplicação lê o JSON gerado e o histórico interno. A publicação deve incluir o JSON, `oficinas.py` e a nova rota nos dois proxies de Visitas.
 
 ### Sessão e acesso
 

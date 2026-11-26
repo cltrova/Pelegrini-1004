@@ -2,6 +2,7 @@
 import os
 import unittest
 from contextlib import closing
+from datetime import date
 from unittest.mock import MagicMock, patch
 from uuid import uuid4
 
@@ -19,6 +20,17 @@ BODY = {
 PATH = "/operacional/visitas/relatorios"
 SESSAO = "/operacional/visitas/sessao"
 VISITADORES = "/operacional/visitas/visitadores"
+OFICINAS = "/operacional/visitas/oficinas"
+CATALOGO_OFICINAS = {
+    "competencia": "2026-11", "uf": "MG", "cidade": "Uberlândia",
+    "fonte": "https://dados.gov.br/dados/conjuntos-dados/cadastro-nacional-da-pessoa-juridica---cnpj",
+    "oficinas": [
+        {"cnpj": "01234567000195", "nome_fantasia": "Mecânica São José", "razao_social": "São José Motores", "bairro": "Centro"},
+        {"cnpj": "01234567000276", "nome_fantasia": "Mecânica São José", "razao_social": "São José Motores", "bairro": "Martins"},
+        {"cnpj": "12ABC34501DE35", "nome_fantasia": "Oficina Alfa", "razao_social": "Alfa Serviços", "bairro": "Planalto"},
+        {"cnpj": "01012345000128", "nome_fantasia": "Oficina Sol", "razao_social": "Pôr do Sol Veículos", "bairro": "Tabajaras"},
+    ],
+}
 
 
 class PortalManagerTest(unittest.TestCase):
@@ -57,6 +69,74 @@ class PortalManagerTest(unittest.TestCase):
             self.assertEqual(response.json()["filiais"], [CHEVROLET])
             other = self.client.get(PATH, params={"escopo": "gerencia", "cod_empresa_bi": "1004", "filial_id": "transmissao"}, headers=self.headers)
             self.assertEqual(other.status_code, 403)
+
+    def test_oficinas_cruzam_cnpj_completo_e_separam_relatorios_sem_documento(self):
+        with patch("auth.portal_get", self.portal), patch("auth.permissao_gerencia", return_value=self.approved), \
+                patch("app.carregar_catalogo", return_value=CATALOGO_OFICINAS, create=True), patch("app.connect") as connect:
+            cursor = connect.return_value.cursor.return_value
+            cursor.fetchall.return_value = [
+                (1, "01.234.567/0001-95", "São José", "Uberlândia", date(2026, 11, 2)),
+                (2, "01234567000195", "São José", "", date(2026, 11, 20)),
+                (3, "12.ABC.345/01DE-35", "Oficina Alfa", "Uberlândia - MG", date(2026, 11, 25)),
+                (4, "", "Por do Sol Veículos", "Uberlandia/MG", date(2026, 11, 17)),
+                (5, "99876543000134", "Oficina dos Relatórios", "Uberlândia - MG", date(2026, 11, 18)),
+                (6, "", "Oficina sem documento", "Uberlândia", date(2026, 11, 5)),
+                (7, "", "Outra cidade", "Uberaba - MG", date(2026, 11, 5)),
+            ]
+            response = self.client.get(OFICINAS, params=CHEVROLET, headers=self.headers)
+            self.assertEqual(response.status_code, 200, response.text)
+            self.assertIn("no-store", response.headers["Cache-Control"])
+            data = response.json()
+            self.assertEqual(data["total"], 6)
+            self.assertEqual(data["catalogo"]["competencia"], "2026-11")
+            rows = {row["cnpj"]: row for row in data["oficinas"]}
+            self.assertEqual(rows["01234567000195"]["ultima_visita"], "2026-11-20")
+            self.assertEqual(rows["01234567000276"]["status"], "sem_visita")
+            self.assertEqual(rows["12ABC34501DE35"]["status"], "visitada")
+            self.assertEqual(rows["01012345000128"]["status"], "a_conferir")
+            self.assertIsNone(rows["01012345000128"]["ultima_visita"])
+            self.assertEqual(rows["99876543000134"]["origem"], "historico")
+            self.assertEqual(rows[None]["nome"], "Oficina sem documento")
+            sql, params = cursor.execute.call_args.args
+            self.assertIn("cod_empresa_bi IN ('1004', '10041')", sql)
+            self.assertEqual(params, ("chevrolet",))
+
+            sem_visita = self.client.get(OFICINAS, params={**CHEVROLET, "status": "sem_visita"}, headers=self.headers).json()
+            self.assertEqual([row["cnpj"] for row in sem_visita["oficinas"]], ["01234567000276"])
+            busca_nome = {**CHEVROLET, "busca": "mecanica sao jose", "limit": 1, "offset": 1}
+            filtered = self.client.get(OFICINAS, params=busca_nome, headers=self.headers).json()
+            self.assertEqual(filtered["total"], 2)
+            self.assertEqual(filtered["oficinas"][0]["cnpj"], "01234567000276")
+            busca_cnpj = {**CHEVROLET, "busca": "12.ABC.345/01de-35", "status": "visitada"}
+            found = self.client.get(OFICINAS, params=busca_cnpj, headers=self.headers).json()
+            self.assertEqual([row["nome"] for row in found["oficinas"]], ["Oficina Alfa"])
+
+    def test_oficinas_mantem_pendencia_mesmo_quando_ha_visita_confirmada_com_o_mesmo_nome(self):
+        with patch("auth.portal_get", self.portal), patch("auth.permissao_gerencia", return_value=self.approved), \
+                patch("app.carregar_catalogo", return_value=CATALOGO_OFICINAS), patch("app.connect") as connect:
+            connect.return_value.cursor.return_value.fetchall.return_value = [
+                (1, "12.ABC.345/01DE-35", "Oficina Alfa", "Uberlândia", date(2026, 11, 20)),
+                (2, "12.ABC.345/01DE-56", "Oficina Alfa", "Uberlândia", date(2026, 11, 21)),
+                (3, "00.000.000/0000-00", "Oficina Sol", "Uberlândia", date(2026, 11, 19)),
+            ]
+            response = self.client.get(OFICINAS, params={**CHEVROLET, "status": "a_conferir"}, headers=self.headers)
+            self.assertEqual(response.status_code, 200)
+            self.assertCountEqual([(row["cnpj"], row["nome"]) for row in response.json()["oficinas"]], [
+                (None, "Oficina Alfa"), ("01012345000128", "Oficina Sol"),
+            ])
+
+    def test_oficinas_exigem_gerencia_da_filial_e_catalogo_valido(self):
+        with patch("auth.portal_get", self.portal), patch("auth.permissao_gerencia", return_value=self.approved), \
+                patch("app.carregar_catalogo", return_value=CATALOGO_OFICINAS, create=True) as catalogo, \
+                patch("app.connect") as connect:
+            self.assertEqual(self.client.get(OFICINAS, params=CHEVROLET).status_code, 401)
+            outra_filial = {"cod_empresa_bi": "1004", "filial_id": "transmissao"}
+            self.assertEqual(self.client.get(OFICINAS, params=outra_filial, headers=self.headers).status_code, 403)
+            self.assertEqual(self.client.get(OFICINAS, params={**CHEVROLET, "cidade": "Uberaba"},
+                                             headers=self.headers).status_code, 422)
+            catalogo.side_effect = OSError("arquivo ausente")
+            self.assertEqual(self.client.get(OFICINAS, params=CHEVROLET, headers=self.headers).status_code, 503)
+            connect.assert_not_called()
 
     def test_portal_user_without_role_or_approved_branch_is_denied(self):
         with patch("auth.portal_get", self.portal), patch("auth.permissao_gerencia", return_value=None):

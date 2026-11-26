@@ -12,6 +12,7 @@ from pydantic import BaseModel, ConfigDict, Field, StringConstraints, field_vali
 
 from auth import Empresa, Filial, Identity, chave_filial, identity, router
 from database import DatabaseError, connect
+from oficinas import FiltroSituacao, PaginaOficinas, carregar_catalogo, classificar_oficinas, filtrar_oficinas, normalizar_texto
 from visitadores import router as visitadores_router
 
 app = FastAPI(title="Pelegrini — Relatórios de visitas")
@@ -94,6 +95,15 @@ def check_branch(user, company, branch):
         raise HTTPException(403, "Acesso à empresa ou filial não autorizado.")
 
 
+def filtro_gerencia(user: Identity, company: Empresa | None, branch: Filial | None) -> tuple[list[str], list[str]]:
+    if "gerencial" not in user.roles or not user.commercial:
+        raise HTTPException(403, "Perfil gerencial obrigatório.")
+    if not company or not branch:
+        raise HTTPException(422, "Informe cod_empresa_bi e filial_id.")
+    check_branch(user, company, branch)
+    if branch == "chevrolet":
+        return ["filial_id = %s", "cod_empresa_bi IN ('1004', '10041')"], [branch]
+    return ["filial_id = %s", "cod_empresa_bi = %s"], [branch, company]
 
 COLUNAS = (
     "cod_empresa_bi", "filial_id", "nome_cliente", "data_visita", "cnpj", "cidade",
@@ -145,18 +155,7 @@ def listar(
         conditions = ["visitador_id = %s"]
         params = [user.id]
     else:
-        if "gerencial" not in user.roles or not user.commercial:
-            raise HTTPException(403, "Perfil gerencial obrigatório.")
-        if not cod_empresa_bi or not filial_id:
-            raise HTTPException(422, "Informe cod_empresa_bi e filial_id.")
-        check_branch(user, cod_empresa_bi, filial_id)
-        conditions = ["filial_id = %s"]
-        params = [filial_id]
-        if filial_id == "chevrolet":
-            conditions.append("cod_empresa_bi IN ('1004', '10041')")
-        else:
-            conditions.append("cod_empresa_bi = %s")
-            params.append(cod_empresa_bi)
+        conditions, params = filtro_gerencia(user, cod_empresa_bi, filial_id)
     for col, term in (("nome_cliente", cliente), ("visitador_nome", visitador)):
         if term and term.strip():
             conditions.append(f"CHARINDEX(%s COLLATE Latin1_General_100_CI_AI, {col} COLLATE Latin1_General_100_CI_AI) > 0")
@@ -192,3 +191,40 @@ def listar(
                       avaliacoes=json.loads(report["avaliacoes"]))
         reports.append(report)
     return {"relatorios": reports, "total": total}
+
+
+@app.get("/operacional/visitas/oficinas", response_model=PaginaOficinas)
+def listar_oficinas(
+    user: CurrentUser,
+    cod_empresa_bi: Empresa,
+    filial_id: Filial,
+    uf: Annotated[str | None, Query(max_length=2)] = None,
+    cidade: Annotated[str | None, Query(max_length=200)] = None,
+    busca: Annotated[str, Query(max_length=200)] = "",
+    status: FiltroSituacao = "todas",
+    offset: Annotated[int, Query(ge=0, le=2147483647)] = 0,
+    limit: Annotated[int, Query(ge=1, le=100)] = 20,
+):
+    conditions, params = filtro_gerencia(user, cod_empresa_bi, filial_id)
+    try:
+        catalogo = carregar_catalogo()
+    except (OSError, ValueError):
+        logging.getLogger(__name__).error("Catálogo de oficinas indisponível.")
+        raise HTTPException(503, "Não foi possível carregar o catálogo de oficinas.") from None
+    if ((uf and uf.upper() != catalogo["uf"])
+            or (cidade and normalizar_texto(cidade) != normalizar_texto(catalogo["cidade"]))):
+        raise HTTPException(422, f"O catálogo de oficinas cobre {catalogo['cidade']} - {catalogo['uf']}.")
+
+    try:
+        with closing(connect()) as db:
+            cur = db.cursor()
+            cur.execute("SELECT id, cnpj, nome_cliente, cidade, data_visita FROM dbo.RelatoriosVisitas WHERE "
+                        + " AND ".join(conditions), tuple(params))
+            rows = cur.fetchall()
+    except DatabaseError:
+        logging.getLogger(__name__).error("Falha ao cruzar oficinas com o histórico de visitas.")
+        raise HTTPException(503, "Não foi possível consultar o histórico das oficinas.") from None
+
+    resultados = filtrar_oficinas(classificar_oficinas(catalogo, rows), busca.strip(), status)
+    cobertura = {key: catalogo[key] for key in ("uf", "cidade", "competencia", "fonte")}
+    return {"catalogo": cobertura, "oficinas": resultados[offset:offset + limit], "total": len(resultados)}

@@ -12,7 +12,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { getFilialPorId } from '@/config/filiaisEmpresa';
 import { applyCnpjMask, formatCnpjDisplay } from '@/utils/formatters';
 import { CidadeVisitaCampo } from './CidadeVisitaCampo';
-import { enviarVisita, listarVisitas, type SessaoVisitas } from './visitasApi';
+import { OficinasVisitas } from './OficinasVisitas';
+import { enviarVisita, listarVisitas, type CarregarOficinas, type SessaoVisitas } from './visitasApi';
 
 const dadosCliente = [
   { key: 'nome_cliente', label: 'Nome do cliente', required: true },
@@ -303,17 +304,37 @@ function Historico({ usuario, filial, carregar = listarVisitas, acoes }: {
   );
 }
 
-function AreaVisitas({ usuario, filial, gerencial, carregar, acoes }: {
+function AreaVisitas({ usuario, filial, gerencial, carregar, carregarOficinas, acoes }: {
   usuario: string;
   filial: FilialVisitas;
   gerencial: boolean;
   carregar?: typeof listarVisitas;
+  carregarOficinas?: CarregarOficinas;
   acoes?: ReactNode;
 }) {
   const [aba, setAba] = useState('novo');
   const [enviado, setEnviado] = useState(false);
   const queryClient = useQueryClient();
-  if (gerencial) return <Historico usuario={usuario} filial={filial} carregar={carregar} acoes={acoes} />;
+  if (gerencial) {
+    const historico = <Historico usuario={usuario} filial={filial} carregar={carregar} acoes={acoes} />;
+    if (!carregarOficinas) return historico;
+    return (
+      <Tabs defaultValue="relatorios" className="flex min-h-0 flex-1 flex-col overflow-hidden">
+        <div className="shrink-0 px-3 py-2 sm:px-4">
+          <TabsList aria-label="Relatórios de visitas" className="h-auto flex-wrap justify-start rounded-sm">
+            <TabsTrigger value="relatorios">Relatórios</TabsTrigger>
+            <TabsTrigger value="oficinas">Oficinas</TabsTrigger>
+          </TabsList>
+        </div>
+        <TabsContent value="relatorios" className="mt-0 flex min-h-0 flex-1 flex-col data-[state=inactive]:hidden">
+          {historico}
+        </TabsContent>
+        <TabsContent value="oficinas" className="mt-0 flex min-h-0 flex-1 flex-col data-[state=inactive]:hidden">
+          <OficinasVisitas usuario={usuario} filial={filial} carregar={carregarOficinas} />
+        </TabsContent>
+      </Tabs>
+    );
+  }
   return (
     <Tabs className="flex min-h-0 flex-1 flex-col overflow-hidden" value={aba}
       onValueChange={(tab) => { setAba(tab); setEnviado(false); }}>
@@ -339,10 +360,11 @@ function AreaVisitas({ usuario, filial, gerencial, carregar, acoes }: {
   );
 }
 
-export default function VisitasPage({ sessao, logout, carregar, filialAtiva }: {
+export default function VisitasPage({ sessao, logout, carregar, carregarOficinas, filialAtiva }: {
   sessao: SessaoVisitas;
   logout?: () => Promise<void>;
   carregar?: typeof listarVisitas;
+  carregarOficinas?: CarregarOficinas;
   filialAtiva?: string;
 }) {
   const gerencial = sessao.perfil === 'gerencial';
@@ -375,7 +397,7 @@ export default function VisitasPage({ sessao, logout, carregar, filialAtiva }: {
       className={`flex min-h-0 w-full min-w-0 flex-col overflow-hidden bg-background ${logout ? 'h-dvh' : 'h-[calc(100dvh-5rem)] md:h-auto md:flex-1'}`}>
       {filial ? (
         <AreaVisitas key={`${sessao.id}:${sessao.perfil}:${gerencial ? filial.filial_id : ''}`}
-          usuario={sessao.id} filial={filial} gerencial={gerencial} carregar={carregar} acoes={acoes} />
+          usuario={sessao.id} filial={filial} gerencial={gerencial} carregar={carregar} carregarOficinas={carregarOficinas} acoes={acoes} />
       ) : (
         <div className="flex flex-wrap items-center justify-between gap-3 p-4">
           <p role="alert" className="text-sm text-muted-foreground">Seu acesso a Visitas precisa ser liberado.</p>

@@ -88,6 +88,42 @@ export async function listarVisitas(params: URLSearchParams, signal: AbortSignal
   return { rows: result.relatorios, total: result.total };
 }
 
+export type StatusOficina = 'visitada' | 'sem_visita' | 'a_conferir';
+
+type Oficina = {
+  id: string;
+  cnpj: string | null;
+  nome: string;
+  razao_social: string | null;
+  bairro: string | null;
+  status: StatusOficina;
+  ultima_visita: string | null;
+  origem: 'receita' | 'historico';
+};
+
+type PaginaOficinas = {
+  catalogo: { uf: string; cidade: string; competencia: string; fonte: string };
+  oficinas: Oficina[];
+  total: number;
+};
+
+export type CarregarOficinas = (params: URLSearchParams, signal: AbortSignal) => Promise<PaginaOficinas>;
+
+export async function listarOficinas(params: URLSearchParams, signal: AbortSignal, accessToken: string) {
+  const fallback = 'Não foi possível consultar as oficinas.';
+  try {
+    const data = await request<PaginaOficinas>(`/operacional/visitas/oficinas?${params}`, {
+      signal, headers: { Authorization: `Bearer ${accessToken}` },
+    }, 200, fallback);
+    if (!data.catalogo?.cidade || !data.catalogo.uf || !Array.isArray(data.oficinas)
+        || !Number.isInteger(data.total) || data.total < 0) throw new Error(fallback);
+    return data;
+  } catch (error) {
+    if (error instanceof SyntaxError) throw new Error(fallback);
+    throw error;
+  }
+}
+
 
 class VisitasAuthError extends Error {}
 

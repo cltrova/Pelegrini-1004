@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFilialSelecionada } from '@/contexts/FilialSelecionadaContext';
 import VisitasPage from './VisitasPage';
-import { consultarSessaoVisitas, listarVisitas } from './visitasApi';
+import { consultarSessaoVisitas, listarOficinas, listarVisitas } from './visitasApi';
 import { tokenPortal } from './portalSession';
 
 export default function VisitasGerenciaPage() {
@@ -38,5 +38,6 @@ export default function VisitasGerenciaPage() {
   );
 
   return <VisitasPage key={session.data.id} sessao={session.data} filialAtiva={filialAtiva}
+    carregarOficinas={async (params, signal) => listarOficinas(params, signal, await tokenPortal(user?.id))}
     carregar={async (params, signal) => listarVisitas(params, signal, await tokenPortal(user?.id))} />;
 }
