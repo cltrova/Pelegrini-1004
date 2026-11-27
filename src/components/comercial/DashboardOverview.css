@@ -27,11 +27,6 @@
   grid-column: 1 / -1;
 }
 
-.dashboard-overview-ranking .dashboard-ranking-guide {
-  opacity: 0.75;
-  pointer-events: none;
-}
-
 .dashboard-inline-ranking {
   min-block-size: 0;
   min-inline-size: 0;

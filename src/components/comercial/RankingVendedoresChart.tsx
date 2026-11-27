@@ -97,7 +97,6 @@ export function RankingVendedoresChart<T>({ data, periodo, onClick, variant = 'd
   const pageStart = page * pageSize;
   const visibleRows = useMemo(() => enriched.slice(pageStart, pageStart + pageSize), [enriched, pageStart, pageSize]);
   const dataKey = modo === 'faturamento' ? 'mes' : 'pctMeta';
-  const highlightedVendor = isBlue && hoverKey ? visibleRows.find((row) => String(row.codigo) === hoverKey) : undefined;
   const domain = useMemo(() => enriched.reduce<[number, number]>(([min, max], row) => [
     Math.min(min, row[dataKey]), Math.max(max, row[dataKey]),
   ], [0, modo === 'meta' ? 100 : 1]), [enriched, dataKey, modo]);
@@ -215,12 +214,7 @@ export function RankingVendedoresChart<T>({ data, periodo, onClick, variant = 'd
                     onMouseLeave={() => setHoverKey(null)}
                     barCategoryGap={isBlue ? '22%' : undefined}
                   >
-                    <CartesianGrid
-                      strokeDasharray={isBlue ? '2 4' : '3 3'}
-                      stroke={isBlue ? 'hsl(var(--muted-foreground) / 0.32)' : 'hsl(var(--border))'}
-                      vertical={false}
-                      opacity={isBlue ? 1 : 0.4}
-                    />
+                    {!isBlue && <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} opacity={0.4} />}
                     <XAxis
                       dataKey="nome"
                       tick={false}
@@ -246,7 +240,7 @@ export function RankingVendedoresChart<T>({ data, periodo, onClick, variant = 'd
                       isAnimationActive={!reduceMotion}
                     />
 
-                    {modo === 'meta' && (
+                    {!isBlue && modo === 'meta' && (
                       <ReferenceLine
                         y={100}
                         stroke="hsl(var(--foreground))"
@@ -291,15 +285,6 @@ export function RankingVendedoresChart<T>({ data, periodo, onClick, variant = 'd
                         );
                       })}
                     </Bar>
-                    {highlightedVendor && (
-                      <ReferenceLine
-                        className="dashboard-ranking-guide"
-                        y={highlightedVendor[dataKey]}
-                        stroke="hsl(var(--primary))"
-                        strokeWidth={1.25}
-                        pointerEvents="none"
-                      />
-                    )}
                   </BarChart>
                 </ResponsiveContainer>
               </div>

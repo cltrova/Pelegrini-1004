@@ -722,11 +722,12 @@ describe('CampanhasTab loading lifecycle', () => {
 });
 
 describe('análises diárias em Detalhes', () => {
-  it('apresenta a análise salva para a filial e o período sem geração manual', () => {
+  it('mostra somente o título e abre a análise completa da filial ao clicar', async () => {
     const periodo = { inicio: '2026-06-01', fim: '2026-06-05' };
+    const descricao = 'Priorize os pedidos próximos de faturar.';
     dailyInsightsState.data = {
       dia: '2026-06-06', periodo,
-      insights: [{ tipo: 'oportunidade', titulo: 'Revisar carteira', descricao: 'Priorize os pedidos próximos de faturar.' }],
+      insights: [{ tipo: 'oportunidade', titulo: 'Revisar carteira', descricao }],
     };
     const panel = (filtros: typeof periodo) => (
       <InsightsIATab filial="chevrolet" periodo={filtros}><p>Indicadores do período</p></InsightsIATab>
@@ -736,10 +737,22 @@ describe('análises diárias em Detalhes', () => {
     expect(useQuery).toHaveBeenLastCalledWith(expect.objectContaining({
       queryKey: ['analises-comerciais-diarias', 'user-1', 'chevrolet'], enabled: true,
     }));
-    expect(screen.getByText('Revisar carteira')).toBeVisible();
-    expect(screen.getByText('05/06/2026')).toHaveAttribute('datetime', '2026-06-05');
+    expect(screen.queryByText(descricao)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Comissões do RSYS até/)).not.toBeInTheDocument();
+    expect(screen.queryByText('05/06/2026')).not.toBeInTheDocument();
     expect(screen.queryByText('Análises comerciais')).not.toBeInTheDocument();
-    expect(screen.queryByRole('button')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Gerar análises' })).not.toBeInTheDocument();
+
+    const card = screen.getByRole('button', { name: 'Revisar carteira' });
+    expect(card).toHaveTextContent(/^Revisar carteira$/);
+    card.focus();
+    fireEvent.click(card);
+    const dialog = screen.getByRole('dialog', { name: 'Revisar carteira' });
+    expect(within(dialog).getByText(descricao)).toBeVisible();
+    fireEvent.keyDown(dialog, { key: 'Escape' });
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    expect(card).toHaveFocus();
+    expect(screen.queryByText(descricao)).not.toBeInTheDocument();
 
     rerender(panel({ ...periodo, fim: '2026-06-04' }));
     expect(screen.queryByText('Revisar carteira')).not.toBeInTheDocument();
