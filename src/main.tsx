@@ -3,6 +3,7 @@ import "./index.css";
 import "./styles/operacional-square.css";
 import "./styles/comercial-square.css";
 import "./styles/financeiro-square.css";
+import "./styles/management-workspace.css";
 import { installStaleBundleRecovery } from "./utils/staleBundleRecovery";
 import { isLocalPreviewEnabled } from "./config/localPreview";
 import { consultarSessaoVisitas } from "./pages/visitas/visitasApi";

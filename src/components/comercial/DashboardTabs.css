@@ -512,8 +512,22 @@
   .dashboard-management-tab .dashboard-campaign-values { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
-@media (min-width: 768px) {
-  .dashboard-tab-toolbar { align-items: center; }
+.dashboard-tab-toolbar { align-items: center; }
+
+.dashboard-overview-viewport { overscroll-behavior: contain; }
+
+@media (min-width: 1024px) {
+  .dashboard-overview-viewport { scrollbar-gutter: auto; }
+}
+
+.dashboard-tab-toolbar .dashboard-tab-strip {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.dashboard-tab-toolbar .dashboard-tab-strip > [role='tab'] {
+  min-inline-size: max-content;
+  flex: 1 1 0;
 }
 
 @media (max-width: 767px) {
@@ -531,16 +545,20 @@
     padding-block: 0.5rem;
   }
 
-  .dashboard-tab-toolbar .commercial-tab-strip {
+  .dashboard-tab-toolbar .dashboard-tab-strip {
+    inline-size: 100%;
     gap: 0.125rem;
     padding-block: 0.125rem;
   }
 
-  .dashboard-tab-toolbar [role='tab'] {
+  .dashboard-tab-toolbar .dashboard-tab-strip > [role='tab'] {
     block-size: 1.75rem;
     min-inline-size: 0;
-    flex: 1 0 30%;
-    padding-inline: 0.25rem;
+    padding-inline: 0.1875rem;
+    font-size: 0.6875rem;
+    line-height: 1.1;
+    white-space: normal;
+    overflow-wrap: anywhere;
   }
 
   .dashboard-tab-content .dashboard-tab-metrics {

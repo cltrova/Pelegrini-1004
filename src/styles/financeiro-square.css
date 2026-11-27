@@ -23,6 +23,18 @@
   overscroll-behavior: contain;
 }
 
+[data-module-shell='financeiro'] .financial-tab-viewport {
+  min-inline-size: 0;
+  max-inline-size: 100%;
+  flex-shrink: 0;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+}
+
+[data-module-shell='financeiro'] .financial-tab-viewport [role='tab'] {
+  flex: 1 0 auto;
+}
+
 [data-module-shell='financeiro'] .financial-filter-control,
 .financial-overlay {
   --financial-panel-radius: var(--pelegrini-panel-radius);
@@ -107,12 +119,6 @@
   pointer-events: none;
 }
 
-[data-module-shell='financeiro'] header.safe-area-top {
-  background: hsl(var(--card));
-  box-shadow: none;
-  backdrop-filter: none;
-}
-
 [data-module-shell='financeiro'] :where(.premium-card, .premium-hover-card, .dashboard-header-card, .pelegrini-data-panel, .pelegrini-kpi-card, .pelegrini-chart-frame) {
   border-radius: var(--financial-panel-radius) !important;
   background-image: none !important;
@@ -162,8 +168,30 @@
 }
 
 @media (max-width: 767px) {
-  [data-module-shell='financeiro'] header.safe-area-top > div {
+  [data-module-shell='financeiro'] .financial-mobile-workspace {
+    padding-block-end: calc(4rem + 1px + env(safe-area-inset-bottom, 0px));
+  }
+
+  [data-module-shell='financeiro'] .financial-mobile-header {
+    min-block-size: 2.75rem;
     padding-inline-start: 3.75rem;
+    padding-block-start: max(0.25rem, env(safe-area-inset-top, 0px));
+    border-block-end: 1px solid var(--pelegrini-workspace-border, hsl(var(--border)));
+    background: var(--pelegrini-workspace-surface, hsl(var(--card)));
+  }
+
+  [data-module-shell='financeiro'] .financial-resumo-workspace {
+    overflow-y: auto;
+    overscroll-behavior-block: contain;
+  }
+
+  [data-module-shell='financeiro'] .financial-resumo-tabs {
+    flex: 1 0 auto;
+  }
+
+  [data-module-shell='financeiro'] .financial-tab-viewport [role='tab'] {
+    padding-inline: 0.625rem;
+    font-size: 0.75rem;
   }
 
   [data-module-shell='financeiro'] .financial-toolbar {

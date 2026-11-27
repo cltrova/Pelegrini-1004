@@ -34,7 +34,7 @@ describe('EstoqueWorkspace', () => {
       'overflow-hidden',
     );
     expect(workspace).not.toHaveClass('overflow-auto', 'overflow-y-auto');
-    expect(header).toHaveClass('h-10', 'shrink-0');
+    expect(header).toHaveClass('min-h-10', 'shrink-0');
     expect(header).toHaveClass('max-md:pl-14');
     expect(toolbar).toHaveClass('h-10', 'shrink-0');
     expect(toolbar).toHaveClass('flex-nowrap', 'overflow-x-auto');

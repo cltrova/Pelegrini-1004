@@ -74,7 +74,7 @@ export default function SaldoAVencerPage() {
 
 
   return (
-    <div className="financial-workspace enterprise-page-shell max-w-[1600px] animate-fade-in">
+    <div className="financial-workspace enterprise-page-shell w-full animate-fade-in">
       <h1 className="sr-only">Saldo a Vencer</h1>
 
       <Card className="financial-toolbar min-w-0 border-border/60">
@@ -169,7 +169,7 @@ export default function SaldoAVencerPage() {
         )}
       </Card>
 
-      <div className="financial-data-viewport min-w-0">
+      <div className="financial-data-viewport min-h-0 min-w-0 flex-1">
         <SaldoAVencerTab filtros={appliedFiltros} />
       </div>
 

@@ -185,24 +185,38 @@ export default function VariacaoPage() {
 
   // Mobile
   if (isMobile) {
+    const mobileTab = activeTab === 'demonstracao' ? 'demonstracao' : 'dashboard';
+    const mobileFeedback = !hasSearched ? (
+      <FinanceiroSearchPrompt />
+    ) : isLoading ? (
+      <div className="flex items-center justify-center p-4">
+        <LoadingState message="Carregando..." />
+      </div>
+    ) : isError ? (
+      <ErrorState title="Erro ao carregar" message="Não foi possível carregar os dados." onRetry={() => refetch()} />
+    ) : filterOptions.anos.length < 1 ? (
+      <EmptyState title="Dados insuficientes" message="É necessário ter pelo menos 1 ano de dados." />
+    ) : null;
+
     return (
-      <div className="financial-workspace flex h-screen min-w-0 max-w-full flex-col overflow-hidden bg-background pb-20">
+      <div className="financial-workspace financial-mobile-workspace flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-background">
         <MobileHeader
           title="Variação"
+          className="financial-mobile-header"
           actions={
-            <div className="financial-toolbar flex items-center gap-2">
+            <div className="flex items-center gap-2">
               <Sheet open={showMobileFilters} onOpenChange={setShowMobileFilters}>
                 <SheetTrigger asChild>
-                  <Button variant="ghost" size="icon" className="financial-filter-control h-9 w-9">
-                    <Filter className="h-4 w-4" />
+                  <Button aria-label="Abrir filtros" variant="ghost" size="icon" className="financial-filter-control h-9 w-9">
+                    <Filter aria-hidden="true" className="h-4 w-4" />
                   </Button>
                 </SheetTrigger>
-                <SheetContent side="bottom" className="financial-overlay flex h-[70dvh] max-w-full flex-col overflow-hidden">
+                <SheetContent side="bottom" aria-describedby={undefined} className="financial-overlay flex h-[70dvh] max-w-full flex-col overflow-hidden">
                   <SheetHeader>
                     <SheetTitle>Filtros</SheetTitle>
                   </SheetHeader>
                   <div className="financial-filter-control mt-4 min-h-0 min-w-0 flex-1 space-y-3 overflow-y-auto">
-                    {activeTab === 'demonstracao' ? (
+                    {mobileTab === 'demonstracao' ? (
                       <DFCFilters
                         anos={anosOptions}
                         anoPeriodo1={pendingAnoPeriodo1}
@@ -236,64 +250,34 @@ export default function VariacaoPage() {
                   </div>
                 </SheetContent>
               </Sheet>
-              <Button variant="ghost" size="icon" onClick={() => refetch()} className="financial-filter-control h-9 w-9">
-                <RefreshCw className="h-4 w-4" />
+              <Button aria-label="Atualizar dados" variant="ghost" size="icon" onClick={() => refetch()} className="financial-filter-control h-9 w-9">
+                <RefreshCw aria-hidden="true" className="h-4 w-4" />
               </Button>
             </div>
           }
         />
 
-        <div className="financial-toolbar sticky top-14 z-30 border-b border-border bg-background">
-          <div className="flex">
-            <button
-              className={`flex-1 py-3 text-sm font-medium flex items-center justify-center gap-2 transition-colors ${
-                activeTab === 'demonstracao'
-                  ? 'text-primary border-b-2 border-primary bg-primary/5'
-                  : 'text-muted-foreground'
-              }`}
-              onClick={() => setActiveTab('demonstracao')}
-            >
-              <FileText className="h-4 w-4" />
+        <Tabs
+          value={mobileTab}
+          onValueChange={(value) => setActiveTab(value as 'demonstracao' | 'dashboard')}
+          className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden"
+        >
+          <TabsList aria-label="Visões da variação" className="mx-2 mt-2 grid h-auto shrink-0 grid-cols-2 gap-1 p-1">
+            <TabsTrigger value="demonstracao" className="h-8 min-w-0 gap-1.5 px-1.5">
+              <FileText aria-hidden="true" className="h-4 w-4 shrink-0" />
               Demonstração
-            </button>
-            <button
-              className={`flex-1 py-3 text-sm font-medium flex items-center justify-center gap-2 transition-colors ${
-                activeTab === 'dashboard'
-                  ? 'text-primary border-b-2 border-primary bg-primary/5'
-                  : 'text-muted-foreground'
-              }`}
-              onClick={() => setActiveTab('dashboard')}
-            >
-              <BarChart3 className="h-4 w-4" />
+            </TabsTrigger>
+            <TabsTrigger value="dashboard" className="h-8 min-w-0 gap-1.5 px-1.5">
+              <BarChart3 aria-hidden="true" className="h-4 w-4 shrink-0" />
               Dashboard
-            </button>
-          </div>
-        </div>
+            </TabsTrigger>
+          </TabsList>
 
-        <div className="financial-data-viewport min-w-0 flex-1 overflow-y-auto overflow-x-hidden">
-          {!hasSearched ? (
-            <div className="p-4">
-              <FinanceiroSearchPrompt />
-            </div>
-          ) : isLoading ? (
-            <div className="flex items-center justify-center p-8">
-              <LoadingState message="Carregando..." />
-            </div>
-          ) : isError ? (
-            <div className="p-4">
-              <ErrorState title="Erro ao carregar" message="Não foi possível carregar os dados." onRetry={() => refetch()} />
-            </div>
-          ) : filterOptions.anos.length < 1 ? (
-            <div className="p-4">
-              <EmptyState title="Dados insuficientes" message="É necessário ter pelo menos 1 ano de dados." />
-            </div>
-          ) : activeTab === 'demonstracao' ? (
-            !temDadosDFC ? (
-              <div className="p-4">
-                <EmptyState title="Nenhum resultado" message="Nenhum dado encontrado para os períodos." />
-              </div>
+          <TabsContent value="demonstracao" className="financial-data-viewport mt-0 min-h-0 min-w-0 flex-1 p-2">
+            {mobileFeedback ?? (!temDadosDFC ? (
+              <EmptyState title="Nenhum resultado" message="Nenhum dado encontrado para os períodos." />
             ) : (
-              <div className="financial-metric-strip min-w-0 max-w-full space-y-3 p-4">
+              <Suspense fallback={<VariacaoTabFallback />}>
                 <LazyDFCTable
                   linhas={dfc.linhas}
                   anoPeriodo1={anoPeriodo1}
@@ -301,18 +285,20 @@ export default function VariacaoPage() {
                   anoPeriodo2={anoPeriodo2}
                   mesPeriodo2={mesPeriodo2}
                 />
-              </div>
-            )
-          ) : dashboardData.grupos.length === 0 ? (
-            <div className="p-4">
+              </Suspense>
+            ))}
+          </TabsContent>
+
+          <TabsContent value="dashboard" className="financial-data-viewport mt-0 min-h-0 min-w-0 flex-1 p-2">
+            {mobileFeedback ?? (dashboardData.grupos.length === 0 ? (
               <EmptyState title="Nenhum resultado" message="Nenhum dado encontrado para o ano." />
-            </div>
-          ) : (
-            <div className="p-4">
-              <LazyDFCDashboard grupos={dashboardData.grupos} totais={dashboardData.totais} ano={anoDashboard} />
-            </div>
-          )}
-        </div>
+            ) : (
+              <Suspense fallback={<VariacaoTabFallback />}>
+                <LazyDFCDashboard grupos={dashboardData.grupos} totais={dashboardData.totais} ano={anoDashboard} />
+              </Suspense>
+            ))}
+          </TabsContent>
+        </Tabs>
 
         <MobileBottomNav />
       </div>
@@ -397,31 +383,31 @@ export default function VariacaoPage() {
               </CollapsibleFilterBar>
             ) : null}
 
-            <TabsList className="financial-toolbar h-9 max-w-full shrink-0 justify-start gap-1 overflow-x-auto border border-border/60 bg-muted/30 p-0.5">
+            <TabsList aria-label="Visões da variação" className="financial-toolbar h-9 max-w-full shrink-0 justify-start gap-1 overflow-x-auto border border-border/60 bg-muted/30 p-0.5">
               <TabsTrigger
                 value="demonstracao"
-                className="financial-filter-control h-8 gap-2 px-3 data-[state=active]:bg-background data-[state=active]:text-foreground text-muted-foreground transition-colors"
+                className="h-8 gap-2 px-3"
               >
                 <FileText className="h-4 w-4" />
                 Demonstração
               </TabsTrigger>
               <TabsTrigger
                 value="dashboard"
-                className="financial-filter-control h-8 gap-2 px-3 data-[state=active]:bg-background data-[state=active]:text-foreground text-muted-foreground transition-colors"
+                className="h-8 gap-2 px-3"
               >
                 <BarChart3 className="h-4 w-4" />
                 Dashboard
               </TabsTrigger>
               <TabsTrigger
                 value="assistente"
-                className="financial-filter-control h-8 gap-2 px-3 data-[state=active]:bg-background data-[state=active]:text-foreground text-muted-foreground transition-colors"
+                className="h-8 gap-2 px-3"
               >
                 <Bot className="h-4 w-4" />
                 Assistente
               </TabsTrigger>
               <TabsTrigger
                 value="configuracao"
-                className="financial-filter-control h-8 gap-2 px-3 data-[state=active]:bg-background data-[state=active]:text-foreground text-muted-foreground transition-colors"
+                className="h-8 gap-2 px-3"
               >
                 <Settings2 className="h-4 w-4" />
                 Configuração

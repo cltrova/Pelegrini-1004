@@ -7,7 +7,7 @@ import { lazy, Suspense } from "react";
 import { PelegriniThemeProvider } from "@/components/common/PelegriniThemeProvider";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { EmpresaSelecionadaProvider } from "@/contexts/EmpresaSelecionadaContext";
-import { FilialSelecionadaProvider } from "@/contexts/FilialSelecionadaContext";
+import { FilialSelecionadaProvider, useFilialSelecionada } from "@/contexts/FilialSelecionadaContext";
 import { FinanceiroLayout } from "@/components/layout/FinanceiroLayout";
 import { ComercialLayout } from "@/components/layout/ComercialLayout";
 import { WhatsappLayout } from "@/components/layout/WhatsappLayout";
@@ -23,6 +23,7 @@ import { ForceChangePassword } from "@/components/auth/ForceChangePassword";
 import { useAuth } from "@/contexts/AuthContext";
 import { useEmpresaAtiva } from "@/hooks/useEmpresaAtiva";
 import { useUserModulePermissions } from "@/hooks/useUserModulePermissions";
+import { filialPermiteRelatoriosVisitas } from "@/utils/acessoRelatoriosVisitas";
 const DrePage = lazy(() => import('./pages/financeiro/DrePage'));
 const VariacaoPage = lazy(() => import('./pages/financeiro/VariacaoPage'));
 const ResumoPage = lazy(() => import('./pages/financeiro/ResumoPage'));
@@ -104,6 +105,22 @@ export const VENDAS_PERDIDAS_ROUTE = {
   path: 'perdidas',
   Component: VendasPerdidasRoute,
 } as const;
+
+function RotaRelatoriosVisitas() {
+  const { codEmpresaAtiva, pending: carregandoContexto } = useGuardContext();
+  const { filialAtiva, carregandoFilial } = useFilialSelecionada();
+
+  if (carregandoContexto || carregandoFilial) return <GuardSpinner />;
+  if (!filialPermiteRelatoriosVisitas(codEmpresaAtiva, filialAtiva)) {
+    return <Navigate to="/comercial/dashboard" replace />;
+  }
+
+  return (
+    <RequireRole allowedRoles={['master', 'gerencial']}>
+      <VisitasGerenciaPage />
+    </RequireRole>
+  );
+}
 
 function ComercialDashboardByEmpresa() {
   // Layout validado do módulo Comercial Pelegrini.
@@ -232,11 +249,7 @@ const App = () => (
                   </RequireCotacoesPelegrini>
                 } />
                 <Route {...VENDAS_PERDIDAS_ROUTE} />
-                <Route path="visitas" element={
-                  <RequireRole allowedRoles={['master', 'gerencial']}>
-                    <VisitasGerenciaPage />
-                  </RequireRole>
-                } />
+                <Route path="visitas" element={<RotaRelatoriosVisitas />} />
                 <Route path="progresso-vendedor" element={
                   <Navigate to="/comercial/dashboard" replace />
                 } />

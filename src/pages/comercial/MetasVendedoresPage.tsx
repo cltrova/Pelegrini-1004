@@ -660,10 +660,10 @@ export default function MetasVendedoresPage() {
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={handleTabChange} className="flex min-h-0 flex-1 flex-col gap-2 overflow-hidden">
         <div className={cn('flex min-w-0 shrink-0 items-start gap-2', isLayoutPremium && 'dashboard-tab-toolbar')}>
-          <div className={cn('min-w-0 flex-1 rounded-md', !isLayoutPremium && 'overflow-x-auto overscroll-x-contain [scrollbar-width:thin]')}>
+          <div className="min-w-0 flex-1 overflow-x-auto overscroll-x-contain [scrollbar-width:thin]">
             <TabsList aria-label="Dashboard comercial" className={cn(
-              'commercial-tab-strip justify-start',
-              isLayoutPremium ? 'flex h-auto min-h-9 w-full flex-wrap' : 'h-9 w-max min-w-full',
+              'commercial-tab-strip h-9 w-max min-w-full justify-start',
+              isLayoutPremium && 'dashboard-tab-strip',
               isPelegriniPage && 'border border-border/60 bg-muted/40 p-1 text-muted-foreground shadow-none [&_button:hover]:text-foreground [&_button[data-state=active]]:bg-primary [&_button[data-state=active]]:text-primary-foreground',
             )}>
               <TabsTrigger value="visao-geral" className={tabTriggerClass}>Visão geral</TabsTrigger>
@@ -683,7 +683,7 @@ export default function MetasVendedoresPage() {
       <Suspense fallback={<ComercialTabFallback />}>
 
         {/* ==================== ABA: VISÃO GERAL ==================== */}
-        <TabsContent value="visao-geral" className={cn('mt-0 min-h-0 flex-1 overflow-auto', !isLayoutPremium && 'space-y-3')}>
+        <TabsContent value="visao-geral" className={cn('mt-0 min-h-0 flex-1 overflow-auto', isLayoutPremium ? 'dashboard-overview-viewport' : 'space-y-3')}>
           {isLayoutPremium ? (
             <VisaoGeralRapida1004
               vendedoresComMeta={vendedoresComMetaFonteFinal}

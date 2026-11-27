@@ -12,6 +12,7 @@ import { useEmpresaAtiva } from '@/hooks/useEmpresaAtiva';
 import { resolvePelegriniTheme } from '@/config/pelegriniTheme';
 import { useFilialSelecionada } from '@/contexts/FilialSelecionadaContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { filialPermiteRelatoriosVisitas } from '@/utils/acessoRelatoriosVisitas';
 import {
   PelegriniModuleSidebar,
   type PelegriniSidebarItem,
@@ -46,12 +47,12 @@ const futureMenuItems: PelegriniSidebarItem[] = [
 export function ComercialSidebar() {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const { codEmpresaAtiva } = useEmpresaAtiva();
-  const { filialAtiva } = useFilialSelecionada();
+  const { filialAtiva, carregandoFilial } = useFilialSelecionada();
   const { isMaster, isGerencial } = useAuth();
   const theme = resolvePelegriniTheme(filialAtiva || codEmpresaAtiva);
   const comercialMenuItems = getComercialMenuItems(codEmpresaAtiva || '');
   const showFutureItems = !hasCotacoesComerciais(codEmpresaAtiva || '');
-  if (!showFutureItems && (filialAtiva === 'chevrolet' || filialAtiva === 'transmissao') && (isMaster || isGerencial)) {
+  if (!carregandoFilial && (isMaster || isGerencial) && filialPermiteRelatoriosVisitas(codEmpresaAtiva, filialAtiva)) {
     comercialMenuItems.push({ label: 'Relatórios de visitas', icon: ClipboardList, path: '/comercial/visitas' });
   }
 

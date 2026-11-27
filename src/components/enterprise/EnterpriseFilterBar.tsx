@@ -131,7 +131,7 @@ export function EnterpriseFilterBar({
   }
 
   return (
-    <section className={cn('pelegrini-panel min-w-0 rounded-lg border bg-card px-3 py-2', className)} data-testid="enterprise-filter-bar">
+    <section className={cn('enterprise-filter-bar pelegrini-panel min-w-0 rounded-lg border bg-card px-3 py-2', className)} data-testid="enterprise-filter-bar">
       <div className="flex min-w-0 flex-wrap items-center gap-2">
         <button
           aria-expanded={open}

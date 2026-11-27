@@ -166,7 +166,7 @@ export function SaldoAVencerKpis({
 
   return (
     <TooltipProvider delayDuration={200}>
-      <div className="financial-metric-strip grid min-w-0 gap-px overflow-hidden border border-border bg-border sm:grid-cols-2 xl:grid-cols-5">
+      <div className="financial-metric-strip grid min-w-0 grid-cols-2 gap-px overflow-hidden border border-border bg-border xl:grid-cols-5">
         {cards.map((card) => {
           const clicavel = card.detalhavel && !semDados;
           const ativo = foco === card.key;
@@ -192,7 +192,7 @@ export function SaldoAVencerKpis({
                     }
                   }}
                   className={[
-                    'group flex h-full min-h-[92px] min-w-0 flex-col justify-between rounded-xl border border-border/60 bg-card p-3',
+                    'group flex h-full min-h-20 min-w-0 flex-col justify-between rounded-xl border border-border/60 bg-card p-2.5 md:p-3',
                     'transition-colors duration-150 ease-out',
                     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
                     clicavel ? `cursor-pointer hover:bg-muted/30 ${card.ring}` : '',
@@ -208,9 +208,9 @@ export function SaldoAVencerKpis({
                     />
                   </div>
 
-                  <div className="mt-3">
+                  <div className="mt-2">
                     <p
-                      className={`truncate text-[clamp(0.95rem,1.5vw,1.45rem)] font-semibold leading-tight tabular-nums ${card.accent}`}
+                      className={`pelegrini-responsive-value text-[clamp(0.95rem,1.5vw,1.45rem)] font-semibold leading-tight tabular-nums ${card.accent}`}
                     >
                       {semDados
                         ? '—'

@@ -38,6 +38,12 @@ describe('financial active page composition', () => {
     expect(desktopLayout).toMatch(/financial-workspace[^"']*flex-col/);
   });
 
+  it.each(['ResumoPage', 'SaldoAVencerPage'])('%s uses the available workspace width', (page) => {
+    const source = read(`src/pages/financeiro/${page}.tsx`);
+    expect(source).toMatch(/financial-workspace[^"']*\bw-full\b/);
+    expect(source).not.toMatch(/financial-workspace[^"']*max-w-\[1600px\]/);
+  });
+
   it('marks the active balance filters and details as financial overlays', () => {
     const sources = [
       read('src/pages/financeiro/SaldoAVencerPage.tsx'),
@@ -57,5 +63,24 @@ describe('financial active page composition', () => {
     const source = read('src/components/financeiro/SaldoAVencerKpis.tsx');
     expect(source).toContain("rounded-xl border border-border/60 bg-card");
     expect(source).not.toMatch(/hover:-translate|hover:shadow|shadow-md|transition-all/);
+  });
+
+  it('fits two balance indicators per mobile row and lets long values wrap', () => {
+    const source = read('src/components/financeiro/SaldoAVencerKpis.tsx');
+    expect(source).toMatch(/financial-metric-strip[^"']*\sgrid-cols-2\b/);
+    expect(source).toMatch(/className=\{`[^`]*\bpelegrini-responsive-value\b[^`]*\$\{card\.accent\}/);
+  });
+
+  it.each(['src/components/dre/DreGroupedTable.tsx', 'src/components/variacao/DFCTable.tsx'])(
+    '%s uses primary tokens for comparison chrome',
+    (path) => {
+      const source = read(path);
+      expect(source).not.toMatch(/\b(?:bg|text|border)-sky-\d+/);
+    },
+  );
+
+  it('uses primary tokens on the neutral balance customer count', () => {
+    const source = read('src/components/financeiro/SaldoAVencerTab.tsx');
+    expect(source).toMatch(/border-primary\/20 bg-primary\/5[^\n]*\n[^\n]*Clientes no filtro/);
   });
 });

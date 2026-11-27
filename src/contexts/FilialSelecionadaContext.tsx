@@ -10,6 +10,8 @@ interface FilialSelecionadaContextType {
   setFilialAtiva: (id: string | null) => void;
   setFilialAtivaForEmpresa: (codEmpresa: string | null | undefined, id: string | null) => void;
   clearFilial: () => void;
+  /** A seleção da empresa em contexto ainda está sendo restaurada. */
+  carregandoFilial: boolean;
   /** Empresa ativa exige seleção de filial e ainda não há uma escolhida. */
   requerSelecao: boolean;
   /** Empresa ativa possui filiais distintas configuradas. */
@@ -40,6 +42,7 @@ export function FilialSelecionadaProvider({ children }: { children: ReactNode })
     () => (codEmpresaContexto ? `${STORAGE_PREFIX}${codEmpresaContexto}` : null),
     [codEmpresaContexto],
   );
+  const [chaveFilialResolvida, setChaveFilialResolvida] = useState(storageKey);
 
   const [filialAtiva, setFilialAtivaState] = useState<string | null>(() => {
     if (!codEmpresaContexto) return null;
@@ -61,6 +64,7 @@ export function FilialSelecionadaProvider({ children }: { children: ReactNode })
 
   // Recarregar quando empresa muda
   useEffect(() => {
+    setChaveFilialResolvida(storageKey);
     if (!storageKey) {
       setFilialAtivaState(null);
       return;
@@ -123,6 +127,7 @@ export function FilialSelecionadaProvider({ children }: { children: ReactNode })
       setFilialAtiva,
       setFilialAtivaForEmpresa,
       clearFilial,
+      carregandoFilial: chaveFilialResolvida !== storageKey,
       requerSelecao,
       empresaPossuiFiliaisAtiva,
       codEmpresaContexto,

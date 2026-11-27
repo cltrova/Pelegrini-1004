@@ -76,7 +76,13 @@ describe('financial square visual scope', () => {
   });
 
   it('reserves mobile header space for the floating sidebar control', () => {
-    expect(css).toMatch(/header\.safe-area-top\s*>\s*div[^}]*padding-inline-start:\s*3\.75rem/s);
+    expect(css).toMatch(/\[data-module-shell='financeiro'\] \.financial-mobile-header\s*\{[^}]*padding-inline-start:\s*3\.75rem/);
+    expect(css).toMatch(/\.financial-mobile-workspace\s*\{[^}]*padding-block-end:[^;]*env\(safe-area-inset-bottom/);
+  });
+
+  it('bounds horizontal tab overflow within its own viewport', () => {
+    expect(css).toMatch(/\[data-module-shell='financeiro'\] \.financial-tab-viewport\s*\{[^}]*max-inline-size:\s*100%/);
+    expect(css).toMatch(/\.financial-tab-viewport\s*\{[^}]*overflow-x:\s*auto/);
   });
 
   it('limits reduced motion overrides to the financial shell and overlays', () => {
@@ -87,12 +93,13 @@ describe('financial square visual scope', () => {
   });
 
   it('loads the financial stylesheet after the other module styles', () => {
+    const operationalImport = mainSource.indexOf('"./styles/operacional-square.css"');
     const commercialImport = mainSource.indexOf('"./styles/comercial-square.css"');
     const financialImport = mainSource.indexOf('"./styles/financeiro-square.css"');
-    const cssImports = [...mainSource.matchAll(/^import ["'](.+\.css)["'];$/gm)];
 
+    expect(operationalImport).toBeGreaterThanOrEqual(0);
     expect(commercialImport).toBeGreaterThanOrEqual(0);
+    expect(financialImport).toBeGreaterThan(operationalImport);
     expect(financialImport).toBeGreaterThan(commercialImport);
-    expect(cssImports.at(-1)?.[1]).toBe('./styles/financeiro-square.css');
   });
 });

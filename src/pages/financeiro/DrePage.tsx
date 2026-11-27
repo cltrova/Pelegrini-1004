@@ -182,22 +182,23 @@ export default function DrePage() {
   // Versão Mobile
   if (isMobile) {
     return (
-      <div className="financial-workspace flex h-screen min-w-0 max-w-full flex-col overflow-hidden bg-background pb-20">
+      <div className="financial-workspace financial-mobile-workspace flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-background">
         {/* Header Mobile */}
         <MobileHeader
           title="DRE"
+          className="financial-mobile-header"
           actions={
-            <div className="financial-toolbar flex items-center gap-2">
+            <div className="flex items-center gap-2">
               <Sheet open={showMobileFilters} onOpenChange={setShowMobileFilters}>
                 <SheetTrigger asChild>
-                  <Button variant="ghost" size="icon" className="financial-filter-control relative h-9 w-9">
-                    <Filter className="h-4 w-4" />
+                  <Button aria-label="Abrir filtros" variant="ghost" size="icon" className="financial-filter-control relative h-9 w-9">
+                    <Filter aria-hidden="true" className="h-4 w-4" />
                     {hasActiveFilters && (
-                      <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-primary" />
+                      <span aria-hidden="true" className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-primary" />
                     )}
                   </Button>
                 </SheetTrigger>
-                <SheetContent side="bottom" className="financial-overlay flex h-[70dvh] max-w-full flex-col overflow-hidden">
+                <SheetContent side="bottom" aria-describedby={undefined} className="financial-overlay flex h-[70dvh] max-w-full flex-col overflow-hidden">
                   <SheetHeader>
                     <SheetTitle>Filtros</SheetTitle>
                   </SheetHeader>
@@ -227,15 +228,15 @@ export default function DrePage() {
                   </div>
                 </SheetContent>
               </Sheet>
-              <Button variant="ghost" size="icon" onClick={() => refetch()} className="financial-filter-control h-9 w-9">
-                <RefreshCw className="h-4 w-4" />
+              <Button aria-label="Atualizar dados" variant="ghost" size="icon" onClick={() => refetch()} className="financial-filter-control h-9 w-9">
+                <RefreshCw aria-hidden="true" className="h-4 w-4" />
               </Button>
             </div>
           }
         />
 
         {/* Conteúdo */}
-        <div className="financial-data-viewport min-w-0 flex-1 overflow-y-auto overflow-x-hidden">
+        <div className="financial-data-viewport min-h-0 min-w-0 flex-1 overflow-y-auto overflow-x-hidden">
           {!hasSearched ? (
             <div className="p-4">
               <FinanceiroSearchPrompt />
@@ -332,31 +333,31 @@ export default function DrePage() {
 
                 {/* Tabs de visualização */}
                 <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'dashboard' | 'comparativo' | 'detalhe' | 'assistente')} className="flex min-h-0 min-w-0 max-w-full flex-1 flex-col overflow-hidden">
-                  <TabsList className="financial-toolbar mb-3 h-9 max-w-full shrink-0 justify-start gap-1 overflow-x-auto border border-border/60 bg-muted/30 p-0.5">
+                  <TabsList aria-label="Visões do DRE" className="financial-toolbar mb-3 h-9 max-w-full shrink-0 justify-start gap-1 overflow-x-auto border border-border/60 bg-muted/30 p-0.5">
                     <TabsTrigger
                       value="dashboard"
-                      className="gap-2 h-8 px-3 data-[state=active]:bg-background data-[state=active]:text-foreground text-muted-foreground"
+                      className="h-8 gap-2 px-3"
                     >
                       <LayoutDashboard className="h-4 w-4" />
                       Visão Geral
                     </TabsTrigger>
                     <TabsTrigger
                       value="comparativo"
-                      className="gap-2 h-8 px-3 data-[state=active]:bg-background data-[state=active]:text-foreground text-muted-foreground"
+                      className="h-8 gap-2 px-3"
                     >
                       <GitCompare className="h-4 w-4" />
                       Comparativo
                     </TabsTrigger>
                     <TabsTrigger
                       value="detalhe"
-                      className="gap-2 h-8 px-3 data-[state=active]:bg-background data-[state=active]:text-foreground text-muted-foreground"
+                      className="h-8 gap-2 px-3"
                     >
                       <Table className="h-4 w-4" />
                       Detalhe
                     </TabsTrigger>
                     <TabsTrigger
                       value="assistente"
-                      className="gap-2 h-8 px-3 data-[state=active]:bg-background data-[state=active]:text-foreground text-muted-foreground"
+                      className="h-8 gap-2 px-3"
                     >
                       <Bot className="h-4 w-4" />
                       Assistente

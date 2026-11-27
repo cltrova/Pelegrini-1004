@@ -537,7 +537,7 @@ function DreGroupedTableRPA({ data, className }: DreGroupedTableProps) {
                       </EnterpriseTh>
                     )}
                     {showAH && colIndex > 0 && (
-                      <EnterpriseTh key={`${col}-ah`} numeric className="w-16 bg-sky-500/10 px-3 py-1.5 text-[9.5px] font-medium text-sky-300/80">
+                      <EnterpriseTh key={`${col}-ah`} numeric className="w-16 bg-primary/10 px-3 py-1.5 text-[9.5px] font-medium text-primary">
                         AH%
                       </EnterpriseTh>
                     )}
@@ -599,7 +599,7 @@ function DreGroupedTableRPA({ data, className }: DreGroupedTableProps) {
                             </EnterpriseTd>
                           )}
                           {showAH && colIndex > 0 && (
-                            <EnterpriseTd key={`${col}-ah`} numeric className={cn('bg-sky-500/[0.06] px-3 py-3.5 font-mono text-[11px]', getAHColor(ah))}>
+                            <EnterpriseTd key={`${col}-ah`} numeric className={cn('bg-primary/[0.06] px-3 py-3.5 font-mono text-[11px]', getAHColor(ah))}>
                               {formatAH(ah)}
                             </EnterpriseTd>
                           )}
@@ -644,7 +644,7 @@ function DreGroupedTableRPA({ data, className }: DreGroupedTableProps) {
                                     </EnterpriseTd>
                                   )}
                                   {showAH && colIndex > 0 && (
-                                    <EnterpriseTd key={`${col}-ah`} numeric className={cn('bg-sky-500/[0.05] px-3 py-2.5 font-mono text-[10.5px]', getAHColor(ah))}>
+                                    <EnterpriseTd key={`${col}-ah`} numeric className={cn('bg-primary/5 px-3 py-2.5 font-mono text-[10.5px]', getAHColor(ah))}>
                                       {formatAH(ah)}
                                     </EnterpriseTd>
                                   )}
@@ -689,7 +689,7 @@ function DreGroupedTableRPA({ data, className }: DreGroupedTableProps) {
                                             </EnterpriseTd>
                                           )}
                                           {showAH && colIndex > 0 && (
-                                            <EnterpriseTd key={`${col}-ah`} numeric className={cn('bg-sky-500/[0.04] px-3 py-2 font-mono text-[10px]', getAHColor(ah))}>
+                                            <EnterpriseTd key={`${col}-ah`} numeric className={cn('bg-primary/[0.04] px-3 py-2 font-mono text-[10px]', getAHColor(ah))}>
                                               {formatAH(ah)}
                                             </EnterpriseTd>
                                           )}
@@ -723,7 +723,7 @@ function DreGroupedTableRPA({ data, className }: DreGroupedTableProps) {
                                                 </EnterpriseTd>
                                               )}
                                               {showAH && colIndex > 0 && (
-                                                <EnterpriseTd key={`${col}-ah`} numeric className={cn('bg-sky-500/[0.04] px-3 py-1.5 font-mono text-[10px]', getAHColor(ah))}>
+                                                <EnterpriseTd key={`${col}-ah`} numeric className={cn('bg-primary/[0.04] px-3 py-1.5 font-mono text-[10px]', getAHColor(ah))}>
                                                   {formatAH(ah)}
                                                 </EnterpriseTd>
                                               )}
@@ -765,7 +765,7 @@ function DreGroupedTableRPA({ data, className }: DreGroupedTableProps) {
                               </EnterpriseTd>
                             )}
                             {showAH && colIndex > 0 && (
-                              <EnterpriseTd key={`${col}-ah`} numeric className={cn('bg-sky-500/10 px-3 py-3.5 font-mono text-[11px]', getAHColor(ah))}>
+                              <EnterpriseTd key={`${col}-ah`} numeric className={cn('bg-primary/10 px-3 py-3.5 font-mono text-[11px]', getAHColor(ah))}>
                                 {formatAH(ah)}
                               </EnterpriseTd>
                             )}
@@ -832,7 +832,7 @@ function DreGroupedTableRPA({ data, className }: DreGroupedTableProps) {
                                 </EnterpriseTd>
                               )}
                               {showAH && colIndex > 0 && (
-                                <EnterpriseTd key={`${col}-ah`} numeric className={cn('bg-sky-500/10 px-3 py-3.5 font-mono text-[11px]', getAHColor(ah))}>
+                                <EnterpriseTd key={`${col}-ah`} numeric className={cn('bg-primary/10 px-3 py-3.5 font-mono text-[11px]', getAHColor(ah))}>
                                   {formatAH(ah)}
                                 </EnterpriseTd>
                               )}
@@ -871,7 +871,7 @@ function DreGroupedTableRPA({ data, className }: DreGroupedTableProps) {
                       </EnterpriseTd>
                     )}
                     {showAH && colIndex > 0 && (
-                      <EnterpriseTd key={`${col}-ah`} numeric className={cn('bg-sky-500/[0.12] px-3 py-4 font-mono text-[11px]', getAHColor(ah))}>
+                      <EnterpriseTd key={`${col}-ah`} numeric className={cn('bg-primary/[0.12] px-3 py-4 font-mono text-[11px]', getAHColor(ah))}>
                         {formatAH(ah)}
                       </EnterpriseTd>
                     )}

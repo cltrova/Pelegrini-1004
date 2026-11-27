@@ -950,7 +950,7 @@ export function SaldoAVencerTab({ filtros }: { filtros?: SaldoAVencerFiltros }) 
                 {formatCurrency(filtrados.reduce((s, c) => s + c.total, 0))}
               </p>
             </div>
-            <div className="rounded-xl border border-blue-500/20 bg-blue-500/5 p-4">
+            <div className="rounded-xl border border-primary/20 bg-primary/5 p-4">
               <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Clientes no filtro</p>
               <p className="mt-2 text-2xl font-black tabular-nums text-foreground">{filtrados.length}</p>
             </div>

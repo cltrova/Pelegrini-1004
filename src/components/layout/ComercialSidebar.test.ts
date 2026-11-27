@@ -59,18 +59,38 @@ function mockCompany(codEmpresaAtiva: string) {
   vi.mocked(useAuth).mockReturnValue({ isLoading: false } as never);
 }
 
-it.each([
-  ['chevrolet', true],
-  ['transmissao', true],
-  [null, false],
-] as const)('mostra Visitas no Comercial da filial %s conforme o escopo', (filialAtiva, visivel) => {
-  mockCompany('1004');
-  vi.mocked(useAuth).mockReturnValue({ isLoading: false, isGerencial: true } as never);
-  vi.mocked(useFilialSelecionada).mockReturnValue({ filialAtiva } as never);
-  render(createElement(MemoryRouter, { initialEntries: ['/comercial/dashboard'], future: { v7_startTransition: true, v7_relativeSplatPath: true } }, createElement(ComercialSidebar)));
-  const link = screen.queryByRole('link', { name: 'Relatórios de visitas' });
-  if (visivel) expect(link).toHaveAttribute('href', '/comercial/visitas');
-  else expect(link).not.toBeInTheDocument();
+describe.each([
+  { menu: 'desktop', Componente: ComercialSidebar },
+  { menu: 'móvel', Componente: ComercialMobileBottomNav },
+])('Relatórios de visitas no menu $menu', ({ menu, Componente }) => {
+  it.each([
+    ['1004', 'chevrolet', 'gerencial', false, true],
+    ['1004', 'transmissao', 'gerencial', false, false],
+    ['1004', 'transmissao', 'master', false, false],
+    ['1004', null, 'master', false, false],
+    ['10041', 'chevrolet', 'master', false, true],
+    ['10041', 'chevrolet', 'master', true, false],
+    ['10041', 'chevrolet', 'vendedor', false, false],
+  ] as const)('empresa %s, filial %s, perfil %s e restauração pendente %s', (empresa, filialAtiva, perfil, carregandoFilial, visivel) => {
+    mockCompany(empresa);
+    vi.mocked(useAuth).mockReturnValue({
+      isLoading: false,
+      isMaster: perfil === 'master',
+      isGerencial: perfil === 'gerencial',
+    } as never);
+    vi.mocked(useFilialSelecionada).mockReturnValue({ filialAtiva, carregandoFilial } as never);
+    render(createElement(
+      MemoryRouter,
+      { initialEntries: ['/comercial/dashboard'], future: { v7_startTransition: true, v7_relativeSplatPath: true } },
+      createElement(Componente),
+    ));
+
+    if (menu === 'móvel') fireEvent.click(screen.getByRole('button', { name: 'Mais' }));
+
+    const link = screen.queryByRole('link', { name: 'Relatórios de visitas' });
+    if (visivel) expect(link).toHaveAttribute('href', '/comercial/visitas');
+    else expect(link).not.toBeInTheDocument();
+  });
 });
 
 function mockLostSalesQueries() {

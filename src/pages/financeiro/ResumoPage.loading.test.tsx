@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import ResumoPage from './ResumoPage';
@@ -39,6 +39,7 @@ vi.mock('@/components/resumo/AgingDetalhado', () => ({ AgingDetalhado: () => <di
 vi.mock('@/components/resumo/TopRiscoTable', () => ({ TopRiscoTable: () => <div /> }));
 vi.mock('@/components/resumo/PDDBreakdown', () => ({ PDDBreakdown: () => <div /> }));
 vi.mock('@/components/resumo/ResumoFiltersBar', () => ({ ResumoFiltersBar: () => <div /> }));
+vi.mock('@/components/resumo/AcompanhamentoTab', () => ({ AcompanhamentoTab: () => <div /> }));
 vi.mock('@/components/enterprise', () => ({
   EnterpriseBadge: ({ children }: { children: React.ReactNode }) => <span>{children}</span>,
   EnterprisePageHeader: ({ actions }: { actions: React.ReactNode }) => <header>{actions}</header>,
@@ -65,5 +66,21 @@ describe('ResumoPage loading action footprint', () => {
     expect(within(busyButton).getByTestId('loading-indicator')).toHaveClass('h-4', 'w-4', 'mr-2');
     expect(screen.queryByRole('status', { name: 'Carregando resumo financeiro' })).not.toBeInTheDocument();
     expect(document.querySelector('.financial-metric-strip')).toBeInTheDocument();
+  });
+
+  it('keeps all six tabs inside a separate scroll rail and opens the last panel by keyboard', () => {
+    render(<ResumoPage />);
+
+    const tablist = screen.getByRole('tablist', { name: 'Visões do resumo financeiro' });
+    expect(within(tablist).getAllByRole('tab')).toHaveLength(6);
+    const rail = tablist.closest('.financial-tab-viewport');
+    expect(rail).toBeInTheDocument();
+
+    const lastTab = within(tablist).getByRole('tab', { name: /Acompanhamento/ });
+    fireEvent.keyDown(lastTab, { key: 'Enter' });
+    expect(lastTab).toHaveAttribute('aria-selected', 'true');
+    const panel = screen.getByRole('tabpanel', { name: /Acompanhamento/ });
+    expect(panel).toHaveClass('financial-data-viewport');
+    expect(rail).not.toContainElement(panel);
   });
 });

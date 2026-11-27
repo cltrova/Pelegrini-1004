@@ -1,0 +1,95 @@
+:is([data-module-shell='comercial'], [data-module-shell='operacional'], [data-module-shell='financeiro']) {
+  --pelegrini-workspace-border: hsl(var(--border) / 0.78);
+  --pelegrini-workspace-surface: hsl(var(--card));
+  --pelegrini-workspace-hover: hsl(var(--primary) / 0.075);
+  color: hsl(var(--foreground));
+}
+
+/* O mesmo acabamento do Dashboard nas superfícies de trabalho dos três módulos. */
+:is([data-module-shell='comercial'], [data-module-shell='operacional'], [data-module-shell='financeiro']) :is(
+  .pelegrini-panel, .pelegrini-kpi-card, .pelegrini-chart-frame, .dashboard-frame,
+  .commercial-dashboard-panel, .commercial-detail-panel, .commercial-table-frame,
+  .operational-panel, .operational-chart-panel, .operational-table-frame,
+  .financial-metric-strip
+) {
+  border-color: var(--pelegrini-workspace-border);
+  border-radius: var(--pelegrini-panel-radius);
+  box-shadow: none;
+}
+
+:is([data-module-shell='comercial'], [data-module-shell='operacional'], [data-module-shell='financeiro']) :is(
+  .enterprise-filter-bar, .comercial-filter-bar, .pelegrini-filter-bar, .operational-workspace-header, .financial-filter-control:not(button)
+) {
+  min-inline-size: 0;
+  border-color: var(--pelegrini-workspace-border);
+  background-color: var(--pelegrini-workspace-surface);
+}
+
+:is([data-module-shell='comercial'], [data-module-shell='operacional'], [data-module-shell='financeiro']) [role='tablist'] {
+  border: 1px solid var(--pelegrini-workspace-border);
+  border-radius: var(--pelegrini-panel-radius);
+  background-color: var(--pelegrini-workspace-surface);
+  box-shadow: none;
+}
+
+:is([data-module-shell='comercial'], [data-module-shell='operacional'], [data-module-shell='financeiro']) [role='tablist'] > [role='tab'] {
+  border-color: transparent;
+  border-radius: var(--pelegrini-control-radius);
+  color: hsl(var(--muted-foreground));
+  font-weight: 600;
+  transition: color var(--pelegrini-motion) var(--pelegrini-ease),
+    background-color var(--pelegrini-motion) var(--pelegrini-ease);
+}
+
+:is([data-module-shell='comercial'], [data-module-shell='operacional'], [data-module-shell='financeiro']) [role='tablist'] > [role='tab']:hover:not(:disabled, [aria-selected='true']) {
+  color: hsl(var(--foreground));
+  background-color: var(--pelegrini-workspace-hover);
+}
+
+:is([data-module-shell='comercial'], [data-module-shell='operacional'], [data-module-shell='financeiro']) [role='tablist'] > [role='tab'][aria-selected='true'] {
+  background-color: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+  box-shadow: none;
+}
+
+:is([data-module-shell='comercial'], [data-module-shell='operacional'], [data-module-shell='financeiro']) [role='tablist'] > [role='tab']:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: -2px;
+}
+
+:is([data-module-shell='comercial'], [data-module-shell='operacional'], [data-module-shell='financeiro']) :is(
+  .comercial-metric-strip, .operational-metric-strip, .financial-metric-strip
+) {
+  border-color: var(--pelegrini-workspace-border);
+  border-radius: var(--pelegrini-panel-radius);
+  background-color: var(--pelegrini-workspace-surface);
+}
+
+:is([data-module-shell='comercial'], [data-module-shell='operacional'], [data-module-shell='financeiro']) :is(
+  .pelegrini-metric-value, .comercial-metric-value
+) { font-variant-numeric: tabular-nums; }
+
+:is([data-module-shell='comercial'], [data-module-shell='operacional'], [data-module-shell='financeiro']) :is(table, [role='table']) {
+  font-variant-numeric: tabular-nums;
+}
+
+:is([data-module-shell='comercial'], [data-module-shell='operacional'], [data-module-shell='financeiro']) :is(thead, [role='rowgroup']:has([role='columnheader'])) {
+  background-color: var(--pelegrini-workspace-surface);
+  color: hsl(var(--muted-foreground));
+}
+
+:is([data-module-shell='comercial'], [data-module-shell='operacional'], [data-module-shell='financeiro']) :is(thead th, [role='columnheader']) {
+  border-color: var(--pelegrini-workspace-border);
+  font-weight: 650;
+}
+
+:is([data-module-shell='comercial'], [data-module-shell='operacional'], [data-module-shell='financeiro']) tbody tr:where(:hover, :focus-within):not([aria-selected='true'], [data-state='selected']) {
+  background-color: var(--pelegrini-workspace-hover);
+}
+
+:is(.commercial-overlay, .operational-overlay, .financial-overlay) {
+  border-color: hsl(var(--enterprise-border-strong));
+  background-color: hsl(var(--popover));
+  color: hsl(var(--popover-foreground));
+  box-shadow: var(--pelegrini-overlay-shadow);
+}

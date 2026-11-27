@@ -216,8 +216,8 @@ export function DFCTable({ linhas, anoPeriodo1, mesPeriodo1, anoPeriodo2, mesPer
               </span>
             </div>
             <div className="flex items-center gap-2 mt-1">
-              <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-sky-500/10 border border-sky-500/25 text-[10.5px] font-medium text-sky-300 tabular-nums">
-                <span className="h-1.5 w-1.5 bg-sky-400" />
+              <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-primary/10 border border-primary/25 text-[10.5px] font-medium text-primary tabular-nums">
+                <span className="h-1.5 w-1.5 bg-primary" />
                 P1 · {headerP1}
               </span>
               <ArrowRight className="h-3 w-3 text-muted-foreground/60" />
@@ -329,9 +329,9 @@ export function DFCTable({ linhas, anoPeriodo1, mesPeriodo1, anoPeriodo2, mesPer
               <th className="text-left px-5 py-3 text-[10.5px] font-semibold text-muted-foreground uppercase tracking-[0.14em] min-w-[400px]">
                 Descrição
               </th>
-              <th className="text-right px-4 py-3 text-[10.5px] font-semibold text-sky-300/90 uppercase tracking-[0.14em] w-40">
+              <th className="text-right px-4 py-3 text-[10.5px] font-semibold text-primary uppercase tracking-[0.14em] w-40">
                 <span className="inline-flex items-center gap-1.5">
-                  <span className="h-1.5 w-1.5 rounded-full bg-sky-400" />
+                  <span className="h-1.5 w-1.5 rounded-full bg-primary" />
                   {headerP1}
                 </span>
               </th>
@@ -358,8 +358,8 @@ export function DFCTable({ linhas, anoPeriodo1, mesPeriodo1, anoPeriodo2, mesPer
       {/* Footer com legenda */}
       <div className="px-5 py-3 border-t border-border/60 bg-muted/20 flex flex-wrap items-center gap-2">
         <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground/70 mr-1">Legenda</span>
-        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-sky-500/10 border border-sky-500/25 text-[10.5px] font-medium text-sky-300">
-          <span className="h-1.5 w-1.5 rounded-full bg-sky-400" />
+        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-primary/10 border border-primary/25 text-[10.5px] font-medium text-primary">
+          <span className="h-1.5 w-1.5 rounded-full bg-primary" />
           Valores P1 / P2
         </span>
         <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-[10.5px] font-medium text-emerald-300">

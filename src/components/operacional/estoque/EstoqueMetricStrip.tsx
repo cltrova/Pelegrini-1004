@@ -40,10 +40,10 @@ function MetricContent({ icon: Icon, label, value }: Pick<EstoqueMetric, 'icon' 
     <>
       <Icon aria-hidden="true" className="h-3.5 w-3.5 shrink-0 text-current opacity-70" />
       <span className="min-w-0 flex-1">
-        <span className="block truncate text-[9px] font-semibold uppercase leading-none text-muted-foreground">
+        <span className="block truncate text-[9px] font-semibold uppercase leading-none text-muted-foreground max-sm:whitespace-normal max-sm:leading-tight">
           {label}
         </span>
-        <span className="mt-0.5 block min-w-0 max-w-full whitespace-nowrap text-[0.95rem] font-semibold leading-none tabular-nums text-foreground">
+        <span className="mt-0.5 block min-w-0 max-w-full whitespace-nowrap text-[0.95rem] font-semibold leading-none tabular-nums text-foreground max-sm:whitespace-normal max-sm:leading-tight max-sm:[overflow-wrap:anywhere]">
           {value}
         </span>
       </span>
@@ -56,7 +56,7 @@ function MetricItem({ active, metric, onMetricClick }: MetricItemProps) {
   const descriptionId = `estoque-metric-description-${useId().replace(/:/g, '')}`;
   const metricMinWidth = `max(9rem, calc(${metric.value.length}ch + 3rem))`;
   const commonClassName = cn(
-    'relative flex h-full w-full flex-1 items-center gap-1.5 border-r border-border/55 px-2 text-left',
+    'relative flex h-full w-full flex-1 items-center gap-1.5 border-r border-border/55 px-2 text-left max-sm:!min-w-0 max-sm:min-h-10 max-sm:border-b max-sm:py-1',
     'transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring',
     toneClasses[metric.tone],
     active ? 'bg-primary/10' : 'bg-card/80 hover:bg-muted/35',
@@ -142,11 +142,11 @@ export function EstoqueMetricStrip({
     <section
       aria-label="Indicadores de estoque"
       className={cn(
-        'operational-metric-strip flex h-11 min-w-0 shrink-0 overflow-x-auto border-y border-border/60 bg-card/85',
+        'operational-metric-strip flex h-11 min-w-0 shrink-0 overflow-x-auto border-y border-border/60 bg-card/85 max-sm:h-auto max-sm:overflow-hidden',
         className,
       )}
     >
-      <div className="flex min-w-[54rem] flex-1">
+      <div className="flex min-w-[54rem] flex-1 max-sm:grid max-sm:min-w-0 max-sm:grid-cols-2">
         {metrics.map((metric) => (
           <MetricItem
             active={metric.interactive && (metric.key === activeKey || Boolean(activeKeys?.includes(metric.key)))}

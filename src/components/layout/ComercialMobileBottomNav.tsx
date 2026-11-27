@@ -6,6 +6,7 @@
  import { cn } from '@/lib/utils';
  import { useAuth } from '@/contexts/AuthContext';
  import { useFilialSelecionada } from '@/contexts/FilialSelecionadaContext';
+ import { filialPermiteRelatoriosVisitas } from '@/utils/acessoRelatoriosVisitas';
  
  interface NavItem {
    icon: React.ComponentType<{ className?: string }>;
@@ -26,11 +27,13 @@
    const navigate = useNavigate();
    const { codEmpresaAtiva } = useEmpresaAtiva();
    const { isMaster, isGerencial } = useAuth();
-   const { filialAtiva } = useFilialSelecionada();
+   const { filialAtiva, carregandoFilial } = useFilialSelecionada();
    const showQuoteNavigation = codEmpresaAtiva === '1004' || codEmpresaAtiva === '10041';
-   const isQuoteRoute = location.pathname === '/comercial/cotacoes'
+   const mostrarRelatoriosVisitas = !carregandoFilial && (isMaster || isGerencial)
+     && filialPermiteRelatoriosVisitas(codEmpresaAtiva, filialAtiva);
+   const rotaDoMenuMais = location.pathname === '/comercial/cotacoes'
      || location.pathname === '/comercial/perdidas'
-     || location.pathname === '/comercial/visitas';
+     || (mostrarRelatoriosVisitas && location.pathname === '/comercial/visitas');
  
    const isActive = (item: NavItem) => {
      if (item.match) {
@@ -76,13 +79,13 @@
                  type="button"
                  className={cn(
                    'flex h-14 min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-sm px-1 py-2 transition-colors duration-150',
-                   isQuoteRoute
+                   rotaDoMenuMais
                      ? 'bg-primary/10 text-primary'
                      : 'text-muted-foreground hover:text-foreground',
                  )}
                >
                  <MoreHorizontal className="h-5 w-5" />
-                 <span className={cn('text-[10px] font-medium', isQuoteRoute && 'font-semibold')}>Mais</span>
+                 <span className={cn('text-[10px] font-medium', rotaDoMenuMais && 'font-semibold')}>Mais</span>
                </button>
              </PopoverTrigger>
              <PopoverContent side="top" align="end" className="commercial-overlay w-56 p-1">
@@ -94,7 +97,7 @@
                  <XCircle aria-hidden="true" className="h-4 w-4" />
                  Vendas Perdidas
                </NavLink>
-               {(filialAtiva === 'chevrolet' || filialAtiva === 'transmissao') && (isMaster || isGerencial) && (
+               {mostrarRelatoriosVisitas && (
                  <NavLink to="/comercial/visitas" className="flex h-11 items-center gap-2 rounded-sm px-2 text-sm hover:bg-primary/10">
                    <ClipboardList aria-hidden="true" className="h-4 w-4" />
                    Relatórios de visitas
