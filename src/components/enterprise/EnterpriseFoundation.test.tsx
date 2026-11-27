@@ -165,6 +165,23 @@ describe('enterprise visual foundation', () => {
     expect(onApply).toHaveBeenCalledTimes(1);
   });
 
+  it('links the filter control to its panel and announces how many filters are active', () => {
+    render(
+      <EnterpriseFilterBar activeCount={2}>
+        <EnterpriseSearchFilter label="Busca" value="" onChange={() => undefined} />
+      </EnterpriseFilterBar>,
+    );
+
+    const trigger = screen.getByRole('button', { name: 'Expandir filtros' });
+    expect(trigger).toHaveAccessibleDescription('2 filtros ativos');
+    const panel = document.getElementById(trigger.getAttribute('aria-controls') ?? '');
+    expect(panel).toContainElement(screen.getByLabelText('Busca'));
+    expect(panel).not.toBeVisible();
+
+    fireEvent.click(trigger);
+    expect(panel).toBeVisible();
+  });
+
   it('keeps an exact fixed icon slot when Buscar changes to loading', () => {
     const { rerender } = render(
       <EnterpriseFilterBar defaultOpen isApplying={false} onApply={() => undefined}>

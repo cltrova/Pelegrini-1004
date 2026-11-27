@@ -18,18 +18,20 @@ export function ErrorState({
   return (
     <div
       className={cn(
-        'flex flex-col items-center justify-center rounded-xl border border-border bg-card p-8 text-center shadow-sm',
+        'pelegrini-panel flex flex-col items-center justify-center gap-2 border border-destructive/[0.25] bg-card p-6 text-center',
         className
       )}
     >
-      <div className="h-16 w-16 rounded-full bg-destructive/10 flex items-center justify-center mb-4">
-        <AlertCircle className="h-8 w-8 text-destructive" />
+      <div className="mb-1 grid size-10 place-items-center rounded-md bg-destructive/10 text-destructive" aria-hidden="true">
+        <AlertCircle className="size-5" />
       </div>
-      <h3 className="text-lg font-semibold text-foreground mb-2">{title}</h3>
-      <p className="text-sm text-muted-foreground max-w-sm mb-6">{message}</p>
+      <div role="alert" className="max-w-sm space-y-1">
+        <h3 className="text-base font-semibold text-foreground">{title}</h3>
+        <p className="text-sm text-muted-foreground">{message}</p>
+      </div>
       {onRetry && (
-        <Button onClick={onRetry} variant="outline">
-          <RefreshCw className="h-4 w-4 mr-2" />
+        <Button type="button" onClick={onRetry} size="sm" variant="outline" className="mt-2">
+          <RefreshCw className="size-4" aria-hidden="true" />
           Tentar novamente
         </Button>
       )}

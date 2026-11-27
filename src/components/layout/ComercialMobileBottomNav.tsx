@@ -34,7 +34,7 @@
  
    const isActive = (item: NavItem) => {
      if (item.match) {
-       return item.match.some(m => location.pathname.startsWith(m));
+       return item.match.some(path => location.pathname === path || (path !== '/' && location.pathname.startsWith(`${path}/`)));
      }
      return location.pathname === item.path;
    };
@@ -42,7 +42,7 @@
    return (
     <nav
       aria-label="Navegacao comercial mobile"
-      className="commercial-mobile-navigation fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-card safe-area-bottom"
+      className="commercial-mobile-navigation z-50 shrink-0 border-t border-border bg-card safe-area-bottom"
     >
        <div className="flex h-16 items-center justify-around px-2">
          {navItems.map((item) => {
@@ -50,6 +50,7 @@
            return (
              <button
                key={item.path}
+               aria-current={active ? 'page' : undefined}
                onClick={() => navigate(item.path)}
                className={cn(
                  'flex h-14 min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-sm px-1 py-2 transition-colors duration-150',
@@ -85,16 +86,16 @@
                </button>
              </PopoverTrigger>
              <PopoverContent side="top" align="end" className="commercial-overlay w-56 p-1">
-               <NavLink to="/comercial/cotacoes" className="flex h-11 items-center gap-2 rounded-sm px-2 text-sm hover:bg-accent">
+               <NavLink to="/comercial/cotacoes" className="flex h-11 items-center gap-2 rounded-sm px-2 text-sm hover:bg-primary/10">
                  <Clock aria-hidden="true" className="h-4 w-4" />
                  Cotações Abertas
                </NavLink>
-               <NavLink to="/comercial/perdidas" className="flex h-11 items-center gap-2 rounded-sm px-2 text-sm hover:bg-accent">
+               <NavLink to="/comercial/perdidas" className="flex h-11 items-center gap-2 rounded-sm px-2 text-sm hover:bg-primary/10">
                  <XCircle aria-hidden="true" className="h-4 w-4" />
                  Vendas Perdidas
                </NavLink>
                {(filialAtiva === 'chevrolet' || filialAtiva === 'transmissao') && (isMaster || isGerencial) && (
-                 <NavLink to="/comercial/visitas" className="flex h-11 items-center gap-2 rounded-sm px-2 text-sm hover:bg-accent">
+                 <NavLink to="/comercial/visitas" className="flex h-11 items-center gap-2 rounded-sm px-2 text-sm hover:bg-primary/10">
                    <ClipboardList aria-hidden="true" className="h-4 w-4" />
                    Relatórios de visitas
                  </NavLink>

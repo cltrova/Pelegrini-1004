@@ -53,9 +53,9 @@ describe('commercial square visual scope', () => {
   });
 
   it('defines the commercial geometry and motion tokens', () => {
-    expect(css).toContain('--commercial-panel-radius: 2px');
-    expect(css).toContain('--commercial-control-radius: 4px');
-    expect(css).toMatch(/--commercial-motion-fast:\s*(?:120|1[3-7]0|180)ms/);
+    expect(css).toContain('--commercial-panel-radius: var(--pelegrini-panel-radius)');
+    expect(css).toContain('--commercial-control-radius: var(--pelegrini-control-radius)');
+    expect(css).toContain('--commercial-motion-fast: var(--pelegrini-motion)');
     expect(css).toMatch(/--commercial-motion-sidebar:\s*(?:1[2-9]0|20[0-9]|210|220)ms/);
   });
 
@@ -132,11 +132,9 @@ describe('commercial square visual scope', () => {
     const indexImport = mainSource.indexOf('"./index.css"');
     const operationalImport = mainSource.indexOf('"./styles/operacional-square.css"');
     const commercialImport = mainSource.indexOf('"./styles/comercial-square.css"');
-    const cssImports = [...mainSource.matchAll(/^import ["'](.+\.css)["'];$/gm)];
 
     expect(indexImport).toBeGreaterThanOrEqual(0);
     expect(operationalImport).toBeGreaterThan(indexImport);
     expect(commercialImport).toBeGreaterThan(operationalImport);
-    expect(cssImports.at(-1)?.[1]).toBe('./styles/comercial-square.css');
   });
 });

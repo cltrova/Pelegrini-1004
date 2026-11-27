@@ -101,6 +101,11 @@ function formatDateBr(parts: { ano: number; mes: number; dia: number }): string 
   return `${String(parts.dia).padStart(2, '0')}/${String(parts.mes).padStart(2, '0')}/${parts.ano}`;
 }
 
+export function formatCalendarDate(value?: string | null, fallback = '—'): string {
+  const date = parseIsoDateParts(value ?? undefined);
+  return date ? formatDateBr(date) : fallback;
+}
+
 export function formatFiltroPeriodoLabel(
   periodo: { inicio?: string; fim?: string } | undefined,
   fallback: { ano: number; mes: number },

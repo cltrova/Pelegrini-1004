@@ -308,10 +308,9 @@ describe('Pelegrini visual foundation', () => {
     const source = readFileSync(join(process.cwd(), 'src/components/comercial/VisaoGeralRapida1004.tsx'), 'utf8');
 
     expect(source).toContain('ComercialMetricStrip');
-    expect(source).toContain("label: 'Faturamento'");
-    expect(source).toContain("label: 'Meta mensal'");
+    expect(source).toContain('DashboardGoalPace');
     expect(source).toContain("label: 'Pedidos'");
-    expect(source).toContain("label: 'Atingimento'");
+    expect(source).toContain("label: 'Ticket médio'");
     expect(source).not.toContain('pelegrini-kpi-card');
     expect(source).not.toContain('bg-gradient-to-br pointer-events-none');
     expect(source).not.toContain('pelegrini-compact-card pelegrini-led-card');
@@ -323,7 +322,7 @@ describe('Pelegrini visual foundation', () => {
     const source = readFileSync(join(process.cwd(), 'src/pages/comercial/MetasVendedoresPage.tsx'), 'utf8');
 
     expect(source).toContain('ComercialCompactPage');
-    expect(source).toContain('dashboard-overview-toolbar');
+    expect(source).toContain('dashboard-tab-toolbar');
     expect(source).not.toContain('EnterprisePageHeader');
     expect(source).not.toContain('Insights IA');
     expect(source).not.toContain('Insights Executivos (IA)');

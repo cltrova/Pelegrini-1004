@@ -63,8 +63,8 @@ describe('operational square visual scope', () => {
   });
 
   it('defines stable radii and reduced motion', () => {
-    expect(css).toContain('--operational-panel-radius: 2px');
-    expect(css).toContain('--operational-control-radius: 4px');
+    expect(css).toContain('--operational-panel-radius: var(--pelegrini-panel-radius)');
+    expect(css).toContain('--operational-control-radius: var(--pelegrini-control-radius)');
     expect(css).toContain('@media (prefers-reduced-motion: reduce)');
   });
 

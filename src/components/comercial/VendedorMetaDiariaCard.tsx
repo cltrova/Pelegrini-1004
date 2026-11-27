@@ -87,10 +87,10 @@ export function VendedorMetaDiariaCard({ vendedor, className, compact1004 = fals
           : 'Atenção';
     const statusClasses =
       vendedor.status === 'acima'
-        ? 'border-emerald-400/25 bg-emerald-400/10 text-emerald-300'
+        ? 'border-emerald-400/25 bg-emerald-400/10 text-emerald-700 dark:text-emerald-300'
         : vendedor.status === 'proximo'
-          ? 'border-amber-400/25 bg-amber-400/10 text-amber-300'
-          : 'border-red-400/25 bg-red-400/10 text-red-300';
+          ? 'border-amber-400/25 bg-amber-400/10 text-amber-800 dark:text-amber-300'
+          : 'border-red-400/25 bg-red-400/10 text-red-700 dark:text-red-300';
     const barClass =
       vendedor.status === 'acima'
         ? 'bg-emerald-500'
@@ -100,11 +100,11 @@ export function VendedorMetaDiariaCard({ vendedor, className, compact1004 = fals
 
     const metricasPrincipais = [
       { label: 'Realizado', value: formatCurrency(vendedor.metaReal), tone: 'text-foreground' },
-      { label: 'Meta até hoje', value: formatCurrency(vendedor.metaEsperada), tone: 'text-sky-200' },
+      { label: 'Meta até hoje', value: formatCurrency(vendedor.metaEsperada), tone: 'text-primary' },
       {
         label: 'Diferença',
         value: formatCurrency(vendedor.diferenca, true),
-        tone: vendedor.diferenca >= 0 ? 'text-emerald-300' : 'text-red-300',
+        tone: vendedor.diferenca >= 0 ? 'text-emerald-700 dark:text-emerald-300' : 'text-red-700 dark:text-red-300',
       },
       { label: 'Atingimento', value: formatPercent(vendedor.percentualAtingimento), tone: cfg.text },
     ];
@@ -122,7 +122,7 @@ export function VendedorMetaDiariaCard({ vendedor, className, compact1004 = fals
           className,
         )}
       >
-        <div className="grid gap-4 xl:grid-cols-[minmax(220px,0.85fr)_minmax(520px,2fr)_minmax(210px,0.85fr)] xl:items-center">
+        <div className="grid gap-3 xl:grid-cols-[minmax(10rem,0.85fr)_minmax(0,2fr)_minmax(11rem,0.85fr)] xl:items-center">
           <div className="flex items-center gap-3">
             <div className="relative shrink-0">
               <div className="h-12 w-12 overflow-hidden rounded-lg border border-border/60 bg-background/60">
@@ -160,11 +160,11 @@ export function VendedorMetaDiariaCard({ vendedor, className, compact1004 = fals
             </div>
           </div>
 
-          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
             {metricasPrincipais.map((metrica) => (
               <div key={metrica.label} className="rounded-lg border border-border/45 bg-background/35 px-3 py-2.5">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-muted-foreground">{metrica.label}</p>
-                <p className={cn('mono-value mt-1 whitespace-nowrap text-xs font-bold tabular-nums 2xl:text-sm', metrica.tone)}>
+                <p className={cn('mono-value mt-1 text-xs font-bold tabular-nums [overflow-wrap:anywhere] 2xl:text-sm', metrica.tone)}>
                   {metrica.value}
                 </p>
               </div>
@@ -180,7 +180,7 @@ export function VendedorMetaDiariaCard({ vendedor, className, compact1004 = fals
             </div>
             <div className="h-2.5 overflow-hidden rounded-full bg-background/70">
               <div
-                className={cn('h-full rounded-full transition-[width] duration-700', barClass)}
+                className={cn('h-full rounded-full transition-[width] duration-700 motion-reduce:transition-none', barClass)}
                 style={{ width: `${pct}%` }}
               />
             </div>
@@ -188,7 +188,7 @@ export function VendedorMetaDiariaCard({ vendedor, className, compact1004 = fals
               {metricasSecundarias.map((metrica) => (
                 <div key={metrica.label} className="min-w-0">
                   <p className="whitespace-nowrap text-[9px] uppercase text-muted-foreground">{metrica.label}</p>
-                  <p className="mono-value whitespace-nowrap text-[10px] font-semibold tabular-nums text-foreground 2xl:text-xs">{metrica.value}</p>
+                  <p className="mono-value text-[10px] font-semibold tabular-nums text-foreground [overflow-wrap:anywhere] 2xl:text-xs">{metrica.value}</p>
                 </div>
               ))}
             </div>

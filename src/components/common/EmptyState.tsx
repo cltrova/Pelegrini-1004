@@ -17,14 +17,14 @@ export function EmptyState({
   return (
     <div
       className={cn(
-        'flex flex-col items-center justify-center rounded-xl border border-border bg-card p-8 text-center shadow-sm',
+        'pelegrini-panel flex flex-col items-center justify-center gap-2 border bg-card p-6 text-center',
         className
       )}
     >
-      <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center mb-4">
-        {icon || <FileSearch className="h-8 w-8 text-muted-foreground" />}
+      <div className="mb-1 grid size-10 place-items-center rounded-md border border-border bg-muted/60 text-muted-foreground" aria-hidden="true">
+        {icon || <FileSearch className="size-5" />}
       </div>
-      <h3 className="text-lg font-semibold text-foreground mb-2">{title}</h3>
+      <h3 className="text-base font-semibold text-foreground">{title}</h3>
       <p className="text-sm text-muted-foreground max-w-sm">{message}</p>
     </div>
   );

@@ -4,7 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { lazy, Suspense } from "react";
-import { ThemeProvider } from "next-themes";
+import { PelegriniThemeProvider } from "@/components/common/PelegriniThemeProvider";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { EmpresaSelecionadaProvider } from "@/contexts/EmpresaSelecionadaContext";
 import { FilialSelecionadaProvider } from "@/contexts/FilialSelecionadaContext";
@@ -154,7 +154,7 @@ export function PasswordGate({ children }: { children: React.ReactNode }) {
 }
 
 const App = () => (
-  <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
+  <PelegriniThemeProvider>
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <EmpresaSelecionadaProvider>
@@ -311,7 +311,7 @@ const App = () => (
         </EmpresaSelecionadaProvider>
       </AuthProvider>
     </QueryClientProvider>
-  </ThemeProvider>
+  </PelegriniThemeProvider>
 );
 
 export default App;

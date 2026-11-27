@@ -156,6 +156,7 @@ describe('EnterpriseComercialFilters', () => {
       />,
     );
 
+    fireEvent.click(screen.getByRole('button', { name: 'Expandir filtros' }));
     fireEvent.click(screen.getByRole('combobox', { name: 'Cliente' }));
     fireEvent.click(screen.getByRole('option', { name: 'Cliente B' }));
 
@@ -179,6 +180,7 @@ describe('EnterpriseComercialFilters', () => {
       />,
     );
 
+    fireEvent.click(screen.getByRole('button', { name: 'Expandir filtros' }));
     fireEvent.click(screen.getByRole('combobox', { name: 'Cliente' }));
 
     expect(screen.getByRole('listbox')).toHaveClass('commercial-overlay');
@@ -199,6 +201,7 @@ describe('EnterpriseComercialFilters', () => {
       />,
     );
 
+    fireEvent.click(screen.getByRole('button', { name: 'Expandir filtros' }));
     fireEvent.click(screen.getByRole('button', { name: /Periodo:/ }));
 
     expect(screen.getByRole('dialog')).toHaveClass('commercial-overlay');
@@ -228,6 +231,7 @@ describe('EnterpriseComercialFilters', () => {
       />,
     );
 
+    fireEvent.click(screen.getByRole('button', { name: 'Expandir filtros' }));
     fireEvent.click(screen.getByRole('button', { name: '2026' }));
     expect(screen.getByRole('dialog')).toHaveClass('commercial-overlay');
 

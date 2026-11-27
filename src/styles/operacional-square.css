@@ -1,7 +1,7 @@
 [data-module-shell='operacional'] {
-  --operational-panel-radius: 2px;
-  --operational-control-radius: 4px;
-  --operational-motion-fast: 150ms;
+  --operational-panel-radius: var(--pelegrini-panel-radius);
+  --operational-control-radius: var(--pelegrini-control-radius);
+  --operational-motion-fast: var(--pelegrini-motion);
   --operational-motion-sidebar: 220ms;
 }
 
@@ -94,7 +94,7 @@
 [data-module-shell='operacional'] .operational-panel,
 [data-module-shell='operacional'] .operational-table-frame {
   border: 1px solid hsl(var(--border));
-  border-radius: 2px;
+  border-radius: var(--operational-panel-radius);
   background: hsl(var(--card));
   box-shadow: none;
 }
@@ -109,6 +109,10 @@
   border: 0;
   border-radius: 0 !important;
   background: hsl(var(--card)) !important;
+}
+
+[data-module-shell='operacional'] .operational-kpi-grid .operational-overview-metric:is(:hover, :focus-visible) {
+  background: hsl(var(--enterprise-row-hover)) !important;
 }
 
 [data-module-shell='operacional'] .operational-stock-table :where(th, td) {

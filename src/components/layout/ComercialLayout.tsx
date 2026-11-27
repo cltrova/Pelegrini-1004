@@ -9,6 +9,7 @@ import { getFilialAccessState } from '@/utils/filialAccess';
 import { useAuth } from '@/contexts/AuthContext';
 import { PelegriniModuleShell } from '@/components/pelegrini';
 import { LoadingState } from '@/components/common/LoadingState';
+import { EnterpriseBadge } from '@/components/enterprise/EnterpriseBadge';
 
 export function ComercialLayout() {
   const isMobile = useIsMobile();
@@ -47,17 +48,17 @@ export function ComercialLayout() {
             onClick={() => setFilialAtivaForEmpresa(codEmpresaContexto, filial.id)}
           >
             {filial.blocked ? (
-              <Lock className="h-4 w-4 text-amber-500" />
+              <Lock className="h-4 w-4 text-warning" />
             ) : (
               <Building2 className="h-4 w-4 text-primary" />
             )}
             <span className="font-medium">{filial.nome}</span>
-            {filial.blocked && <span className="ml-auto text-xs text-amber-500">Bloqueada</span>}
+            {filial.blocked && <EnterpriseBadge className="ml-auto" tone="warning">Bloqueada</EnterpriseBadge>}
           </Button>
         ))}
       </div>
       {!filialAccess.hasAnyAccess && (
-        <p className="text-xs text-amber-500 max-w-sm">
+        <p className="text-xs text-warning max-w-sm">
           Nenhuma filial foi liberada para seu usuário. Peça ao master para ajustar seu acesso em Configurações.
         </p>
       )}

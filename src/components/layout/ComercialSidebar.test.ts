@@ -199,6 +199,8 @@ describe('commercial sidebar menu access', () => {
 
     expect(screen.getByRole('navigation', { name: 'Navegacao comercial mobile' }))
       .toHaveClass('commercial-mobile-navigation');
+    expect(screen.getByRole('button', { name: 'Dashboard' })).toHaveAttribute('aria-current', 'page');
+    expect(screen.getByRole('button', { name: 'Início' })).not.toHaveAttribute('aria-current');
   });
 
   it('keeps the blocked mobile branch placeholder inside the commercial shell', () => {

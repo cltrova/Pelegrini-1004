@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useCampanhas, type Campanha, type CampanhaInput, type CampanhaMarca } from '@/hooks/useCampanhas';
 import { useComercialProdutos } from '@/hooks/useComercialProdutos';
 import { postAiJson } from '@/lib/aiApi';
@@ -20,6 +21,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Checkbox } from '@/components/ui/checkbox';
+import { EnterpriseBadge, EnterpriseFilterBar } from '@/components/enterprise';
 import { LoadingIndicator, LoadingState } from '@/components/common/LoadingState';
 import {
   Tooltip, TooltipContent, TooltipProvider, TooltipTrigger,
@@ -30,7 +32,7 @@ import {
   Award, DollarSign, Wallet, X, MessageSquare, Info, ChevronDown,
   Calculator, Zap,
 } from 'lucide-react';
-import { formatCurrency } from '@/utils/formatters';
+import { formatCurrency, formatPercent } from '@/utils/formatters';
 import { cn } from '@/lib/utils';
 import { nomePertenceEquipe } from '@/utils/filialFilter';
 import { useEmpresaAtiva } from '@/hooks/useEmpresaAtiva';
@@ -57,6 +59,7 @@ import {
   ComercialFilterBar,
   ComercialMetricStrip,
 } from '@/components/comercial/compact';
+import { DashboardExecutiveSummary, DashboardPageHeading, DashboardPanelHeading, getTeamGoalStatus } from './DashboardOverviewManagement';
 
 const VENDEDORES_CT_CAMPANHA_1004_LABELS = [
   { codigo: '78', nome: 'BRUNO' },
@@ -378,12 +381,14 @@ function marcaCampanhaMatches(itemMarca: unknown, campanhaMarca: unknown): boole
   return item.includes(campanha) || campanha.includes(item);
 }
 interface CampanhasTabProps {
+  dashboardFilterTarget?: HTMLElement | null;
   periodoFiltro?: { inicio: string; fim: string };
   vendedoresFiltro?: Array<string | number>;
   vendedorFiltro?: string | number;
 }
 
-export function CampanhasTab({ periodoFiltro }: CampanhasTabProps = {}) {
+export function CampanhasTab({ periodoFiltro, dashboardFilterTarget }: CampanhasTabProps = {}) {
+  const compactDashboard = dashboardFilterTarget !== undefined;
   const { campanhas, isLoading, create, update, remove, isMutating } = useCampanhas();
   const campanhasFetchCount = useIsFetching({ queryKey: ['campanhas'] });
   const [hasResolvedData, setHasResolvedData] = useState(false);
@@ -635,105 +640,151 @@ export function CampanhasTab({ periodoFiltro }: CampanhasTabProps = {}) {
   const isFetching = campanhasFetchCount > 0 || isFetchingProdutos || insightsQuery.isFetching;
   const isRefreshing = isFetching && hasVisibleCampaignData;
 
-  if (showInitialLoading) return <CampanhasSkeleton />;
+  const campaignFilterFields = (
+    <>
+      <Select value={statusFilter} onValueChange={setStatusFilter}>
+        <SelectTrigger aria-label="Status da campanha" className="h-9 w-[150px] rounded-md">
+          <SelectValue placeholder="Status" />
+        </SelectTrigger>
+        <SelectContent className="commercial-overlay">
+          <SelectItem value="todas">Todos status</SelectItem>
+          <SelectItem value="ativa">Ativa</SelectItem>
+          <SelectItem value="pausada">Rascunho</SelectItem>
+          <SelectItem value="encerrada">Encerrada</SelectItem>
+        </SelectContent>
+      </Select>
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button variant="outline" size="sm" className="h-9 min-w-[160px] justify-between gap-1.5 rounded-md font-normal">
+            <span className="truncate">
+              {marcaFilter.length === 0
+                ? 'Todas as marcas'
+                : marcaFilter.length === 1
+                  ? marcaFilter[0]
+                  : `${marcaFilter.length} marcas`}
+            </span>
+            <ChevronDown className="h-3.5 w-3.5 opacity-60" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="commercial-overlay w-64 p-0" align="end">
+          <div className="flex items-center justify-between px-3 py-2 border-b">
+            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Marcas</span>
+            {marcaFilter.length > 0 && (
+              <button type="button" className="text-xs text-primary hover:underline" onClick={() => setMarcaFilter([])}>
+                Limpar
+              </button>
+            )}
+          </div>
+          <div className="max-h-72 overflow-y-auto py-1">
+            {marcasDisponiveis.length === 0 && (
+              <p className="px-3 py-4 text-xs text-muted-foreground text-center">Sem marcas disponíveis</p>
+            )}
+            {marcasDisponiveis.map(m => {
+              const checked = marcaFilter.includes(m);
+              return (
+                <label key={m} className="flex items-center gap-2 px-3 py-1.5 text-sm hover:bg-muted/60 cursor-pointer">
+                  <Checkbox
+                    checked={checked}
+                    onCheckedChange={(v) => {
+                      setMarcaFilter(prev => v ? [...prev, m] : prev.filter(x => x !== m));
+                    }}
+                  />
+                  <span className="truncate">{m}</span>
+                </label>
+              );
+            })}
+          </div>
+        </PopoverContent>
+      </Popover>
+      {String(codEmpresaAtiva || '') === '1004' && (
+        <CampanhaVendedoresFiltro1004
+          selectedExtras={vendedoresExtras1004}
+          onChange={setVendedoresExtras1004}
+        />
+      )}
+    </>
+  );
+  const campaignActions = (
+    <>
+      <span
+        role="status"
+        aria-label={isRefreshing ? 'Atualizando campanhas comerciais' : undefined}
+        title={isRefreshing ? 'Atualizando campanhas comerciais...' : undefined}
+        className="commercial-refresh-indicator flex h-5 w-5 shrink-0 items-center justify-center text-muted-foreground"
+      >
+        {isRefreshing && <>
+          <LoadingIndicator size="sm" />
+          <span className="sr-only">Atualizando campanhas comerciais...</span>
+        </>}
+      </span>
+      <CampanhaDialog
+        onSubmit={async (input) => { await create(input); }}
+        isPending={isMutating}
+        marcasDisponiveis={marcasDisponiveis}
+        trigger={
+          <Button size="sm" className="h-9 gap-1.5 rounded-md">
+            <Plus className="h-4 w-4" /> Nova campanha
+          </Button>
+        }
+      />
+    </>
+  );
+  const defaultSalespeople = vendedoresExtras1004Inicializados ? VENDEDORES_EXTRAS_CAMPANHA_1004 : [];
+  const salespeopleFilterChanged = vendedoresExtras1004.length !== defaultSalespeople.length
+    || defaultSalespeople.some(codigo => !vendedoresExtrasSelecionados1004.has(codigo));
+  const activeFilterCount = Number(statusFilter !== 'todas') + Number(marcaFilter.length > 0) + Number(salespeopleFilterChanged);
+  const campaignFilters = dashboardFilterTarget && createPortal(
+    <EnterpriseFilterBar
+      presentation="popover"
+      activeCount={activeFilterCount}
+      onClear={() => {
+        setStatusFilter('todas');
+        setMarcaFilter([]);
+        setVendedoresExtras1004([...defaultSalespeople]);
+      }}
+    >
+      {campaignFilterFields}
+    </EnterpriseFilterBar>,
+    dashboardFilterTarget,
+  );
+
+  if (showInitialLoading) return <>{campaignFilters}<CampanhasSkeleton /></>;
 
   return (
     <TooltipProvider>
-      <div className="flex h-full min-h-0 flex-col gap-2">
-        <ComercialFilterBar
-          ariaLabel="Filtros de campanhas"
-          primary={<>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="h-9 w-[150px] rounded-md">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent className="commercial-overlay">
-                <SelectItem value="todas">Todos status</SelectItem>
-                <SelectItem value="ativa">Ativa</SelectItem>
-                <SelectItem value="pausada">Rascunho</SelectItem>
-                <SelectItem value="encerrada">Encerrada</SelectItem>
-              </SelectContent>
-            </Select>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="outline" size="sm" className="h-9 min-w-[160px] justify-between gap-1.5 rounded-md font-normal">
-                  <span className="truncate">
-                    {marcaFilter.length === 0
-                      ? 'Todas as marcas'
-                      : marcaFilter.length === 1
-                        ? marcaFilter[0]
-                        : `${marcaFilter.length} marcas`}
-                  </span>
-                  <ChevronDown className="h-3.5 w-3.5 opacity-60" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="commercial-overlay w-64 p-0" align="end">
-                <div className="flex items-center justify-between px-3 py-2 border-b">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Marcas</span>
-                  {marcaFilter.length > 0 && (
-                    <button type="button" className="text-xs text-primary hover:underline" onClick={() => setMarcaFilter([])}>
-                      Limpar
-                    </button>
-                  )}
-                </div>
-                <div className="max-h-72 overflow-y-auto py-1">
-                  {marcasDisponiveis.length === 0 && (
-                    <p className="px-3 py-4 text-xs text-muted-foreground text-center">Sem marcas disponíveis</p>
-                  )}
-                  {marcasDisponiveis.map(m => {
-                    const checked = marcaFilter.includes(m);
-                    return (
-                      <label key={m} className="flex items-center gap-2 px-3 py-1.5 text-sm hover:bg-muted/60 cursor-pointer">
-                        <Checkbox
-                          checked={checked}
-                          onCheckedChange={(v) => {
-                            setMarcaFilter(prev => v ? [...prev, m] : prev.filter(x => x !== m));
-                          }}
-                        />
-                        <span className="truncate">{m}</span>
-                      </label>
-                    );
-                  })}
-                </div>
-              </PopoverContent>
-            </Popover>
-            {String(codEmpresaAtiva || '') === '1004' && (
-              <CampanhaVendedoresFiltro1004
-                selectedExtras={vendedoresExtras1004}
-                onChange={setVendedoresExtras1004}
-              />
-            )}
-          </>}
-          actions={
-            <>
-              <span
-                role="status"
-                aria-label={isRefreshing ? 'Atualizando campanhas comerciais' : undefined}
-                title={isRefreshing ? 'Atualizando campanhas comerciais...' : undefined}
-                className="commercial-refresh-indicator flex h-5 w-5 shrink-0 items-center justify-center text-muted-foreground"
-              >
-                {isRefreshing && <>
-                  <LoadingIndicator size="sm" />
-                  <span className="sr-only">Atualizando campanhas comerciais...</span>
-                </>}
-              </span>
-              <CampanhaDialog
-                onSubmit={async (input) => { await create(input); }}
-                isPending={isMutating}
-                marcasDisponiveis={marcasDisponiveis}
-                trigger={
-                  <Button size="sm" className="h-9 gap-1.5 rounded-md">
-                    <Plus className="h-4 w-4" /> Nova Campanha
-                  </Button>
-                }
-              />
-            </>
-          }
-        />
+      <div className={compactDashboard ? 'dashboard-management-tab' : 'flex h-full min-h-0 flex-col gap-2'}>
+        {compactDashboard ? (
+          <>
+            {campaignFilters}
+            <DashboardPageHeading title="Campanhas comerciais" actions={campaignActions} />
+            <CampaignProgressOverview campanhas={campanhasFiltradas} compactDashboard />
+          </>
+        ) : (
+          <ComercialFilterBar
+            ariaLabel="Filtros de campanhas"
+            primary={campaignFilterFields}
+            actions={campaignActions}
+          />
+        )}
 
         <ComercialMetricStrip
           ariaLabel="Indicadores de campanhas"
-          metrics={[
+          className={compactDashboard ? 'dashboard-layout-metrics' : undefined}
+          metrics={compactDashboard ? [
+            { label: 'Campanhas no filtro', value: campanhasFiltradas.length },
+            { label: 'Ativas', value: campanhasFiltradas.filter((campanha) => campanha.status === 'ativa' && !campanha.encerrada).length },
+            {
+              label: 'Vendas no período',
+              value: formatCurrency(kpis.realizadoTotal),
+              tooltip: 'Vendas totais dos vendedores elegíveis às campanhas em aberto.',
+            },
+            {
+              label: 'Premiação potencial',
+              value: formatCurrency(kpis.premioTotal),
+              tone: kpis.premioTotal > 0 ? 'success' : 'neutral',
+              tooltip: 'Premiação potencial das campanhas com meta em aberto no filtro.',
+            },
+          ] : [
             {
               label: 'Realizado',
               value: formatCurrency(kpis.realizadoTotal),
@@ -764,9 +815,13 @@ export function CampanhasTab({ periodoFiltro }: CampanhasTabProps = {}) {
           ]}
         />
 
-        <CampaignProgressOverview campanhas={campanhasFiltradas} />
+        {!compactDashboard && <CampaignProgressOverview campanhas={campanhasFiltradas} />}
 
-        <ComercialDataViewport ariaLabel="Campanhas comerciais" className="space-y-2 pr-1">
+        <ComercialDataViewport
+          ariaLabel={compactDashboard ? 'Lista de campanhas' : 'Campanhas comerciais'}
+          className={compactDashboard ? 'dashboard-frame dashboard-campaign-list' : 'space-y-2 pr-1'}
+        >
+          {compactDashboard && <DashboardPanelHeading title="Campanhas" icon={Trophy} />}
           {(insightsQuery.data && insightsQuery.data.length > 0) && (
           <section aria-label="Alertas e oportunidades" className="commercial-dashboard-panel rounded-md border border-border/70 bg-card">
             <div className="border-b border-border/60 px-3 py-2 text-xs font-semibold">Alertas e oportunidades</div>
@@ -797,7 +852,7 @@ export function CampanhasTab({ periodoFiltro }: CampanhasTabProps = {}) {
         {campanhasFiltradas.length === 0 ? (
           <EmptyCampanhas onCreate={async (i) => { await create(i); }} isPending={isMutating} />
         ) : (
-          <div className="space-y-3">
+          <div className="dashboard-campaign-rows space-y-3">
             {campanhasFiltradas.map(c => (
               <CampanhaFullCard
                 key={c.id}
@@ -819,7 +874,7 @@ export function CampanhasTab({ periodoFiltro }: CampanhasTabProps = {}) {
   );
 }
 
-function CampaignProgressOverview({ campanhas }: { campanhas: CampanhaCalculada[] }) {
+function CampaignProgressOverview({ campanhas, compactDashboard = false }: { campanhas: CampanhaCalculada[]; compactDashboard?: boolean }) {
   const emAndamento = campanhas.filter((campanha) => !campanha.encerrada && !campanhaEstaEncerrada(campanha));
   const ativas = emAndamento.length > 0 ? emAndamento : campanhas;
   if (ativas.length === 0) return null;
@@ -831,6 +886,35 @@ function CampaignProgressOverview({ campanhas }: { campanhas: CampanhaCalculada[
   const progresso = metaTotal > 0 ? (realizadoTotal / metaTotal) * 100 : 0;
   const diasRestantes = Math.max(1, ...ativas.map((campanha) => campanha.diasRestantes));
   const campanhaDestaque = [...ativas].sort((a, b) => b.progressoGeral - a.progressoGeral)[0];
+
+  if (compactDashboard) {
+    return (
+      <DashboardExecutiveSummary
+        label="Resumo das campanhas"
+        primary={{
+          label: 'Realizado nas campanhas',
+          icon: TrendingUp,
+          value: formatCurrency(realizadoTotal),
+          context: 'Sem meta cadastrada na seleção.',
+          readings: [
+            { label: 'Meta consolidada', value: metaTotal > 0 ? formatCurrency(metaTotal) : '—' },
+            { label: 'Falta para a meta', value: metaTotal > 0 ? formatCurrency(faltante) : '—', tone: faltante > 0 ? 'proxima' : undefined },
+          ],
+        }}
+        secondary={{
+          label: 'Maior atingimento da seleção',
+          icon: Target,
+          value: campanhaDestaque.metaCampanhaTotal > 0 ? formatPercent(campanhaDestaque.progressoGeral) : '—',
+          context: campanhaDestaque.nome,
+          readings: [
+            { label: 'Realizado', value: formatCurrency(campanhaDestaque.realizadoTotal) },
+            { label: 'Meta', value: campanhaDestaque.metaCampanhaTotal > 0 ? formatCurrency(campanhaDestaque.metaCampanhaTotal) : '—' },
+          ],
+        }}
+        progress={metaTotal > 0 ? { percent: progresso, context: 'da meta consolidada', tone: getTeamGoalStatus(progresso) } : undefined}
+      />
+    );
+  }
 
   return (
     <section aria-label="Progresso das campanhas" className="grid grid-cols-1 border border-border/70 bg-card lg:grid-cols-2">
@@ -1197,16 +1281,17 @@ function CampanhaFullCard({
     [c, vendedoresExtras1004],
   );
   const statusBadge = {
-    'achieved': { label: 'Meta batida', cls: 'bg-emerald-500/15 text-emerald-600 border-emerald-500/30' },
-    'on-track': { label: 'No ritmo', cls: 'bg-primary/15 text-primary border-primary/30' },
-    'risk': { label: 'Em risco', cls: 'bg-red-500/15 text-red-600 border-red-500/30' },
-    'expired': { label: 'Encerrada', cls: 'bg-muted text-muted-foreground border-border' },
-  }[c.statusVisual];
+    achieved: { label: 'Meta batida', tone: 'positive' },
+    'on-track': { label: 'No ritmo', tone: 'info' },
+    risk: { label: 'Em risco', tone: 'negative' },
+    expired: { label: 'Encerrada', tone: 'neutral' },
+  } as const;
+  const status = statusBadge[c.statusVisual];
 
   const progressoCompacto = Math.min(100, Math.max(0, c.progressoGeral || 0));
   return (
     <Card className={cn(
-      'commercial-dashboard-panel group relative overflow-hidden border-border/60 bg-card transition-colors hover:ring-1 hover:ring-primary/20',
+      'dashboard-campaign-row commercial-dashboard-panel group relative overflow-hidden border-border/60 bg-card transition-colors hover:ring-1 hover:ring-primary/20',
       expanded && 'ring-1 ring-primary/25',
       c.statusVisual === 'expired' && 'opacity-80',
     )}>
@@ -1222,20 +1307,20 @@ function CampanhaFullCard({
             onToggle();
           }
         }}
-        className="w-full px-5 py-4 relative overflow-hidden text-left transition-all"
+        className="dashboard-campaign-trigger w-full px-5 py-4 relative overflow-hidden text-left transition-colors"
       >
-        <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 relative">
+        <div className="dashboard-campaign-summary flex flex-col xl:flex-row xl:items-center justify-between gap-4 relative">
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 flex-wrap">
               <span className="grid h-8 w-8 place-items-center rounded-md bg-background/60 ring-1 ring-border/50">
                 <ChevronDown className={cn('h-4 w-4 transition-transform shrink-0', expanded && 'rotate-180')} />
               </span>
-              <h3 className="text-lg font-bold tracking-tight">{c.nome}</h3>
-              <Badge variant="outline" className={cn('text-[10px] font-semibold', statusBadge.cls)}>{statusBadge.label}</Badge>
+              <h3 className="dashboard-campaign-name text-lg font-bold tracking-tight">{c.nome}</h3>
+              <EnterpriseBadge tone={status.tone}>{status.label}</EnterpriseBadge>
             </div>
             <div className="flex items-center gap-3 mt-1.5 text-xs text-muted-foreground flex-wrap">
               <span className="flex items-center gap-1"><Calendar className="h-3 w-3" />
-                {new Date(c.data_inicio).toLocaleDateString('pt-BR')} – {new Date(c.data_fim).toLocaleDateString('pt-BR')}
+                {dateLocalCampanha(c.data_inicio).toLocaleDateString('pt-BR')} – {dateLocalCampanha(c.data_fim).toLocaleDateString('pt-BR')}
               </span>
               {c.diasRestantes > 0 && <span>• {c.diasRestantes} dia(s) restante(s)</span>}
               {c.marcasCalc.length > 0 && (
@@ -1243,7 +1328,7 @@ function CampanhaFullCard({
               )}
             </div>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-4 xl:flex xl:items-center gap-2 shrink-0">
+          <div className="dashboard-campaign-values grid grid-cols-2 sm:grid-cols-4 xl:flex xl:items-center gap-2 shrink-0">
             <div className="rounded-lg border border-border/60 bg-background/40 px-3 py-2 min-w-[130px]">
               <p className="text-[9px] uppercase tracking-[0.14em] text-muted-foreground">Realizado</p>
               <p className="text-sm font-bold tabular-nums">{formatCurrency(c.realizadoTotal)}</p>
@@ -1254,7 +1339,7 @@ function CampanhaFullCard({
             </div>
             <div className="rounded-lg border border-border/60 bg-background/40 px-3 py-2 min-w-[110px]">
               <p className="text-[9px] uppercase tracking-[0.14em] text-muted-foreground">Progresso</p>
-              <p className="text-sm font-bold tabular-nums text-primary">{c.progressoGeral.toFixed(1)}%</p>
+              <p className="text-sm font-bold tabular-nums text-primary">{formatPercent(c.progressoGeral)}</p>
             </div>
             <div className="rounded-lg border border-border/60 bg-background/40 px-3 py-2 min-w-[110px]">
               <p className="text-[9px] uppercase tracking-[0.14em] text-muted-foreground">Prêmio</p>
@@ -1271,7 +1356,7 @@ function CampanhaFullCard({
             />
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button size="icon" variant="ghost" className="h-8 w-8 hover:bg-muted"><Trash2 className="h-3.5 w-3.5" /></Button>
+                <Button size="icon" variant="ghost" className="h-8 w-8 hover:bg-muted" aria-label={`Excluir ${c.nome}`}><Trash2 className="h-3.5 w-3.5" /></Button>
               </AlertDialogTrigger>
               <AlertDialogContent className="commercial-overlay rounded-lg">
                 <AlertDialogHeader>
@@ -1286,10 +1371,10 @@ function CampanhaFullCard({
             </AlertDialog>
           </div>
         </div>
-        <div className="relative mt-4 h-1.5 rounded-full bg-muted/60 overflow-hidden">
+        <div className="dashboard-campaign-meter relative mt-4 h-1.5 rounded-full bg-muted/60 overflow-hidden">
           <div
             className={cn(
-              'h-full rounded-full transition-all duration-700',
+              'h-full rounded-full transition-[width] duration-300 motion-reduce:transition-none',
               c.statusVisual === 'achieved' ? 'bg-emerald-500' : c.statusVisual === 'risk' ? 'bg-red-500' : 'bg-primary',
             )}
             style={{ width: `${progressoCompacto}%` }}
@@ -2408,7 +2493,7 @@ function CampanhaDialog({ initial, onSubmit, isPending, trigger, marcasDisponive
           {/* Identificação */}
           <section className="space-y-3">
             <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-              <span className="w-5 h-5 rounded bg-primary text-white text-[10px] flex items-center justify-center font-bold">1</span>
+              <span className="w-5 h-5 rounded bg-primary text-primary-foreground text-[10px] flex items-center justify-center font-bold">1</span>
               Identificação
             </h3>
             <div>
@@ -2430,7 +2515,7 @@ function CampanhaDialog({ initial, onSubmit, isPending, trigger, marcasDisponive
           {/* Meta geral + bônus */}
           <section className="space-y-3">
             <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-              <span className="w-5 h-5 rounded bg-primary text-white text-[10px] flex items-center justify-center font-bold">2</span>
+              <span className="w-5 h-5 rounded bg-primary text-primary-foreground text-[10px] flex items-center justify-center font-bold">2</span>
               Meta geral da empresa
             </h3>
               <div className="grid grid-cols-2 gap-3">
@@ -2455,7 +2540,7 @@ function CampanhaDialog({ initial, onSubmit, isPending, trigger, marcasDisponive
           <section className="space-y-3">
             <div className="flex items-center justify-between">
               <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-                <span className="w-5 h-5 rounded bg-primary text-white text-[10px] flex items-center justify-center font-bold">3</span>
+                <span className="w-5 h-5 rounded bg-primary text-primary-foreground text-[10px] flex items-center justify-center font-bold">3</span>
                 Metas por marca
               </h3>
               <Button type="button" variant="outline" size="sm" onClick={addMarca} className="h-7 gap-1 rounded-lg text-xs">
@@ -2574,7 +2659,7 @@ function CampanhaDialog({ initial, onSubmit, isPending, trigger, marcasDisponive
           {/* Mensagem + observações */}
           <section className="space-y-3">
             <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-              <span className="w-5 h-5 rounded bg-primary text-white text-[10px] flex items-center justify-center font-bold">4</span>
+              <span className="w-5 h-5 rounded bg-primary text-primary-foreground text-[10px] flex items-center justify-center font-bold">4</span>
               Comunicação
             </h3>
             <div>

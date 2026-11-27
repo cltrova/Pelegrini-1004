@@ -1,11 +1,11 @@
 import { Eye, MessageSquarePlus, Pencil } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
+import { EnterpriseBadge, type EnterpriseTone } from '@/components/enterprise/EnterpriseBadge';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import type { MotivoPerdaRegistro } from '@/hooks/useMotivosPerda';
 import type { CotacaoComercial, CotacaoOrigem, CotacaoStatus } from '@/types/cotacoesComerciais';
 import { consolidarMotivoPerda } from '@/utils/cotacoesComerciais';
-import { formatCurrency, formatInteger } from '@/utils/formatters';
+import { formatCalendarDate, formatCurrency, formatInteger } from '@/utils/formatters';
 
 type MotivosPerdaMap = ReadonlyMap<string, Pick<MotivoPerdaRegistro, 'motivo' | 'observacao'>>;
 
@@ -15,6 +15,7 @@ interface CotacoesTableProps {
   motivos: MotivosPerdaMap;
   onEditMotivo?: (row: CotacaoComercial) => void;
   onSelectCotacao?: (row: CotacaoComercial) => void;
+  referenceDate?: string;
 }
 
 const statusLabels: Record<CotacaoStatus, string> = {
@@ -24,17 +25,12 @@ const statusLabels: Record<CotacaoStatus, string> = {
   vencida: 'Vencida',
 };
 
-const statusVariants: Record<CotacaoStatus, 'default' | 'secondary' | 'destructive' | 'outline'> = {
-  aberta: 'default',
-  cancelada: 'secondary',
-  recusada: 'destructive',
-  vencida: 'outline',
+const statusTones: Record<CotacaoStatus, EnterpriseTone> = {
+  aberta: 'info',
+  cancelada: 'neutral',
+  recusada: 'negative',
+  vencida: 'negative',
 };
-
-function formatDate(value: string | null): string {
-  const match = String(value ?? '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
-  return match ? `${match[3]}/${match[2]}/${match[1]}` : '--';
-}
 
 function getMotivoLabel(row: CotacaoComercial, motivos: MotivosPerdaMap): string {
   return consolidarMotivoPerda(row, motivos).label;
@@ -92,8 +88,13 @@ function DetailAction({
   );
 }
 
-function StatusBadge({ status }: { status: CotacaoStatus }) {
-  return <Badge variant={statusVariants[status]} className="whitespace-nowrap text-[11px]">{statusLabels[status]}</Badge>;
+function StatusBadge({ status, overdue }: { status: CotacaoStatus; overdue: boolean }) {
+  return (
+    <span className="inline-flex flex-wrap justify-end gap-1 md:justify-center">
+      <EnterpriseBadge tone={statusTones[status]} className="whitespace-nowrap">{statusLabels[status]}</EnterpriseBadge>
+      {overdue && <EnterpriseBadge tone="negative" className="whitespace-nowrap">Validade vencida</EnterpriseBadge>}
+    </span>
+  );
 }
 
 function EmptyState({ mode }: { mode: CotacaoOrigem }) {
@@ -104,14 +105,17 @@ function EmptyState({ mode }: { mode: CotacaoOrigem }) {
   );
 }
 
-export function CotacoesTable({ mode, rows, motivos, onEditMotivo, onSelectCotacao }: CotacoesTableProps) {
+export function CotacoesTable({ mode, rows, motivos, onEditMotivo, onSelectCotacao, referenceDate }: CotacoesTableProps) {
   const isOpenQuotes = mode === 'abertas';
+  const isOverdue = ({ status, dataValidade }: CotacaoComercial) => (
+    status === 'aberta' && Boolean(referenceDate && dataValidade && dataValidade < referenceDate)
+  );
 
   return (
     <section aria-label="Lista de cotacoes" className="min-h-0">
       <div className="hidden min-w-0 border border-border md:block">
         {rows.length === 0 ? <EmptyState mode={mode} /> : (
-            <table className="min-w-[67rem] w-full text-left text-sm">
+            <table className="pelegrini-table w-full min-w-[56rem] text-left text-sm">
               <thead className="sticky top-0 z-10 bg-muted">
                 <tr className="border-b border-border text-xs text-muted-foreground">
                   <th scope="col" className="px-3 py-2 font-medium">Cotacao</th>
@@ -132,14 +136,14 @@ export function CotacoesTable({ mode, rows, motivos, onEditMotivo, onSelectCotac
               </thead>
               <tbody>
                 {rows.map((row) => (
-                  <tr key={row.idCotacao} className="h-10 border-b border-border/70 last:border-b-0 hover:bg-muted/50">
-                    <td className="px-3 py-2 font-medium tabular-nums">{row.numeroCotacao}</td>
-                    <td className="px-3 py-2 whitespace-nowrap tabular-nums">{formatDate(row.dataCotacao)}</td>
-                    {isOpenQuotes && <td className="px-3 py-2 whitespace-nowrap tabular-nums">{formatDate(row.dataValidade)}</td>}
+                  <tr key={row.idCotacao} data-attention={isOverdue(row) || statusTones[row.status] === 'negative' ? 'true' : undefined} className="h-10 border-b border-border/70 last:border-b-0">
+                    <td className="px-3 py-2 font-semibold tabular-nums">{row.numeroCotacao}</td>
+                    <td className="whitespace-nowrap px-3 py-2 tabular-nums">{formatCalendarDate(row.dataCotacao)}</td>
+                    {isOpenQuotes && <td className="whitespace-nowrap px-3 py-2 tabular-nums">{formatCalendarDate(row.dataValidade)}</td>}
                     <td className="max-w-[15rem] px-3 py-2"><span className="block truncate" title={row.nomeCliente}>{row.nomeCliente || '--'}</span></td>
                     <td className="max-w-[13rem] px-3 py-2"><span className="block truncate" title={row.nomeVendedor}>{row.nomeVendedor || '--'}</span></td>
-                    <td className="px-3 py-2 text-right font-medium tabular-nums">{formatCurrency(row.valor)}</td>
-                    <td className="px-3 py-2 text-center"><StatusBadge status={row.status} /></td>
+                    <td className="whitespace-nowrap px-3 py-2 text-right font-semibold tabular-nums">{formatCurrency(row.valor)}</td>
+                    <td className="px-3 py-2 text-center"><StatusBadge status={row.status} overdue={isOverdue(row)} /></td>
                     {isOpenQuotes ? (
                       <td className="px-3 py-2 text-right tabular-nums">{formatInteger(row.diasEmAberto)}</td>
                     ) : (
@@ -156,19 +160,19 @@ export function CotacoesTable({ mode, rows, motivos, onEditMotivo, onSelectCotac
 
       <div className="space-y-2 md:hidden">
         {rows.length === 0 ? <div className="border border-border"><EmptyState mode={mode} /></div> : rows.map((row) => (
-          <article key={row.idCotacao} className="border border-border p-3">
+          <article key={row.idCotacao} className="pelegrini-panel border p-3">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
                 <p className="font-semibold tabular-nums">Cotacao {row.numeroCotacao}</p>
                 <p className="truncate text-sm text-muted-foreground" title={row.nomeCliente}>{row.nomeCliente || '--'}</p>
               </div>
-              <StatusBadge status={row.status} />
+              <StatusBadge status={row.status} overdue={isOverdue(row)} />
             </div>
             <dl className="mt-3 grid grid-cols-2 gap-x-3 gap-y-2 text-sm">
               {isOpenQuotes ? (
                 <>
-                  <div><dt className="text-xs text-muted-foreground">Data</dt><dd className="tabular-nums">{formatDate(row.dataCotacao)}</dd></div>
-                  <div><dt className="text-xs text-muted-foreground">Validade</dt><dd className="tabular-nums">{formatDate(row.dataValidade)}</dd></div>
+                  <div><dt className="text-xs text-muted-foreground">Data</dt><dd className="tabular-nums">{formatCalendarDate(row.dataCotacao)}</dd></div>
+                  <div><dt className="text-xs text-muted-foreground">Validade</dt><dd className="tabular-nums">{formatCalendarDate(row.dataValidade)}</dd></div>
                   <div><dt className="text-xs text-muted-foreground">Valor</dt><dd className="font-medium tabular-nums">{formatCurrency(row.valor)}</dd></div>
                   <div><dt className="text-xs text-muted-foreground">Dias em aberto</dt><dd className="tabular-nums">{formatInteger(row.diasEmAberto)}</dd></div>
                   <div className="col-span-2"><dt className="text-xs text-muted-foreground">Vendedor</dt><dd className="truncate" title={row.nomeVendedor}>{row.nomeVendedor || '--'}</dd></div>
@@ -178,7 +182,7 @@ export function CotacoesTable({ mode, rows, motivos, onEditMotivo, onSelectCotac
                   <div className="col-span-2"><dt className="text-xs text-muted-foreground">Motivo</dt><dd className="truncate" title={getMotivoLabel(row, motivos)}>{getMotivoLabel(row, motivos)}</dd></div>
                   <div><dt className="text-xs text-muted-foreground">Valor</dt><dd className="font-medium tabular-nums">{formatCurrency(row.valor)}</dd></div>
                   <div><dt className="text-xs text-muted-foreground">Vendedor</dt><dd className="truncate" title={row.nomeVendedor}>{row.nomeVendedor || '--'}</dd></div>
-                  <div className="col-span-2"><dt className="text-xs text-muted-foreground">Data</dt><dd className="tabular-nums">{formatDate(row.dataCotacao)}</dd></div>
+                  <div className="col-span-2"><dt className="text-xs text-muted-foreground">Data</dt><dd className="tabular-nums">{formatCalendarDate(row.dataCotacao)}</dd></div>
                 </>
               )}
             </dl>

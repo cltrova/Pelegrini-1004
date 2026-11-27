@@ -796,7 +796,7 @@ export default function VendedoresPage() {
                         <EnterpriseTd numeric className="mono-value font-medium">{formatCurrency(p.projecaoRitmoAtual)}</EnterpriseTd>
                         <EnterpriseTd className="text-center">
                           {p.bateMeta ? (
-                            <Badge variant="default" className="bg-success text-white">
+                            <Badge variant="default" className="bg-success text-success-foreground">
                               <CheckCircle className="h-3 w-3 mr-1" />
                               Sim
                             </Badge>

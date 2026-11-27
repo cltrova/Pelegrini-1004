@@ -1,6 +1,7 @@
 import { Filter, RotateCcw, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { LoadingIndicator } from '@/components/common/LoadingState';
+import { EnterpriseBadge } from '@/components/enterprise/EnterpriseBadge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -99,6 +100,13 @@ export function CotacoesFilters({
   isApplying = false,
 }: CotacoesFiltersProps) {
   const isOpenQuotes = mode === 'abertas';
+  const selectedFilterCount = [
+    pendingFilters.vendedores.length > 0,
+    pendingFilters.clientes.length > 0,
+    ...(isOpenQuotes
+      ? [pendingFilters.diasMin !== null || pendingFilters.diasMax !== null]
+      : [pendingFilters.status.length > 0, pendingFilters.motivos.length > 0]),
+  ].filter(Boolean).length;
   const searchPlaceholder = isOpenQuotes
     ? 'Buscar cotacao, cliente ou vendedor'
     : 'Buscar venda, cliente ou vendedor';
@@ -208,6 +216,7 @@ export function CotacoesFilters({
             <Button type="button" variant="outline" size="sm" className="h-9">
               <Filter aria-hidden="true" className="h-3.5 w-3.5" />
               Mais filtros
+              {selectedFilterCount > 0 && <EnterpriseBadge tone="info" className="py-0">{selectedFilterCount}</EnterpriseBadge>}
             </Button>
           </PopoverTrigger>
           <PopoverContent align="end" className="commercial-overlay w-80 max-h-[calc(100dvh-2rem)] max-w-[calc(100vw-2rem)] overflow-y-auto p-3" aria-label="Filtros avancados de cotacoes">

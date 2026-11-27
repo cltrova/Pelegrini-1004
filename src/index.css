@@ -1,4 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+@import './styles/pelegrini-ui.css';
 
 @tailwind base;
 @tailwind components;
@@ -26,15 +27,15 @@
     --muted-foreground: 213 14% 43%;
 
     --accent: 196 92% 44%;
-    --accent-foreground: 0 0% 100%;
+    --accent-foreground: 213 44% 14%;
 
-    --destructive: 0 72% 51%;
+    --destructive: 351.3 52.1% 46.7%;
     --destructive-foreground: 0 0% 100%;
 
-    --success: 142 71% 40%;
+    --success: 148.2 55.7% 29.2%;
     --success-foreground: 0 0% 100%;
 
-    --warning: 38 92% 50%;
+    --warning: 36.1 90.1% 27.8%;
     --warning-foreground: 0 0% 100%;
 
     --border: 214 25% 86%;
@@ -62,8 +63,8 @@
     --chart-5: 0 72% 51%;
 
     /* Financial specific */
-    --positive: 142 71% 40%;
-    --negative: 0 72% 51%;
+    --positive: var(--success);
+    --negative: var(--destructive);
     --neutral: 220 9% 46%;
 
     --enterprise-surface: 0 0% 100%;
@@ -71,81 +72,77 @@
     --enterprise-border: 214 25% 84%;
     --enterprise-border-strong: 214 20% 72%;
     --enterprise-text-muted: 213 13% 42%;
-    --enterprise-positive: 142 65% 36%;
-    --enterprise-negative: 0 68% 46%;
-    --enterprise-warning: 38 88% 42%;
+    --enterprise-positive: var(--success);
+    --enterprise-negative: var(--destructive);
+    --enterprise-warning: var(--warning);
     --enterprise-info: 207 86% 34%;
     --enterprise-row-hover: 214 35% 96%;
   }
 
   .dark {
-    /* Dark Mode - Deep Navy & Electric Blue */
     --background: 222 47% 6%;
-    --foreground: 210 40% 98%;
+    --foreground: 190 23.1% 94.9%;
 
     --card: 222 47% 9%;
-    --card-foreground: 210 40% 98%;
+    --card-foreground: var(--foreground);
 
-    --popover: 222 47% 9%;
-    --popover-foreground: 210 40% 98%;
+    --popover: var(--card);
+    --popover-foreground: var(--foreground);
 
-    --primary: 217 91% 60%;
-    --primary-foreground: 222 47% 6%;
+    --primary: 210.3 60.2% 68.4%;
+    --primary-foreground: var(--background);
 
     --secondary: 222 40% 14%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary-foreground: var(--foreground);
 
-    --muted: 222 40% 14%;
-    --muted-foreground: 215 20% 55%;
+    --muted: var(--secondary);
+    --muted-foreground: 201.4 17.1% 67.8%;
 
-    --accent: 173 80% 45%;
-    --accent-foreground: 222 47% 6%;
+    --accent: 171.8 41.7% 62.4%;
+    --accent-foreground: var(--background);
 
-    --destructive: 0 72% 55%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 354.9 75.8% 75.7%;
+    --destructive-foreground: var(--background);
 
-    --success: 142 71% 50%;
-    --success-foreground: 222 47% 6%;
+    --success: 148.9 44.4% 63.3%;
+    --success-foreground: var(--background);
 
-    --warning: 38 92% 55%;
-    --warning-foreground: 222 47% 6%;
+    --warning: 36.1 73.8% 68.6%;
+    --warning-foreground: var(--background);
 
     --border: 222 40% 16%;
-    --input: 222 40% 16%;
-    --ring: 217 91% 60%;
+    --input: 222 22% 46%;
+    --ring: 210.3 74% 74.3%;
 
-    /* Sidebar - Dark */
     --sidebar-background: 222 47% 8%;
-    --sidebar-foreground: 220 14% 96%;
-    --sidebar-primary: 217 91% 60%;
-    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-foreground: var(--foreground);
+    --sidebar-primary: var(--primary);
+    --sidebar-primary-foreground: var(--primary-foreground);
     --sidebar-accent: 222 47% 14%;
-    --sidebar-accent-foreground: 220 14% 96%;
-    --sidebar-border: 222 40% 14%;
-    --sidebar-ring: 217 91% 60%;
-    --sidebar-muted: 220 9% 50%;
+    --sidebar-accent-foreground: var(--foreground);
+    --sidebar-border: var(--secondary);
+    --sidebar-ring: var(--ring);
+    --sidebar-muted: var(--muted-foreground);
 
-    /* Chart colors - Dark */
-    --chart-1: 217 91% 60%;
-    --chart-2: 173 80% 45%;
-    --chart-3: 142 71% 50%;
-    --chart-4: 38 92% 55%;
-    --chart-5: 0 72% 55%;
+    --chart-1: var(--primary);
+    --chart-2: var(--accent);
+    --chart-3: var(--success);
+    --chart-4: var(--warning);
+    --chart-5: var(--destructive);
 
-    /* Financial specific - Dark */
-    --positive: 142 71% 50%;
-    --negative: 0 72% 55%;
-    --neutral: 220 9% 50%;
+    --positive: var(--success);
+    --negative: var(--destructive);
+    --neutral: var(--muted-foreground);
 
-    --enterprise-surface: 222 43% 9%;
-    --enterprise-surface-subtle: 222 32% 13%;
-    --enterprise-border: 222 28% 18%;
+    --enterprise-surface: var(--card);
+    --enterprise-surface-subtle: var(--muted);
+    --enterprise-border: var(--border);
     --enterprise-border-strong: 222 22% 28%;
-    --enterprise-text-muted: 215 18% 62%;
-    --enterprise-positive: 142 62% 48%;
-    --enterprise-negative: 0 70% 56%;
-    --enterprise-warning: 38 90% 55%;
-    --enterprise-info: 199 89% 58%;
+    --enterprise-text-muted: var(--muted-foreground);
+    --enterprise-positive: var(--success);
+    --enterprise-negative: var(--destructive);
+    --enterprise-warning: var(--warning);
+    --enterprise-info: var(--primary);
     --enterprise-row-hover: 222 32% 13%;
   }
 }
@@ -2369,17 +2366,16 @@
 /* Tela de acesso CT/CCH */
 .pelegrini-login {
   --login-accent: #22b8e6;
-  --login-action: #0b5a91;
-  --login-panel: #eaf3f9;
+  --login-action: hsl(var(--primary));
   display: grid;
   min-height: 100dvh;
   grid-template-columns: minmax(0, 3fr) minmax(400px, 2fr);
   overflow: hidden;
-  background: #f7f9fb;
-  color: #10253b;
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
 }
 
-.pelegrini-login[data-branch='chevrolet'] { --login-accent: #e6b51f; --login-action: #07528f; --login-panel: #eef3f7; }
+.pelegrini-login[data-branch='chevrolet'] { --login-accent: #e6b51f; }
 .pelegrini-login-visual { position: relative; min-height: 100dvh; overflow: hidden; background: #07365f; }
 .pelegrini-login-visual-image { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .pelegrini-login-visual-overlay { position: absolute; inset: 0; background: linear-gradient(90deg, rgb(3 31 57 / 0.9) 0%, rgb(3 43 76 / 0.55) 62%, rgb(3 43 76 / 0.28) 100%); }
@@ -2401,40 +2397,36 @@
 .pelegrini-login-progress { display: grid; width: min(230px, 45%); grid-template-columns: repeat(2, 1fr); gap: 8px; margin: 24px auto 0; }
 .pelegrini-login-progress span { position: relative; height: 2px; overflow: hidden; background: rgb(255 255 255 / 0.28); }
 .pelegrini-login-progress span[data-active='true']::after { position: absolute; inset: 0; background: var(--login-accent); content: ''; transform-origin: left center; animation: pelegrini-login-progress 6s linear both; }
-.pelegrini-login-access { position: relative; z-index: 2; isolation: isolate; display: flex; min-width: 0; min-height: 100dvh; align-items: center; justify-content: center; overflow: hidden; border-left: 4px solid var(--login-accent); padding: clamp(34px, 4vw, 68px); background: var(--login-panel); box-shadow: -24px 0 48px rgb(3 31 57 / 0.28); transition: background-color 420ms ease, border-color 420ms ease; }
-.pelegrini-login-access::before { position: absolute; z-index: -1; inset: 0; background-image: linear-gradient(rgb(11 90 145 / 0.055) 1px, transparent 1px), linear-gradient(90deg, rgb(11 90 145 / 0.055) 1px, transparent 1px); background-size: 32px 32px; content: ''; mask-image: linear-gradient(to bottom, black, transparent 72%); }
-.pelegrini-login-access::after { position: absolute; z-index: -1; top: 28px; right: 28px; width: 92px; height: 42px; border-top: 2px solid color-mix(in srgb, var(--login-accent) 70%, transparent); border-right: 2px solid color-mix(in srgb, var(--login-action) 38%, transparent); content: ''; transition: border-color 420ms ease; }
-.pelegrini-login-access-inner { position: relative; z-index: 1; width: min(100%, 430px); min-width: 0; border: 1px solid rgb(145 166 187 / 0.5); border-top: 4px solid var(--login-accent); border-radius: 8px; padding: clamp(30px, 3.4vw, 46px); background: rgb(255 255 255 / 0.9); box-shadow: 0 24px 60px rgb(4 39 69 / 0.16), 0 4px 14px rgb(4 39 69 / 0.08); backdrop-filter: blur(8px); transition: border-color 420ms ease, box-shadow 220ms ease; }
-.pelegrini-login-access-inner:hover { box-shadow: 0 28px 68px rgb(4 39 69 / 0.2), 0 6px 16px rgb(4 39 69 / 0.1); }
+.pelegrini-login-access { position: relative; z-index: 2; display: flex; min-width: 0; min-height: 100dvh; align-items: center; justify-content: center; border-left: 1px solid hsl(var(--border)); padding: clamp(26px, 4vw, 60px); background: hsl(var(--background)); }
+.pelegrini-login-access-inner { position: relative; width: min(100%, 430px); min-width: 0; border: 1px solid hsl(var(--border)); border-top: 2px solid var(--login-accent); border-radius: var(--pelegrini-panel-radius); padding: clamp(24px, 3.4vw, 42px); background: hsl(var(--card)); transition: border-color var(--pelegrini-motion) ease; }
 .pelegrini-login-heading { margin-bottom: 34px; text-align: center; }
-.pelegrini-login-heading h1 { color: #0c2943; font-size: 2rem; font-weight: 720; line-height: 1.12; letter-spacing: 0; }
-.pelegrini-login-heading span { display: block; width: 66px; height: 3px; margin: 15px auto 0; background: var(--login-accent); }
+.pelegrini-login-heading h1 { color: hsl(var(--foreground)); font-size: clamp(1.5rem, 2.25vw, 1.875rem); font-weight: 720; line-height: 1.12; letter-spacing: -0.02em; }
+.pelegrini-login-heading span { display: block; width: 40px; height: 2px; margin: 14px auto 0; background: var(--login-accent); }
 .pelegrini-login-form { display: grid; width: 100%; min-width: 0; gap: 17px; }
-.pelegrini-login-form label { color: #283d52; font-size: 0.82rem; font-weight: 600; }
-.pelegrini-login-field { position: relative; display: flex; min-width: 0; align-items: center; overflow: hidden; border: 1px solid #bdccda; border-radius: 6px; background: #fff; box-shadow: inset 0 1px 2px rgb(15 48 78 / 0.05), 0 4px 10px rgb(15 48 78 / 0.04); transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease; }
-.pelegrini-login-field:hover { border-color: color-mix(in srgb, var(--login-action) 52%, #bdccda); box-shadow: inset 0 1px 2px rgb(15 48 78 / 0.04), 0 7px 16px rgb(15 48 78 / 0.08); }
-.pelegrini-login-field:focus-within { border-color: var(--login-action); box-shadow: 0 0 0 3px color-mix(in srgb, var(--login-accent) 20%, transparent), 0 8px 20px rgb(15 48 78 / 0.1); transform: translateY(-1px); }
-.pelegrini-login-field[data-state='error'] { border-color: #d53545; background: #fffafb; box-shadow: 0 0 0 3px rgb(213 53 69 / 0.1); }
-.pelegrini-login-field[data-state='valid'] { border-color: #269374; }
+.pelegrini-login-form label { color: hsl(var(--foreground)); font-size: 0.82rem; font-weight: 600; }
+.pelegrini-login-field { position: relative; display: flex; min-width: 0; align-items: center; overflow: hidden; border: 1px solid hsl(var(--input)); border-radius: var(--pelegrini-control-radius); background: hsl(var(--background)); transition: border-color var(--pelegrini-motion) ease; }
+.pelegrini-login-field:hover { border-color: var(--login-action); }
+.pelegrini-login-field[data-state='error'] { border-color: hsl(var(--destructive)); }
+.pelegrini-login-field[data-state='valid'] { border-color: hsl(var(--success)); }
+.pelegrini-login-field:focus-within { outline: 2px solid hsl(var(--ring)); outline-offset: 2px; }
 .pelegrini-login-field-icon { position: absolute; left: 14px; z-index: 1; width: 18px; height: 18px; color: var(--login-action); pointer-events: none; }
-.pelegrini-login-form input { height: 48px; border: 0; border-radius: 0; padding-left: 44px; background: transparent; color: #10253b; box-shadow: none; }
+.pelegrini-login-form input { height: 46px; border: 0; border-radius: 0; padding-left: 44px; background: transparent; color: hsl(var(--foreground)); box-shadow: none; }
 .pelegrini-login-field[data-login-field='password'] input { padding-right: 46px; }
-.pelegrini-login-valid-icon { position: absolute; right: 14px; width: 17px; height: 17px; color: #18765d; pointer-events: none; }
+.pelegrini-login-valid-icon { position: absolute; right: 14px; width: 17px; height: 17px; color: hsl(var(--success)); pointer-events: none; }
 .pelegrini-login-form input:focus-visible { box-shadow: none; }
-.pelegrini-login-form input:-webkit-autofill { -webkit-text-fill-color: #10253b; box-shadow: 0 0 0 1000px #fff inset; transition: background-color 9999s ease-out; }
-.pelegrini-login-password-toggle { position: absolute; z-index: 2; right: 3px; top: 3px; display: flex; width: 40px; height: 40px; align-items: center; justify-content: center; border-radius: 4px; color: #66788c; transition: background-color 160ms ease, color 160ms ease; }
-.pelegrini-login-password-toggle:hover { background: color-mix(in srgb, var(--login-accent) 13%, white); color: var(--login-action); }
+.pelegrini-login-form input:-webkit-autofill { -webkit-text-fill-color: hsl(var(--foreground)); box-shadow: 0 0 0 1000px hsl(var(--background)) inset; }
+.pelegrini-login-password-toggle { position: absolute; z-index: 2; right: 3px; top: 3px; display: flex; width: 40px; height: 40px; align-items: center; justify-content: center; border-radius: var(--pelegrini-control-radius); color: hsl(var(--muted-foreground)); transition: background-color 160ms ease, color 160ms ease; }
+.pelegrini-login-password-toggle:hover { background: hsl(var(--primary) / 0.1); color: var(--login-action); }
 .pelegrini-login-password-toggle:focus-visible { outline: 2px solid var(--login-action); outline-offset: -2px; }
 .pelegrini-login-password-toggle svg { width: 18px; height: 18px; }
-.pelegrini-login-field-feedback { margin: 6px 2px 0; color: #b32838; font-size: 0.75rem; font-weight: 550; line-height: 1.3; }
-.pelegrini-login-caps-lock { display: flex; align-items: center; gap: 6px; margin: 6px 2px 0; color: #8a5b00; font-size: 0.75rem; font-weight: 600; line-height: 1.3; }
+.pelegrini-login-field-feedback { margin: 6px 2px 0; color: hsl(var(--destructive)); font-size: 0.75rem; font-weight: 550; line-height: 1.3; }
+.pelegrini-login-caps-lock { display: flex; align-items: center; gap: 6px; margin: 6px 2px 0; color: hsl(var(--warning)); font-size: 0.75rem; font-weight: 600; line-height: 1.3; }
 .pelegrini-login-caps-lock svg { width: 14px; height: 14px; }
-.pelegrini-login-message { border-left: 3px solid #d53545; padding: 9px 11px; background: #fff1f2; color: #9f1f2d; font-size: 0.78rem; }
-.pelegrini-login-message[data-state='success'] { border-color: #128264; background: #edfdf7; color: #0c664e; }
-.pelegrini-login-submit { height: 48px; border: 1px solid color-mix(in srgb, var(--login-action) 76%, black); border-radius: 6px; background: var(--login-action); color: white; box-shadow: 0 10px 22px color-mix(in srgb, var(--login-action) 28%, transparent); transition: background-color 180ms ease, box-shadow 180ms ease, transform 180ms ease; }
-.pelegrini-login-submit:hover { background: color-mix(in srgb, var(--login-action) 88%, black); box-shadow: 0 14px 28px color-mix(in srgb, var(--login-action) 36%, transparent); }
-.pelegrini-login-submit:active { box-shadow: 0 6px 14px color-mix(in srgb, var(--login-action) 24%, transparent); transform: translateY(0); }
-.pelegrini-login-submit:disabled { cursor: wait; box-shadow: 0 6px 14px color-mix(in srgb, var(--login-action) 18%, transparent); opacity: 0.78; }
+.pelegrini-login-message { border-left: 2px solid hsl(var(--destructive)); padding: 9px 11px; background: hsl(var(--destructive) / 0.08); color: hsl(var(--destructive)); font-size: 0.78rem; }
+.pelegrini-login-message[data-state='success'] { border-color: hsl(var(--success)); background: hsl(var(--success) / 0.08); color: hsl(var(--success)); }
+.pelegrini-login-submit { height: 44px; border-radius: var(--pelegrini-control-radius); background: var(--login-action); color: hsl(var(--primary-foreground)); transition: background-color var(--pelegrini-motion) ease; }
+.pelegrini-login-submit:hover { background: hsl(var(--primary) / 0.88); }
+.pelegrini-login-submit:disabled { cursor: wait; opacity: 0.78; }
 
 @keyframes pelegrini-login-progress { from { transform: scaleX(0); } to { transform: scaleX(1); } }
 
@@ -2449,13 +2441,13 @@
   .pelegrini-login-logo-stage > .transmission-full-logo { width: min(280px, 86%); }
   .pelegrini-login-story > p { max-width: 430px; font-size: 1.05rem; }
   .pelegrini-login-progress { width: 150px; margin-top: 14px; }
-  .pelegrini-login-access { width: 100%; max-width: 100vw; min-height: auto; box-sizing: border-box; border-left: 0; border-top: 4px solid var(--login-accent); padding: 30px 22px 38px; box-shadow: 0 -18px 34px rgb(3 31 57 / 0.2); }
+  .pelegrini-login-access { width: 100%; max-width: 100vw; min-height: auto; box-sizing: border-box; border-left: 0; border-top: 1px solid hsl(var(--border)); padding: 26px 16px 34px; }
   .pelegrini-login-access-inner { padding: 28px 22px; }
   .pelegrini-login-access-inner,
   .pelegrini-login-form,
   .pelegrini-login-form input,
   .pelegrini-login-submit { width: 100%; max-width: 100%; box-sizing: border-box; }
-  .pelegrini-login-access-inner { width: calc(100vw - 44px); }
+  .pelegrini-login-access-inner { width: min(100%, 430px); }
 }
 
 @media (prefers-reduced-motion: reduce) {

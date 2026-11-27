@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="pt-BR">
+<html lang="pt-BR" class="dark">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -10,6 +10,13 @@
     <meta name="apple-mobile-web-app-title" content="Grupo Pelegrini" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="theme-color" content="#073f73" />
+    <script>
+      try {
+        if (localStorage.getItem('theme') === 'light') {
+          document.documentElement.classList.replace('dark', 'light');
+        }
+      } catch {}
+    </script>
     <title>Rsys Pelegrini</title>
     <meta name="description" content="Sistema dedicado Pelegrini" />
     <meta property="og:type" content="website" />

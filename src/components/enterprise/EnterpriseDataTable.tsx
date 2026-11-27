@@ -4,13 +4,13 @@ import { cn } from '@/lib/utils';
 export function EnterpriseTable({ className, children, ...props }: HTMLAttributes<HTMLDivElement> & { children: ReactNode }) {
   return (
     <div className={cn('min-w-0 max-h-full overflow-auto rounded-lg border border-border', className)} data-enterprise-table {...props}>
-      <table className="w-full min-w-max border-collapse text-xs">{children}</table>
+      <table className="pelegrini-table w-full min-w-max border-collapse text-xs">{children}</table>
     </div>
   );
 }
 
 export function EnterpriseThead({ className, ...props }: HTMLAttributes<HTMLTableSectionElement>) {
-  return <thead className={cn('sticky top-0 z-10 bg-muted/80 text-muted-foreground', className)} {...props} />;
+  return <thead className={cn('sticky top-0 z-10 bg-muted text-muted-foreground', className)} {...props} />;
 }
 
 export function EnterpriseTbody({ className, ...props }: HTMLAttributes<HTMLTableSectionElement>) {
@@ -18,7 +18,7 @@ export function EnterpriseTbody({ className, ...props }: HTMLAttributes<HTMLTabl
 }
 
 export function EnterpriseTr({ className, ...props }: HTMLAttributes<HTMLTableRowElement>) {
-  return <tr className={cn('transition-colors hover:bg-[hsl(var(--enterprise-row-hover))]', className)} {...props} />;
+  return <tr className={className} {...props} />;
 }
 
 export function EnterpriseTh({ numeric = false, className, ...props }: ThHTMLAttributes<HTMLTableCellElement> & { numeric?: boolean }) {

@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { ThemeProvider } from 'next-themes';
+import { PelegriniThemeProvider } from '@/components/common/PelegriniThemeProvider';
+import { LoadingState } from '@/components/common/LoadingState';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -58,7 +59,7 @@ function VisitasEntrada() {
       <p role="alert" className="text-sm text-destructive">{erro}</p>
       <Button asChild variant="outline"><a href="/">Voltar ao login</a></Button>
     </main>
-  ) : <p className="p-6" role="status">Carregando Visitas…</p>;
+  ) : <LoadingState message="Carregando Visitas" variant="screen" />;
 
   if (sessao.troca_senha_pendente) return (
     <main className="grid min-h-dvh place-items-center bg-background p-4 text-foreground">
@@ -86,7 +87,7 @@ function VisitasEntrada() {
 }
 
 export default function VisitasApp() {
-  return <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
+  return <PelegriniThemeProvider>
     <QueryClientProvider client={queries}><VisitasEntrada /></QueryClientProvider>
-  </ThemeProvider>;
+  </PelegriniThemeProvider>;
 }

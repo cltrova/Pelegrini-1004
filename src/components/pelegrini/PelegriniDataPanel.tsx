@@ -12,11 +12,11 @@ interface PelegriniDataPanelProps {
 export function PelegriniDataPanel({ title, action, children, className, eyebrow }: PelegriniDataPanelProps) {
   return (
     <section
-      className={cn('pelegrini-data-panel min-w-0 overflow-hidden rounded-lg border bg-card', className)}
+      className={cn('pelegrini-panel pelegrini-data-panel min-w-0 overflow-hidden rounded-lg border bg-card', className)}
       data-pelegrini-panel
     >
       {(title || action || eyebrow) && (
-        <header className="flex min-w-0 items-start justify-between gap-3 border-b border-border/70 px-4 py-3">
+        <header className="flex min-w-0 flex-wrap items-start justify-between gap-2 border-b border-border px-4 py-3">
           <div className="min-w-0">
             {eyebrow && <p className="text-[10px] font-semibold uppercase text-muted-foreground">{eyebrow}</p>}
             {title && <h3 className="text-base font-semibold text-foreground">{title}</h3>}

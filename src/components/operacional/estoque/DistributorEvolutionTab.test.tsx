@@ -95,14 +95,14 @@ describe('DistributorEvolutionTab', () => {
     expect(filterPanel).toHaveClass('z-40');
     expect(filterPanel).toHaveClass('operational-overlay');
     expect(filterPanel).not.toHaveClass('z-50');
-    expect(screen.getAllByText(/R\$\s*120/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/R\$\s*120,00/).length).toBeGreaterThan(0);
     expect(screen.queryByRole('heading', { name: 'Evolução mensal' })).not.toBeInTheDocument();
     expect(screen.getByRole('region', { name: 'Comparativo de vendas e compras' })).toBeInTheDocument();
     expect(screen.getByTestId('sales-purchases-chart')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: /Expandir ZF/i }));
     expect(screen.getByText('ZF Pesado')).toBeInTheDocument();
     const groupRow = screen.getByText('ZF Pesado').closest('tr');
-    expect(groupRow?.querySelector('.text-emerald-500, .text-red-500')).toBeTruthy();
+    expect(groupRow?.querySelector('.text-success, .text-destructive')).toBeTruthy();
 
     const table = screen.getByRole('table', { name: 'Comparativo mensal dos distribuidores' });
     expect(table).toHaveClass('w-full', 'table-fixed');
@@ -131,10 +131,10 @@ describe('DistributorEvolutionTab', () => {
     const august = within(table).getByRole('button', { name: /ZF em agosto de 2026/i });
 
     expect(within(july).getByText('sem base')).toHaveClass('text-muted-foreground');
-    expect(within(august).getByText('+20%')).toHaveClass('text-emerald-500');
+    expect(within(august).getByText('+20%')).toHaveClass('text-success');
 
     fireEvent.click(screen.getAllByRole('button', { name: 'Vendas' })[0]);
-    expect(within(august).getByText('-25%')).toHaveClass('text-red-500');
+    expect(within(august).getByText('-25%')).toHaveClass('text-destructive');
   });
 
   it('explica quando o endpoint ainda nao esta publicado', () => {

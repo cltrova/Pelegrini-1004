@@ -1,6 +1,7 @@
 import { CircleCheck, CircleOff, PauseCircle, Siren, TriangleAlert, type LucideIcon } from 'lucide-react';
 
 import { PelegriniDataPanel } from '@/components/pelegrini';
+import { EnterpriseBadge } from '@/components/enterprise/EnterpriseBadge';
 import { cn } from '@/lib/utils';
 
 import type { StockProductInsight } from './estoqueIntelligence';
@@ -42,7 +43,7 @@ export function EstoqueAttentionPanel({ products, onSelectProduct }: EstoqueAtte
     <PelegriniDataPanel className="operational-panel" eyebrow="Prioridade operacional" title="Atencao no estoque">
       {prioritized.length === 0 ? (
         <div className="flex min-w-0 items-center gap-2 py-3 text-sm text-muted-foreground">
-          <CircleCheck aria-hidden="true" className="h-5 w-5 shrink-0 text-emerald-600" />
+          <CircleCheck aria-hidden="true" className="h-5 w-5 shrink-0 text-success" />
           <span>Estoque sem alertas prioritarios</span>
         </div>
       ) : (
@@ -63,7 +64,7 @@ export function EstoqueAttentionPanel({ products, onSelectProduct }: EstoqueAtte
                     'flex h-8 w-8 shrink-0 items-center justify-center rounded-md border',
                     status === 'out' || status === 'critical'
                       ? 'border-destructive/30 text-destructive'
-                      : 'border-amber-500/40 text-amber-700 dark:text-amber-400',
+                      : 'border-warning/40 text-warning',
                   )}
                   role="img"
                 >
@@ -75,12 +76,10 @@ export function EstoqueAttentionPanel({ products, onSelectProduct }: EstoqueAtte
                     Codigo {item.cod_produto} · {item.marca}
                   </span>
                 </span>
-                <span
-                  className="flex shrink-0 items-center gap-1.5 text-xs font-semibold text-foreground"
-                  data-stock-status={status}
-                >
-                  <span className="h-1.5 w-1.5 rounded-full bg-current" aria-hidden="true" />
-                  {config.label}
+                <span data-stock-status={status}>
+                  <EnterpriseBadge tone={status === 'out' || status === 'critical' ? 'negative' : 'warning'}>
+                    {config.label}
+                  </EnterpriseBadge>
                 </span>
               </button>
             );

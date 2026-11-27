@@ -126,6 +126,7 @@
   display: -webkit-box;
   overflow: hidden;
   font-weight: 600;
+  text-transform: uppercase;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
 }
@@ -172,7 +173,7 @@
   margin-top: 0.125rem;
   color: hsl(var(--foreground));
   font-size: clamp(0.8125rem, 3.25cqi, 1rem);
-  font-weight: 600;
+  font-weight: 720;
   line-height: 1.125rem;
   overflow-wrap: anywhere;
   font-variant-numeric: tabular-nums;

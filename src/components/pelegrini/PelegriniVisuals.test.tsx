@@ -183,7 +183,7 @@ describe('Pelegrini visual components', () => {
     const value = screen.getByText('R$ 12.345.678,90');
 
     expect(container.firstElementChild).toHaveClass('min-w-0');
-    expect(value).toHaveClass('kpi-fluid-value', 'break-words');
+    expect(value).toHaveClass('kpi-fluid-value', 'pelegrini-metric-value');
   });
 
   it('switches the active branch without changing the current route', () => {
@@ -251,16 +251,17 @@ describe('Pelegrini visual components', () => {
     );
 
     const trigger = screen.getByRole('button', { name: /Filtros.*2 ativos/i });
-    const controls = screen.getByRole('button', { name: 'Aplicar filtros' }).closest('.pelegrini-filter-controls');
+    const controls = document.getElementById(trigger.getAttribute('aria-controls') ?? '');
 
     expect(trigger).toHaveAttribute('aria-expanded', 'false');
-    expect(controls).toHaveClass('hidden');
+    expect(controls).toHaveAttribute('hidden');
+    expect(screen.queryByRole('button', { name: 'Aplicar filtros' })).not.toBeInTheDocument();
     expect(screen.getByText('2 ativos')).toHaveClass('rounded-lg');
 
     fireEvent.click(trigger);
 
     expect(trigger).toHaveAttribute('aria-expanded', 'true');
-    expect(controls).not.toHaveClass('hidden');
+    expect(controls).not.toHaveAttribute('hidden');
     expect(screen.getByRole('button', { name: 'Aplicar filtros' })).toBeVisible();
   });
 

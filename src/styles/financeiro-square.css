@@ -1,7 +1,7 @@
 [data-module-shell='financeiro'] {
-  --financial-panel-radius: 2px;
-  --financial-control-radius: 4px;
-  --financial-motion-fast: 150ms;
+  --financial-panel-radius: var(--pelegrini-panel-radius);
+  --financial-control-radius: var(--pelegrini-control-radius);
+  --financial-motion-fast: var(--pelegrini-motion);
   --financial-motion-sidebar: 220ms;
 }
 
@@ -25,8 +25,8 @@
 
 [data-module-shell='financeiro'] .financial-filter-control,
 .financial-overlay {
-  --financial-panel-radius: 2px;
-  --financial-control-radius: 4px;
+  --financial-panel-radius: var(--pelegrini-panel-radius);
+  --financial-control-radius: var(--pelegrini-control-radius);
   border-radius: var(--financial-control-radius) !important;
   background-image: none !important;
   backdrop-filter: none !important;

@@ -1,17 +1,19 @@
-import { useMemo, useState } from 'react';
+import { useId, useMemo, useRef, useState } from 'react';
 import { useReducedMotion } from 'framer-motion';
-import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
-import { formatCompactNumber, formatCurrency, formatPercent } from '@/utils/formatters';
+import { formatCompactNumber, formatCurrency, formatPercent, formatPeriod } from '@/utils/formatters';
 import {
   ResponsiveContainer, ComposedChart, Area, Line, XAxis, YAxis, CartesianGrid,
   Tooltip, ReferenceLine, Legend,
 } from 'recharts';
-import { CalendarDays, Percent, TrendingUp } from 'lucide-react';
+import { ArrowUpRight, BarChart3, CalendarDays, ChartNoAxesCombined, Percent, TrendingUp, Trophy, X } from 'lucide-react';
 import { RankingVendedoresChart } from './RankingVendedoresChart';
+import { DashboardGoalPace, DashboardPageHeading, DashboardTeamGoals, formatDashboardPeriod, getTeamGoalStatus, type TeamGoalStatus } from './DashboardOverviewManagement';
 import { useEmpresaAtiva } from '@/hooks/useEmpresaAtiva';
 import { useFilialSelecionada } from '@/contexts/FilialSelecionadaContext';
+import { getFeriadosComerciaisMeta } from '@/utils/feriadosComerciais';
 import {
   isContextoChevrolet10041,
   vendedorForcaP1004,
@@ -41,7 +43,7 @@ type LinhaFaturamento = Partial<Pick<Pedido,
 >> & { nome_interno?: unknown; nome_externo?: unknown };
 
 type IndicadoresVisaoGeral = Partial<Record<
-  'totalMeta' | 'totalFaturado' | 'totalDevolucoes' | 'acimaMeta' | 'proximoMeta' | 'abaixoMeta' | 'qtdPedidos' | 'qtdVendas' | 'clientesAtendidos',
+  'totalMeta' | 'totalMetaEsperada' | 'totalFaturado' | 'totalDevolucoes' | 'qtdPedidos' | 'qtdVendas' | 'clientesAtendidos',
   number
 >>;
 
@@ -83,6 +85,14 @@ const PIE_COLORS = [
   'hsl(var(--secondary))',
 ];
 
+const analysisTitles = {
+  evolucao: 'Faturamento no mês',
+  participacao: 'Participação nas vendas',
+  mapa: 'Faturamento por dia e vendedor',
+};
+
+const QUICK_GOAL_SCALE = 120;
+
 export function getCorParticipacaoVendedor(nome: string, index: number): string {
   if (nome.trim().toUpperCase() === 'ELIELTON') return '#db2777';
   return PIE_COLORS[index % PIE_COLORS.length];
@@ -120,8 +130,13 @@ export function VisaoGeralRapida1004<TVendedor extends VendedorVisaoGeral>({
   const isEmpresa1001 = String(codEmpresaAtiva) === '1001';
   const isEmpresaPelegrini = codEmpresaAtiva === '1004' || codEmpresaAtiva === '10041' || isContextoChevrolet10041Ativo;
   const reduceMotion = useReducedMotion();
+  const gradientId = `dashboard-trend${useId().replace(/:/g, '')}`;
   const [previewHeatCell, setPreviewHeatCell] = useState<SelecaoMapa | null>(null);
   const [selectedHeatCell, setSelectedHeatCell] = useState<SelecaoMapa | null>(null);
+  const [teamFilter, setTeamFilter] = useState<TeamGoalStatus | null>(null);
+  const [analysisView, setAnalysisView] = useState<keyof typeof analysisTitles>('evolucao');
+  const rankingRef = useRef<HTMLElement>(null);
+  const rankingChartRef = useRef<HTMLElement>(null);
 
   const { ano, mes } = periodoFiltros;
   const hoje = new Date();
@@ -149,6 +164,7 @@ export function VisaoGeralRapida1004<TVendedor extends VendedorVisaoGeral>({
       porDia.set(dia, (porDia.get(dia) || 0) + getReceitaPedido1004(p));
     }
     const metaMensal = kpisGerais.totalMeta || 0;
+    const feriados = new Set(getFeriadosComerciaisMeta(codEmpresaAtiva, ano, mes - 1));
     const metaDiariaLinear = diasUteisNoMes > 0 ? metaMensal / diasUteisNoMes : 0;
     let acc = 0;
     let diaUtil = 0;
@@ -156,7 +172,7 @@ export function VisaoGeralRapida1004<TVendedor extends VendedorVisaoGeral>({
     for (let d = 1; d <= totalDiasMes; d++) {
       const dt = new Date(ano, mes - 1, d);
       const dow = dt.getDay();
-      const isUtil = dow !== 0 && dow !== 6;
+      const isUtil = dow !== 0 && dow !== 6 && !feriados.has(`${periodoMapa}-${String(d).padStart(2, '0')}`);
       if (isUtil) diaUtil++;
       acc += porDia.get(d) || 0;
       const metaAcc = metaDiariaLinear * diaUtil;
@@ -168,7 +184,7 @@ export function VisaoGeralRapida1004<TVendedor extends VendedorVisaoGeral>({
       });
     }
     return out;
-  }, [pedidosMes, kpisGerais.totalMeta, diasUteisNoMes, ano, mes, totalDiasMes, diaHoje]);
+  }, [pedidosMes, kpisGerais.totalMeta, diasUteisNoMes, codEmpresaAtiva, ano, mes, periodoMapa, totalDiasMes, diaHoje]);
 
   // Chave de agrupamento alinhada ao restante do dashboard 1004:
   // usa vendedor_codigo → vendedor_nome → nome_interno → nome_externo
@@ -256,6 +272,21 @@ export function VisaoGeralRapida1004<TVendedor extends VendedorVisaoGeral>({
     return dadosPorVendedor.map((v, index) => ({ ...v, ranking: index + 1, pct: (v.mes / total) * 100 }));
   }, [dadosPorVendedor, isEmpresaPelegrini, kpisGerais.totalFaturado]);
 
+  const ranking = useMemo(() => {
+    const counts: Record<TeamGoalStatus, number> = { atingida: 0, proxima: 0, abaixo: 0 };
+    const rows = participacao.map((vendedor) => {
+      const percent = vendedor.meta > 0 ? (vendedor.mes / vendedor.meta) * 100 : null;
+      const status = percent === null ? null : getTeamGoalStatus(percent);
+      if (status) counts[status]++;
+      return { ...vendedor, percent, status, balance: percent === null ? null : vendedor.mes - vendedor.meta };
+    });
+    return { counts, rows };
+  }, [participacao]);
+  const rankingRows = teamFilter ? ranking.rows.filter(({ status }) => status === teamFilter) : ranking.rows;
+  if (teamFilter === 'abaixo') {
+    rankingRows.sort((a, b) => (a.percent ?? 0) - (b.percent ?? 0));
+  }
+
   // ============ Heatmap dias x vendedores ============
   const heatmap = useMemo(() => {
     const map = new Map<string, Map<number, number>>();
@@ -291,30 +322,24 @@ export function VisaoGeralRapida1004<TVendedor extends VendedorVisaoGeral>({
   const kpiDecisao = useMemo(() => {
     const meta = kpisGerais.totalMeta || 0;
     const fat = kpisGerais.totalFaturado || 0;
-    const pct = meta > 0 ? (fat / meta) * 100 : 0;
     const gap = meta - fat;
     const diasUteisRestantes = Math.max(0, diasUteisNoMes - diasUteisDecorridos);
     const diariaRealizada = diasUteisDecorridos > 0 ? fat / diasUteisDecorridos : 0;
     const diariaNecessaria = diasUteisRestantes > 0 && gap > 0 ? gap / diasUteisRestantes : 0;
     const projecao = diasUteisDecorridos > 0 ? diariaRealizada * diasUteisNoMes : fat;
-    const projPct = meta > 0 ? (projecao / meta) * 100 : 0;
     let ritmoStatus: 'acelerar' | 'noritmo' | 'folga' = 'acelerar';
     if (gap <= 0) ritmoStatus = 'folga';
-    else if (diariaRealizada >= diariaNecessaria * 0.95) ritmoStatus = 'noritmo';
+    else if (diariaRealizada >= diariaNecessaria) ritmoStatus = 'noritmo';
 
-    const acima = kpisGerais.acimaMeta || 0;
-    const proximo = kpisGerais.proximoMeta || 0;
-    const abaixo = kpisGerais.abaixoMeta || 0;
-    const totalEq = acima + proximo + abaixo || 1;
-
-    return {
-      fat, meta, pct, gap,
-      diariaRealizada, diariaNecessaria, ritmoStatus,
-      projecao, projPct,
-      acima, proximo, abaixo, totalEq,
-      diasUteisRestantes,
-    };
+    return { fat, meta, gap, diariaRealizada, diariaNecessaria, ritmoStatus, projecao, diasUteisRestantes };
   }, [kpisGerais, diasUteisNoMes, diasUteisDecorridos]);
+
+  const hasGoal = kpiDecisao.meta > 0;
+  const periodStartsAtMonthBeginning = !periodoAplicado || periodoAplicado.inicio === `${periodoMapa}-01`;
+  const hasDailyAverage = periodStartsAtMonthBeginning && diasUteisDecorridos > 0;
+  const showProjection = hasGoal && hasDailyAverage && isMesAtual && kpiDecisao.diasUteisRestantes > 0;
+  const monthLabel = formatPeriod(periodoMapa);
+  const periodLabel = formatDashboardPeriod(periodoAplicado) ?? monthLabel;
 
   // ============ Totalizadores simples ============
   // Alinhado com a aba Detalhes: usa TODOS os pedidos do período (inclui devoluções)
@@ -332,64 +357,173 @@ export function VisaoGeralRapida1004<TVendedor extends VendedorVisaoGeral>({
 
   const totalizadores: ComercialMetric[] = [
     {
-      label: 'Faturamento',
-      value: formatCurrency(totais.receita),
-      context: `${totais.clientes.toLocaleString('pt-BR')} clientes`,
-      tone: 'success',
-      tooltip: `Faturamento líquido do período. Devoluções: ${formatCurrency(kpisGerais.totalDevolucoes || 0)}.`,
-      onClick: onReceitaClick,
-      actionLabel: 'Abrir detalhamento do faturamento',
-    },
-    {
-      label: 'Meta mensal',
-      value: formatCurrency(kpiDecisao.meta),
-      context: kpiDecisao.gap > 0 ? `Falta ${formatCurrency(kpiDecisao.gap)}` : 'Meta atingida',
-      tooltip: 'Soma das metas mensais dos vendedores no filtro atual.',
-    },
-    {
       label: 'Pedidos',
       value: totais.vendas.toLocaleString('pt-BR'),
-      context: `Ticket médio ${formatCurrency(totais.ticket)}`,
       tooltip: 'Quantidade de pedidos considerada no período selecionado.',
     },
     {
-      label: 'Atingimento',
-      value: formatPercent(kpiDecisao.pct),
-      context: `${kpiDecisao.totalEq} vendedores ativos`,
-      tone: kpiDecisao.pct >= 100 ? 'success' : kpiDecisao.pct >= 80 ? 'warning' : 'danger',
-      tooltip: 'Percentual do faturamento realizado em relação à meta mensal.',
+      label: 'Ticket médio',
+      value: formatCurrency(totais.ticket),
+      tooltip: 'Faturamento líquido dividido pela quantidade de pedidos.',
+    },
+    {
+      label: 'Clientes',
+      value: totais.clientes.toLocaleString('pt-BR'),
+      tooltip: 'Clientes atendidos no período selecionado.',
+    },
+    {
+      label: 'Devoluções',
+      value: formatCurrency(kpisGerais.totalDevolucoes || 0),
+      tone: kpisGerais.totalDevolucoes ? 'danger' : 'neutral',
+      tooltip: 'Valor das devoluções registradas no período.',
     },
   ];
 
   const ParticipationRow = onDetalheVendedor ? 'button' : 'div';
+  const handleTeamFilter = (status: TeamGoalStatus) => {
+    setTeamFilter((current) => current === status ? null : status);
+    const rankingSection = rankingRef.current;
+    const viewport = rankingSection?.closest('[role="tabpanel"]');
+    if (rankingSection && viewport) {
+      const rankingBounds = rankingSection.getBoundingClientRect();
+      const viewportBounds = viewport.getBoundingClientRect();
+      if (rankingBounds.top < viewportBounds.top || rankingBounds.bottom > viewportBounds.bottom) {
+        rankingSection.scrollIntoView({ block: 'nearest', behavior: reduceMotion ? 'auto' : 'smooth' });
+      }
+    }
+  };
 
   return (
     <div className="dashboard-overview-grid min-w-0 text-foreground">
+      <DashboardPageHeading title="Desempenho comercial" period={periodLabel} />
+      <DashboardGoalPace
+        revenue={totais.receita}
+        goal={hasGoal ? kpiDecisao.meta : null}
+        expected={showProjection ? kpisGerais.totalMetaEsperada ?? null : null}
+        daysRemaining={hasGoal && periodStartsAtMonthBeginning ? kpiDecisao.diasUteisRestantes : null}
+        dailyActual={hasDailyAverage ? kpiDecisao.diariaRealizada : null}
+        projection={showProjection ? kpiDecisao.projecao : null}
+        dailyNeeded={showProjection && kpiDecisao.gap > 0 ? kpiDecisao.diariaNecessaria : null}
+        pace={kpiDecisao.ritmoStatus}
+        onRevenueClick={onReceitaClick}
+      />
       <ComercialMetricStrip metrics={totalizadores} ariaLabel="Indicadores do dashboard comercial" />
 
-      <RankingVendedoresChart
-        data={dadosPorVendedor}
-        periodo={periodoAplicado}
-        variant={isEmpresaPelegrini ? 'pelegriniBlue' : 'default'}
-        onClick={onDetalheVendedor ? (row) => onDetalheVendedor(row, 0) : undefined}
+      <section ref={rankingChartRef} className="dashboard-inline-ranking" aria-label="Gráfico de ranking de vendedores" tabIndex={-1}>
+        <RankingVendedoresChart
+          data={dadosPorVendedor}
+          periodo={periodoAplicado}
+          variant={isEmpresaPelegrini ? 'pelegriniBlue' : 'default'}
+          onClick={onDetalheVendedor ? (row) => {
+            onDetalheVendedor(row, ranking.rows.find(({ codigo }) => codigo === row.codigo)?.ranking ?? 0);
+          } : undefined}
+        />
+      </section>
+
+      <section ref={rankingRef} className="dashboard-frame dashboard-quick-ranking" id="dashboard-quick-ranking" aria-label="Metas por vendedor">
+        <header className="dashboard-panel-heading">
+          <h2><Trophy aria-hidden="true" /> Metas por vendedor</h2>
+          <div className="dashboard-ranking-actions">
+            {teamFilter && (
+              <Button type="button" variant="ghost" size="sm" className="h-7 gap-1 px-2 text-xs" onClick={() => setTeamFilter(null)}>
+                Todos <X aria-hidden="true" className="size-3" />
+              </Button>
+            )}
+            {ranking.rows.length > 0 && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-7 gap-1.5 px-2 text-xs"
+                onClick={() => {
+                  rankingChartRef.current?.focus({ preventScroll: true });
+                  rankingChartRef.current?.scrollIntoView({ block: 'nearest', behavior: reduceMotion ? 'auto' : 'smooth' });
+                }}
+              >
+                <BarChart3 aria-hidden="true" className="size-3.5" /> Ir para o gráfico
+              </Button>
+            )}
+          </div>
+        </header>
+        {rankingRows.length === 0 ? (
+          <p className="dashboard-analytics-empty">{teamFilter ? 'Nenhum vendedor nesta situação.' : 'Sem vendas ou metas no período.'}</p>
+        ) : (
+          <>
+            <div className="dashboard-quick-row dashboard-quick-header" aria-hidden="true">
+              <span />
+              <span>Vendedor</span>
+              <span className="dashboard-quick-bar" title="Escala de 0% a 120%. A marca indica 100% da meta.">Ritmo da meta</span>
+              <span className="dashboard-quick-value">Faturado</span>
+              <span className="dashboard-quick-percent">% Meta</span>
+              <span className="dashboard-quick-balance">Saldo da meta</span>
+            </div>
+            <ol className="dashboard-quick-list" aria-label={teamFilter === 'abaixo' ? 'Vendedores por menor atingimento' : 'Vendedores por faturamento'}>
+            {rankingRows.map((vendedor) => {
+              const barValue = (Math.max(0, Math.min(vendedor.percent ?? 0, QUICK_GOAL_SCALE)) / QUICK_GOAL_SCALE) * 100;
+              const goalDescription = vendedor.percent === null || vendedor.balance === null
+                ? 'Sem meta cadastrada.'
+                : `${formatPercent(vendedor.percent)} da meta. Saldo de ${formatCurrency(vendedor.balance, true)}.`;
+              return (
+                <li key={vendedor.codigo}>
+                  <ParticipationRow
+                    className="dashboard-quick-row"
+                    type={onDetalheVendedor ? 'button' : undefined}
+                    aria-label={onDetalheVendedor ? `Ver detalhes de ${vendedor.nome} no ranking` : undefined}
+                    aria-description={onDetalheVendedor ? `${formatCurrency(vendedor.mes)} faturados. ${goalDescription}` : undefined}
+                    onClick={onDetalheVendedor ? () => onDetalheVendedor(vendedor._row, vendedor.ranking) : undefined}
+                  >
+                    <span className="dashboard-quick-position" data-leading={vendedor.ranking <= 3}>{vendedor.ranking}</span>
+                    <span className="dashboard-quick-name" title={vendedor.nome}>{vendedor.nome}</span>
+                    <span className="dashboard-quick-bar dashboard-quick-track" aria-hidden="true" data-goal-tone={vendedor.status}>
+                      {vendedor.percent !== null && <span style={{ width: `${barValue}%` }} />}
+                    </span>
+                    <strong className="dashboard-quick-value">{formatCurrency(vendedor.mes)}</strong>
+                    <span className="dashboard-quick-percent" data-goal-tone={vendedor.status} title={vendedor.percent === null ? 'Sem meta cadastrada' : 'Atingimento da meta'}>
+                      {vendedor.percent === null ? '—' : formatPercent(vendedor.percent)}
+                    </span>
+                    <span className="dashboard-quick-balance" data-goal-tone={vendedor.status}>
+                      {vendedor.balance === null ? '—' : formatCurrency(vendedor.balance, true)}
+                    </span>
+                    {onDetalheVendedor && <ArrowUpRight className="dashboard-quick-link" aria-hidden="true" />}
+                  </ParticipationRow>
+                </li>
+              );
+            })}
+            </ol>
+          </>
+        )}
+      </section>
+      <DashboardTeamGoals
+        counts={ranking.counts}
+        selected={teamFilter}
+        onSelect={handleTeamFilter}
       />
 
-      <Card className="dashboard-overview-panel commercial-dashboard-panel commercial-chart-frame flex min-h-0 min-w-0 flex-col border-border/70 bg-card shadow-none">
-        <Tabs defaultValue="evolucao" className="flex min-h-0 flex-1 flex-col">
-          <TabsList aria-label="Análises da visão geral" className="dashboard-overview-views">
-            <TabsTrigger value="evolucao">
-              <TrendingUp aria-hidden="true" className="size-3.5" />
-              Evolução
-            </TabsTrigger>
-            <TabsTrigger value="participacao">
-              <Percent aria-hidden="true" className="size-3.5" />
-              Participação
-            </TabsTrigger>
-            <TabsTrigger value="mapa">
-              <CalendarDays aria-hidden="true" className="size-3.5" />
-              Mapa diário
-            </TabsTrigger>
-          </TabsList>
+      <section aria-label="Análise do faturamento" className="dashboard-frame dashboard-overview-panel commercial-dashboard-panel commercial-chart-frame">
+        <Tabs value={analysisView} onValueChange={(value) => setAnalysisView(value as keyof typeof analysisTitles)} className="flex min-h-0 flex-1 flex-col">
+          <div className="dashboard-panel-heading dashboard-overview-chart-heading">
+            <div className="dashboard-chart-name">
+              <h2><ChartNoAxesCombined aria-hidden="true" /> {analysisTitles[analysisView]}</h2>
+              <span>
+                {analysisView === 'participacao' ? periodLabel : monthLabel}
+                {analysisView === 'evolucao' && pedidosMes.length > 0 && <strong> · {formatCurrency(dadosAcumulado[diaHoje - 1]?.realizado ?? 0)}</strong>}
+              </span>
+            </div>
+            <TabsList aria-label="Análises da visão geral" className="dashboard-overview-views">
+              <TabsTrigger value="evolucao">
+                <TrendingUp aria-hidden="true" className="size-3.5" />
+                Evolução
+              </TabsTrigger>
+              <TabsTrigger value="participacao">
+                <Percent aria-hidden="true" className="size-3.5" />
+                Participação
+              </TabsTrigger>
+              <TabsTrigger value="mapa">
+                <CalendarDays aria-hidden="true" className="size-3.5" />
+                Mapa diário
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
           <TabsContent value="evolucao" className="dashboard-overview-view mt-0" aria-label="Evolução do faturamento e da meta acumulada">
             <div className="min-h-0 min-w-0 flex-1">
@@ -400,20 +534,25 @@ export function VisaoGeralRapida1004<TVendedor extends VendedorVisaoGeral>({
                   accessibilityLayer
                 >
                   <defs>
-                    <linearGradient id="gradRealizado" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.2} />
+                    <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.24} />
                       <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0.01} />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.65} />
+                  <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.7} />
                   <XAxis
                     dataKey="label"
                     height={20}
                     minTickGap={18}
+                    axisLine={false}
+                    tickLine={false}
                     tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
                   />
                   <YAxis
                     tickCount={4}
+                    width={54}
+                    axisLine={false}
+                    tickLine={false}
                     tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
                     tickFormatter={formatCompactNumber}
                   />
@@ -436,10 +575,10 @@ export function VisaoGeralRapida1004<TVendedor extends VendedorVisaoGeral>({
                     name="Realizado"
                     stroke="hsl(var(--primary))"
                     strokeWidth={2.5}
-                    fill="url(#gradRealizado)"
+                    fill={`url(#${gradientId})`}
                     activeDot={{ r: 4, strokeWidth: 2 }}
                     isAnimationActive={!reduceMotion}
-                    animationDuration={450}
+                    animationDuration={220}
                   />
                   <Line
                     type="monotone"
@@ -450,7 +589,7 @@ export function VisaoGeralRapida1004<TVendedor extends VendedorVisaoGeral>({
                     strokeDasharray="6 4"
                     dot={false}
                     isAnimationActive={!reduceMotion}
-                    animationDuration={450}
+                    animationDuration={220}
                   />
                   {isMesAtual && (
                     <ReferenceLine
@@ -565,7 +704,7 @@ export function VisaoGeralRapida1004<TVendedor extends VendedorVisaoGeral>({
             </div>
           </TabsContent>
         </Tabs>
-      </Card>
+      </section>
     </div>
   );
 }

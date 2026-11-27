@@ -1,0 +1,111 @@
+@layer base {
+  :root {
+    color-scheme: light;
+    --pelegrini-panel-radius: 0.5rem;
+    --pelegrini-control-radius: 0.375rem;
+    --pelegrini-motion: 180ms;
+    --pelegrini-ease: cubic-bezier(0.2, 0.65, 0.3, 1);
+    --pelegrini-overlay-shadow: 0 6px 20px rgb(0 0 0 / 0.16);
+  }
+
+  :root.dark {
+    color-scheme: dark;
+    --pelegrini-overlay-shadow: 0 8px 24px rgb(0 0 0 / 0.28);
+  }
+
+  :where(button, a[href], input, select, textarea, summary, [tabindex]):focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 2px;
+  }
+}
+
+@layer components {
+  .pelegrini-panel {
+    border-radius: var(--pelegrini-panel-radius);
+    border-color: hsl(var(--border));
+    background-color: hsl(var(--card));
+    box-shadow: none;
+  }
+
+  .pelegrini-panel[data-interactive='true'] {
+    transition: background-color var(--pelegrini-motion) var(--pelegrini-ease),
+      border-color var(--pelegrini-motion) var(--pelegrini-ease);
+  }
+
+  .pelegrini-panel[data-interactive='true']:hover {
+    border-color: hsl(var(--enterprise-border-strong));
+    background-color: hsl(var(--enterprise-row-hover));
+  }
+
+  .pelegrini-metric-label {
+    color: hsl(var(--muted-foreground));
+    font-size: 0.6875rem;
+    font-weight: 650;
+    letter-spacing: 0.045em;
+    line-height: 1rem;
+    text-transform: uppercase;
+  }
+
+  .pelegrini-metric-value {
+    font-variant-numeric: tabular-nums;
+    font-weight: 720;
+    overflow-wrap: anywhere;
+  }
+
+  .pelegrini-table :where(thead) {
+    background-color: hsl(var(--muted));
+  }
+
+  .pelegrini-table :where(tbody tr) {
+    transition: background-color var(--pelegrini-motion) var(--pelegrini-ease);
+  }
+
+  .pelegrini-table :where(tbody tr):is(:hover, :focus-within) {
+    background-color: hsl(var(--enterprise-row-hover));
+  }
+
+  .pelegrini-table :where(tbody tr[data-attention='true']) {
+    background-image: linear-gradient(hsl(var(--destructive) / 0.045), hsl(var(--destructive) / 0.045));
+  }
+
+  .pelegrini-overlay-surface {
+    border-radius: var(--pelegrini-panel-radius);
+    border-color: hsl(var(--enterprise-border-strong));
+    background-color: hsl(var(--popover));
+    color: hsl(var(--popover-foreground));
+    box-shadow: var(--pelegrini-overlay-shadow);
+  }
+
+  .pelegrini-disclosure[data-state='open'],
+  .pelegrini-disclosure[open] > .pelegrini-disclosure-content,
+  .pelegrini-modal[data-state='open'] {
+    animation: pelegrini-surface-in var(--pelegrini-motion) var(--pelegrini-ease) both;
+  }
+
+  .pelegrini-modal[data-state='closed'] {
+    animation: pelegrini-surface-out 150ms ease-in both;
+  }
+}
+
+.recharts-cartesian-axis-tick-value {
+  fill: hsl(var(--muted-foreground));
+}
+
+@keyframes pelegrini-surface-in {
+  from { opacity: 0; translate: 0 0.3rem; }
+  to { opacity: 1; translate: 0 0; }
+}
+
+@keyframes pelegrini-surface-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

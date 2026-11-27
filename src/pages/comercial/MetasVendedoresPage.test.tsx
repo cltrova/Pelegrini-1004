@@ -187,6 +187,18 @@ describe('MetasVendedoresPage commercial dashboard', () => {
     expect(vi.mocked(useComercialData).mock.lastCall?.[0]?.anos).toEqual(['2025', '2026']);
   });
 
+  it.each(['Detalhes', 'Ranking', 'Comparativos'])('mantém o filtro à direita das abas em %s', async (name) => {
+    render(<MetasVendedoresPage />);
+
+    const dashboard = await screen.findByRole('tablist', { name: 'Dashboard comercial' });
+    fireEvent.mouseDown(within(dashboard).getByRole('tab', { name }), { button: 0 });
+
+    const filter = await screen.findByRole('button', { name: 'Expandir filtros' });
+    expect(dashboard.parentElement?.parentElement).toContainElement(filter);
+    fireEvent.click(filter);
+    expect(await screen.findByRole('dialog', { name: 'Filtros comerciais' })).toBeVisible();
+  });
+
   it('bloqueia a visao resolvida de transmissao enquanto chevrolet esta pendente', async () => {
     const { rerender } = render(<MetasVendedoresPage />);
 
@@ -221,13 +233,13 @@ describe('MetasVendedoresPage commercial dashboard', () => {
     expect(getMesesDoFiltro(filters)).toEqual(new Set(['2026-06', '2026-07', '2026-08', '2026-09']));
   });
 
-  it('deixa a neutralizacao da sombra do trigger ativo a cargo do shell comercial', async () => {
+  it('destaca a aba ativa e mantém o indicador de foco pelo teclado', async () => {
     render(<MetasVendedoresPage />);
 
     const activeTab = await screen.findByRole('tab', { name: 'Visão geral' });
-    expect(activeTab).toHaveAttribute('data-state', 'active');
-    expect(activeTab).not.toHaveClass('data-[state=active]:shadow-none');
-    expect(activeTab).toHaveClass('data-[state=active]:shadow-sm');
+    expect(activeTab).toHaveAttribute('aria-selected', 'true');
+    expect(activeTab).toHaveClass('data-[state=active]:bg-primary', 'focus-visible:ring-inset', 'focus-visible:ring-ring');
+    expect(activeTab).not.toHaveClass('data-[state=active]:shadow-sm');
   });
 
   it('percorre disabled, loading e dados sem perder o conteudo no refetch', async () => {
@@ -448,8 +460,13 @@ describe('MetasVendedoresPage commercial dashboard', () => {
       }],
     } as ReturnType<typeof useComercialData>);
 
-    const { container } = render(<MetasVendedoresPage />);
-
+    render(<MetasVendedoresPage />);
+    const scenarios = await screen.findByRole('tab', { name: 'Cenários' });
+    const summary = screen.getByRole('region', { name: 'Resumo de comparativos' });
+    expect(within(summary).getByRole('heading', { name: 'Faturado no período' })).toBeVisible();
+    expect(scenarios).toHaveAttribute('aria-selected', 'false');
+    fireEvent.mouseDown(scenarios, { button: 0 });
+    expect(summary).toBeVisible();
     const section = (await screen.findByText(/Se mantiver ritmo atual/)).closest('.commercial-dashboard-panel');
     expect(section).not.toBeNull();
     expect(screen.queryByText('Projeções por Cenário - Vai Bater a Meta?')).not.toBeInTheDocument();
@@ -464,6 +481,26 @@ describe('MetasVendedoresPage commercial dashboard', () => {
 
     await waitFor(() => expect(screen.queryByTestId('enterprise-filter-bar')).not.toBeInTheDocument());
     expect(await screen.findByRole('tab', { name: 'Metas' })).toHaveAttribute('data-state', 'active');
+    expect(await screen.findByRole('heading', { name: 'Nenhum dado encontrado para o período' }, { timeout: 10000 })).toBeVisible();
+    expect(screen.getByRole('heading', { name: 'Metas diárias' })).toBeVisible();
+    const trigger = screen.getByRole('button', { name: 'Expandir filtros' });
+    expect(screen.getByRole('tablist', { name: 'Dashboard comercial' }).parentElement?.parentElement).toContainElement(trigger);
+    fireEvent.click(trigger);
+    expect(await screen.findByRole('dialog', { name: 'Filtros comerciais' })).toBeVisible();
+  }, 15000);
+
+  it('abre os filtros específicos de Campanhas à direita das abas', async () => {
+    sessionStorage.setItem('comercial:metas:tab', 'campanhas');
+    render(<MetasVendedoresPage />);
+
+    const filter = await screen.findByRole('button', { name: 'Expandir filtros' }, { timeout: 5000 });
+    expect(screen.getByRole('heading', { name: 'Campanhas comerciais' })).toBeVisible();
+    expect(screen.getAllByRole('button', { name: 'Nova campanha' }).length).toBeGreaterThan(0);
+    expect(screen.getByRole('tablist', { name: 'Dashboard comercial' }).parentElement?.parentElement).toContainElement(filter);
+    fireEvent.click(filter);
+    const dialog = await screen.findByRole('dialog', { name: 'Filtros comerciais' });
+    expect(within(dialog).getByRole('combobox', { name: 'Status da campanha' })).toBeVisible();
+    expect(within(dialog).getByRole('button', { name: 'Todas as marcas' })).toBeVisible();
   });
 
   it('falls back to the overview when the removed analyses tab was persisted', async () => {
@@ -474,12 +511,13 @@ describe('MetasVendedoresPage commercial dashboard', () => {
     expect(screen.queryByRole('tab', { name: 'Análises' })).not.toBeInTheDocument();
   });
 
-  it('removes redundant ranking headings', async () => {
+  it('apresenta o gráfico junto à tabela do ranking', async () => {
+    sessionStorage.setItem('comercial:metas:tab', 'ranking');
     render(<MetasVendedoresPage />);
 
-    fireEvent.click(await screen.findByRole('tab', { name: 'Ranking' }));
-
-    expect(screen.queryByText('Ranking de Vendedores')).not.toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Desempenho por vendedor' })).toBeVisible();
+    expect(within(screen.getByRole('region', { name: 'Gráfico do ranking' })).getByRole('button', { name: 'Faturamento' })).toBeVisible();
+    expect(within(screen.getByRole('region', { name: 'Tabela do ranking' })).getByRole('table')).toBeVisible();
     expect(screen.queryByText('Performance por vendedor ordenada por valor líquido')).not.toBeInTheDocument();
   });
 });
@@ -729,6 +767,7 @@ describe('PremiumMetasView management signals', () => {
   it('limits both monthly panels and totals to the applied period', () => {
     render(
       <PremiumMetasView
+        compactDashboard
         vendedoresComMeta={[{
           codigo: 98,
           nome: 'DANIEL',
@@ -763,6 +802,13 @@ describe('PremiumMetasView management signals', () => {
 
     const totalRealizado = screen.getByText('Total Realizado').parentElement!;
     expect(totalRealizado).toHaveTextContent('R$ 1.000,00');
+    expect(screen.queryByRole('tablist', { name: 'Detalhes do Dashboard' })).not.toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Resumo da meta' })).toBeVisible();
+    expect(screen.getByRole('heading', { name: 'Média Mensal por Vendedor' })).toBeVisible();
+    expect(screen.getByRole('heading', { name: 'Média Mensal Geral' })).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: 'Mensal' }));
+    expect(screen.getByRole('heading', { name: 'Realizado vs Meta Mensal' })).toBeVisible();
+    expect(screen.getByRole('heading', { name: 'Média Mensal Geral' })).toBeVisible();
     expect(screen.getByText('Junho')).toBeInTheDocument();
     expect(screen.queryByText('Maio')).not.toBeInTheDocument();
     expect(screen.queryByText('R$ 8.000,00')).not.toBeInTheDocument();

@@ -42,9 +42,9 @@ describe('financial square visual scope', () => {
   });
 
   it('defines compact financial geometry and motion tokens', () => {
-    expect(css).toContain('--financial-panel-radius: 2px');
-    expect(css).toContain('--financial-control-radius: 4px');
-    expect(css).toMatch(/--financial-motion-fast:\s*(?:120|1[3-7]0|180)ms/);
+    expect(css).toContain('--financial-panel-radius: var(--pelegrini-panel-radius)');
+    expect(css).toContain('--financial-control-radius: var(--pelegrini-control-radius)');
+    expect(css).toContain('--financial-motion-fast: var(--pelegrini-motion)');
     expect(css).toContain('--financial-motion-sidebar: 220ms');
   });
 

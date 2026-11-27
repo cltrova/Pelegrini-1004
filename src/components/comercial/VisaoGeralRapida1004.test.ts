@@ -1,5 +1,5 @@
 import React from 'react';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { getCorParticipacaoVendedor, VisaoGeralRapida1004 } from './VisaoGeralRapida1004';
 
@@ -47,9 +47,6 @@ describe('VisaoGeralRapida1004 dashboard structure', () => {
       totalDevolucoes: 0,
       qtdPedidos: 1,
       clientesAtendidos: 1,
-      acimaMeta: 0,
-      proximoMeta: 0,
-      abaixoMeta: 1,
     },
     pedidos: [{
       vendedor_codigo: 1,
@@ -68,8 +65,43 @@ describe('VisaoGeralRapida1004 dashboard structure', () => {
     const { container } = render(React.createElement(VisaoGeralRapida1004, props));
 
     expect(screen.getByLabelText('Indicadores do dashboard comercial')).toHaveClass('commercial-metric-strip');
+    expect(within(screen.getByRole('region', { name: 'Gráfico de ranking de vendedores' })).getByText('Ranking de vendedores')).toBeVisible();
     expect(container.querySelector('.commercial-dashboard-panel')).toBeInTheDocument();
     expect(container.querySelector('.commercial-chart-frame')).toBeInTheDocument();
+  });
+
+  it('filtra o ranking pela situação da meta e abre o vendedor da lista', () => {
+    const onDetalheVendedor = vi.fn();
+    const ana = { codigo: 2, nome: 'ANA', faturamentoMesAtual: 3200, metaMensal: 3000 };
+    render(React.createElement(VisaoGeralRapida1004, {
+      ...props,
+      vendedoresComMeta: [...props.vendedoresComMeta, ana],
+      kpisGerais: { ...props.kpisGerais, totalFaturado: 4200, totalMeta: 5000 },
+      onDetalheVendedor,
+    }));
+
+    const ranking = within(screen.getByRole('region', { name: 'Metas por vendedor' }));
+    expect(ranking.getByText('R$ 3.200,00')).toBeVisible();
+    const risk = screen.getByRole('button', { name: /Abaixo da meta/ });
+    fireEvent.click(risk);
+    expect(risk).toHaveAttribute('aria-pressed', 'true');
+    expect(ranking.queryByText('ANA')).not.toBeInTheDocument();
+    fireEvent.click(ranking.getByRole('button', { name: 'Ver detalhes de MARIA no ranking' }));
+    expect(onDetalheVendedor).toHaveBeenCalledWith(props.vendedoresComMeta[0], 2);
+    fireEvent.click(risk);
+    expect(ranking.getByText('ANA')).toBeInTheDocument();
+  });
+
+  it('cobre a ausência de meta e de vendedores sem exibir percentuais fictícios', () => {
+    render(React.createElement(VisaoGeralRapida1004, {
+      ...props,
+      vendedoresComMeta: [],
+      pedidos: [],
+      kpisGerais: {},
+    }));
+
+    expect(within(screen.getByRole('region', { name: 'Ritmo da meta' })).getByText('Sem meta cadastrada')).toBeVisible();
+    expect(within(screen.getByRole('region', { name: 'Equipe por meta' })).getByText('Nenhum vendedor com meta no período.')).toBeVisible();
   });
 
   it('fecha o detalhe do heatmap ao retirar o mouse', () => {

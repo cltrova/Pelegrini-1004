@@ -1,18 +1,22 @@
 import { useMemo, useState, useCallback, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useComercialData } from '@/hooks/useComercialData';
 import { useComercialProdutos } from '@/hooks/useComercialProdutos';
 
 import { useEmpresaAtiva } from '@/hooks/useEmpresaAtiva';
 import { useFilialSelecionada } from '@/contexts/FilialSelecionadaContext';
 import { LoadingState } from '@/components/common/LoadingState';
-import { ErrorState } from '@/components/common/ErrorState';
 import { VendedorMetaDiariaCard } from '@/components/comercial/VendedorMetaDiariaCard';
-import { AlertTriangle, BarChart3, Calendar, CheckCircle2, DollarSign, RefreshCw, Target, TrendingDown, TrendingUp } from 'lucide-react';
+import { AlertTriangle, BarChart3, Calendar, CheckCircle2, DollarSign, RefreshCw, Target, TrendingDown, TrendingUp, UsersRound } from 'lucide-react';
 import { getDiasUteisNoMes, getDiasUteisDecorridos } from '@/types/comercial';
 import type { VendedorMetaDiaria, ComercialFilters as ComercialFiltersType } from '@/types/comercial';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { CollapsibleFilterBar } from '@/components/common/CollapsibleFilterBar';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { EnterpriseComercialFilters } from '@/components/comercial/EnterpriseComercialFilters';
+import { ComercialDataViewport, ComercialMetricStrip, type ComercialMetric } from '@/components/comercial/compact';
+import { DashboardExecutiveSummary, DashboardMeter, DashboardPageHeading, DashboardPanelHeading, formatDashboardPeriod } from '@/components/comercial/DashboardOverviewManagement';
 import { 
   ComercialFilters, 
   getDefaultFiltersForEmpresa, 
@@ -20,7 +24,7 @@ import {
   countActiveFilters 
 } from '@/components/comercial/ComercialFilters';
 import { AnaliseDiariaLayout } from '@/components/comercial/AnaliseDiariaLayout';
-import { formatCurrency, formatPercent } from '@/utils/formatters';
+import { formatCurrency, formatPercent, formatPeriod } from '@/utils/formatters';
 import { getFeriadosComerciaisMeta } from '@/utils/feriadosComerciais';
 import { cn } from '@/lib/utils';
 
@@ -43,7 +47,8 @@ const META_PADRAO = 0;
 // Anos disponíveis para seleção
 const ANOS_DISPONIVEIS = ['2023', '2024', '2025', '2026'];
 
-export default function MetasDiariasPage() {
+export default function MetasDiariasPage({ dashboardFilterTarget }: { dashboardFilterTarget?: HTMLElement | null } = {}) {
+  const compactDashboard = dashboardFilterTarget !== undefined;
   const { empresa, codEmpresaAtiva, isLoading: isLoadingEmpresa } = useEmpresaAtiva();
   const { filialAtiva } = useFilialSelecionada();
   const [initialized, setInitialized] = useState(false);
@@ -313,19 +318,79 @@ export default function MetasDiariasPage() {
     );
   }
 
-  if (!rankingVendedores.length) {
-    return (
-      <div className="enterprise-page-shell items-center justify-center text-center">
-        <Target className="h-16 w-16 text-muted-foreground mb-4" />
-        <h2 className="text-xl font-semibold mb-2">Nenhum dado encontrado para o período</h2>
-        <p className="text-muted-foreground">Selecione um período diferente ou verifique os filtros.</p>
-      </div>
-    );
-  }
+  const dashboardFilter = dashboardFilterTarget && createPortal(
+    <EnterpriseComercialFilters
+      pendingFilters={pendingFilters ?? getDefaultFiltersForEmpresa(codEmpresaAtiva, periodoDisponivel)}
+      appliedFilters={appliedFilters ?? getDefaultFiltersForEmpresa(codEmpresaAtiva, periodoDisponivel)}
+      onPendingFiltersChange={setPendingFilters}
+      onApply={handleBuscar}
+      onClear={handleClearFilters}
+      hasChanges={hasChanges}
+      isApplying={isCompanyDataPending}
+      anos={ANOS_DISPONIVEIS}
+      vendedores={vendedoresDisponiveis}
+      showVendedorFilter
+      useNativeControls
+      presentation="popover"
+      isOpen={filtersOpen}
+      onOpenChange={setFiltersOpen}
+    />,
+    dashboardFilterTarget,
+  );
+
+  const resumoMetrics: Array<ComercialMetric & { icon: typeof Target }> = [
+    {
+      label: 'Realizado',
+      value: formatCurrency(resumoMetas1004.totalRealizado),
+      context: 'Faturado no período',
+      icon: DollarSign,
+    },
+    {
+      label: 'Meta até hoje',
+      value: formatCurrency(resumoMetas1004.totalEsperado),
+      context: `${diasUteisDecorridos} de ${diasUteisNoMes} dias úteis`,
+      icon: Target,
+    },
+    {
+      label: 'Diferença',
+      value: formatCurrency(resumoMetas1004.diferenca, true),
+      context: resumoMetas1004.diferenca >= 0 ? 'Acima do esperado' : 'Abaixo do esperado',
+      icon: resumoMetas1004.diferenca >= 0 ? TrendingUp : TrendingDown,
+      tone: resumoMetas1004.diferenca >= 0 ? 'success' : 'danger',
+    },
+    {
+      label: 'Ritmo geral',
+      value: formatPercent(resumoMetas1004.percentual),
+      context: `Meta mensal ${formatCurrency(resumoMetas1004.totalMensal)}`,
+      icon: BarChart3,
+      tone: resumoMetas1004.percentual >= 100 ? 'success' : resumoMetas1004.percentual >= 80 ? 'warning' : 'danger',
+    },
+    {
+      label: 'No caminho',
+      value: `${resumoMetas1004.acima + resumoMetas1004.proximo}/${resumoMetas1004.totalVendedores}`,
+      context: `${resumoMetas1004.acima} acima, ${resumoMetas1004.proximo} próximos`,
+      icon: CheckCircle2,
+      tone: 'success',
+    },
+    {
+      label: 'Atenção',
+      value: String(resumoMetas1004.abaixo),
+      context: 'Abaixo do ritmo esperado',
+      icon: AlertTriangle,
+      tone: 'warning',
+    },
+  ];
 
   return (
-    <div className="enterprise-page-shell">
-      {/* Barra de Filtros */}
+    <div className={compactDashboard ? 'dashboard-management-tab' : 'enterprise-page-shell'}>
+      {dashboardFilter}
+      {compactDashboard && (
+        <DashboardPageHeading
+          title="Metas diárias"
+          period={formatDashboardPeriod(appliedFilters?.periodo) ?? formatPeriod(`${anoAtual}-${String(mesAtual + 1).padStart(2, '0')}`)}
+        />
+      )}
+      {!compactDashboard && rankingVendedores.length > 0 && (
       <CollapsibleFilterBar
         title="Filtros"
         summary={appliedFilters ? getComercialFiltersSummary(appliedFilters, vendedoresDisponiveis) : []}
@@ -344,6 +409,92 @@ export default function MetasDiariasPage() {
           showVendedorFilter
         />
       </CollapsibleFilterBar>
+      )}
+
+      {rankingVendedores.length === 0 ? (
+        <div className="flex flex-1 flex-col items-center justify-center p-4 text-center">
+          <Target className="mb-3 size-9 text-muted-foreground" aria-hidden="true" />
+          <h2 className="mb-1 text-base font-semibold">Nenhum dado encontrado para o período</h2>
+          <p className="text-sm text-muted-foreground">Selecione um período diferente ou verifique os filtros.</p>
+        </div>
+      ) : compactDashboard ? (
+        <>
+          <DashboardExecutiveSummary
+            label="Resumo das metas diárias"
+            primary={{
+              label: 'Realizado no período',
+              icon: DollarSign,
+              value: formatCurrency(resumoMetas1004.totalRealizado),
+              context: 'Meta diária indisponível para o período.',
+              readings: [
+                { label: 'Meta até hoje', value: formatCurrency(resumoMetas1004.totalEsperado) },
+                { label: 'Diferença', value: formatCurrency(resumoMetas1004.diferenca, true), tone: resumoMetas1004.diferenca >= 0 ? 'atingida' : 'abaixo' },
+              ],
+            }}
+            secondary={{
+              label: 'No caminho da meta',
+              icon: Target,
+              value: `${resumoMetas1004.acima + resumoMetas1004.proximo} de ${resumoMetas1004.totalVendedores}`,
+              readings: [
+                { label: 'No ritmo', value: resumoMetas1004.acima, tone: 'atingida' },
+                { label: 'Próximos', value: resumoMetas1004.proximo, tone: 'proxima' },
+              ],
+            }}
+            progress={resumoMetas1004.totalEsperado > 0 ? {
+              percent: resumoMetas1004.percentual,
+              context: 'da meta até hoje',
+              tone: resumoMetas1004.percentual >= 100 ? 'atingida' : resumoMetas1004.percentual >= 80 ? 'proxima' : 'abaixo',
+            } : undefined}
+          />
+          <ComercialMetricStrip
+            ariaLabel="Indicadores de metas diárias"
+            className="dashboard-layout-metrics dashboard-layout-metrics-3"
+            metrics={[
+              { label: 'Meta mensal', value: formatCurrency(resumoMetas1004.totalMensal) },
+              { label: 'Dias úteis', value: `${diasUteisDecorridos} de ${diasUteisNoMes}` },
+              { label: 'Em atenção', value: resumoMetas1004.abaixo, tone: resumoMetas1004.abaixo > 0 ? 'warning' : 'neutral' },
+            ]}
+          />
+          <section className="dashboard-frame dashboard-meta-panel" aria-label="Metas por vendedor">
+            <DashboardPanelHeading title="Metas por vendedor" icon={UsersRound} />
+            <div className="dashboard-meta-header" aria-hidden="true">
+              <div className="dashboard-meta-vendor">
+                <span>Vendedor</span>
+                <span>Realizado</span>
+                <span className="dashboard-meta-track">Meta até hoje</span>
+                <span>Atingimento</span>
+              </div>
+            </div>
+            <ComercialDataViewport ariaLabel="Lista de metas diárias" className="dashboard-meta-list">
+              <Accordion type="single" collapsible>
+                {rankingVendedores.map((vendedor) => (
+                  <AccordionItem key={String(vendedor.codigo)} value={String(vendedor.codigo)}>
+                    <AccordionTrigger className="dashboard-meta-trigger min-w-0 gap-2 text-left text-xs hover:no-underline">
+                      <span className="dashboard-meta-vendor">
+                        <span className="dashboard-meta-name" title={vendedor.nome}>{vendedor.nome}</span>
+                        <span>{formatCurrency(vendedor.metaReal)}</span>
+                        <span className="dashboard-meta-track" aria-hidden="true">
+                          {vendedor.metaEsperada > 0 && <DashboardMeter percent={vendedor.percentualAtingimento} label="" />}
+                        </span>
+                        <span
+                          className="dashboard-toned-number"
+                          data-goal-tone={vendedor.metaEsperada > 0 ? vendedor.status === 'acima' ? 'atingida' : vendedor.status === 'proximo' ? 'proxima' : 'abaixo' : undefined}
+                        >
+                          {vendedor.metaEsperada > 0 ? formatPercent(vendedor.percentualAtingimento) : '—'}
+                        </span>
+                      </span>
+                    </AccordionTrigger>
+                    <AccordionContent className="dashboard-meta-vendor-detail px-2 pb-2">
+                      <VendedorMetaDiariaCard vendedor={vendedor} compact1004={isEmpresa1004} />
+                    </AccordionContent>
+                  </AccordionItem>
+                ))}
+              </Accordion>
+            </ComercialDataViewport>
+          </section>
+        </>
+      ) : (
+        <>
 
       <div className="flex shrink-0 justify-end">
         <Badge variant="outline" className="text-sm px-4 py-2">
@@ -358,57 +509,14 @@ export default function MetasDiariasPage() {
       {isEmpresa1004 && (
         <div className="rounded-lg border border-border/60 bg-card/55 p-4">
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-6">
-            {[
-              {
-                label: 'Realizado',
-                value: formatCurrency(resumoMetas1004.totalRealizado),
-                helper: 'faturado no período',
-                icon: DollarSign,
-                tone: 'text-sky-300',
-              },
-              {
-                label: 'Meta até hoje',
-                value: formatCurrency(resumoMetas1004.totalEsperado),
-                helper: `${diasUteisDecorridos} de ${diasUteisNoMes} dias úteis`,
-                icon: Target,
-                tone: 'text-blue-300',
-              },
-              {
-                label: 'Diferença',
-                value: formatCurrency(resumoMetas1004.diferenca, true),
-                helper: resumoMetas1004.diferenca >= 0 ? 'acima do esperado' : 'abaixo do esperado',
-                icon: resumoMetas1004.diferenca >= 0 ? TrendingUp : TrendingDown,
-                tone: resumoMetas1004.diferenca >= 0 ? 'text-emerald-300' : 'text-red-300',
-              },
-              {
-                label: 'Ritmo geral',
-                value: formatPercent(resumoMetas1004.percentual),
-                helper: `meta mensal ${formatCurrency(resumoMetas1004.totalMensal)}`,
-                icon: BarChart3,
-                tone: resumoMetas1004.percentual >= 100 ? 'text-emerald-300' : resumoMetas1004.percentual >= 80 ? 'text-amber-300' : 'text-red-300',
-              },
-              {
-                label: 'No caminho',
-                value: `${resumoMetas1004.acima + resumoMetas1004.proximo}/${resumoMetas1004.totalVendedores}`,
-                helper: `${resumoMetas1004.acima} acima, ${resumoMetas1004.proximo} próximos`,
-                icon: CheckCircle2,
-                tone: 'text-emerald-300',
-              },
-              {
-                label: 'Atenção',
-                value: String(resumoMetas1004.abaixo),
-                helper: 'abaixo do ritmo esperado',
-                icon: AlertTriangle,
-                tone: 'text-amber-300',
-              },
-            ].map((item) => (
+            {resumoMetrics.map((item) => (
               <div key={item.label} className="rounded-lg border border-border/50 bg-background/35 px-4 py-3">
                 <div className="mb-2 flex items-center justify-between gap-2">
                   <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">{item.label}</span>
-                  <item.icon className={`h-4 w-4 ${item.tone}`} />
+                  <item.icon className={cn('size-4 text-primary', item.tone === 'success' && 'text-emerald-500', item.tone === 'warning' && 'text-amber-500', item.tone === 'danger' && 'text-destructive')} />
                 </div>
                 <p className="mono-value whitespace-nowrap text-base font-bold tabular-nums text-foreground 2xl:text-lg">{item.value}</p>
-                <p className="mt-1 min-h-8 text-[11px] leading-4 text-muted-foreground">{item.helper}</p>
+                <p className="mt-1 min-h-8 text-[11px] leading-4 text-muted-foreground">{item.context}</p>
               </div>
             ))}
           </div>
@@ -425,6 +533,8 @@ export default function MetasDiariasPage() {
           />
         ))}
       </div>
+        </>
+      )}
     </div>
   );
 }

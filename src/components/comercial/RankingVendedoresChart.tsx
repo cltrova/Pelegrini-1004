@@ -189,7 +189,7 @@ export function RankingVendedoresChart<T>({ data, periodo, onClick, variant = 'd
         </div>
       </CardHeader>
 
-      <CardContent className={cn('relative', isBlue && 'flex min-h-0 flex-1 flex-col px-2.5 pb-2 pt-0')}>
+      <CardContent className={cn('relative', isBlue && 'flex min-h-0 flex-1 flex-col p-0 px-2.5 pb-2')}>
         {enriched.length === 0 ? (
           <div className={cn('text-center text-sm text-muted-foreground', isBlue ? 'grid flex-1 place-items-center' : 'py-16')}>
             Sem dados no período selecionado
@@ -227,7 +227,7 @@ export function RankingVendedoresChart<T>({ data, periodo, onClick, variant = 'd
                 <RTooltip
                   cursor={{ fill: 'hsl(var(--muted) / 0.35)', radius: 8 }}
                   content={<CustomTooltip modo={modo} variant={variant} />}
-                  isAnimationActive={isBlue ? !reduceMotion : undefined}
+                  isAnimationActive={!reduceMotion}
                 />
 
                 {modo === 'meta' && (
@@ -255,8 +255,8 @@ export function RankingVendedoresChart<T>({ data, periodo, onClick, variant = 'd
                   maxBarSize={isBlue ? 80 : undefined}
                   onMouseOver={(d: EnrichedVendedorRow) => setHoverKey(String(d.codigo))}
                   onClick={(d: EnrichedVendedorRow<T>) => onClick?.(d._row)}
-                  animationDuration={isBlue ? 450 : 700}
-                  isAnimationActive={isBlue ? !reduceMotion : undefined}
+                  animationDuration={220}
+                  isAnimationActive={!reduceMotion}
                   cursor={onClick ? 'pointer' : undefined}
                 >
                   {visibleRows.map((v) => {

@@ -292,7 +292,7 @@ export default function VendasPerdidasPage() {
         </>
       )}
 
-      <ComercialDataViewport className="commercial-table-frame">
+      <ComercialDataViewport ariaLabel="Resultados de vendas perdidas" className="commercial-table-frame">
         {!consulta ? (
           <EmptyState
             title="Consulta ainda não realizada"

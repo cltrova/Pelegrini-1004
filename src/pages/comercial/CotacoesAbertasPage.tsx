@@ -154,8 +154,8 @@ export default function CotacoesAbertasPage() {
     () => sortOpenQuotes(filtrarCotacoes(rows, visibleFilters)),
     [rows, visibleFilters],
   );
+  const today = formatDateInput(new Date());
   const kpis = useMemo(() => {
-    const today = formatDateInput(new Date());
     const base = calcularCotacoesKpis(filteredRows, emptyMotivos);
     const tempoMedioEmAberto = filteredRows.length
       ? filteredRows.reduce((total, row) => total + row.diasEmAberto, 0) / filteredRows.length
@@ -166,7 +166,7 @@ export default function CotacoesAbertasPage() {
       tempoMedioEmAberto,
       cotacoesVencidas: filteredRows.filter((row) => row.dataValidade !== null && row.dataValidade < today).length,
     };
-  }, [filteredRows]);
+  }, [filteredRows, today]);
 
   const applyFilters = (filters: CotacoesFiltros) => {
     setAppliedPeriod({ ...pendingPeriod });
@@ -270,7 +270,7 @@ export default function CotacoesAbertasPage() {
         </>
       )}
 
-      <ComercialDataViewport className={showInitialLoading ? 'commercial-table-frame flex flex-col' : 'commercial-table-frame'}>
+      <ComercialDataViewport ariaLabel="Resultados de cotações" className={showInitialLoading ? 'commercial-table-frame flex flex-col' : 'commercial-table-frame'}>
         {!filial && !isLoadingEmpresa ? (
           <EmptyState
             title="Selecione uma filial"
@@ -296,7 +296,7 @@ export default function CotacoesAbertasPage() {
         ) : (
           <div className="min-w-0">
             {filteredRows.length > 0 && <div aria-label="Download da lista" className="flex justify-end border-b border-border px-3 py-2"><Button type="button" variant="outline" size="sm" onClick={exportCurrentRows}><Download aria-hidden="true" className="h-4 w-4" />Baixar lista</Button></div>}
-            <CotacoesTable mode="abertas" rows={filteredRows} motivos={emptyMotivos} onSelectCotacao={selectQuote} />
+            <CotacoesTable mode="abertas" rows={filteredRows} motivos={emptyMotivos} onSelectCotacao={selectQuote} referenceDate={today} />
           </div>
         )}
       </ComercialDataViewport>

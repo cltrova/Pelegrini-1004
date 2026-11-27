@@ -1,5 +1,5 @@
 import { CircleAlert, Clock3, Gauge, Landmark, UserRound } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
+import { EnterpriseBadge } from '@/components/enterprise/EnterpriseBadge';
 import { Progress } from '@/components/ui/progress';
 import {
   Sheet,
@@ -14,7 +14,7 @@ import {
   calcularCotacaoPrioridade,
   consolidarMotivoPerda,
 } from '@/utils/cotacoesComerciais';
-import { formatCurrency, formatInteger } from '@/utils/formatters';
+import { formatCalendarDate, formatCurrency, formatInteger } from '@/utils/formatters';
 
 type MotivosPerdaMap = ReadonlyMap<string, Pick<MotivoPerdaRegistro, 'motivo' | 'observacao'>>;
 
@@ -24,11 +24,6 @@ interface CotacaoDetailDrawerProps {
   mode: CotacaoOrigem;
   cotacao: CotacaoComercial | null;
   motivos: MotivosPerdaMap;
-}
-
-function formatDate(value: string | null): string {
-  const match = String(value ?? '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
-  return match ? `${match[3]}/${match[2]}/${match[1]}` : '--';
 }
 
 export function CotacaoDetailDrawer({ open, onOpenChange, mode, cotacao, motivos }: CotacaoDetailDrawerProps) {
@@ -55,9 +50,9 @@ export function CotacaoDetailDrawer({ open, onOpenChange, mode, cotacao, motivos
                     </p>
                     <p className="mt-1 text-2xl font-semibold tabular-nums">{prioridade.score}/100</p>
                   </div>
-                  <Badge variant={prioridade.nivel === 'quente' ? 'destructive' : prioridade.nivel === 'atencao' ? 'secondary' : 'outline'}>
+                  <EnterpriseBadge tone={prioridade.nivel === 'quente' ? 'negative' : prioridade.nivel === 'atencao' ? 'warning' : 'neutral'}>
                     {prioridade.label}
-                  </Badge>
+                  </EnterpriseBadge>
                 </div>
                 <Progress value={prioridade.score} className="mt-3 h-2" />
                 <p className="mt-2 text-xs text-muted-foreground">{prioridade.descricao}</p>
@@ -80,11 +75,11 @@ export function CotacaoDetailDrawer({ open, onOpenChange, mode, cotacao, motivos
                 </div>
                 <div className="rounded-md border border-border bg-background/50 p-3">
                   <p className="text-xs text-muted-foreground">Emissão</p>
-                  <p className="mt-1 font-semibold tabular-nums">{formatDate(cotacao.dataCotacao)}</p>
+                  <p className="mt-1 font-semibold tabular-nums">{formatCalendarDate(cotacao.dataCotacao)}</p>
                 </div>
                 <div className="rounded-md border border-border bg-background/50 p-3">
                   <p className="text-xs text-muted-foreground">Validade</p>
-                  <p className="mt-1 font-semibold tabular-nums">{formatDate(cotacao.dataValidade)}</p>
+                  <p className="mt-1 font-semibold tabular-nums">{formatCalendarDate(cotacao.dataValidade)}</p>
                 </div>
               </section>
 

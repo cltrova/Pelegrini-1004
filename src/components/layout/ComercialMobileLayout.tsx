@@ -3,8 +3,8 @@
  
  export function ComercialMobileLayout() {
    return (
-    <div data-module-shell="comercial" className="min-h-screen flex flex-col bg-background">
-       <main className="flex-1 overflow-y-auto pb-20">
+    <div data-module-shell="comercial" className="flex h-dvh min-h-0 flex-col bg-background">
+       <main className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain">
          <Outlet />
        </main>
        <ComercialMobileBottomNav />

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useReducedMotion } from 'framer-motion';
 import {
   CalendarRange, ChevronDown, ChevronRight, Download, Filter, RefreshCw,
 } from 'lucide-react';
@@ -16,6 +17,7 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '
 import { Switch } from '@/components/ui/switch';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { cn } from '@/lib/utils';
+import { formatCalendarDate, formatCurrency } from '@/utils/formatters';
 import { useDistributorEvolution, type DistributorEvolutionFilters } from '@/hooks/useDistributorEvolution';
 import { useComercialProdutos } from '@/hooks/useComercialProdutos';
 import {
@@ -41,7 +43,6 @@ const METRICS: Array<{ key: MetricKey; label: string; percent?: boolean }> = [
   { key: 'margem_venda', label: 'Margem', percent: true },
 ];
 
-const money = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 });
 const compactMoney = new Intl.NumberFormat('pt-BR', {
   style: 'currency',
   currency: 'BRL',
@@ -83,16 +84,15 @@ function previewSupports(metric: MetricKey): boolean {
 
 function formatMetric(value: number | null, metric: MetricKey): string {
   if (value === null) return 'Indisponível';
-  return metric === 'margem_venda' ? `${decimal.format(value)}%` : money.format(value);
+  return metric === 'margem_venda' ? `${decimal.format(value)}%` : formatCurrency(value);
 }
 
-function formatCompactMetric(value: number | null, metric: MetricKey): string {
-  if (value === null) return '—';
-  return metric === 'margem_venda' ? `${decimal.format(value)}%` : compactMoney.format(value);
+function formatTableMetric(value: number | null, metric: MetricKey): string {
+  return value === null ? '—' : formatMetric(value, metric);
 }
 
 function formatMoney(value: number | null): string {
-  return value === null ? 'Indisponível' : money.format(value);
+  return value === null ? 'Indisponível' : formatCurrency(value);
 }
 
 function sumComplete(values: Array<number | null | undefined>): number | null {
@@ -104,8 +104,8 @@ function Delta({ value, semantic = true }: { value: number | null; semantic?: bo
   if (value === null) return <span className="text-[10px] text-muted-foreground">sem base</span>;
   return <span className={cn(
     'text-[10px] font-medium tabular-nums',
-    semantic && value > 0 && 'text-emerald-500',
-    semantic && value < 0 && 'text-red-500',
+    semantic && value > 0 && 'text-success',
+    semantic && value < 0 && 'text-destructive',
     !semantic && 'text-muted-foreground',
   )}>{value > 0 ? '+' : ''}{percent.format(value)}</span>;
 }
@@ -119,8 +119,8 @@ function MetricStrip({ summary, preview }: { summary: DistributorMonthSummary; p
   ];
   return <div aria-label="Resumo dos distribuidores" className="grid shrink-0 grid-cols-2 border-b border-border/60 bg-card/35 lg:grid-cols-5">
     {items.map(([label, value]) => <div className="min-w-0 border-r border-border/50 px-3 py-2 last:border-r-0" key={label}>
-      <span className="block text-[10px] uppercase text-muted-foreground">{label}</span>
-      <strong className="block truncate text-sm font-semibold tabular-nums text-foreground">{value}</strong>
+      <span className="pelegrini-metric-label block">{label}</span>
+      <strong className="pelegrini-metric-value block text-sm text-foreground">{value}</strong>
     </div>)}
     <div className="min-w-0 px-3 py-2">
       <span className="block text-[10px] uppercase text-muted-foreground">Variação do estoque</span>
@@ -167,6 +167,7 @@ async function exportWorkbook(rows: ReturnType<typeof import('./distributorEvolu
 }
 
 export function DistributorEvolutionTab({ active }: { active: boolean }) {
+  const reduceMotion = useReducedMotion();
   const [pending, setPending] = useState<DistributorEvolutionFilters>(defaultFilters);
   const [filters, setFilters] = useState<DistributorEvolutionFilters>(pending);
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -258,7 +259,7 @@ export function DistributorEvolutionTab({ active }: { active: boolean }) {
         </PopoverContent>
       </Popover>
       <CalendarRange aria-hidden="true" className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-      <span className="min-w-0 truncate text-[11px] text-muted-foreground">{filters.dataInicio.split('-').reverse().join('/')} a {filters.dataFim.split('-').reverse().join('/')} · {filters.marcas.length} marcas</span>
+      <span className="min-w-0 truncate text-[11px] text-muted-foreground">{formatCalendarDate(filters.dataInicio)} a {formatCalendarDate(filters.dataFim)} · {filters.marcas.length} marcas</span>
       <div className="ml-auto flex items-center gap-1">
         <Button aria-busy={isRefreshing || undefined} aria-label="Atualizar relatório" className="h-7 w-7" disabled={isRefreshing} onClick={() => void refreshReport()} size="icon" variant="ghost">{isRefreshing ? <LoadingIndicator size="sm" /> : <RefreshCw aria-hidden="true" className="h-3.5 w-3.5" />}</Button>
       </div>
@@ -281,8 +282,8 @@ export function DistributorEvolutionTab({ active }: { active: boolean }) {
                 <TableHeader><TableRow><TableHead className="w-[7.25rem] bg-card px-1.5 text-[10px]">Marca / grupo</TableHead>{evolution.months.map((mes) => <TableHead className="px-0.5 text-center text-[10px] leading-3" key={mes}>{monthLabel(mes)}</TableHead>)}</TableRow></TableHeader>
                 <TableBody>{evolution.brands.flatMap((brand) => {
                   const open = expanded.has(brand.marca);
-                  const brandRow = <TableRow key={brand.marca}><TableCell className="bg-card p-0.5"><Button aria-label={`${open ? 'Recolher' : 'Expandir'} ${brand.marca}`} className="h-7 w-full justify-start gap-1 px-1 text-[10px]" onClick={() => setExpanded((current) => { const next = new Set(current); if (open) next.delete(brand.marca); else next.add(brand.marca); return next; })} size="sm" variant="ghost">{open ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}<i className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: BRAND_COLORS[brand.marca] }} />{brand.marca}</Button></TableCell>{evolution.months.map((mes, index) => { const item = brand.months.find((month) => month.mes === mes); const previous = brand.months.find((month) => month.mes === evolution.months[index - 1]); const value = valueFor(item, activeMetric); return <TableCell className="p-0.5 text-center" key={mes}>{item ? <button aria-label={`${brand.marca} em ${monthLabel(mes, true)}: ${formatMetric(value, activeMetric)}`} className="w-full rounded-sm px-0.5 py-1 text-center transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" onClick={() => setSelected(item)} title={formatMetric(value, activeMetric)} type="button"><strong className="block truncate whitespace-nowrap text-[10px] font-medium leading-3 tabular-nums">{formatCompactMetric(value, activeMetric)}</strong><Delta value={calculateVariation(value, valueFor(previous, activeMetric))} /></button> : <span className="text-muted-foreground">—</span>}</TableCell>; })}</TableRow>;
-                  const groupRows = open ? brand.groups.map((group) => <TableRow className="bg-muted/15" key={group.key}><TableCell className="truncate bg-muted/30 px-1.5 py-1 text-[10px]" title={group.grupo}>{group.grupo}</TableCell>{evolution.months.map((mes, index) => { const item = group.months.find((month) => month.mes === mes); const previous = group.months.find((month) => month.mes === evolution.months[index - 1]); const value = valueFor(item, activeMetric); return <TableCell className="p-0.5 text-center" key={mes}>{item ? <button aria-label={`${group.grupo} em ${monthLabel(mes, true)}: ${formatMetric(value, activeMetric)}`} className="w-full px-0.5 py-1 text-center text-[10px] tabular-nums hover:bg-muted" onClick={() => setSelected(item)} title={formatMetric(value, activeMetric)} type="button"><strong className="block truncate whitespace-nowrap font-medium leading-3">{formatCompactMetric(value, activeMetric)}</strong><Delta value={calculateVariation(value, valueFor(previous, activeMetric))} /></button> : '—'}</TableCell>; })}</TableRow>) : [];
+                  const brandRow = <TableRow key={brand.marca}><TableCell className="bg-card p-0.5"><Button aria-label={`${open ? 'Recolher' : 'Expandir'} ${brand.marca}`} className="h-7 w-full justify-start gap-1 px-1 text-[10px]" onClick={() => setExpanded((current) => { const next = new Set(current); if (open) next.delete(brand.marca); else next.add(brand.marca); return next; })} size="sm" variant="ghost">{open ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}<i className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: BRAND_COLORS[brand.marca] }} />{brand.marca}</Button></TableCell>{evolution.months.map((mes, index) => { const item = brand.months.find((month) => month.mes === mes); const previous = brand.months.find((month) => month.mes === evolution.months[index - 1]); const value = valueFor(item, activeMetric); return <TableCell className="p-0.5 text-center" key={mes}>{item ? <button aria-label={`${brand.marca} em ${monthLabel(mes, true)}: ${formatMetric(value, activeMetric)}`} className="w-full rounded-sm px-0.5 py-1 text-center transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" onClick={() => setSelected(item)} title={formatMetric(value, activeMetric)} type="button"><strong className="block truncate whitespace-nowrap text-[10px] font-medium leading-3 tabular-nums">{formatTableMetric(value, activeMetric)}</strong><Delta value={calculateVariation(value, valueFor(previous, activeMetric))} /></button> : <span className="text-muted-foreground">—</span>}</TableCell>; })}</TableRow>;
+                  const groupRows = open ? brand.groups.map((group) => <TableRow className="bg-muted/15" key={group.key}><TableCell className="truncate bg-muted/30 px-1.5 py-1 text-[10px]" title={group.grupo}>{group.grupo}</TableCell>{evolution.months.map((mes, index) => { const item = group.months.find((month) => month.mes === mes); const previous = group.months.find((month) => month.mes === evolution.months[index - 1]); const value = valueFor(item, activeMetric); return <TableCell className="p-0.5 text-center" key={mes}>{item ? <button aria-label={`${group.grupo} em ${monthLabel(mes, true)}: ${formatMetric(value, activeMetric)}`} className="w-full px-0.5 py-1 text-center text-[10px] tabular-nums hover:bg-muted" onClick={() => setSelected(item)} title={formatMetric(value, activeMetric)} type="button"><strong className="block truncate whitespace-nowrap font-medium leading-3">{formatTableMetric(value, activeMetric)}</strong><Delta value={calculateVariation(value, valueFor(previous, activeMetric))} /></button> : '—'}</TableCell>; })}</TableRow>) : [];
                   return [brandRow, ...groupRows];
                 })}</TableBody>
               </Table>
@@ -311,15 +312,23 @@ export function DistributorEvolutionTab({ active }: { active: boolean }) {
             <ResponsiveContainer height="100%" width="100%">
               <AreaChart data={salesPurchasesData} margin={{ left: 0, right: 12, top: 22, bottom: 0 }}>
                 <defs>
-                  <linearGradient id="distributor-sales-fill" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stopColor="#0ea5e9" stopOpacity={0.28} /><stop offset="100%" stopColor="#0ea5e9" stopOpacity={0.01} /></linearGradient>
-                  <linearGradient id="distributor-purchases-fill" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stopColor="#10b981" stopOpacity={0.22} /><stop offset="100%" stopColor="#10b981" stopOpacity={0.01} /></linearGradient>
+                  <linearGradient id="distributor-sales-fill" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stopColor="hsl(var(--chart-1))" stopOpacity={0.22} /><stop offset="100%" stopColor="hsl(var(--chart-1))" stopOpacity={0.01} /></linearGradient>
+                  <linearGradient id="distributor-purchases-fill" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stopColor="hsl(var(--chart-3))" stopOpacity={0.17} /><stop offset="100%" stopColor="hsl(var(--chart-3))" stopOpacity={0.01} /></linearGradient>
                 </defs>
                 <CartesianGrid stroke="hsl(var(--border))" strokeDasharray="3 3" vertical={false} />
                 <XAxis dataKey="mes" fontSize={10} tickLine={false} />
                 <YAxis fontSize={10} tickFormatter={(value) => `${Math.round(value / 1000)}k`} tickLine={false} width={44} />
-                <Tooltip formatter={(value: number, name: string) => [money.format(value), name === 'vendas' ? 'Vendas' : 'Compras']} />
-                {showSales && <Area activeDot={{ r: 4 }} dataKey="vendas" dot={false} fill="url(#distributor-sales-fill)" name="Vendas" stroke="#0ea5e9" strokeWidth={2} type="monotone"><LabelList dataKey="vendas" fill="#38bdf8" fontSize={10} fontWeight={600} formatter={(value: number) => compactMoney.format(value)} offset={6} position="top" /></Area>}
-                {!isPreview && showPurchases && <Area activeDot={{ r: 4 }} connectNulls={false} dataKey="compras" dot={false} fill="url(#distributor-purchases-fill)" name="Compras" stroke="#10b981" strokeWidth={2} type="monotone"><LabelList dataKey="compras" fill="#34d399" fontSize={10} fontWeight={600} formatter={(value: number) => compactMoney.format(value)} offset={6} position="top" /></Area>}
+                <Tooltip formatter={(value: number) => formatCurrency(value)} />
+                {showSales && (
+                  <Area activeDot={{ r: 4 }} animationDuration={220} dataKey="vendas" dot={false} fill="url(#distributor-sales-fill)" isAnimationActive={!reduceMotion} name="Vendas" stroke="hsl(var(--chart-1))" strokeWidth={2} type="monotone">
+                    <LabelList dataKey="vendas" fill="hsl(var(--chart-1))" fontSize={10} fontWeight={600} formatter={(value: number) => compactMoney.format(value)} offset={6} position="top" />
+                  </Area>
+                )}
+                {!isPreview && showPurchases && (
+                  <Area activeDot={{ r: 4 }} animationDuration={220} dataKey="compras" dot={false} fill="url(#distributor-purchases-fill)" isAnimationActive={!reduceMotion} name="Compras" stroke="hsl(var(--chart-3))" strokeWidth={2} type="monotone">
+                    <LabelList dataKey="compras" fill="hsl(var(--chart-3))" fontSize={10} fontWeight={600} formatter={(value: number) => compactMoney.format(value)} offset={6} position="bottom" />
+                  </Area>
+                )}
               </AreaChart>
             </ResponsiveContainer>
           </div>

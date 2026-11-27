@@ -6,15 +6,15 @@ export type EnterpriseTone = 'neutral' | 'positive' | 'negative' | 'warning' | '
 
 const toneClasses: Record<EnterpriseTone, string> = {
   neutral: 'border-border bg-muted/40 text-muted-foreground',
-  positive: 'border-[hsl(var(--enterprise-positive)/0.28)] bg-[hsl(var(--enterprise-positive)/0.09)] text-[hsl(var(--enterprise-positive))]',
-  negative: 'border-[hsl(var(--enterprise-negative)/0.28)] bg-[hsl(var(--enterprise-negative)/0.09)] text-[hsl(var(--enterprise-negative))]',
-  warning: 'border-[hsl(var(--enterprise-warning)/0.28)] bg-[hsl(var(--enterprise-warning)/0.09)] text-[hsl(var(--enterprise-warning))]',
-  info: 'border-[hsl(var(--enterprise-info)/0.28)] bg-[hsl(var(--enterprise-info)/0.09)] text-[hsl(var(--enterprise-info))]',
+  positive: 'border-success/35 bg-success/10 text-success',
+  negative: 'border-destructive/35 bg-destructive/10 text-destructive',
+  warning: 'border-warning/35 bg-warning/10 text-warning',
+  info: 'border-[hsl(var(--enterprise-info)/0.35)] bg-[hsl(var(--enterprise-info)/0.10)] text-[hsl(var(--enterprise-info))]',
 };
 
 export function EnterpriseBadge({ children, tone = 'neutral', className }: { children: ReactNode; tone?: EnterpriseTone; className?: string }) {
   return (
-    <span className={cn('inline-flex min-w-0 items-center gap-1 rounded-md border px-1.5 py-0.5 text-[11px] font-medium leading-4', toneClasses[tone], className)}>
+    <span className={cn('inline-flex min-w-0 items-center gap-1 rounded-md border px-1.5 py-0.5 text-[11px] font-semibold leading-4', toneClasses[tone], className)}>
       {children}
     </span>
   );

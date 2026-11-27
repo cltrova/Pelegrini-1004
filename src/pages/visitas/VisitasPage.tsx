@@ -1,8 +1,11 @@
 import { useState, type ChangeEvent, type FormEvent, type ReactNode } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ChevronDown, Filter, LogOut, RefreshCw, Send } from 'lucide-react';
+import { CheckCircle2, ChevronDown, Filter, LogOut, RefreshCw, Send } from 'lucide-react';
+import { EmptyState } from '@/components/common/EmptyState';
+import { ErrorState } from '@/components/common/ErrorState';
 import { LoadingState } from '@/components/common/LoadingState';
 import { ComercialDataViewport, ComercialFilterBar } from '@/components/comercial/compact';
+import { EnterpriseBadge } from '@/components/enterprise/EnterpriseBadge';
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Input } from '@/components/ui/input';
@@ -10,7 +13,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { getFilialPorId } from '@/config/filiaisEmpresa';
-import { applyCnpjMask, formatCnpjDisplay } from '@/utils/formatters';
+import { applyCnpjMask, formatCalendarDate, formatCnpjDisplay } from '@/utils/formatters';
 import { CidadeVisitaCampo } from './CidadeVisitaCampo';
 import { OficinasVisitas } from './OficinasVisitas';
 import { enviarVisita, listarVisitas, type CarregarOficinas, type SessaoVisitas } from './visitasApi';
@@ -32,7 +35,6 @@ const filtrosVazios = { cliente: '', visitador: '', inicio: '', fim: '' };
 type FilialVisitas = SessaoVisitas['filiais'][number];
 const porPagina = 20;
 const dataHoje = () => new Intl.DateTimeFormat('sv-SE', { timeZone: 'America/Sao_Paulo' }).format(new Date());
-const dataBr = (data: string) => data.split('-').reverse().join('/');
 
 function formatarCampoCnpj({ currentTarget, nativeEvent }: ChangeEvent<HTMLInputElement>) {
   const { value, selectionStart } = currentTarget;
@@ -183,10 +185,10 @@ function Historico({ usuario, filial, carregar = listarVisitas, acoes }: {
                   <Button type="button" variant="outline" size="sm" className="group gap-2">
                     <Filter aria-hidden="true" className="h-3.5 w-3.5" />
                     Filtros
-                    {ativos > 0 && <span className="rounded-sm bg-primary/10 px-1.5 text-xs text-primary">
+                    {ativos > 0 && <EnterpriseBadge tone="info">
                       {ativos === 1 ? '1 ativo' : `${ativos} ativos`}
-                    </span>}
-                    <ChevronDown aria-hidden="true" className="h-3.5 w-3.5 group-data-[state=open]:rotate-180" />
+                    </EnterpriseBadge>}
+                    <ChevronDown aria-hidden="true" className="h-3.5 w-3.5 transition-transform duration-200 group-data-[state=open]:rotate-180" />
                   </Button>
                 </CollapsibleTrigger>
                 {!gerencial && atualizar}
@@ -207,7 +209,7 @@ function Historico({ usuario, filial, carregar = listarVisitas, acoes }: {
         />
         <CollapsibleContent asChild forceMount>
           <form onSubmit={buscar} onReset={() => { setPagina(0); setFiltros(filtrosVazios); }}
-            className="max-h-[50dvh] shrink-0 space-y-2 overflow-y-auto border-b bg-card px-3 py-2 data-[state=closed]:hidden sm:px-4">
+            className="pelegrini-disclosure max-h-[50dvh] shrink-0 space-y-2 overflow-y-auto border-b bg-card px-3 py-2 data-[state=closed]:hidden sm:px-4">
             <div className="grid min-w-0 gap-2 sm:grid-cols-2 lg:grid-cols-4">
               <div className="min-w-0 space-y-1">
                 <Label htmlFor="busca-cliente">Cliente</Label>
@@ -237,27 +239,24 @@ function Historico({ usuario, filial, carregar = listarVisitas, acoes }: {
         <ComercialDataViewport ariaLabel="Resultados dos relatórios de visitas" className="space-y-2 px-3 py-3 sm:px-4">
           {query.isPending && <LoadingState message="Carregando relatórios" variant="content" className="min-h-full" />}
           {query.isError && (
-            <div className="flex flex-wrap items-center gap-3 rounded-sm border p-4">
-              <p role="alert" className="text-sm text-destructive">Não foi possível carregar os relatórios.</p>
-              <Button variant="outline" size="sm" onClick={() => void query.refetch()}>Tentar novamente</Button>
-            </div>
+            <ErrorState title="Não foi possível carregar os relatórios." message="Tente atualizar a consulta." onRetry={() => void query.refetch()} />
           )}
           {query.isSuccess && query.data.total === 0 && (
-            <p className="w-full rounded-sm border bg-card p-4 text-sm text-muted-foreground">Nenhum relatório encontrado.</p>
+            <EmptyState title="Nenhum relatório encontrado." message={ativos ? 'Limpe os filtros para ver todos os relatórios.' : 'Os relatórios de visitas aparecem aqui após o envio.'} className="w-full" />
           )}
           {query.isSuccess && query.data.rows.map((relatorio) => (
-            <details key={relatorio.id} className="group min-w-0 rounded-sm border bg-card">
-              <summary className="grid cursor-pointer list-none grid-cols-[minmax(0,1fr)_auto] items-center gap-2 px-3 py-2.5 hover:bg-muted/50 [&::-webkit-details-marker]:hidden">
+            <details key={relatorio.id} className="pelegrini-panel pelegrini-disclosure group min-w-0 border">
+              <summary className="grid cursor-pointer list-none grid-cols-[minmax(0,1fr)_auto] items-center gap-2 rounded-[inherit] px-3 py-2.5 transition-colors duration-200 hover:bg-muted/70 focus-visible:-outline-offset-2 [&::-webkit-details-marker]:hidden">
                 <span className="min-w-0 space-y-0.5">
                   <strong className="block break-words text-sm">{relatorio.nome_cliente}</strong>
                   <span className="block break-words text-xs text-muted-foreground">
-                    {[dataBr(relatorio.data_visita), relatorio.cidade, gerencial ? relatorio.visitador_nome : null]
+                    {[formatCalendarDate(relatorio.data_visita), relatorio.cidade, gerencial ? relatorio.visitador_nome : null]
                       .filter(Boolean).join(' · ')}
                   </span>
                 </span>
-                <ChevronDown aria-hidden="true" className="h-4 w-4 text-muted-foreground group-open:rotate-180" />
+                <ChevronDown aria-hidden="true" className="h-4 w-4 text-muted-foreground transition-transform duration-200 group-open:rotate-180" />
               </summary>
-              <div className="space-y-3 border-t px-4 py-3">
+              <div className="pelegrini-disclosure-content space-y-3 border-t px-4 py-3">
                 <dl className="grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-4">
                   {dadosCliente.filter(({ key }) => key !== 'nome_cliente' && key !== 'data_visita').map(({ key, label }) => (
                     <div key={key} className="min-w-0">
@@ -355,7 +354,14 @@ function AreaVisitas({ usuario, filial, gerencial, carregar, carregarOficinas, a
         }} />
       </TabsContent>
       <TabsContent value="historico" className="mt-0 flex min-h-0 flex-1 flex-col data-[state=inactive]:hidden">
-        {enviado && <p role="status" className="shrink-0 px-3 pt-2 text-sm text-primary sm:px-4">Relatório enviado. Ele já está disponível para a gerência.</p>}
+        {enviado && (
+          <div role="status" className="shrink-0 px-3 pt-2 sm:px-4">
+            <EnterpriseBadge tone="positive" className="whitespace-normal text-xs">
+              <CheckCircle2 aria-hidden="true" className="size-3.5 shrink-0" />
+              Relatório enviado. Ele já está disponível para a gerência.
+            </EnterpriseBadge>
+          </div>
+        )}
         <Historico usuario={usuario} />
       </TabsContent>
     </Tabs>

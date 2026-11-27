@@ -1,6 +1,9 @@
 import { useMemo, useState } from 'react';
+import { useReducedMotion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
@@ -10,13 +13,14 @@ import {
 } from 'recharts';
 import {
   Target, AlertTriangle, TrendingDown, Trophy, Calendar,
-  ArrowUp, ArrowDown, Minus, Check, DollarSign,
+  ArrowUp, ArrowDown, Minus, Check, DollarSign, Info,
   LucideIcon,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { formatCurrency, formatPercent, formatCompactNumber } from '@/utils/formatters';
 import { getDiasUteisNoMes } from '@/types/comercial';
 import { ComercialMetricStrip } from '@/components/comercial/compact';
+import { DashboardGoalRing } from './DashboardOverviewManagement';
 
 /** Converte valores em formato brasileiro ("R$ 61.000,00", "61.000,00") para number puro. */
 function parseBRLToNumber(value: unknown): number {
@@ -70,6 +74,7 @@ function getReceitaPedido(p: PedidoMin): number {
 }
 
 interface Props {
+  compactDashboard?: boolean;
   vendedoresComMeta: VendedorComMeta[];
   pedidos: PedidoMin[];
   kpisGerais: {
@@ -109,6 +114,7 @@ const MES_NOMES = [
 ];
 
 export function PremiumMetasView({
+  compactDashboard = false,
   vendedoresComMeta,
   pedidos,
   kpisGerais,
@@ -119,6 +125,7 @@ export function PremiumMetasView({
 }: Props) {
   const [vendedorFoco, setVendedorFoco] = useState<string | null>(null);
   const [chartView, setChartView] = useState<ChartView>('diario');
+  const reduceMotion = useReducedMotion();
 
   const pedidosNoPeriodo = useMemo(() => {
     const inicioMes = `${periodoFiltros.ano}-${String(periodoFiltros.mes).padStart(2, '0')}-01`;
@@ -173,23 +180,37 @@ export function PremiumMetasView({
 
   // ===== INSIGHTS =====
   const insights = useMemo(() => {
-    const result: Array<{ icon: LucideIcon; title: string; subtitle: string; color: string }> = [];
+    const result: Array<{ icon: LucideIcon; title: string; summary: string; action: string; color: string }> = [];
+
+    if (compactDashboard && totais.metaTotal <= 0) {
+      return [{
+        icon: Target,
+        title: 'Sem meta cadastrada',
+        summary: `Faturamento de ${formatCurrency(totais.valorTotal)} no período.`,
+        action: 'Confira o período e o vendedor selecionado antes de comparar o atingimento.',
+        color: 'text-primary',
+      }];
+    }
 
     // Insight 1: faltam X / dia útil
     if (totais.falta > 0) {
       result.push({
         icon: Target,
         title: `Faltam ${formatCurrency(totais.falta)} para a meta`,
-        subtitle: diasUteisRestantes > 0
-          ? `Necessário ${formatCurrency(diariaNecessaria)}/dia em ${diasUteisRestantes} dia${diasUteisRestantes > 1 ? 's' : ''} úte${diasUteisRestantes > 1 ? 'is' : 'l'}. Ação gerencial: distribuir a meta diária entre os vendedores e revisar o avanço no próximo fechamento.`
-          : 'Período encerrado — meta não atingida. Ação gerencial: registrar o desvio e definir um plano de recuperação para o próximo período.',
+        summary: diasUteisRestantes > 0
+          ? `Necessário ${formatCurrency(diariaNecessaria)}/dia em ${diasUteisRestantes} ${diasUteisRestantes > 1 ? 'dias úteis' : 'dia útil'}.`
+          : 'O período encerrou abaixo da meta.',
+        action: diasUteisRestantes > 0
+          ? 'Distribua a meta diária entre os vendedores e revise o avanço no próximo fechamento.'
+          : 'Registre o desvio e defina a meta de recuperação para o próximo período.',
         color: 'text-amber-500',
       });
     } else {
       result.push({
         icon: Trophy,
         title: `Meta superada em ${formatCurrency(Math.abs(totais.falta))}`,
-        subtitle: `${formatPercent(totais.percentual)} atingidos no período. Ação gerencial: proteger a carteira que sustentou o resultado e replicar as práticas na equipe.`,
+        summary: `${formatPercent(totais.percentual)} atingidos no período.`,
+        action: 'Identifique as carteiras que sustentaram o resultado e compartilhe as práticas com a equipe.',
         color: 'text-emerald-500',
       });
     }
@@ -201,9 +222,10 @@ export function PremiumMetasView({
       result.push({
         icon: AlertTriangle,
         title: `${acima === 1 ? 'Apenas 1 vendedor acima' : `${acima} vendedores acima`} da meta`,
-        subtitle: abaixo > 0
-          ? `${abaixo} abaixo de 70%. Concentração de risco na equipe. Ação gerencial: priorizar o acompanhamento individual desses vendedores e definir compromissos para o próximo fechamento.`
-          : 'Equilíbrio saudável da equipe. Ação gerencial: manter o acompanhamento semanal e compartilhar as práticas dos vendedores acima da meta.',
+        summary: abaixo > 0 ? `${abaixo} ${abaixo === 1 ? 'vendedor abaixo' : 'vendedores abaixo'} de 70% da meta.` : 'Nenhum vendedor abaixo de 70% da meta.',
+        action: abaixo > 0
+          ? 'Priorize o acompanhamento desses vendedores e combine os próximos passos antes do fechamento.'
+          : 'Compartilhe com a equipe as práticas dos vendedores que atingiram a meta.',
         color: acima >= 3 ? 'text-emerald-500' : 'text-amber-500',
       });
     } else {
@@ -211,12 +233,17 @@ export function PremiumMetasView({
       result.push({
         icon: AlertTriangle,
         title: `Posição #${ranking} entre ${vendedoresLista.length}`,
-        subtitle: focado.percentualMetaFaturado >= 100
-          ? 'Vendedor superando individualmente a meta. Ação gerencial: manter a cadência e compartilhar as práticas que sustentam o resultado.'
-          : `${formatPercent(focado.percentualMetaFaturado)} da meta individual atingida. Ação gerencial: revisar a carteira e pactuar as próximas oportunidades necessárias para recuperar a meta.`,
+        summary: `${formatPercent(focado.percentualMetaFaturado)} da meta individual atingida.`,
+        action: focado.percentualMetaFaturado >= 100
+          ? 'Compartilhe as práticas da carteira que sustentaram o resultado.'
+          : 'Revise a carteira e identifique as oportunidades com maior chance de fechamento.',
         color: focado.percentualMetaFaturado >= 100 ? 'text-emerald-500' : 'text-amber-500',
       });
     }
+
+    const inicioMes = `${periodoFiltros.ano}-${String(periodoFiltros.mes).padStart(2, '0')}-01`;
+    const periodoProjetavel = diasUteisDecorridos > 0 && diasUteisRestantes > 0 && (!periodoAplicado || periodoAplicado.inicio === inicioMes);
+    if (compactDashboard && !periodoProjetavel) return result;
 
     // Insight 3: Projeção em risco
     const ritmoDiario = diasUteisDecorridos > 0 ? totais.valorTotal / diasUteisDecorridos : 0;
@@ -226,14 +253,17 @@ export function PremiumMetasView({
     result.push({
       icon: TrendingDown,
       title: `Projeção${projPct < 100 ? ' em risco' : ''}: ${formatPercent(projPct)}`,
-      subtitle: gap > 0
-        ? `Ritmo atual fecha em ${formatCurrency(projecaoFim)} — gap de ${formatCurrency(gap)}. Ação gerencial: acelerar as oportunidades de maior probabilidade e acompanhar o gap a cada fechamento.`
-        : `Ritmo atual fecha em ${formatCurrency(projecaoFim)} — acima da meta. Ação gerencial: proteger as oportunidades em curso e antecipar riscos que possam reduzir a projeção.`,
+      summary: gap > 0
+        ? `Ritmo atual fecha em ${formatCurrency(projecaoFim)}, ${formatCurrency(gap)} abaixo da meta.`
+        : `Ritmo atual fecha em ${formatCurrency(projecaoFim)}.`,
+      action: gap > 0
+        ? 'Priorize as oportunidades próximas de fechar e acompanhe a diferença para a meta.'
+        : 'Acompanhe as oportunidades em curso que sustentam a projeção.',
       color: projPct >= 100 ? 'text-emerald-500' : projPct >= 90 ? 'text-amber-500' : 'text-red-500',
     });
 
     return result;
-  }, [totais, diasUteisRestantes, diariaNecessaria, focado, kpisGerais, vendedoresComMeta, vendedoresLista, vendedorFoco, diasUteisDecorridos, diasUteisNoMes]);
+  }, [totais, diasUteisRestantes, diariaNecessaria, focado, kpisGerais, vendedoresComMeta, vendedoresLista, vendedorFoco, diasUteisDecorridos, diasUteisNoMes, compactDashboard, periodoAplicado, periodoFiltros]);
 
   // ===== Média mensal por vendedor =====
   // Agrupa vendas e meta por vendedor + mês (a partir dos pedidos), usando todos os meses presentes
@@ -468,471 +498,577 @@ export function PremiumMetasView({
   const clientesResumo = kpisGerais.clientesAtendidos || 0;
   const ticketResumo = kpisGerais.ticketMedio ?? (vendasResumo > 0 ? receitaResumo / vendasResumo : 0);
 
-  return (
-    <div className="space-y-4">
-      <ComercialMetricStrip
-        ariaLabel="Indicadores detalhados de metas"
-        className="metas-metric-strip rounded-md border border-border/70"
-        metrics={[
-          {
-            label: 'Receita',
-            value: formatCurrency(receitaResumo),
-            context: `${formatPercent(kpisGerais.percentualFaturado || 0)} da meta`,
-            tone: 'success',
-            tooltip: `Meta do período: ${formatCurrency(kpisGerais.totalMeta)}`,
-          },
-          {
-            label: 'Ticket médio',
-            value: formatCurrency(ticketResumo),
-            context: `${vendasResumo.toLocaleString('pt-BR')} vendas`,
-            tooltip: 'Receita dividida pela quantidade de vendas do período.',
-          },
-          {
-            label: 'Clientes',
-            value: clientesResumo.toLocaleString('pt-BR'),
-            context: `${vendasResumo > 0 ? (vendasResumo / Math.max(1, clientesResumo)).toFixed(1) : '0'} pedidos/cliente`,
-            tooltip: 'Clientes atendidos no período selecionado.',
-          },
-          {
-            label: 'Devoluções',
-            value: formatCurrency(kpisGerais.totalDevolucoes || 0),
-            tone: 'danger',
-            tooltip: 'Total das devoluções registradas no período.',
-          },
-          {
-            label: 'Vendas',
-            value: vendasResumo.toLocaleString('pt-BR'),
-            context: `${kpisGerais.totalVendedores} vendedor(es)`,
-            tooltip: 'Quantidade de vendas e vendedores ativos no período.',
-          },
-        ]}
-      />
+  const metrics = (
+    <ComercialMetricStrip
+      ariaLabel="Indicadores detalhados de metas"
+      className={cn('metas-metric-strip rounded-md border border-border/70', compactDashboard && 'dashboard-tab-metrics dashboard-tab-metrics-5')}
+      metrics={[
+        {
+          label: 'Receita',
+          value: formatCurrency(receitaResumo),
+          context: `${formatPercent(kpisGerais.percentualFaturado || 0)} da meta`,
+          tone: 'success',
+          tooltip: `Meta do período: ${formatCurrency(kpisGerais.totalMeta)}`,
+        },
+        {
+          label: 'Ticket médio',
+          value: formatCurrency(ticketResumo),
+          context: `${vendasResumo.toLocaleString('pt-BR')} vendas`,
+          tooltip: 'Receita dividida pela quantidade de vendas do período.',
+        },
+        {
+          label: 'Clientes',
+          value: clientesResumo.toLocaleString('pt-BR'),
+          context: `${vendasResumo > 0 ? (vendasResumo / Math.max(1, clientesResumo)).toFixed(1) : '0'} pedidos/cliente`,
+          tooltip: 'Clientes atendidos no período selecionado.',
+        },
+        {
+          label: 'Devoluções',
+          value: formatCurrency(kpisGerais.totalDevolucoes || 0),
+          tone: 'danger',
+          tooltip: 'Total das devoluções registradas no período.',
+        },
+        {
+          label: 'Vendas',
+          value: vendasResumo.toLocaleString('pt-BR'),
+          context: `${kpisGerais.totalVendedores} vendedor(es)`,
+          tooltip: 'Quantidade de vendas e vendedores ativos no período.',
+        },
+      ]}
+    />
+  );
 
-      {/* ============== SINAIS DO PERÍODO ============== */}
-      <div>
-        <div className="flex items-center gap-2 mb-2">
-          <TrendingDown className="h-4 w-4 text-primary" />
-          <span className="text-xs font-semibold text-foreground">Sinais do período</span>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          {insights.map((ins, i) => {
-            const Icon = ins.icon;
-            return (
-              <Card
-                key={i}
-                className="commercial-dashboard-panel relative overflow-hidden rounded-lg border-border/60 bg-card transition-colors duration-300 hover:border-primary/30 hover:bg-muted/30 cursor-default"
-              >
+  const periodSignals = (
+    <div>
+      <div className="flex items-center gap-2 mb-2">
+        <TrendingDown className="h-4 w-4 text-primary" />
+        <span className="text-xs font-semibold text-foreground">Sinais do período</span>
+      </div>
+      <div className={cn('grid grid-cols-1 md:grid-cols-3 gap-3', compactDashboard && 'dashboard-detail-signals')}>
+        {insights.map((ins, i) => {
+          const Icon = ins.icon;
+          return (
+            <Card
+              key={i}
+              className="commercial-dashboard-panel relative overflow-hidden rounded-lg border-border/60 bg-card transition-colors duration-300 hover:border-primary/30 hover:bg-muted/30 cursor-default"
+            >
+              <div className={cn(
+                'absolute left-0 top-0 bottom-0 w-1',
+                ins.color.includes('emerald') && 'bg-emerald-500',
+                ins.color.includes('amber') && 'bg-amber-500',
+                ins.color.includes('red') && 'bg-red-500',
+                ins.color.includes('primary') && 'bg-primary',
+              )} />
+              <CardContent className="p-3 flex items-start gap-3 relative">
                 <div className={cn(
-                  'absolute left-0 top-0 bottom-0 w-1',
-                  ins.color.includes('emerald') && 'bg-emerald-500',
-                  ins.color.includes('amber') && 'bg-amber-500',
-                  ins.color.includes('red') && 'bg-red-500',
-                  ins.color.includes('primary') && 'bg-primary',
-                )} />
-                <CardContent className="p-3 flex items-start gap-3 relative">
-                  <div className={cn(
-                    'h-9 w-9 rounded-lg flex items-center justify-center flex-shrink-0',
-                    ins.color,
-                    ins.color.includes('emerald') && 'bg-emerald-500/15',
-                    ins.color.includes('amber') && 'bg-amber-500/15',
-                    ins.color.includes('red') && 'bg-red-500/15',
-                    ins.color.includes('primary') && 'bg-primary/15',
-                  )}>
-                    <Icon className="h-5 w-5" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className={cn('text-sm font-semibold leading-tight', ins.color)}>{ins.title}</p>
-                    <p className="commercial-insight-action mt-0.5 whitespace-normal break-words text-xs text-muted-foreground">{ins.subtitle}</p>
-                  </div>
-                </CardContent>
-              </Card>
+                  'h-9 w-9 rounded-lg flex items-center justify-center flex-shrink-0',
+                  ins.color,
+                  ins.color.includes('emerald') && 'bg-emerald-500/15',
+                  ins.color.includes('amber') && 'bg-amber-500/15',
+                  ins.color.includes('red') && 'bg-red-500/15',
+                  ins.color.includes('primary') && 'bg-primary/15',
+                )}>
+                  <Icon className="h-5 w-5" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className={cn('text-sm font-semibold leading-tight', ins.color)}>{ins.title}</p>
+                  <p className="commercial-insight-action mt-0.5 whitespace-normal break-words text-xs text-muted-foreground">
+                    {ins.summary}{!compactDashboard && ` Ação gerencial: ${ins.action}`}
+                  </p>
+                </div>
+                {compactDashboard && (
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <button
+                        type="button"
+                        aria-label={`Orientação para ${ins.title}`}
+                        className="shrink-0 rounded p-0.5 text-muted-foreground hover:bg-muted hover:text-primary focus-visible:outline focus-visible:outline-1"
+                      >
+                        <Info aria-hidden="true" className="size-3.5" />
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent align="end" className="commercial-overlay w-56 p-2.5 text-xs leading-relaxed">
+                      {ins.action}
+                    </PopoverContent>
+                  </Popover>
+                )}
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
+    </div>
+  );
+
+  const sellerList = (
+    <Card className="commercial-dashboard-panel lg:col-span-2 overflow-hidden">
+      <CardContent className="p-3">
+        <div className="flex items-center justify-between mb-2">
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Vendedores</p>
+            <p className="text-[10px] text-muted-foreground">Clique p/ filtrar</p>
+          </div>
+          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-primary/15 text-primary">
+            {vendedoresLista.length}
+          </span>
+        </div>
+        <div className="space-y-1 max-h-[280px] overflow-y-auto pr-1 pb-2 scrollbar-thin">
+          <button
+            onClick={() => setVendedorFoco(null)}
+            className={cn(
+              'w-full text-left px-2 py-1.5 rounded-md text-xs font-semibold uppercase transition-colors duration-200',
+              !vendedorFoco
+                ? 'bg-primary/10 text-primary ring-1 ring-primary/30'
+                : 'text-muted-foreground hover:bg-muted/60'
+            )}
+          >
+            ◉ Todos
+          </button>
+          {vendedoresLista.map(v => {
+            const active = vendedorFoco === String(v.codigo);
+            const pct = v.percentualMetaFaturado || 0;
+            const dotColor = pct >= 100 ? 'bg-emerald-500' : pct >= 80 ? 'bg-amber-500' : 'bg-red-500';
+            return (
+              <button
+                key={String(v.codigo)}
+                onClick={() => setVendedorFoco(String(v.codigo))}
+                className={cn(
+                  'w-full text-left px-2 py-1.5 rounded-md text-xs font-semibold uppercase transition-colors duration-200 truncate flex items-center gap-1.5',
+                  active
+                    ? 'bg-primary/10 text-primary ring-1 ring-primary/30'
+                    : 'text-foreground hover:bg-muted/60'
+                )}
+                title={`${v.nome} · ${formatPercent(pct)}`}
+              >
+                <span className={cn('h-1.5 w-1.5 rounded-full flex-shrink-0', dotColor)} />
+                <span className="truncate flex-1">{v.nome}</span>
+              </button>
             );
           })}
         </div>
-      </div>
+      </CardContent>
+    </Card>
+  );
 
-      {/* ============== LINHA 1: Vendedores | Total/Meta | Gauge | Média por vendedor ============== */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
-        {/* Lista vendedores */}
-        <Card className="commercial-dashboard-panel lg:col-span-2 overflow-hidden">
-          <CardContent className="p-3">
-            <div className="flex items-center justify-between mb-2">
-              <div>
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Vendedores</p>
-                <p className="text-[10px] text-muted-foreground">Clique p/ filtrar</p>
-              </div>
-              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-primary/15 text-primary">
-                {vendedoresLista.length}
-              </span>
+  const totalsCards = (
+    <div className="grid grid-rows-2 gap-3 lg:col-span-3">
+      <Card className="commercial-dashboard-panel relative overflow-hidden rounded-lg border-border/60 bg-card transition-colors duration-300 hover:border-emerald-500/35 hover:bg-muted/30">
+        <CardContent className="p-4 flex flex-col justify-between h-full relative">
+          <div className="flex items-start justify-between">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Valor Total</p>
+            <Calendar className="h-4 w-4 text-emerald-500" />
+          </div>
+          <div>
+            <p className="text-2xl font-bold mt-2 text-emerald-500">
+              {formatCurrency(totais.valorTotal)}
+            </p>
+            <div className="mt-1 h-1 rounded-full bg-muted overflow-hidden">
+              <div
+                className="h-full bg-emerald-500"
+                style={{ width: `${Math.min(totais.percentual, 100)}%` }}
+              />
             </div>
-            <div className="space-y-1 max-h-[280px] overflow-y-auto pr-1 pb-2 scrollbar-thin">
-              <button
-                onClick={() => setVendedorFoco(null)}
-                className={cn(
-                  'w-full text-left px-2 py-1.5 rounded-md text-xs font-semibold uppercase transition-colors duration-200',
-                  !vendedorFoco
-                    ? 'bg-primary/10 text-primary ring-1 ring-primary/30'
-                    : 'text-muted-foreground hover:bg-muted/60'
-                )}
-              >
-                ◉ Todos
-              </button>
-              {vendedoresLista.map(v => {
-                const active = vendedorFoco === String(v.codigo);
-                const pct = v.percentualMetaFaturado || 0;
-                const dotColor = pct >= 100 ? 'bg-emerald-500' : pct >= 80 ? 'bg-amber-500' : 'bg-red-500';
+          </div>
+        </CardContent>
+      </Card>
+      <Card className="commercial-dashboard-panel relative overflow-hidden rounded-lg border-border/60 bg-card transition-colors duration-300 hover:border-violet-500/35 hover:bg-muted/30">
+        <CardContent className="p-4 flex flex-col justify-between h-full relative">
+          <div className="flex items-start justify-between">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Meta Total</p>
+            <Target className="h-4 w-4 text-violet-500" />
+          </div>
+          <div>
+            <p className="text-2xl font-bold mt-2 text-violet-500">
+              {formatCurrency(totais.metaTotal)}
+            </p>
+            {(() => {
+              const diff = totais.valorTotal - totais.metaTotal;
+              const isAcima = diff >= 0;
+              return (
+                <p className="text-[10px] text-muted-foreground mt-1">
+                  {isAcima ? 'Acima ' : 'Abaixo '}
+                  <span className={cn('font-semibold', isAcima ? 'text-emerald-500' : 'text-rose-500')}>
+                    {formatCurrency(Math.abs(diff))}
+                  </span>
+                </p>
+              );
+            })()}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+
+  const progressGauge = (
+    <Card
+      className="commercial-dashboard-panel commercial-chart-frame relative overflow-hidden bg-card border-border lg:col-span-3"
+      style={{
+        fontFamily: 'Inter, "SF Pro Display", -apple-system, BlinkMacSystemFont, sans-serif',
+      }}
+    >
+      <CardContent className="p-5 flex flex-col h-full relative">
+        <div className="flex items-center justify-between w-full">
+          <div className="flex items-center gap-2">
+            <Target className="h-3.5 w-3.5 text-emerald-500" strokeWidth={2.5} />
+            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+              Meta Atingida
+            </p>
+          </div>
+          {totais.percentual >= 100 && (
+            <span className="inline-flex items-center gap-1 text-[10px] font-bold tracking-wider px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-500 border border-emerald-500/30">
+              <Check className="h-3 w-3" strokeWidth={3} />
+              META SUPERADA
+            </span>
+          )}
+        </div>
+        <div className="flex-1 flex items-center justify-center">
+          <GaugeSemi percent={totais.percentual} />
+        </div>
+      </CardContent>
+    </Card>
+  );
+
+  const AverageTable = compactDashboard ? 'table' : Table;
+  const sellerAverages = (
+    <Card className={cn('commercial-dashboard-panel', compactDashboard ? 'dashboard-frame dashboard-detail-average-panel dashboard-detail-seller-averages' : 'lg:col-span-4')}>
+      <CardHeader className={compactDashboard ? 'dashboard-detail-average-header space-y-0 p-0' : 'pb-2'}>
+        <CardTitle className="text-base">Média Mensal por Vendedor</CardTitle>
+        <p className="text-xs text-muted-foreground">{qtdMesesPeriodo} {qtdMesesPeriodo === 1 ? 'mês' : 'meses'} no período</p>
+      </CardHeader>
+      <CardContent className={compactDashboard ? 'dashboard-detail-average-body p-0' : 'pt-0'}>
+        <div
+          className={compactDashboard ? 'dashboard-detail-average-viewport' : 'max-h-[260px] overflow-y-auto overflow-x-hidden scrollbar-thin'}
+          role={compactDashboard ? 'region' : undefined}
+          aria-label={compactDashboard ? 'Tabela de médias por vendedor' : undefined}
+          tabIndex={compactDashboard ? 0 : undefined}
+        >
+          <AverageTable className="w-full table-fixed">
+            <TableHeader className="sticky top-0 bg-card z-10">
+              <TableRow>
+                <TableHead className="text-xs px-2 w-[52%]">Vendedor</TableHead>
+                <TableHead className="text-xs text-right px-2 w-[14%]">% Meta</TableHead>
+                <TableHead className="text-xs text-right px-2 w-[17%]">Valor Médio</TableHead>
+                <TableHead className="text-xs text-right px-2 w-[17%]">Meta Média</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {mediaMensalPorVendedor.map(r => {
+                const cor = r.pctMeta >= 100 ? 'emerald' : r.pctMeta >= 80 ? 'amber' : 'red';
+                const isSelected = vendedorFoco === String(r.codigo);
                 return (
-                  <button
-                    key={String(v.codigo)}
-                    onClick={() => setVendedorFoco(String(v.codigo))}
+                  <TableRow
+                    key={r.codigo}
+                    onClick={() => setVendedorFoco(isSelected ? null : String(r.codigo))}
                     className={cn(
-                      'w-full text-left px-2 py-1.5 rounded-md text-xs font-semibold uppercase transition-colors duration-200 truncate flex items-center gap-1.5',
-                      active
-                        ? 'bg-primary/10 text-primary ring-1 ring-primary/30'
-                        : 'text-foreground hover:bg-muted/60'
+                      'cursor-pointer transition-colors group',
+                      isSelected
+                        ? 'bg-primary/10 hover:bg-primary/15 ring-1 ring-inset ring-primary/40'
+                        : 'hover:bg-muted/40'
                     )}
-                    title={`${v.nome} · ${formatPercent(pct)}`}
                   >
-                    <span className={cn('h-1.5 w-1.5 rounded-full flex-shrink-0', dotColor)} />
-                    <span className="truncate flex-1">{v.nome}</span>
-                  </button>
+                    <TableCell className="font-semibold uppercase text-xs px-2">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <span className={cn(
+                          'h-1.5 w-1.5 rounded-full flex-shrink-0',
+                          cor === 'emerald' && 'bg-emerald-500',
+                          cor === 'amber' && 'bg-amber-500',
+                          cor === 'red' && 'bg-red-500',
+                        )} />
+                        {compactDashboard ? (
+                          <button
+                            type="button"
+                            aria-pressed={isSelected}
+                            title={r.nome}
+                            className={cn('min-w-0 truncate rounded-sm text-left hover:text-primary focus-visible:outline focus-visible:outline-1', isSelected && 'text-primary')}
+                          >
+                            {r.nome}
+                          </button>
+                        ) : (
+                          <span className={cn('truncate', isSelected && 'text-primary')} title={r.nome}>{r.nome}</span>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-right px-2">
+                      <span className={cn(
+                        'font-mono text-xs font-semibold',
+                        cor === 'emerald' && 'text-emerald-500',
+                        cor === 'amber' && 'text-amber-500',
+                        cor === 'red' && 'text-red-500',
+                      )}>
+                        {formatPercent(r.pctMeta)}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-right font-mono text-xs px-2 truncate">{formatCurrency(r.valorMedio)}</TableCell>
+                    <TableCell className="text-right font-mono text-xs text-muted-foreground px-2 truncate">{formatCurrency(r.metaMedia)}</TableCell>
+                  </TableRow>
                 );
               })}
-            </div>
-          </CardContent>
-        </Card>
+            </TableBody>
+          </AverageTable>
+        </div>
+      </CardContent>
+    </Card>
+  );
 
-        {/* Valor Total + Meta Total empilhados */}
-        <div className="lg:col-span-3 grid grid-rows-2 gap-3">
-          <Card className="commercial-dashboard-panel relative overflow-hidden rounded-lg border-border/60 bg-card transition-colors duration-300 hover:border-emerald-500/35 hover:bg-muted/30">
-            <CardContent className="p-4 flex flex-col justify-between h-full relative">
-              <div className="flex items-start justify-between">
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Valor Total</p>
-                <Calendar className="h-4 w-4 text-emerald-500" />
+  const salesChart = (
+    <Card className={cn('commercial-dashboard-panel commercial-chart-frame', compactDashboard ? 'dashboard-frame dashboard-detail-chart' : 'lg:col-span-7')}>
+      <CardHeader className={compactDashboard ? 'dashboard-detail-chart-header space-y-0 p-0' : 'pb-2'}>
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <div>
+            <CardTitle className="text-base flex items-center gap-2">
+              <span className="h-2 w-2 rounded-full bg-emerald-500" />
+              Realizado vs Meta {chartView === 'anual' ? 'Anual' : chartView === 'mensal' ? 'Mensal' : 'Diária'}
+            </CardTitle>
+            <p className="text-xs text-muted-foreground mt-1">
+              Meta diária média: <span className="font-semibold text-foreground">{diasUteisNoMes > 0 ? formatCurrency(kpisGerais.totalMeta / diasUteisNoMes) : '—'}</span>
+              {' • '}
+              <span className={cn(
+                'font-semibold',
+                totais.percentual >= 100 ? 'text-emerald-500' : totais.percentual >= 80 ? 'text-amber-500' : 'text-red-500'
+              )}>{formatPercent(totais.percentual)} atingido</span>
+              {anosAtingidos && (
+                <> {' • '}<span className="font-semibold">{anosAtingidos.ok}/{anosAtingidos.total} anos ≥ meta</span></>
+              )}
+            </p>
+          </div>
+          {melhorPonto && chartView === 'anual' && (
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-emerald-500/10 border border-emerald-500/30">
+              <Trophy className="h-4 w-4 text-emerald-500" />
+              <div className="text-xs">
+                <p className="text-[10px] uppercase font-semibold text-muted-foreground">Melhor ano - {melhorPonto.label}</p>
+                <p className="font-bold text-emerald-500">{formatCurrency(melhorPonto.valor)}</p>
               </div>
-              <div>
-                <p className="text-2xl font-bold mt-2 text-emerald-500">
-                  {formatCurrency(totais.valorTotal)}
-                </p>
-                <div className="mt-1 h-1 rounded-full bg-muted overflow-hidden">
-                  <div
-                    className="h-full bg-emerald-500"
-                    style={{ width: `${Math.min(totais.percentual, 100)}%` }}
-                  />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="commercial-dashboard-panel relative overflow-hidden rounded-lg border-border/60 bg-card transition-colors duration-300 hover:border-violet-500/35 hover:bg-muted/30">
-            <CardContent className="p-4 flex flex-col justify-between h-full relative">
-              <div className="flex items-start justify-between">
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Meta Total</p>
-                <Target className="h-4 w-4 text-violet-500" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold mt-2 text-violet-500">
-                  {formatCurrency(totais.metaTotal)}
-                </p>
-                {(() => {
-                  const diff = totais.valorTotal - totais.metaTotal;
-                  const isAcima = diff >= 0;
-                  return (
-                    <p className="text-[10px] text-muted-foreground mt-1">
-                      {isAcima ? 'Acima ' : 'Abaixo '}
-                      <span className={cn('font-semibold', isAcima ? 'text-emerald-500' : 'text-rose-500')}>
-                        {formatCurrency(Math.abs(diff))}
-                      </span>
-                    </p>
-                  );
-                })()}
-              </div>
-            </CardContent>
-          </Card>
+            </div>
+          )}
+        </div>
+        <div className={cn('flex gap-1', compactDashboard ? 'dashboard-detail-chart-controls' : 'mt-2')}>
+          {(['anual', 'mensal', 'diario'] as ChartView[]).map(v => (
+            <Button
+              key={v}
+              variant={chartView === v ? 'default' : 'ghost'}
+              aria-pressed={chartView === v}
+              size="sm"
+              className="h-7 px-3 text-xs capitalize"
+              onClick={() => setChartView(v)}
+            >
+              {v === 'diario' ? 'Diário' : v === 'mensal' ? 'Mensal' : 'Anual'}
+            </Button>
+          ))}
+        </div>
+      </CardHeader>
+      <CardContent className={compactDashboard ? 'dashboard-detail-chart-body p-0' : undefined}>
+        <div className={compactDashboard ? 'dashboard-detail-chart-plot' : 'h-64'}>
+          <ResponsiveContainer width="100%" height="100%">
+            <ComposedChart data={dadosGrafico}>
+              <CartesianGrid strokeDasharray="3 3" className="stroke-border/40" />
+              <XAxis dataKey="label" tick={{ fontSize: 11 }} />
+              <YAxis tickFormatter={(v) => formatCompactNumber(v)} tick={{ fontSize: 11 }} />
+              <Tooltip
+                formatter={(v: number) => formatCurrency(v)}
+                cursor={{ fill: 'hsl(var(--muted) / 0.4)' }}
+                contentStyle={{
+                  backgroundColor: 'hsl(var(--popover))',
+                  border: '1px solid hsl(var(--border))',
+                  borderRadius: 8,
+                }}
+              />
+              <Legend wrapperStyle={{ fontSize: 12 }} />
+              <Bar dataKey="valor" name="Valor Venda" fill="hsl(142 71% 45%)" radius={[6, 6, 0, 0]} maxBarSize={80} isAnimationActive={!reduceMotion} animationDuration={compactDashboard ? 340 : 800} />
+              <Line
+                type="monotone"
+                dataKey="meta"
+                name="Meta"
+                stroke="hsl(280, 65%, 60%)"
+                strokeWidth={2.5}
+                strokeDasharray="5 5"
+                dot={{ r: 3, fill: 'hsl(280, 65%, 60%)', strokeWidth: 1, stroke: 'hsl(var(--background))' }}
+                activeDot={{ r: 5, fill: 'hsl(280, 65%, 70%)' }}
+                animationDuration={800}
+                isAnimationActive={false}
+              />
+              {chartView !== 'diario' && (
+                <Line
+                  type="monotone"
+                  dataKey="metaDiaria"
+                  name="Meta Diária"
+                  stroke="hsl(38, 92%, 55%)"
+                  strokeWidth={2}
+                  strokeDasharray="2 4"
+                  dot={{ r: 2.5, fill: 'hsl(38, 92%, 55%)', strokeWidth: 1, stroke: 'hsl(var(--background))' }}
+                  activeDot={{ r: 4, fill: 'hsl(38, 92%, 65%)' }}
+                  isAnimationActive={!reduceMotion}
+                  animationDuration={compactDashboard ? 320 : 800}
+                />
+              )}
+            </ComposedChart>
+          </ResponsiveContainer>
         </div>
 
-        {/* Gauge % Meta - Premium SaaS Enterprise (Donut Gauge) */}
-        <Card
-          className="commercial-dashboard-panel commercial-chart-frame lg:col-span-3 relative overflow-hidden bg-card border-border"
-          style={{
-            fontFamily: 'Inter, "SF Pro Display", -apple-system, BlinkMacSystemFont, sans-serif',
-          }}
+        {/* KPIs do gráfico */}
+        <div className={cn('grid grid-cols-2 md:grid-cols-4 gap-3 mt-4', compactDashboard && 'dashboard-detail-chart-metrics')}>
+          <div className="rounded-md border border-border/40 bg-muted/20 px-3 py-2 border-l-2 border-l-emerald-500/70 flex flex-col justify-between min-h-[58px]">
+            <p className="text-[10px] uppercase font-semibold text-muted-foreground tracking-wide">Total Realizado</p>
+            <p className="font-bold text-sm font-mono mt-1">{formatCurrency(totaisGrafico.totalRealizado)}</p>
+          </div>
+          <div className="rounded-md border border-border/40 bg-muted/20 px-3 py-2 border-l-2 border-l-violet-500/70 flex flex-col justify-between min-h-[58px]">
+            <p className="text-[10px] uppercase font-semibold text-muted-foreground tracking-wide">Meta Total</p>
+            <p className="font-bold text-sm font-mono mt-1">{formatCurrency(totaisGrafico.totalMeta)}</p>
+          </div>
+          <div className={cn(
+            'rounded-md border border-border/40 bg-muted/20 px-3 py-2 border-l-2 flex flex-col justify-between min-h-[58px]',
+            totaisGrafico.diferenca >= 0 ? 'border-l-emerald-500/70' : 'border-l-red-500/70'
+          )}>
+            <p className="text-[10px] uppercase font-semibold text-muted-foreground tracking-wide">Diferença</p>
+            <p className={cn('font-bold text-sm font-mono mt-1 flex items-center gap-1', totaisGrafico.diferenca >= 0 ? 'text-emerald-500' : 'text-red-500')}>
+              {totaisGrafico.diferenca >= 0 ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />}
+              {formatCurrency(Math.abs(totaisGrafico.diferenca))}
+            </p>
+          </div>
+          <div className="rounded-md border border-border/40 bg-muted/20 px-3 py-2 border-l-2 border-l-amber-500/70 flex flex-col justify-between min-h-[58px]">
+            <p className="text-[10px] uppercase font-semibold text-muted-foreground tracking-wide">Meta Diária</p>
+            <p className="font-bold text-sm font-mono mt-1">{formatCurrency(totaisGrafico.metaDiaria)}</p>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+
+  const overallAverages = (
+    <Card className={cn('commercial-dashboard-panel commercial-chart-frame', compactDashboard ? 'dashboard-frame dashboard-detail-average-panel' : 'lg:col-span-5')}>
+      <CardHeader className={compactDashboard ? 'dashboard-detail-average-header space-y-0 p-0' : 'pb-2'}>
+        <CardTitle className="text-base">Média Mensal Geral</CardTitle>
+        <p className="text-xs text-muted-foreground">Faturamento e meta por período · evolução vs mesmo mês ano anterior</p>
+      </CardHeader>
+      <CardContent className={compactDashboard ? 'dashboard-detail-average-body p-0' : undefined}>
+        <div
+          className={compactDashboard ? 'dashboard-detail-average-viewport' : 'max-h-[320px] overflow-y-auto overflow-x-hidden scrollbar-thin'}
+          role={compactDashboard ? 'region' : undefined}
+          aria-label={compactDashboard ? 'Tabela de médias mensais gerais' : undefined}
+          tabIndex={compactDashboard ? 0 : undefined}
         >
-          <CardContent className="p-5 flex flex-col h-full relative">
-            <div className="flex items-center justify-between w-full">
-              <div className="flex items-center gap-2">
-                <Target className="h-3.5 w-3.5 text-emerald-500" strokeWidth={2.5} />
-                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                  Meta Atingida
-                </p>
-              </div>
-              {totais.percentual >= 100 && (
-                <span className="inline-flex items-center gap-1 text-[10px] font-bold tracking-wider px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-500 border border-emerald-500/30">
-                  <Check className="h-3 w-3" strokeWidth={3} />
-                  META SUPERADA
-                </span>
-              )}
-            </div>
-            <div className="flex-1 flex items-center justify-center">
-              <GaugeSemi percent={totais.percentual} />
-            </div>
-          </CardContent>
-        </Card>
-
-
-        {/* Média mensal por vendedor */}
-        <Card className="commercial-dashboard-panel lg:col-span-4">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base">Média Mensal por Vendedor</CardTitle>
-            <p className="text-xs text-muted-foreground">{qtdMesesPeriodo} {qtdMesesPeriodo === 1 ? 'mês' : 'meses'} no período</p>
-          </CardHeader>
-          <CardContent className="pt-0">
-            <div className="max-h-[260px] overflow-y-auto overflow-x-hidden scrollbar-thin">
-              <Table className="w-full table-fixed">
-                <TableHeader className="sticky top-0 bg-card z-10">
-                  <TableRow>
-                    <TableHead className="text-xs px-2 w-[52%]">Vendedor</TableHead>
-                    <TableHead className="text-xs text-right px-2 w-[14%]">% Meta</TableHead>
-                    <TableHead className="text-xs text-right px-2 w-[17%]">Valor Médio</TableHead>
-                    <TableHead className="text-xs text-right px-2 w-[17%]">Meta Média</TableHead>
+          <AverageTable className="w-full table-fixed">
+            <TableHeader className="sticky top-0 bg-card z-10">
+              <TableRow>
+                <TableHead className="text-xs px-1.5 w-[10%]">Ano</TableHead>
+                <TableHead className="text-xs px-1.5 w-[14%]">Mês</TableHead>
+                <TableHead className="text-xs text-right px-1.5 w-[12%]">% Meta</TableHead>
+                <TableHead className="text-xs text-right px-1.5 w-[24%]">Valor</TableHead>
+                <TableHead className="text-xs text-right px-1.5 w-[22%]">Meta</TableHead>
+                <TableHead className="text-xs text-right px-1.5 w-[18%]">Evol.</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {mediaMensalGeral.map(l => {
+                const cor = l.pct >= 100 ? 'emerald' : l.pct >= 80 ? 'amber' : 'red';
+                return (
+                  <TableRow key={l.key} className="hover:bg-muted/40 transition-colors">
+                    <TableCell className="font-semibold text-xs px-1.5">{l.ano}</TableCell>
+                    <TableCell className="text-xs px-1.5 truncate">{l.mesNome}</TableCell>
+                    <TableCell className="text-right px-1.5">
+                      {l.meta > 0 ? (
+                        <span className={cn(
+                          'font-mono text-xs font-semibold',
+                          cor === 'emerald' && 'text-emerald-500',
+                          cor === 'amber' && 'text-amber-500',
+                          cor === 'red' && 'text-red-500',
+                        )}>
+                          {formatPercent(l.pct)}
+                        </span>
+                      ) : (
+                        <span className="font-mono text-xs text-muted-foreground">—</span>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-right font-mono text-xs px-1.5 whitespace-nowrap" title={formatCurrency(l.valor)}>
+                      {formatCurrency(l.valor)}
+                    </TableCell>
+                    <TableCell className="text-right font-mono text-xs text-muted-foreground px-1.5 whitespace-nowrap" title={l.meta > 0 ? formatCurrency(l.meta) : ''}>
+                      {l.meta > 0 ? formatCurrency(l.meta) : '—'}
+                    </TableCell>
+                    <TableCell className="text-right font-mono text-xs px-1.5">
+                      {l.evolucao === null ? (
+                        <span className="text-muted-foreground inline-flex items-center gap-0.5"><Minus className="h-3 w-3" /></span>
+                      ) : (
+                        <span className={cn(
+                          'inline-flex items-center gap-0.5 font-semibold',
+                          l.evolucao >= 0 ? 'text-emerald-500' : 'text-red-500'
+                        )}>
+                          {l.evolucao >= 0 ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />}
+                          {formatPercent(Math.abs(l.evolucao))}
+                        </span>
+                      )}
+                    </TableCell>
                   </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {mediaMensalPorVendedor.map(r => {
-                    const cor = r.pctMeta >= 100 ? 'emerald' : r.pctMeta >= 80 ? 'amber' : 'red';
-                    const isSelected = vendedorFoco === String(r.codigo);
-                    return (
-                      <TableRow
-                        key={r.codigo}
-                        onClick={() => setVendedorFoco(isSelected ? null : String(r.codigo))}
-                        className={cn(
-                          'cursor-pointer transition-colors group',
-                          isSelected
-                            ? 'bg-primary/10 hover:bg-primary/15 ring-1 ring-inset ring-primary/40'
-                            : 'hover:bg-muted/40'
-                        )}
-                      >
-                        <TableCell className="font-semibold uppercase text-xs px-2">
-                          <div className="flex items-center gap-1.5 min-w-0">
-                            <span className={cn(
-                              'h-1.5 w-1.5 rounded-full flex-shrink-0',
-                              cor === 'emerald' && 'bg-emerald-500',
-                              cor === 'amber' && 'bg-amber-500',
-                              cor === 'red' && 'bg-red-500',
-                            )} />
-                            <span className={cn('truncate', isSelected && 'text-primary')} title={r.nome}>{r.nome}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-right px-2">
-                          <span className={cn(
-                            'font-mono text-xs font-semibold',
-                            cor === 'emerald' && 'text-emerald-500',
-                            cor === 'amber' && 'text-amber-500',
-                            cor === 'red' && 'text-red-500',
-                          )}>
-                            {formatPercent(r.pctMeta)}
-                          </span>
-                        </TableCell>
-                        <TableCell className="text-right font-mono text-xs px-2 truncate">{formatCurrency(r.valorMedio)}</TableCell>
-                        <TableCell className="text-right font-mono text-xs text-muted-foreground px-2 truncate">{formatCurrency(r.metaMedia)}</TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+                );
+              })}
+            </TableBody>
+          </AverageTable>
+        </div>
+      </CardContent>
+    </Card>
+  );
 
-      {/* ============== LINHA 2: Realizado vs Meta + Média Mensal Geral ============== */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
-        {/* Gráfico Realizado vs Meta */}
-        <Card className="commercial-dashboard-panel commercial-chart-frame lg:col-span-7">
-          <CardHeader className="pb-2">
-            <div className="flex items-center justify-between flex-wrap gap-2">
-              <div>
-                <CardTitle className="text-base flex items-center gap-2">
-                  <span className="h-2 w-2 rounded-full bg-emerald-500" />
-                  Realizado vs Meta {chartView === 'anual' ? 'Anual' : chartView === 'mensal' ? 'Mensal' : 'Diária'}
-                </CardTitle>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Meta diária média: <span className="font-semibold text-foreground">{formatCurrency(kpisGerais.totalMeta / diasUteisNoMes)}</span>
-                  {' • '}
-                  <span className={cn(
-                    'font-semibold',
-                    totais.percentual >= 100 ? 'text-emerald-500' : totais.percentual >= 80 ? 'text-amber-500' : 'text-red-500'
-                  )}>{formatPercent(totais.percentual)} atingido</span>
-                  {anosAtingidos && (
-                    <> {' • '}<span className="font-semibold">{anosAtingidos.ok}/{anosAtingidos.total} anos ≥ meta</span></>
-                  )}
-                </p>
-              </div>
-              {melhorPonto && chartView === 'anual' && (
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-emerald-500/10 border border-emerald-500/30">
-                  <Trophy className="h-4 w-4 text-emerald-500" />
-                  <div className="text-xs">
-                    <p className="text-[10px] uppercase font-semibold text-muted-foreground">Melhor ano - {melhorPonto.label}</p>
-                    <p className="font-bold text-emerald-500">{formatCurrency(melhorPonto.valor)}</p>
+  if (compactDashboard) {
+    const gap = totais.valorTotal - totais.metaTotal;
+    return (
+      <div className="dashboard-details-dashboard">
+        {metrics}
+        <div className="dashboard-detail-main">
+          {salesChart}
+          <section className="dashboard-frame dashboard-detail-goal" aria-label="Resumo da meta">
+            <header className="dashboard-panel-heading">
+              <h3><Target aria-hidden="true" /> Resumo da meta</h3>
+              <Select
+                value={vendedorFoco ?? 'todos'}
+                onValueChange={(value) => setVendedorFoco(value === 'todos' ? null : value)}
+              >
+                <SelectTrigger aria-label="Destacar vendedor" className="h-8 w-40 max-w-full min-w-0 text-xs [&>span]:truncate">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="commercial-overlay">
+                  <SelectItem value="todos">Todos os vendedores</SelectItem>
+                  {vendedoresLista.map((vendedor) => (
+                    <SelectItem key={String(vendedor.codigo)} value={String(vendedor.codigo)}>{vendedor.nome}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </header>
+            <div className="dashboard-detail-goal-body">
+              <DashboardGoalRing percent={totais.metaTotal > 0 ? totais.percentual : null} />
+              <dl className="dashboard-detail-goal-readings">
+                <div><dt>Valor realizado</dt><dd>{formatCurrency(totais.valorTotal)}</dd></div>
+                <div><dt>Meta total</dt><dd>{totais.metaTotal > 0 ? formatCurrency(totais.metaTotal) : '—'}</dd></div>
+                {totais.metaTotal > 0 && (
+                  <div>
+                    <dt>{gap < 0 ? 'Falta para a meta' : 'Acima da meta'}</dt>
+                    <dd className={gap < 0 ? 'text-destructive' : 'text-success'}>{formatCurrency(Math.abs(gap))}</dd>
                   </div>
-                </div>
-              )}
+                )}
+              </dl>
             </div>
-            <div className="flex gap-1 mt-2">
-              {(['anual', 'mensal', 'diario'] as ChartView[]).map(v => (
-                <Button
-                  key={v}
-                  variant={chartView === v ? 'default' : 'ghost'}
-                  size="sm"
-                  className="h-7 px-3 text-xs capitalize"
-                  onClick={() => setChartView(v)}
-                >
-                  {v === 'diario' ? 'Diário' : v === 'mensal' ? 'Mensal' : 'Anual'}
-                </Button>
-              ))}
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <ComposedChart data={dadosGrafico}>
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-border/40" />
-                  <XAxis dataKey="label" tick={{ fontSize: 11 }} />
-                  <YAxis tickFormatter={(v) => formatCompactNumber(v)} tick={{ fontSize: 11 }} />
-                  <Tooltip
-                    formatter={(v: number) => formatCurrency(v)}
-                    cursor={{ fill: 'hsl(var(--muted) / 0.4)' }}
-                    contentStyle={{
-                      backgroundColor: 'hsl(var(--popover))',
-                      border: '1px solid hsl(var(--border))',
-                      borderRadius: 8,
-                    }}
-                  />
-                  <Legend wrapperStyle={{ fontSize: 12 }} />
-                  <Bar dataKey="valor" name="Valor Venda" fill="hsl(142 71% 45%)" radius={[6, 6, 0, 0]} maxBarSize={80} animationDuration={800} />
-                  <Line
-                    type="monotone"
-                    dataKey="meta"
-                    name="Meta"
-                    stroke="hsl(280, 65%, 60%)"
-                    strokeWidth={2.5}
-                    strokeDasharray="5 5"
-                    dot={{ r: 3, fill: 'hsl(280, 65%, 60%)', strokeWidth: 1, stroke: 'hsl(var(--background))' }}
-                    activeDot={{ r: 5, fill: 'hsl(280, 65%, 70%)' }}
-                    animationDuration={800}
-                    isAnimationActive={false}
-                  />
-                  {chartView !== 'diario' && (
-                    <Line
-                      type="monotone"
-                      dataKey="metaDiaria"
-                      name="Meta Diária"
-                      stroke="hsl(38, 92%, 55%)"
-                      strokeWidth={2}
-                      strokeDasharray="2 4"
-                      dot={{ r: 2.5, fill: 'hsl(38, 92%, 55%)', strokeWidth: 1, stroke: 'hsl(var(--background))' }}
-                      activeDot={{ r: 4, fill: 'hsl(38, 92%, 65%)' }}
-                      animationDuration={800}
-                    />
-                  )}
-                </ComposedChart>
-              </ResponsiveContainer>
-            </div>
+          </section>
+        </div>
+        {periodSignals}
+        <div className="dashboard-detail-averages">
+          {sellerAverages}
+          {overallAverages}
+        </div>
+      </div>
+    );
+  }
 
-            {/* KPIs do gráfico */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4">
-              <div className="rounded-md border border-border/40 bg-muted/20 px-3 py-2 border-l-2 border-l-emerald-500/70 flex flex-col justify-between min-h-[58px]">
-                <p className="text-[10px] uppercase font-semibold text-muted-foreground tracking-wide">Total Realizado</p>
-                <p className="font-bold text-sm font-mono mt-1">{formatCurrency(totaisGrafico.totalRealizado)}</p>
-              </div>
-              <div className="rounded-md border border-border/40 bg-muted/20 px-3 py-2 border-l-2 border-l-violet-500/70 flex flex-col justify-between min-h-[58px]">
-                <p className="text-[10px] uppercase font-semibold text-muted-foreground tracking-wide">Meta Total</p>
-                <p className="font-bold text-sm font-mono mt-1">{formatCurrency(totaisGrafico.totalMeta)}</p>
-              </div>
-              <div className={cn(
-                'rounded-md border border-border/40 bg-muted/20 px-3 py-2 border-l-2 flex flex-col justify-between min-h-[58px]',
-                totaisGrafico.diferenca >= 0 ? 'border-l-emerald-500/70' : 'border-l-red-500/70'
-              )}>
-                <p className="text-[10px] uppercase font-semibold text-muted-foreground tracking-wide">Diferença</p>
-                <p className={cn('font-bold text-sm font-mono mt-1 flex items-center gap-1', totaisGrafico.diferenca >= 0 ? 'text-emerald-500' : 'text-red-500')}>
-                  {totaisGrafico.diferenca >= 0 ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />}
-                  {formatCurrency(Math.abs(totaisGrafico.diferenca))}
-                </p>
-              </div>
-              <div className="rounded-md border border-border/40 bg-muted/20 px-3 py-2 border-l-2 border-l-amber-500/70 flex flex-col justify-between min-h-[58px]">
-                <p className="text-[10px] uppercase font-semibold text-muted-foreground tracking-wide">Meta Diária</p>
-                <p className="font-bold text-sm font-mono mt-1">{formatCurrency(totaisGrafico.metaDiaria)}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Média mensal geral */}
-        <Card className="commercial-dashboard-panel commercial-chart-frame lg:col-span-5">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base">Média Mensal Geral</CardTitle>
-            <p className="text-xs text-muted-foreground">Faturamento e meta por período · evolução vs mesmo mês ano anterior</p>
-          </CardHeader>
-          <CardContent>
-            <div className="max-h-[320px] overflow-y-auto overflow-x-hidden scrollbar-thin">
-              <Table className="w-full table-fixed">
-                <TableHeader className="sticky top-0 bg-card z-10">
-                  <TableRow>
-                    <TableHead className="text-xs px-1.5 w-[10%]">Ano</TableHead>
-                    <TableHead className="text-xs px-1.5 w-[14%]">Mês</TableHead>
-                    <TableHead className="text-xs text-right px-1.5 w-[12%]">% Meta</TableHead>
-                    <TableHead className="text-xs text-right px-1.5 w-[24%]">Valor</TableHead>
-                    <TableHead className="text-xs text-right px-1.5 w-[22%]">Meta</TableHead>
-                    <TableHead className="text-xs text-right px-1.5 w-[18%]">Evol.</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {mediaMensalGeral.map(l => {
-                    const cor = l.pct >= 100 ? 'emerald' : l.pct >= 80 ? 'amber' : 'red';
-                    return (
-                      <TableRow key={l.key} className="hover:bg-muted/40 transition-colors">
-                        <TableCell className="font-semibold text-xs px-1.5">{l.ano}</TableCell>
-                        <TableCell className="text-xs px-1.5 truncate">{l.mesNome}</TableCell>
-                        <TableCell className="text-right px-1.5">
-                          {l.meta > 0 ? (
-                            <span className={cn(
-                              'font-mono text-xs font-semibold',
-                              cor === 'emerald' && 'text-emerald-500',
-                              cor === 'amber' && 'text-amber-500',
-                              cor === 'red' && 'text-red-500',
-                            )}>
-                              {formatPercent(l.pct)}
-                            </span>
-                          ) : (
-                            <span className="font-mono text-xs text-muted-foreground">—</span>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-right font-mono text-xs px-1.5 whitespace-nowrap" title={formatCurrency(l.valor)}>
-                          {formatCurrency(l.valor)}
-                        </TableCell>
-                        <TableCell className="text-right font-mono text-xs text-muted-foreground px-1.5 whitespace-nowrap" title={l.meta > 0 ? formatCurrency(l.meta) : ''}>
-                          {l.meta > 0 ? formatCurrency(l.meta) : '—'}
-                        </TableCell>
-                        <TableCell className="text-right font-mono text-xs px-1.5">
-                          {l.evolucao === null ? (
-                            <span className="text-muted-foreground inline-flex items-center gap-0.5"><Minus className="h-3 w-3" /></span>
-                          ) : (
-                            <span className={cn(
-                              'inline-flex items-center gap-0.5 font-semibold',
-                              l.evolucao >= 0 ? 'text-emerald-500' : 'text-red-500'
-                            )}>
-                              {l.evolucao >= 0 ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />}
-                              {formatPercent(Math.abs(l.evolucao))}
-                            </span>
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </div>
-          </CardContent>
-        </Card>
+  return (
+    <div className="space-y-4">
+      {metrics}
+      {periodSignals}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
+        {sellerList}
+        {totalsCards}
+        {progressGauge}
+        {sellerAverages}
+      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
+        {salesChart}
+        {overallAverages}
       </div>
     </div>
   );
