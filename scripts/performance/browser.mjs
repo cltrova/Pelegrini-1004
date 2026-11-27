@@ -135,12 +135,13 @@ async function click(label) {
     const label = ${JSON.stringify(label)};
     const items = [...document.querySelectorAll('button, a, [role="tab"], [role="option"], [role="checkbox"]')];
     const item = items.find(x => (x.getAttribute('aria-label') || x.textContent).trim() === label && x.getClientRects().length);
-    if (!item || item.disabled || item.getAttribute('aria-disabled') === 'true') return null;
+    if (!item) return {error: 'Controle ausente'};
+    if (item.disabled || item.getAttribute('aria-disabled') === 'true') return {error: 'Controle desabilitado'};
     item.scrollIntoView({block:'nearest'});
     const r = item.getBoundingClientRect();
     return [r.x + r.width / 2, r.y + r.height / 2];
   })()`);
-  if (!matched) throw new Error(`Controle ausente: ${label}`);
+  if (!Array.isArray(matched)) throw new Error(`${matched?.error ?? 'Controle ausente'}: ${label}`);
   const [x, y] = matched;
   await call('Input.dispatchMouseEvent', { type: 'mousePressed', x, y, button: 'left', clickCount: 1 });
   await call('Input.dispatchMouseEvent', { type: 'mouseReleased', x, y, button: 'left', clickCount: 1 });

@@ -203,6 +203,13 @@ describe('MetasVendedoresPage commercial dashboard', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Expandir filtros' }));
     produtosFiltroState.value = { ...produtosFiltroState.value, isFetching: true };
     fetchingState.value = 1;
+    const panel = await screen.findByRole('dialog', { name: 'Filtros comerciais' });
+    fireEvent.click(within(panel).getByRole('button', { name: '2026' }));
+    fireEvent.click(await screen.findByRole('button', { name: '2025' }));
+    vi.mocked(useComercialData).mockReturnValue({
+      ...comercialData,
+      isFetching: true,
+    } as ReturnType<typeof useComercialData>);
     await act(async () => rerender(<MetasVendedoresPage />));
     expect(screen.getByRole('button', { name: 'Buscar' })).toBeEnabled();
     fireEvent.click(screen.getByRole('button', { name: 'Buscar' }));

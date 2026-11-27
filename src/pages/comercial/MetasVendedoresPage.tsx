@@ -610,7 +610,7 @@ export default function MetasVendedoresPage() {
       appliedFilters={appliedFilters || getDefaultFiltersForEmpresa(codEmpresaAtiva)}
       onPendingFiltersChange={handlePendingFiltersChange}
       onApply={handleBuscar}
-      isApplying={isRefreshing}
+      isApplying={isRefreshing && !hasChanges}
       onClear={handleClearFilters}
       hasChanges={hasChanges}
       anos={ANOS_DISPONIVEIS}

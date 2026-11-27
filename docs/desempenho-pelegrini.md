@@ -16,7 +16,7 @@ No Dashboard da Chevrolet, a leitura de itens chegou a oito requisições e 4,42
 
 O candidato consulta o período inicial imediatamente, compartilha a leitura de produtos entre filtros que só mudam os cálculos locais e normaliza os nomes de vendedores uma vez por comparação. Na DRE, o arquivo local de demonstração de 6,78 MB deixou de ser dependência estática da rota e passa a carregar quando a fonte local é usada. A geração diária dos insights de IA mantém a cadência existente.
 
-Na revisão oficial da Chevrolet, a volta à Visão geral levou 0,33 s em uma sessão com dados já carregados. As tentativas de abrir Comparativos e Metas aguardaram 19,29 s e 23,84 s, respectivamente, sem confirmação de prontidão. Ao selecionar Ano completo, o botão Buscar ficou desabilitado enquanto as opções de vendedores carregavam. O candidato permite enviar o período durante a consulta das opções. O relatório anual e o recorte integral ainda precisam de medição com dados completos.
+Na revisão oficial da Chevrolet, a volta à Visão geral levou 0,33 s em uma sessão com dados já carregados. As tentativas de abrir Comparativos e Metas aguardaram 19,29 s e 23,84 s, respectivamente, sem confirmação de prontidão. Ao selecionar Ano completo, o botão Buscar ficou desabilitado enquanto as opções de vendedores carregavam. O clique no candidato iniciou a consulta anual. Após quatro segundos, ainda havia duas chamadas de produtos e duas de pedidos pendentes. O relatório anual e o recorte integral ainda precisam de medição com dados completos.
 
 ## Origem e capacidade
 
