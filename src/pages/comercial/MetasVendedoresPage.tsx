@@ -59,6 +59,7 @@ type VendedorDetalheRow = {
   nome: string;
   metaMensal: number;
   faturamentoMesAtual: number;
+  totalDevolucoes?: number;
   valorPendente: number;
   valorTotal: number;
   percentualMetaFaturado: number;
@@ -427,7 +428,7 @@ export default function MetasVendedoresPage() {
       const diferenca = faturamentoMesAtual - metaEsperada;
 
       // Status
-      const status = percentualMetaFaturado >= 100 ? 'acima' : percentualMetaFaturado >= 90 ? 'proximo' : 'abaixo';
+      const status: VendedorDetalheRow['status'] = percentualMetaFaturado >= 100 ? 'acima' : percentualMetaFaturado >= 90 ? 'proximo' : 'abaixo';
       
       return {
         ...v,
@@ -464,6 +465,7 @@ export default function MetasVendedoresPage() {
       const existente = vendedoresComMeta.find(row => String(row.codigo) === v.codigo || String(row.nome).trim().toUpperCase() === v.nome.toUpperCase());
       const metaMensal = existente?.metaMensal || 0;
       const percentualMetaFaturado = metaMensal > 0 ? (v.receita / metaMensal) * 100 : 0;
+      const status: VendedorDetalheRow['status'] = percentualMetaFaturado >= 100 ? 'acima' : percentualMetaFaturado >= 90 ? 'proximo' : 'abaixo';
       return {
         ...(existente || {}),
         codigo: existente?.codigo ?? v.codigo,
@@ -477,14 +479,14 @@ export default function MetasVendedoresPage() {
         percentualMetaFaturado,
         percentualMetaTotal: percentualMetaFaturado,
         diferenca: v.receita - (existente?.metaEsperada || 0),
-        status: percentualMetaFaturado >= 100 ? 'acima' : percentualMetaFaturado >= 90 ? 'proximo' : 'abaixo',
+        status,
         metaDiaria: existente?.metaDiaria || 0,
         metaEsperada: existente?.metaEsperada || 0,
         vendas: v.pedidos.size,
       };
     });
 
-    return incluirVendedoresSemReceita1004(linhasReceita, vendedoresComMeta);
+    return incluirVendedoresSemReceita1004<VendedorDetalheRow>(linhasReceita, vendedoresComMeta);
   }, [isPelegriniPage, receita1004PorVendedor, receita1004Totalizada, vendedoresComMeta]);
 
 
@@ -648,6 +650,7 @@ export default function MetasVendedoresPage() {
   const pedidosDetalheVisual: Array<Pedido | ProdutoItem> = isPelegriniPage ? pedidosFonteFinal : pedidos;
   const semVendedores = !vendedoresBaseVisual.length;
   const tabUsaFiltroProprio = activeTab === 'metas-diarias' || (isPelegriniPage && activeTab === 'campanhas');
+  const isCompactOverview = isLayoutPremium && activeTab === 'visao-geral';
   const tabTriggerClass = cn(
     'h-8 flex-none whitespace-nowrap px-3 text-xs',
     isPelegriniPage
@@ -672,62 +675,70 @@ export default function MetasVendedoresPage() {
     return 'bg-muted text-muted-foreground';
   };
 
+  const commercialFilters = !tabUsaFiltroProprio && (
+    <EnterpriseComercialFilters
+      pendingFilters={pendingFilters || getDefaultFiltersForEmpresa(codEmpresaAtiva)}
+      appliedFilters={appliedFilters || getDefaultFiltersForEmpresa(codEmpresaAtiva)}
+      onPendingFiltersChange={handlePendingFiltersChange}
+      onApply={handleBuscar}
+      isApplying={isRefreshing}
+      onClear={handleClearFilters}
+      hasChanges={hasChanges}
+      anos={ANOS_DISPONIVEIS}
+      vendedores={vendedoresParaFiltro1004}
+      resultCount={pedidosFonteFinal.length}
+      showVendedorFilter
+      useNativeControls
+      isOpen={filtersOpen}
+      onOpenChange={setFiltersOpen}
+      presentation={isCompactOverview ? 'popover' : 'inline'}
+    />
+  );
+
+  const handleTabChange = (value: string) => {
+    if (isLayoutPremium && (isCompactOverview || value === 'visao-geral')) setFiltersOpen(false);
+    setActiveTab(value);
+    try { sessionStorage.setItem('comercial:metas:tab', value); } catch { /* storage pode estar bloqueado pelo navegador */ }
+  };
+
   return (
     <ComercialCompactPage as="div" className={cn(
       'commercial-dashboard dashboard-commercial-page enterprise-page relative',
       isPelegriniPage && 'bg-background text-foreground',
+      isCompactOverview && 'dashboard-compact-overview',
     )}>
-      {!tabUsaFiltroProprio && (
-        <EnterpriseComercialFilters
-          pendingFilters={pendingFilters || getDefaultFiltersForEmpresa(codEmpresaAtiva)}
-          appliedFilters={appliedFilters || getDefaultFiltersForEmpresa(codEmpresaAtiva)}
-          onPendingFiltersChange={handlePendingFiltersChange}
-          onApply={handleBuscar}
-          isApplying={isRefreshing}
-          onClear={handleClearFilters}
-          hasChanges={hasChanges}
-          anos={ANOS_DISPONIVEIS}
-          vendedores={vendedoresParaFiltro1004}
-          resultCount={pedidosFonteFinal.length}
-          showVendedorFilter
-          useNativeControls
-          isOpen={filtersOpen}
-          onOpenChange={setFiltersOpen}
-        />
-      )}
+      {!isCompactOverview && commercialFilters}
 
       {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v); try { sessionStorage.setItem('comercial:metas:tab', v); } catch { /* storage pode estar bloqueado pelo navegador */ } }} className="flex min-h-0 flex-1 flex-col gap-2 overflow-hidden">
-        <div className="w-full shrink-0 overflow-x-auto overscroll-x-contain rounded-md [scrollbar-width:thin]">
-        <TabsList className={cn(
-          'commercial-tab-strip h-9 w-max min-w-full justify-start',
-          isPelegriniPage && 'border border-border/60 bg-muted/40 p-1 text-muted-foreground shadow-none [&_button:hover]:text-foreground [&_button[data-state=active]]:bg-primary [&_button[data-state=active]]:text-primary-foreground',
-        )}>
-          <TabsTrigger value="visao-geral" className={tabTriggerClass}>Visão geral</TabsTrigger>
-          {isPelegriniPage && (
-          <TabsTrigger value="detalhes" className={tabTriggerClass}>Detalhes</TabsTrigger>
-          )}
-          <TabsTrigger value="metas-diarias" className={tabTriggerClass}>Metas</TabsTrigger>
-          <TabsTrigger value="ranking" className={tabTriggerClass}>Ranking</TabsTrigger>
-          <TabsTrigger value="comparativos" className={tabTriggerClass}>Comparativos</TabsTrigger>
-          {isPelegriniPage && (
-            <TabsTrigger value="campanhas" className={tabTriggerClass}>Campanhas</TabsTrigger>
-          )}
-        </TabsList>
+      <Tabs value={activeTab} onValueChange={handleTabChange} className="flex min-h-0 flex-1 flex-col gap-2 overflow-hidden">
+        <div className={cn('flex min-w-0 shrink-0 items-start gap-2', isCompactOverview && 'dashboard-overview-toolbar')}>
+          <div className={cn('min-w-0 flex-1 rounded-md', !isCompactOverview && 'overflow-x-auto overscroll-x-contain [scrollbar-width:thin]')}>
+            <TabsList aria-label="Dashboard comercial" className={cn(
+              'commercial-tab-strip justify-start',
+              isCompactOverview ? 'flex h-auto min-h-9 w-full flex-wrap' : 'h-9 w-max min-w-full',
+              isPelegriniPage && 'border border-border/60 bg-muted/40 p-1 text-muted-foreground shadow-none [&_button:hover]:text-foreground [&_button[data-state=active]]:bg-primary [&_button[data-state=active]]:text-primary-foreground',
+            )}>
+              <TabsTrigger value="visao-geral" className={tabTriggerClass}>Visão geral</TabsTrigger>
+              {isPelegriniPage && <TabsTrigger value="detalhes" className={tabTriggerClass}>Detalhes</TabsTrigger>}
+              <TabsTrigger value="metas-diarias" className={tabTriggerClass}>Metas</TabsTrigger>
+              <TabsTrigger value="ranking" className={tabTriggerClass}>Ranking</TabsTrigger>
+              <TabsTrigger value="comparativos" className={tabTriggerClass}>Comparativos</TabsTrigger>
+              {isPelegriniPage && <TabsTrigger value="campanhas" className={tabTriggerClass}>Campanhas</TabsTrigger>}
+            </TabsList>
+          </div>
+          {isCompactOverview && commercialFilters}
         </div>
 
       <Suspense fallback={<ComercialTabFallback />}>
 
         {/* ==================== ABA: VISÃO GERAL ==================== */}
-        <TabsContent value="visao-geral" className="mt-0 min-h-0 flex-1 space-y-3 overflow-auto">
+        <TabsContent value="visao-geral" className={cn('mt-0 min-h-0 flex-1 overflow-auto', !isLayoutPremium && 'space-y-3')}>
           {isLayoutPremium ? (
             <VisaoGeralRapida1004
               vendedoresComMeta={vendedoresComMetaFonteFinal}
               vendedoresGrafico={vendedoresGraficoVisaoGeral1004}
               kpisGerais={kpisGerais}
               pedidos={pedidosFonteFinal}
-              evolucaoDiaria={evolucaoDiaria}
-              evolucaoMensal={evolucaoMensal}
               periodoFiltros={periodoFiltros}
               periodoAplicado={appliedFilters?.periodo}
               diasUteisNoMes={diasUteisNoMes}
@@ -742,7 +753,6 @@ export default function MetasVendedoresPage() {
               pedidos={pedidosDetalheVisual}
               kpisGerais={kpisGerais}
               periodoFiltros={periodoFiltros}
-              periodoAplicado={appliedFilters?.periodo}
               diasUteisNoMes={diasUteisNoMes}
               diasUteisDecorridos={diasUteisDecorridos}
             />

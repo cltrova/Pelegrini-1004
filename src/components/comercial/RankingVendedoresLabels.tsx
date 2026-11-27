@@ -9,23 +9,27 @@ interface RankingVendedorLabelRow {
   nome: string;
   mes: number;
   pctMeta: number;
+  rank?: number;
 }
 
 interface Props {
   data: RankingVendedorLabelRow[];
   modo: Modo;
   variant?: 'default' | 'pelegriniBlue';
+  onSelect?: (index: number) => void;
+  onHighlight?: (key: string | null) => void;
 }
 
-export function RankingVendedoresLabels({ data, modo, variant }: Props) {
+export function RankingVendedoresLabels({ data, modo, variant, onSelect, onHighlight }: Props) {
   const layout = getRankingVendedoresChartLayout(data.length);
   const isPelegrini = variant === 'pelegriniBlue';
+  const Label = onSelect ? 'button' : 'div';
 
   return (
     <div
       className={cn(
         "grid items-start gap-0",
-        isPelegrini ? "min-h-[48px] pl-[52px] pr-[18px] pt-1" : "min-h-[104px] pl-[68px] pr-4 pt-2",
+        isPelegrini ? "min-h-9 shrink-0 pl-[52px] pr-[18px] pt-0.5" : "min-h-[104px] pl-[68px] pr-4 pt-2",
       )}
       style={{ gridTemplateColumns: `repeat(${data.length}, minmax(0, 1fr))` }}
     >
@@ -35,7 +39,18 @@ export function RankingVendedoresLabels({ data, modo, variant }: Props) {
           : formatCurrency(row.mes || 0);
 
         return (
-          <div key={String(row.codigo ?? index)} className="min-w-0 text-center" title={row.nome}>
+          <Label
+            key={String(row.codigo ?? index)}
+            type={onSelect ? 'button' : undefined}
+            aria-label={onSelect ? `Abrir detalhes de ${row.nome}, ${valueLabel}` : undefined}
+            title={row.nome}
+            className={cn('min-w-0 text-center', onSelect && 'dashboard-ranking-label rounded-sm px-0.5 py-0.5 hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring')}
+            onClick={onSelect ? () => onSelect(index) : undefined}
+            onMouseEnter={() => onHighlight?.(String(row.codigo))}
+            onMouseLeave={() => onHighlight?.(null)}
+            onFocus={() => onHighlight?.(String(row.codigo))}
+            onBlur={() => onHighlight?.(null)}
+          >
             <span
               className={cn(
                 "block min-w-0 truncate text-muted-foreground",
@@ -46,7 +61,7 @@ export function RankingVendedoresLabels({ data, modo, variant }: Props) {
                 fontWeight: isPelegrini ? 700 : layout.sellerFontWeight,
               }}
             >
-              {index + 1}. {row.nome}
+              {row.rank ?? index + 1}. {row.nome}
             </span>
             <span
               aria-label={valueLabel}
@@ -63,7 +78,7 @@ export function RankingVendedoresLabels({ data, modo, variant }: Props) {
             >
               {valueLabel}
             </span>
-          </div>
+          </Label>
         );
       })}
     </div>

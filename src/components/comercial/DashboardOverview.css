@@ -1,0 +1,272 @@
+.dashboard-overview-grid {
+  display: grid;
+  min-block-size: 0;
+  grid-template-rows: auto clamp(14.5rem, 30dvh, 18rem) clamp(12rem, 26dvh, 16rem);
+  gap: 0.5rem;
+}
+
+.dashboard-overview-grid > .comercial-metric-strip {
+  min-block-size: 0;
+  grid-auto-flow: row;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  overflow: visible;
+}
+
+.dashboard-overview-grid .comercial-metric-cell {
+  min-width: 0 !important;
+  padding-block: 0.375rem;
+}
+
+.dashboard-overview-grid .comercial-metric-cell[role='button']:is(:hover, :focus-visible) {
+  background-color: hsl(var(--primary) / 0.07);
+}
+
+.dashboard-overview-ranking,
+.dashboard-overview-panel {
+  border-radius: var(--commercial-panel-radius, 4px);
+}
+
+.dashboard-overview-ranking .dashboard-ranking-bar {
+  transition: opacity 150ms ease, stroke 150ms ease;
+}
+
+.dashboard-overview-views {
+  inline-size: 100%;
+  min-inline-size: 0;
+  flex: 0 0 auto;
+  justify-content: flex-start;
+  gap: 0.25rem;
+  overflow: visible;
+  border-bottom: 1px solid hsl(var(--border) / 0.7);
+  background: transparent;
+  padding: 0.25rem 0.5rem;
+}
+
+.dashboard-overview-views > [role='tab'] {
+  position: relative;
+  flex-shrink: 0;
+  gap: 0.3rem;
+  background: transparent;
+  padding-inline: 0.625rem;
+}
+
+.dashboard-overview-views > [role='tab']:is(:hover, [data-state='active']) {
+  color: hsl(var(--primary));
+  background: hsl(var(--primary) / 0.09);
+}
+
+.dashboard-overview-views > [role='tab']::after {
+  position: absolute;
+  inset: auto 0.4rem 0;
+  block-size: 2px;
+  transform: scaleX(0);
+  border-radius: 2px;
+  background: hsl(var(--primary));
+  transition: transform 180ms ease;
+  content: '';
+}
+
+.dashboard-overview-views > [data-state='active']::after {
+  transform: scaleX(1);
+}
+
+.dashboard-overview-view[data-state='active'] {
+  display: flex;
+  min-block-size: 0;
+  min-inline-size: 0;
+  flex: 1 1 0;
+  flex-direction: column;
+  padding: 0.4rem 0.65rem;
+}
+
+.dashboard-overview-participant {
+  display: grid;
+  inline-size: 100%;
+  min-block-size: 1.625rem;
+  grid-template-columns: auto minmax(5rem, 1fr) minmax(2rem, 1.75fr) max-content minmax(3.25rem, max-content);
+  align-items: center;
+  gap: clamp(0.375rem, 1.5vw, 1rem);
+  padding: 0.125rem 0.25rem;
+  font-size: 0.75rem;
+}
+
+.dashboard-overview-share-bar {
+  block-size: 0.25rem;
+  overflow: hidden;
+  border-radius: 1rem;
+  background: hsl(var(--muted));
+}
+
+.dashboard-overview-share-bar > span {
+  display: block;
+  block-size: 100%;
+  transform-origin: left;
+  border-radius: inherit;
+}
+
+.dashboard-overview-heatmap-scroll {
+  min-block-size: 0;
+  flex: 1 1 0;
+  overflow: auto;
+  padding: 0.125rem;
+  scrollbar-width: thin;
+}
+
+.dashboard-overview-heatmap {
+  display: grid;
+  min-inline-size: 33rem;
+  align-items: center;
+  gap: 0.1875rem;
+}
+
+.dashboard-overview-heat-cell {
+  block-size: clamp(0.75rem, 2.1vh, 1.125rem);
+  min-inline-size: 0;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.dashboard-overview-heat-cell:is([data-highlighted='true'], [aria-pressed='true'], :focus-visible) {
+  outline: 1px solid hsl(var(--primary));
+  outline-offset: 1px;
+}
+
+@media (min-width: 768px) {
+  .dashboard-overview-grid {
+    block-size: 100%;
+    grid-template-rows: auto minmax(13.5rem, 1.05fr) minmax(12rem, 1fr);
+  }
+
+  .dashboard-overview-toolbar {
+    align-items: center;
+  }
+}
+
+@media (max-width: 767px) {
+  [data-module-shell='comercial'] main:has(> .dashboard-compact-overview) {
+    padding-block-end: calc(4rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  .dashboard-commercial-page.dashboard-compact-overview {
+    padding-block: 0.5rem;
+  }
+
+  .dashboard-overview-toolbar .commercial-tab-strip {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.125rem;
+    padding-block: 0.125rem;
+  }
+
+  .dashboard-overview-toolbar [role='tab'] {
+    block-size: 1.75rem;
+    min-inline-size: 0;
+    padding-inline: 0.25rem;
+  }
+
+  .dashboard-overview-grid > .comercial-metric-strip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .dashboard-overview-grid .comercial-metric-cell:nth-child(2) {
+    border-inline-end: 0;
+  }
+
+  .dashboard-overview-grid .comercial-metric-cell:nth-child(-n + 2) {
+    border-block-end: 1px solid hsl(var(--border));
+  }
+
+  .dashboard-overview-participant {
+    grid-template-columns: auto minmax(0, 1fr) max-content minmax(3rem, max-content);
+  }
+
+  .dashboard-overview-share-bar {
+    display: none;
+  }
+
+  .dashboard-overview-views {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.125rem;
+    padding-inline: 0.25rem;
+  }
+
+  .dashboard-overview-views > [role='tab'] {
+    min-inline-size: 0;
+    gap: 0.25rem;
+    padding-inline: 0.25rem;
+    font-size: 0.75rem;
+  }
+}
+
+@media (max-width: 520px) {
+  .dashboard-overview-ranking .dashboard-ranking-order button {
+    block-size: 1.625rem;
+    gap: 0.25rem;
+    padding-inline: 0.4rem;
+    font-size: 0.6875rem;
+  }
+
+  .dashboard-overview-ranking :is(.dashboard-ranking-order, .dashboard-ranking-stat-heading) svg {
+    inline-size: 0.75rem;
+    block-size: 0.75rem;
+    flex-shrink: 0;
+  }
+
+  .dashboard-overview-ranking .dashboard-ranking-stat {
+    padding: 0.3rem 0.35rem;
+  }
+
+  .dashboard-overview-ranking .dashboard-ranking-stat-heading {
+    gap: 0.25rem;
+    letter-spacing: 0;
+  }
+
+  .dashboard-overview-ranking :is(.dashboard-ranking-stat-full, .dashboard-ranking-stat-hint) {
+    display: none;
+  }
+
+  .dashboard-overview-ranking .dashboard-ranking-stat-short {
+    display: inline;
+  }
+
+  .dashboard-overview-ranking .dashboard-ranking-stat-value {
+    overflow: visible;
+    font-size: 0.75rem;
+    line-height: 1.1;
+    overflow-wrap: anywhere;
+    white-space: normal;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .dashboard-overview-grid > :is(.comercial-metric-strip, .dashboard-overview-ranking, .dashboard-overview-panel),
+  .dashboard-overview-view[data-state='active'] {
+    animation: dashboard-overview-enter 200ms ease-out both;
+  }
+
+  .dashboard-overview-grid > .dashboard-overview-ranking {
+    animation-delay: 35ms;
+  }
+
+  .dashboard-overview-grid > .dashboard-overview-panel {
+    animation-delay: 65ms;
+  }
+
+  .dashboard-overview-share-bar > span {
+    animation: dashboard-overview-share 320ms ease-out both;
+  }
+}
+
+@keyframes dashboard-overview-enter {
+  from {
+    transform: translateY(-3px);
+    opacity: 0;
+  }
+}
+
+@keyframes dashboard-overview-share {
+  from {
+    transform: scaleX(0);
+  }
+}

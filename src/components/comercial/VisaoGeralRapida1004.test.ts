@@ -57,10 +57,8 @@ describe('VisaoGeralRapida1004 dashboard structure', () => {
       cliente_codigo: 10,
       data_faturamento: '2026-06-05',
       valor_liquido_final: 1000,
-      tipo: 'PEDIDO',
+      tipo: 'PEDIDO' as const,
     }],
-    evolucaoDiaria: [],
-    evolucaoMensal: [],
     periodoFiltros: { ano: 2026, mes: 6 },
     diasUteisNoMes: 22,
     diasUteisDecorridos: 5,
@@ -76,6 +74,7 @@ describe('VisaoGeralRapida1004 dashboard structure', () => {
 
   it('fecha o detalhe do heatmap ao retirar o mouse', () => {
     render(React.createElement(VisaoGeralRapida1004, props));
+    fireEvent.mouseDown(screen.getByRole('tab', { name: 'Mapa diário' }), { button: 0 });
     const cell = screen.getByRole('button', { name: /^MARIA, dia 5, R\$/ });
 
     fireEvent.mouseEnter(cell);
@@ -83,6 +82,23 @@ describe('VisaoGeralRapida1004 dashboard structure', () => {
 
     fireEvent.mouseLeave(cell);
     expect(screen.queryByText('MARIA - dia 5')).not.toBeInTheDocument();
-    expect(screen.getByText('Passe nos quadrados para ver o dia')).toBeInTheDocument();
+    expect(screen.getByText('Selecione um dia para ver o faturamento')).toBeInTheDocument();
+  });
+
+  it('mantém o dia escolhido no mapa e permite abrir os detalhes pela participação', () => {
+    const onDetalheVendedor = vi.fn();
+    render(React.createElement(VisaoGeralRapida1004, { ...props, onDetalheVendedor }));
+
+    expect(screen.getByRole('tab', { name: 'Evolução' })).toHaveAttribute('aria-selected', 'true');
+    fireEvent.mouseDown(screen.getByRole('tab', { name: 'Mapa diário' }), { button: 0 });
+    const day = screen.getByRole('button', { name: /^MARIA, dia 5, R\$/ });
+    fireEvent.click(day);
+    fireEvent.mouseLeave(day);
+    expect(day).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByText('MARIA - dia 5')).toBeVisible();
+
+    fireEvent.mouseDown(screen.getByRole('tab', { name: 'Participação' }), { button: 0 });
+    fireEvent.click(screen.getByRole('button', { name: 'Abrir detalhes de MARIA' }));
+    expect(onDetalheVendedor).toHaveBeenCalledWith(props.vendedoresComMeta[0], 1);
   });
 });

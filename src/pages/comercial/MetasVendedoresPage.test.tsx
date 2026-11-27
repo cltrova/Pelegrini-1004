@@ -166,6 +166,27 @@ describe('MetasVendedoresPage commercial dashboard', () => {
     expect(screen.queryByRole('tab', { name: 'Análises' })).not.toBeInTheDocument();
   });
 
+  it('abre o filtro ao lado das abas e aplica sem desmontar a visão geral', async () => {
+    render(<MetasVendedoresPage />);
+
+    const overview = await screen.findByText('Conteudo preservado');
+    const tabs = screen.getByRole('tablist');
+    const trigger = screen.getByRole('button', { name: 'Expandir filtros' });
+    expect(tabs.parentElement?.parentElement).toContainElement(trigger);
+    expect(tabs.compareDocumentPosition(trigger) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+
+    fireEvent.click(trigger);
+    const panel = await screen.findByRole('dialog', { name: 'Filtros comerciais' });
+    fireEvent.click(within(panel).getByRole('button', { name: '2026' }));
+    fireEvent.click(await screen.findByRole('button', { name: '2025' }));
+    fireEvent.click(within(panel).getByRole('button', { name: 'Buscar' }));
+
+    await waitFor(() => expect(panel).not.toBeInTheDocument());
+    expect(screen.getByRole('button', { name: 'Expandir filtros' })).toHaveAttribute('aria-expanded', 'false');
+    expect(screen.getByText('Conteudo preservado')).toBe(overview);
+    expect(vi.mocked(useComercialData).mock.lastCall?.[0]?.anos).toEqual(['2025', '2026']);
+  });
+
   it('bloqueia a visao resolvida de transmissao enquanto chevrolet esta pendente', async () => {
     const { rerender } = render(<MetasVendedoresPage />);
 

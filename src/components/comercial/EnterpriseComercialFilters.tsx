@@ -39,6 +39,7 @@ interface EnterpriseComercialFiltersProps {
   useNativeControls?: boolean;
   isOpen?: boolean;
   onOpenChange?: (open: boolean) => void;
+  presentation?: 'inline' | 'popover';
 }
 
 const toOptions = (
@@ -106,6 +107,7 @@ export function EnterpriseComercialFilters({
   useNativeControls = false,
   isOpen,
   onOpenChange,
+  presentation,
 }: EnterpriseComercialFiltersProps) {
   const summary = getComercialFiltersSummary(appliedFilters, vendedores, clientes)
     .map((item) => `${item.label}: ${item.value}`)
@@ -137,6 +139,7 @@ export function EnterpriseComercialFilters({
         resultCount={resultCount}
         isOpen={isOpen}
         onOpenChange={onOpenChange}
+        presentation={presentation}
         summary={summary}
       >
         <div className="basis-full min-w-0">
@@ -176,6 +179,7 @@ export function EnterpriseComercialFilters({
       resultCount={resultCount}
       isOpen={isOpen}
       onOpenChange={onOpenChange}
+      presentation={presentation}
       summary={summary}
     >
       <EnterpriseSelectFilter

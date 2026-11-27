@@ -1,14 +1,14 @@
 import { useMemo, useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { useReducedMotion } from 'framer-motion';
+import { Card } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
-import { formatCurrency, formatPercent } from '@/utils/formatters';
+import { formatCompactNumber, formatCurrency, formatPercent } from '@/utils/formatters';
 import {
   ResponsiveContainer, ComposedChart, Area, Line, XAxis, YAxis, CartesianGrid,
-  Tooltip, ReferenceLine, BarChart, Bar, PieChart, Pie, Cell, Legend, LineChart
+  Tooltip, ReferenceLine, Legend,
 } from 'recharts';
-import { Zap, Crown, Flame } from 'lucide-react';
+import { CalendarDays, Percent, TrendingUp } from 'lucide-react';
 import { RankingVendedoresChart } from './RankingVendedoresChart';
 import { useEmpresaAtiva } from '@/hooks/useEmpresaAtiva';
 import { useFilialSelecionada } from '@/contexts/FilialSelecionadaContext';
@@ -17,21 +17,44 @@ import {
   vendedorForcaP1004,
   vendedorOcultoFiltroContextual1004,
 } from '@/utils/vendedores1004';
-import { ComercialMetricStrip } from '@/components/comercial/compact';
+import { ComercialMetricStrip, type ComercialMetric } from '@/components/comercial/compact';
+import type { Pedido } from '@/types/comercial';
+import './DashboardOverview.css';
 
 
-interface Props {
-  vendedoresComMeta: any[];
-  vendedoresGrafico?: any[];
-  kpisGerais: any;
-  pedidos: any[];
-  evolucaoDiaria: any[];
-  evolucaoMensal: any[];
+type VendedorVisaoGeral = {
+  codigo: string | number;
+  nome: string;
+  metaMensal?: number;
+  metaDiaria?: number;
+  faturamentoMesAtual?: number;
+  metaReal?: number;
+  valorFaturado?: number;
+  faturamentoLiquido?: number;
+  dia?: number;
+  status?: string;
+};
+
+type LinhaFaturamento = Partial<Pick<Pedido,
+  'tipo' | 'data_faturamento' | 'vendedor_codigo' | 'vendedor_nome' | 'cliente_codigo' |
+  'valor_bruto' | 'valor_desconto' | 'valor_liquido' | 'valor_liquido_final' | 'valor_devolucao_real' | 'valor_real'
+>> & { nome_interno?: unknown; nome_externo?: unknown };
+
+type IndicadoresVisaoGeral = Partial<Record<
+  'totalMeta' | 'totalFaturado' | 'totalDevolucoes' | 'acimaMeta' | 'proximoMeta' | 'abaixoMeta' | 'qtdPedidos' | 'qtdVendas' | 'clientesAtendidos',
+  number
+>>;
+
+interface Props<TVendedor extends VendedorVisaoGeral> {
+  vendedoresComMeta: TVendedor[];
+  vendedoresGrafico?: TVendedor[];
+  kpisGerais: IndicadoresVisaoGeral;
+  pedidos: LinhaFaturamento[];
   periodoFiltros: { ano: number; mes: number };
   periodoAplicado?: { inicio: string; fim: string };
   diasUteisNoMes: number;
   diasUteisDecorridos: number;
-  onDetalheVendedor?: (row: any, ranking: number) => void;
+  onDetalheVendedor?: (row: TVendedor, ranking: number) => void;
   onReceitaClick?: () => void;
 }
 
@@ -48,11 +71,7 @@ function vendedorVisivelNoContexto1004(
   return !vendedorOcultoFiltroContextual1004(vendedor?.nome, false);
 }
 
-const STATUS_COLOR = {
-  acima: 'hsl(var(--success, 142 71% 45%))',
-  proximo: 'hsl(var(--warning, 38 92% 50%))',
-  abaixo: 'hsl(var(--destructive))',
-};
+type SelecaoMapa = { codigo: string; dia: number; periodo: string };
 
 const PIE_COLORS = [
   'hsl(var(--primary))',
@@ -69,7 +88,7 @@ export function getCorParticipacaoVendedor(nome: string, index: number): string 
   return PIE_COLORS[index % PIE_COLORS.length];
 }
 
-function getReceitaPedido1004(p: any): number {
+function getReceitaPedido1004(p: LinhaFaturamento): number {
   if (p.tipo === 'DEVOLUCAO') {
     return -Math.abs(Number(p.valor_devolucao_real || p.valor_real || p.valor_liquido || 0));
   }
@@ -78,7 +97,7 @@ function getReceitaPedido1004(p: any): number {
   return liquidoFinal - devolucao;
 }
 
-export function VisaoGeralRapida1004({
+export function VisaoGeralRapida1004<TVendedor extends VendedorVisaoGeral>({
   vendedoresComMeta,
   vendedoresGrafico,
   kpisGerais,
@@ -89,7 +108,7 @@ export function VisaoGeralRapida1004({
   diasUteisDecorridos,
   onDetalheVendedor,
   onReceitaClick,
-}: Props) {
+}: Props<TVendedor>) {
   // sem toggle: sempre segue o filtro global (mês/período selecionado)
   const { codEmpresaAtiva, empresa } = useEmpresaAtiva();
   const { filialAtiva, filialNome } = useFilialSelecionada();
@@ -98,15 +117,18 @@ export function VisaoGeralRapida1004({
     return { ...empresa, nome: `${empresa?.nome ?? ''} ${filialNome}` };
   }, [empresa, filialNome]);
   const isContextoChevrolet10041Ativo = isContextoChevrolet10041(codEmpresaAtiva, filialAtiva, empresaComFilial);
-  const isEmpresa1001 = codEmpresaAtiva === '1001';
+  const isEmpresa1001 = String(codEmpresaAtiva) === '1001';
   const isEmpresaPelegrini = codEmpresaAtiva === '1004' || codEmpresaAtiva === '10041' || isContextoChevrolet10041Ativo;
-  const [selectedHeatCell, setSelectedHeatCell] = useState<{ nome: string; dia: number; valor: number } | null>(null);
+  const reduceMotion = useReducedMotion();
+  const [previewHeatCell, setPreviewHeatCell] = useState<SelecaoMapa | null>(null);
+  const [selectedHeatCell, setSelectedHeatCell] = useState<SelecaoMapa | null>(null);
 
   const { ano, mes } = periodoFiltros;
   const hoje = new Date();
   const isMesAtual = hoje.getFullYear() === ano && (hoje.getMonth() + 1) === mes;
   const diaHoje = isMesAtual ? hoje.getDate() : new Date(ano, mes, 0).getDate();
   const totalDiasMes = new Date(ano, mes, 0).getDate();
+  const periodoMapa = `${ano}-${String(mes).padStart(2, '0')}`;
 
   // ============ Pedidos do mês filtrado (faturados) ============
   const pedidosMes = useMemo(() => {
@@ -130,7 +152,7 @@ export function VisaoGeralRapida1004({
     const metaDiariaLinear = diasUteisNoMes > 0 ? metaMensal / diasUteisNoMes : 0;
     let acc = 0;
     let diaUtil = 0;
-    const out: any[] = [];
+    const out: Array<{ dia: number; label: string; realizado: number | null; meta: number }> = [];
     for (let d = 1; d <= totalDiasMes; d++) {
       const dt = new Date(ano, mes - 1, d);
       const dow = dt.getDay();
@@ -151,7 +173,7 @@ export function VisaoGeralRapida1004({
   // Chave de agrupamento alinhada ao restante do dashboard 1004:
   // usa vendedor_codigo → vendedor_nome → nome_interno → nome_externo
   // para não colapsar pedidos sem código num único bucket.
-  const getVendKey = (p: any) =>
+  const getVendKey = (p: LinhaFaturamento) =>
     String(p?.vendedor_codigo ?? p?.vendedor_nome ?? p?.nome_interno ?? p?.nome_externo ?? '').trim();
 
   const vendedoresVisiveis1004 = useMemo(
@@ -231,8 +253,7 @@ export function VisaoGeralRapida1004({
     const total = isEmpresaPelegrini
       ? Number(kpisGerais.totalFaturado || 0) || 1
       : dadosPorVendedor.reduce((a, v) => a + v.mes, 0) || 1;
-    return dadosPorVendedor
-      .map(v => ({ nome: v.nome, valor: v.mes, pct: (v.mes / total) * 100 }));
+    return dadosPorVendedor.map((v, index) => ({ ...v, ranking: index + 1, pct: (v.mes / total) * 100 }));
   }, [dadosPorVendedor, isEmpresaPelegrini, kpisGerais.totalFaturado]);
 
   // ============ Heatmap dias x vendedores ============
@@ -253,11 +274,17 @@ export function VisaoGeralRapida1004({
     const linhas = vendedoresVisiveis1004
       .filter(v => map.has(String(v.codigo)))
       .map(v => ({
+        codigo: String(v.codigo),
         nome: v.nome,
         cells: Array.from({ length: totalDiasMes }, (_, i) => map.get(String(v.codigo))?.get(i + 1) || 0),
       }));
     return { linhas, maxVal: maxVal || 1 };
   }, [pedidosMesVisiveis1004, vendedoresVisiveis1004, totalDiasMes]);
+
+  const activeHeatCell = previewHeatCell ?? selectedHeatCell;
+  const activeHeatRow = activeHeatCell?.periodo === periodoMapa
+    ? heatmap.linhas.find(linha => linha.codigo === activeHeatCell.codigo)
+    : undefined;
 
 
   // ============ KPIs de decisão ============
@@ -303,12 +330,12 @@ export function VisaoGeralRapida1004({
   }, [pedidos, kpisGerais.totalFaturado, kpisGerais.qtdPedidos, kpisGerais.qtdVendas, kpisGerais.clientesAtendidos, isEmpresa1001]);
 
 
-  const totalizadores = [
+  const totalizadores: ComercialMetric[] = [
     {
       label: 'Faturamento',
       value: formatCurrency(totais.receita),
       context: `${totais.clientes.toLocaleString('pt-BR')} clientes`,
-      tone: 'success' as const,
+      tone: 'success',
       tooltip: `Faturamento líquido do período. Devoluções: ${formatCurrency(kpisGerais.totalDevolucoes || 0)}.`,
       onClick: onReceitaClick,
       actionLabel: 'Abrir detalhamento do faturamento',
@@ -329,221 +356,216 @@ export function VisaoGeralRapida1004({
       label: 'Atingimento',
       value: formatPercent(kpiDecisao.pct),
       context: `${kpiDecisao.totalEq} vendedores ativos`,
-      tone: (kpiDecisao.pct >= 100 ? 'success' : kpiDecisao.pct >= 80 ? 'warning' : 'danger') as const,
+      tone: kpiDecisao.pct >= 100 ? 'success' : kpiDecisao.pct >= 80 ? 'warning' : 'danger',
       tooltip: 'Percentual do faturamento realizado em relação à meta mensal.',
     },
   ];
 
+  const ParticipationRow = onDetalheVendedor ? 'button' : 'div';
+
   return (
-    <div className={cn(
-      'space-y-2',
-      isEmpresaPelegrini && 'dashboard-overview-grid min-h-0 text-foreground',
-    )}>
+    <div className="dashboard-overview-grid min-w-0 text-foreground">
       <ComercialMetricStrip metrics={totalizadores} ariaLabel="Indicadores do dashboard comercial" />
 
-
-      {/* ================= Faturamento por vendedor (interativo) ================= */}
       <RankingVendedoresChart
         data={dadosPorVendedor}
         periodo={periodoAplicado}
         variant={isEmpresaPelegrini ? 'pelegriniBlue' : 'default'}
-        onClick={(row) => onDetalheVendedor?.(row, 0)}
+        onClick={onDetalheVendedor ? (row) => onDetalheVendedor(row, 0) : undefined}
       />
 
-      {/* ================= Gráfico Acumulado ================= */}
-      <Card className={cn('commercial-dashboard-panel commercial-chart-frame', isEmpresaPelegrini && 'pelegrini-compact-card border-border/70 bg-card text-foreground shadow-none')}>
-        <CardContent className={cn(isEmpresaPelegrini ? 'p-2' : 'pt-6')}>
+      <Card className="dashboard-overview-panel commercial-dashboard-panel commercial-chart-frame flex min-h-0 min-w-0 flex-col border-border/70 bg-card shadow-none">
+        <Tabs defaultValue="evolucao" className="flex min-h-0 flex-1 flex-col">
+          <TabsList aria-label="Análises da visão geral" className="dashboard-overview-views">
+            <TabsTrigger value="evolucao">
+              <TrendingUp aria-hidden="true" className="size-3.5" />
+              Evolução
+            </TabsTrigger>
+            <TabsTrigger value="participacao">
+              <Percent aria-hidden="true" className="size-3.5" />
+              Participação
+            </TabsTrigger>
+            <TabsTrigger value="mapa">
+              <CalendarDays aria-hidden="true" className="size-3.5" />
+              Mapa diário
+            </TabsTrigger>
+          </TabsList>
 
-          <div className={cn(isEmpresaPelegrini ? 'h-[230px]' : 'h-72')}>
-            <ResponsiveContainer width="100%" height="100%">
-              <ComposedChart
-                data={dadosAcumulado}
-                margin={isEmpresaPelegrini ? { top: 28, right: 12, left: -10, bottom: 8 } : { top: 10, right: 20, left: 0, bottom: 0 }}
-              >
-                <defs>
-                  <linearGradient id="gradRealizado" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor={isEmpresaPelegrini ? 'hsl(var(--primary))' : 'hsl(var(--primary))'} stopOpacity={isEmpresaPelegrini ? 0.22 : 0.5} />
-                    <stop offset="100%" stopColor={isEmpresaPelegrini ? 'hsl(var(--primary))' : 'hsl(var(--primary))'} stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={isEmpresaPelegrini ? 0.42 : 0.3} />
-                <XAxis dataKey="label" tick={{ fontSize: 13, fill: 'hsl(var(--muted-foreground))' }} />
-                <YAxis
-                  tick={{ fontSize: 13, fill: 'hsl(var(--muted-foreground))' }}
-                  tickFormatter={(v) => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v)}
-                />
-                <Tooltip
-                  cursor={{ stroke: 'hsl(var(--primary))', strokeOpacity: 0.35 }}
-                  contentStyle={{
-                    background: 'hsl(var(--popover))',
-                    border: '1px solid hsl(var(--border))',
-                    borderRadius: 8,
-                    color: 'hsl(var(--popover-foreground))',
-                    fontSize: 14,
-                  }}
-                  formatter={(v: any, name: any) => [v != null ? formatCurrency(v) : '—', name]}
-                  labelFormatter={(l) => `Dia ${l}`}
-                />
-                <Area
-                  type="monotone" dataKey="realizado" name="Realizado"
-                  stroke={isEmpresaPelegrini ? 'hsl(var(--primary))' : 'hsl(var(--primary))'} strokeWidth={isEmpresaPelegrini ? 2.5 : 2} fill="url(#gradRealizado)"
-                  dot={isEmpresaPelegrini ? { r: 2, strokeWidth: 1 } : false}
-                  activeDot={isEmpresaPelegrini ? { r: 4, strokeWidth: 2 } : undefined}
-                />
-                <Line
-                  type="monotone" dataKey="meta" name="Meta acumulada"
-                  stroke="hsl(var(--muted-foreground))" strokeWidth={2} strokeDasharray="6 4" dot={false}
-                />
-                {isMesAtual && (
-                  <ReferenceLine
-                    x={String(diaHoje).padStart(2, '0')}
-                    stroke="hsl(var(--destructive))"
-                    strokeDasharray="3 3"
-                    label={{ value: 'Hoje', position: 'insideTop', fill: 'hsl(var(--destructive))', fontSize: 12 }}
-                  />
-                )}
-                <Legend wrapperStyle={{ fontSize: isEmpresaPelegrini ? 12 : 13 }} />
-              </ComposedChart>
-            </ResponsiveContainer>
-          </div>
-        </CardContent>
-      </Card>
-
-
-
-      {/* ================= Grid extras ================= */}
-      <div className={cn("grid grid-cols-1 lg:grid-cols-2", isEmpresaPelegrini ? "gap-2" : "gap-4")}>
-        {/* Donut participação */}
-        <Card className={cn('commercial-dashboard-panel', isEmpresaPelegrini && 'pelegrini-compact-card border-border/70 bg-card text-foreground shadow-none')}>
-          <CardContent className={cn(isEmpresaPelegrini ? 'p-2' : 'pt-6')}>
-
-            <div className={cn("flex flex-col", isEmpresaPelegrini ? 'h-auto min-h-0' : isEmpresa1001 ? 'h-96' : 'h-64')}>
-              <div className={cn("flex items-baseline justify-between px-1 border-b", isEmpresaPelegrini ? 'border-border/60 pb-1' : 'border-border/60 pb-2')}>
-                <span className={cn("text-[10px] uppercase tracking-wide", isEmpresaPelegrini ? 'text-muted-foreground' : 'text-muted-foreground')}>Total</span>
-                <span className="text-sm font-bold font-mono">{formatCurrency(kpiDecisao.fat)}</span>
-              </div>
-              <div className={cn("overflow-y-auto pr-1 mt-1 divide-y", isEmpresaPelegrini ? 'max-h-[150px] divide-border/40' : 'flex-1 divide-border/40')}>
-                {participacao.length === 0 && (
-                  <div className={cn("text-center text-xs py-6", isEmpresaPelegrini ? 'text-muted-foreground' : 'text-muted-foreground')}>Sem dados</div>
-                )}
-                {participacao.map((v, i) => {
-                  const corParticipacao = getCorParticipacaoVendedor(v.nome, i);
-                  return <div
-                    key={v.nome}
-                    className={cn(
-                      "items-center gap-2 text-sm",
-                      isEmpresaPelegrini
-                        ? "grid grid-cols-[auto_1fr_auto_auto] py-1"
-                        : isEmpresa1001 ? "flex py-2.5" : "grid grid-cols-[auto_1fr_auto_auto] py-1.5"
-                    )}
-                  >
-                    <span
-                      className="h-2.5 w-2.5 rounded-full flex-shrink-0"
-                      style={{ background: corParticipacao }}
-                    />
-                    <span className={cn(
-                      "font-medium leading-tight",
-                      isEmpresa1001 ? "flex-1 min-w-0 break-words" : "truncate"
-                    )}>{v.nome}</span>
-                    <span className="font-mono text-right tabular-nums text-foreground">
-                      {formatCurrency(v.valor)}
-                    </span>
-                    <span
-                      className="font-mono font-semibold w-14 text-right tabular-nums"
-                      style={{ color: corParticipacao }}
-                    >
-                      {v.pct.toFixed(1)}%
-                    </span>
-                  </div>;
-                })}
-              </div>
-
-            </div>
-          </CardContent>
-        </Card>
-
-
-        {/* Heatmap dias x vendedores */}
-        <Card className={cn('commercial-dashboard-panel commercial-chart-frame', isEmpresaPelegrini && 'pelegrini-compact-card border-border/70 bg-card text-foreground shadow-none')}>
-          <CardContent className={cn(isEmpresaPelegrini ? 'p-2' : 'pt-6')}>
-
-            <div className="overflow-x-auto">
-              <div className={cn("space-y-1", isEmpresaPelegrini ? 'min-w-[520px]' : 'min-w-[500px]')}>
-                {/* Cabeçalho dias */}
-                <div
-                  className="grid items-center gap-[3px]"
-                  style={{ gridTemplateColumns: `7rem repeat(${totalDiasMes}, minmax(12px, 1fr))` }}
+          <TabsContent value="evolucao" className="dashboard-overview-view mt-0" aria-label="Evolução do faturamento e da meta acumulada">
+            <div className="min-h-0 min-w-0 flex-1">
+              <ResponsiveContainer width="100%" height="100%">
+                <ComposedChart
+                  data={dadosAcumulado}
+                  margin={{ top: 10, right: 12, left: -6, bottom: 0 }}
+                  accessibilityLayer
                 >
-                  <div />
-                  {Array.from({ length: totalDiasMes }, (_, i) => i + 1).map(d => (
-                    <div key={d} className={cn("text-center text-[9px]", isEmpresaPelegrini ? 'text-muted-foreground' : 'text-muted-foreground')}>
-                      {d % 5 === 0 || d === 1 ? d : ''}
+                  <defs>
+                    <linearGradient id="gradRealizado" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.2} />
+                      <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0.01} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.65} />
+                  <XAxis
+                    dataKey="label"
+                    height={20}
+                    minTickGap={18}
+                    tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
+                  />
+                  <YAxis
+                    tickCount={4}
+                    tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
+                    tickFormatter={formatCompactNumber}
+                  />
+                  <Tooltip
+                    cursor={{ stroke: 'hsl(var(--primary))', strokeOpacity: 0.4 }}
+                    contentStyle={{
+                      background: 'hsl(var(--popover))',
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: 4,
+                      color: 'hsl(var(--popover-foreground))',
+                      fontSize: 12,
+                    }}
+                    formatter={(value: number, name: string) => [value != null ? formatCurrency(value) : '—', name]}
+                    labelFormatter={(dia) => `Dia ${dia}`}
+                    isAnimationActive={!reduceMotion}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="realizado"
+                    name="Realizado"
+                    stroke="hsl(var(--primary))"
+                    strokeWidth={2.5}
+                    fill="url(#gradRealizado)"
+                    activeDot={{ r: 4, strokeWidth: 2 }}
+                    isAnimationActive={!reduceMotion}
+                    animationDuration={450}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="meta"
+                    name="Meta acumulada"
+                    stroke="hsl(var(--muted-foreground))"
+                    strokeWidth={1.75}
+                    strokeDasharray="6 4"
+                    dot={false}
+                    isAnimationActive={!reduceMotion}
+                    animationDuration={450}
+                  />
+                  {isMesAtual && (
+                    <ReferenceLine
+                      x={String(diaHoje).padStart(2, '0')}
+                      stroke="hsl(var(--destructive))"
+                      strokeDasharray="3 3"
+                      label={{ value: 'Hoje', position: 'insideTopLeft', fill: 'hsl(var(--destructive))', fontSize: 11 }}
+                    />
+                  )}
+                  <Legend iconSize={10} wrapperStyle={{ fontSize: 11, paddingTop: 2 }} />
+                </ComposedChart>
+              </ResponsiveContainer>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="participacao" className="dashboard-overview-view mt-0">
+            <div className="mb-1 flex shrink-0 items-center justify-between gap-2 border-b border-border/60 px-1 pb-1">
+              <span className="text-xs text-muted-foreground">Faturamento total</span>
+              <span className="text-sm font-semibold tabular-nums">{formatCurrency(kpiDecisao.fat)}</span>
+            </div>
+            {participacao.length === 0 ? (
+              <div className="grid flex-1 place-items-center text-xs text-muted-foreground">Sem dados no período</div>
+            ) : (
+              <ol className="min-h-0 flex-1 divide-y divide-border/50 overflow-y-auto pr-1">
+                {participacao.map((vendedor, index) => {
+                  const color = getCorParticipacaoVendedor(vendedor.nome, index);
+                  return (
+                    <li key={vendedor.codigo}>
+                      <ParticipationRow
+                        type={onDetalheVendedor ? 'button' : undefined}
+                        aria-label={onDetalheVendedor ? `Abrir detalhes de ${vendedor.nome}` : undefined}
+                        onClick={onDetalheVendedor ? () => onDetalheVendedor(vendedor._row, vendedor.ranking) : undefined}
+                        className={cn(
+                          'dashboard-overview-participant',
+                          onDetalheVendedor && 'hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring',
+                        )}
+                      >
+                        <span className="size-2 shrink-0 rounded-full" style={{ background: color }} aria-hidden="true" />
+                        <span className="truncate text-left font-medium" title={vendedor.nome}>{vendedor.nome}</span>
+                        <span className="dashboard-overview-share-bar" aria-hidden="true">
+                          <span style={{ width: `${Math.min(100, Math.max(0, vendedor.pct))}%`, background: color }} />
+                        </span>
+                        <span className="text-right font-medium tabular-nums">{formatCurrency(vendedor.mes)}</span>
+                        <span className="text-right font-semibold tabular-nums text-muted-foreground">{formatPercent(vendedor.pct)}</span>
+                      </ParticipationRow>
+                    </li>
+                  );
+                })}
+              </ol>
+            )}
+          </TabsContent>
+
+          <TabsContent value="mapa" className="dashboard-overview-view mt-0">
+            {heatmap.linhas.length === 0 ? (
+              <div className="grid flex-1 place-items-center text-xs text-muted-foreground">Sem dados no período</div>
+            ) : (
+              <div className="dashboard-overview-heatmap-scroll" role="region" aria-label="Faturamento por vendedor e dia" tabIndex={0}>
+                <div className="dashboard-overview-heatmap" style={{ gridTemplateColumns: `6.5rem repeat(${totalDiasMes}, minmax(0, 1fr))` }}>
+                  <span className="text-xs font-medium text-muted-foreground">Vendedor</span>
+                  {Array.from({ length: totalDiasMes }, (_, index) => index + 1).map(dia => (
+                    <span key={dia} className="text-center text-[10px] tabular-nums text-muted-foreground">
+                      {dia === 1 || dia % 5 === 0 ? dia : ''}
+                    </span>
+                  ))}
+                  {heatmap.linhas.map(linha => (
+                    <div key={linha.codigo} className="contents">
+                      <span className="truncate pr-2 text-xs font-medium" title={linha.nome}>{linha.nome}</span>
+                      {linha.cells.map((valor, index) => {
+                        const dia = index + 1;
+                        const diaSemana = new Date(ano, mes - 1, dia).getDay();
+                        const fimDeSemana = diaSemana === 0 || diaSemana === 6;
+                        const cell = { codigo: linha.codigo, dia, periodo: periodoMapa };
+                        const isPinned = selectedHeatCell?.periodo === periodoMapa
+                          && selectedHeatCell.codigo === linha.codigo && selectedHeatCell.dia === dia;
+                        const isActive = activeHeatRow === linha && activeHeatCell?.dia === dia;
+                        return (
+                          <button
+                            key={dia}
+                            type="button"
+                            aria-pressed={isPinned}
+                            aria-label={`${linha.nome}, dia ${dia}, ${formatCurrency(valor)}`}
+                            title={`Dia ${dia} · ${formatCurrency(valor)}`}
+                            onMouseEnter={() => setPreviewHeatCell(cell)}
+                            onMouseLeave={() => setPreviewHeatCell(null)}
+                            onFocus={() => setPreviewHeatCell(cell)}
+                            onBlur={() => setPreviewHeatCell(null)}
+                            onClick={() => setSelectedHeatCell(isPinned ? null : cell)}
+                            className="dashboard-overview-heat-cell"
+                            data-highlighted={isActive}
+                            style={{
+                              backgroundColor: valor > 0
+                                ? `hsl(var(--primary) / ${0.16 + (valor / heatmap.maxVal) * 0.84})`
+                                : fimDeSemana ? 'hsl(var(--muted) / 0.35)' : 'hsl(var(--muted))',
+                            }}
+                          />
+                        );
+                      })}
                     </div>
                   ))}
                 </div>
-                {heatmap.linhas.map(linha => (
-                  <div
-                    key={linha.nome}
-                    className="grid items-center gap-[3px]"
-                    style={{ gridTemplateColumns: `7rem repeat(${totalDiasMes}, minmax(12px, 1fr))` }}
-                  >
-                    <div className={cn("truncate uppercase pr-2 font-semibold leading-none", isEmpresaPelegrini ? 'w-28 text-[12px]' : 'w-24 text-xs')} title={linha.nome}>{linha.nome}</div>
-                    {linha.cells.map((val, i) => {
-                      const intensity = val / heatmap.maxVal;
-                      const dt = new Date(ano, mes - 1, i + 1);
-                      const isWeekend = dt.getDay() === 0 || dt.getDay() === 6;
-                      const dia = i + 1;
-                      const isSelected = selectedHeatCell?.nome === linha.nome && selectedHeatCell.dia === dia;
-                      return (
-                        <div
-                          key={i}
-                          role="button"
-                          tabIndex={0}
-                          aria-label={`${linha.nome}, dia ${dia}, ${formatCurrency(val)}`}
-                          title={`Dia ${dia}: ${formatCurrency(val)}`}
-                          onMouseEnter={() => setSelectedHeatCell({ nome: linha.nome, dia, valor: val })}
-                          onMouseLeave={() => setSelectedHeatCell(null)}
-                          onFocus={() => setSelectedHeatCell({ nome: linha.nome, dia, valor: val })}
-                          onClick={() => setSelectedHeatCell({ nome: linha.nome, dia, valor: val })}
-                          onKeyDown={(event) => {
-                            if (event.key === 'Enter' || event.key === ' ') {
-                              event.preventDefault();
-                              setSelectedHeatCell({ nome: linha.nome, dia, valor: val });
-                            }
-                          }}
-                          className={cn(
-                            "rounded-[3px] transition-all hover:-translate-y-0.5 hover:ring-1 hover:ring-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
-                            isEmpresaPelegrini ? 'h-[18px]' : 'h-5',
-                            isSelected && 'ring-2 ring-primary'
-                          )}
-                          style={{
-                            background: val > 0
-                              ? `hsl(var(--primary) / ${0.15 + intensity * 0.85})`
-                              : isWeekend ? 'hsl(var(--muted) / 0.3)' : 'hsl(var(--muted) / 0.6)',
-                          }}
-                        />
-                      );
-                    })}
-                  </div>
-                ))}
-                {heatmap.linhas.length === 0 && (
-                  <div className="text-center text-xs text-muted-foreground py-8">Sem dados no período</div>
-                )}
-              </div>
-            </div>
-            {isEmpresaPelegrini && (
-              <div className="mt-2 flex min-h-6 items-center justify-between gap-3 border-t border-border/50 pt-1.5 text-xs">
-                <span className="truncate font-semibold text-foreground">
-                  {selectedHeatCell ? `${selectedHeatCell.nome} - dia ${selectedHeatCell.dia}` : 'Passe nos quadrados para ver o dia'}
-                </span>
-                <span className="shrink-0 font-mono font-bold text-primary">
-                  {selectedHeatCell ? formatCurrency(selectedHeatCell.valor) : `${heatmap.linhas.length} vendedores`}
-                </span>
               </div>
             )}
-          </CardContent>
-        </Card>
-      </div>
+            <div className="mt-1 flex min-h-6 shrink-0 items-center justify-between gap-2 border-t border-border/60 px-1 pt-1 text-xs">
+              <span className="truncate font-medium">
+                {activeHeatRow && activeHeatCell ? `${activeHeatRow.nome} - dia ${activeHeatCell.dia}` : 'Selecione um dia para ver o faturamento'}
+              </span>
+              {activeHeatRow && activeHeatCell && (
+                <span className="shrink-0 font-semibold tabular-nums text-primary">
+                  {formatCurrency(activeHeatRow.cells[activeHeatCell.dia - 1])}
+                </span>
+              )}
+            </div>
+          </TabsContent>
+        </Tabs>
+      </Card>
     </div>
   );
 }
