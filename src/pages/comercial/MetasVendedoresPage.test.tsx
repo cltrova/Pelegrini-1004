@@ -6,6 +6,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useIsFetching, useQuery } from '@tanstack/react-query';
 import { useComercialData } from '@/hooks/useComercialData';
 import { CampanhasTab } from '@/components/comercial/CampanhasTab';
+import { getDefaultFiltersForEmpresa } from '@/components/comercial/ComercialFilters';
 import { InsightsIATab } from '@/components/comercial/InsightsIATab';
 import { PremiumMetasView } from '@/components/comercial/PremiumMetasView';
 import { getMesesDoFiltro, getPeriodoReferencia, preservarPeriodoExplicito } from '@/utils/metasFilterPeriod';
@@ -125,6 +126,13 @@ const comercialData = {
 };
 
 describe('MetasVendedoresPage commercial dashboard', () => {
+  it('consulta o período padrão na primeira renderização do dashboard', () => {
+    vi.mocked(useComercialData).mockReturnValue({ ...comercialData, isLoading: true } as ReturnType<typeof useComercialData>);
+    render(<MetasVendedoresPage />);
+    expect(vi.mocked(useComercialData).mock.calls[0]?.[0]?.periodo)
+      .toEqual(getDefaultFiltersForEmpresa('1004').periodo);
+  });
+
   beforeEach(() => {
     vi.clearAllMocks();
     sessionStorage.clear();

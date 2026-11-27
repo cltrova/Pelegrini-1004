@@ -106,7 +106,6 @@ export default function MetasVendedoresPage() {
   const isEmpresa10041Page = codEmpresaNorm === '10041' || isContextoChevrolet10041Page;
   const isPelegriniPage = isEmpresa1004Page || isEmpresa10041Page;
   const isLayoutPremium = isPelegriniPage;
-  const [initialized, setInitialized] = useState(false);
   const resolvedScopeRef = useRef<string | null>(null);
   const [activeTab, setActiveTab] = useState<string>(() => {
     try {
@@ -116,9 +115,10 @@ export default function MetasVendedoresPage() {
     } catch { return 'visao-geral'; }
   });
   
-   // Filtros - inicializar como undefined para NÃO filtrar até periodoDisponivel estar disponível
-   const [pendingFilters, setPendingFilters] = useState<ComercialFiltersType | undefined>(undefined);
-   const [appliedFilters, setAppliedFilters] = useState<ComercialFiltersType | undefined>(undefined);
+  const [pendingFilters, setPendingFilters] = useState<ComercialFiltersType | undefined>(
+    () => getDefaultFiltersForEmpresa(codEmpresaAtiva),
+  );
+  const [appliedFilters, setAppliedFilters] = useState(pendingFilters);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [dashboardFilterTarget, setDashboardFilterTarget] = useState<HTMLDivElement | null>(null);
 
@@ -287,23 +287,11 @@ export default function MetasVendedoresPage() {
     setAppliedFilters(defaults);
   }, [aplicarFiltroPadraoPelegrini, periodoDisponivel, codEmpresaAtiva]);
 
-  // Inicializar filtros padrão mesmo quando periodoDisponivel vier nulo
   useEffect(() => {
-    if (!initialized && !isLoading) {
-      const filtrosBase = getDefaultFiltersForEmpresa(codEmpresaAtiva, periodoDisponivel);
-      const filtrosInteligentes = aplicarFiltroPadraoPelegrini(filtrosBase);
-      setPendingFilters(filtrosInteligentes);
-      setAppliedFilters(filtrosInteligentes);
-      setInitialized(true);
-    }
-  }, [aplicarFiltroPadraoPelegrini, periodoDisponivel, isLoading, initialized, codEmpresaAtiva]);
-
-  // Verificar se há mudanças pendentes
-  useEffect(() => {
-    if (!initialized || !isEmpresa10041Page) return;
+    if (!isEmpresa10041Page) return;
     setPendingFilters((current) => aplicarFiltroPadraoPelegrini(current));
     setAppliedFilters((current) => aplicarFiltroPadraoPelegrini(current));
-  }, [aplicarFiltroPadraoPelegrini, initialized, isEmpresa10041Page]);
+  }, [aplicarFiltroPadraoPelegrini, isEmpresa10041Page]);
 
   const hasChanges = JSON.stringify(pendingFilters) !== JSON.stringify(appliedFilters);
 

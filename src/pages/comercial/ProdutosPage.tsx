@@ -1,4 +1,4 @@
-import { useMemo, useState, useCallback, useEffect, useRef } from 'react';
+import { useMemo, useState, useCallback, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useComercialProdutos } from '@/hooks/useComercialProdutos';
 import { formatCurrency, formatNumber } from '@/utils/formatters';
@@ -38,9 +38,8 @@ export default function ProdutosPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState('marcas');
   const [resumoMode, setResumoMode] = useState<'receitas' | 'devolucoes'>('receitas');
-  const [initialized, setInitialized] = useState(false);
-  const [pendingFilters, setPendingFilters] = useState<ComercialFiltersType>({});
-  const [appliedFilters, setAppliedFilters] = useState<ComercialFiltersType>({});
+  const [pendingFilters, setPendingFilters] = useState<ComercialFiltersType>(() => getDefaultFiltersForEmpresa(codEmpresaAtiva));
+  const [appliedFilters, setAppliedFilters] = useState(pendingFilters);
   // Filtro cruzado: marca selecionada via clique no gráfico/tabela/produto
   const [selectedMarca, setSelectedMarca] = useState<string | null>(null);
   const [, setHoverMarca] = useState<string | null>(null);
@@ -78,15 +77,6 @@ export default function ProdutosPage() {
   const blockingError = (productsError || baseError) && !hasResolvedData;
   const showBlockingLoading = isLoadingEmpresa || (!productsError && !baseError && !hasResolvedData);
   const pageClassName = 'commercial-products commercial-products-columns-centered h-[calc(100dvh-9.5rem)] max-h-[calc(100dvh-9.5rem)] overflow-hidden overflow-x-hidden px-3 pb-3 pt-2 sm:px-4 md:h-full md:max-h-full';
-
-  useEffect(() => {
-    if (!initialized && !loadingBase) {
-      const def = getDefaultFiltersForEmpresa(codEmpresaAtiva, periodoDisponivel);
-      setPendingFilters(def);
-      setAppliedFilters(def);
-      setInitialized(true);
-    }
-  }, [initialized, loadingBase, periodoDisponivel, codEmpresaAtiva]);
 
   const hasChanges = JSON.stringify(pendingFilters) !== JSON.stringify(appliedFilters);
   const handleBuscar = useCallback(() => {

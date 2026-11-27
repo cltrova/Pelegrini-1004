@@ -238,7 +238,7 @@ export function getEquipePadraoFiltro1004(
   };
 }
 
-const VENDEDORES_CHEVROLET_1004_API_ALIASES: Record<string, string[]> = {
+const aliasesChevrolet = {
   // O filtro mostra os codigos do relatorio RSYS, mas /comercial/produtos
   // retorna alguns vendedores CCH com outro cod_vendedor.
   '250': ['1032', 'DAYVID'],
@@ -247,6 +247,11 @@ const VENDEDORES_CHEVROLET_1004_API_ALIASES: Record<string, string[]> = {
   '10': ['XEXEU', 'XEXEU CCH'],
   '8': ['DARI'],
 };
+const VENDEDORES_CHEVROLET_1004_API_ALIASES = new Map(Object.entries(aliasesChevrolet)
+  .map(([codigo, aliases]) => [codigo, aliases.map(alias => ({
+    codigo: alias,
+    nome: normalizeVendedor1004(alias),
+  }))]));
 
 const VENDEDORES_CHEVROLET_1004_CANONICAL_BY_API_CODE: Record<string, string> = {
   '1032': '250',
@@ -573,39 +578,40 @@ export function isServicoForaRelatorioChevrolet10041(record: Record<string, unkn
   return descricao === 'SERVICO' || descricao === 'SERVICOS';
 }
 
+function vendedorNormalizadoMatchesFiltro(codigo: string, nome: string, target: string): boolean {
+  if (target === '999' && nome === 'BRUNO B') return true;
+
+  const aliases = VENDEDORES_CHEVROLET_1004_API_ALIASES.get(target);
+  if (aliases) return aliases.some(alias => codigo === alias.codigo || nome.includes(alias.nome));
+
+  if (codigo && codigo === target) return true;
+  const targetNorm = normalizeVendedor1004(target);
+  return !!targetNorm && nome.includes(targetNorm);
+}
+
 export function vendedorMatchesFiltro1004(
   vendedor: { codigo?: unknown; nome?: unknown },
   filtro: unknown,
 ): boolean {
-  const codigo = String(vendedor.codigo ?? '').trim();
-  const nome = normalizeVendedor1004(vendedor.nome);
-  const target = String(filtro ?? '').trim();
-  const targetNorm = normalizeVendedor1004(target);
-
-  if (target === '999' && nome === 'BRUNO B') return true;
-
-  const aliases = VENDEDORES_CHEVROLET_1004_API_ALIASES[target] || [];
-  if (aliases.length > 0) {
-    return aliases.some((alias) => {
-      const aliasRaw = String(alias).trim();
-      const aliasNorm = normalizeVendedor1004(aliasRaw);
-      return codigo === aliasRaw || nome === aliasNorm || nome.includes(aliasNorm);
-    });
-  }
-
-  if (codigo && codigo === target) return true;
-  return !!targetNorm && (nome === targetNorm || nome.includes(targetNorm));
+  return vendedorNormalizadoMatchesFiltro(
+    String(vendedor.codigo ?? '').trim(),
+    normalizeVendedor1004(vendedor.nome),
+    String(filtro ?? '').trim(),
+  );
 }
 
 export function canonizarVendedorChevrolet1004(
   vendedor: { codigo?: unknown; nome?: unknown },
 ): { codigo: string; nome: string } | null {
-  if (normalizeVendedor1004(vendedor.nome) === 'BRUNO B') {
+  const codigo = String(vendedor.codigo ?? '').trim();
+  const nome = normalizeVendedor1004(vendedor.nome);
+  if (!codigo && !nome) return null;
+  if (nome === 'BRUNO B') {
     return { codigo: '999', nome: 'BRUNO B' };
   }
 
   for (const vendedorChevrolet of VENDEDORES_CHEVROLET_1004) {
-    if (vendedorMatchesFiltro1004(vendedor, vendedorChevrolet.codigo)) {
+    if (vendedorNormalizadoMatchesFiltro(codigo, nome, vendedorChevrolet.codigo)) {
       return vendedorChevrolet;
     }
   }

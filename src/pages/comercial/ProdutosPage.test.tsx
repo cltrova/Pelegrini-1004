@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useComercialData } from '@/hooks/useComercialData';
 import { useComercialProdutos } from '@/hooks/useComercialProdutos';
+import { getDefaultFiltersForEmpresa } from '@/components/comercial/ComercialFilters';
 import { ComercialDataViewport } from '@/components/comercial/compact';
 import ProdutosPage from './ProdutosPage';
 
@@ -215,6 +216,13 @@ describe('ProdutosPage compacta', () => {
     expect(document.querySelector('.premium-card')).not.toBeInTheDocument();
     expect(document.querySelectorAll('[data-show-insights="false"]')).toHaveLength(1);
     expect(screen.getByRole('button', { name: 'Selecionar EATON' })).toHaveAttribute('data-embedded', 'true');
+  });
+
+  it('consulta o período do filtro já na abertura da página de produtos', () => {
+    renderPage();
+    const expected = getDefaultFiltersForEmpresa('1004').periodo;
+    expect(vi.mocked(useComercialData).mock.calls[0]?.[0]?.periodo).toEqual(expected);
+    expect(vi.mocked(useComercialProdutos).mock.calls[0]?.[0]?.periodo).toEqual(expected);
   });
 
   it('preserva a selecao de marca e recalcula os indicadores', () => {

@@ -1181,11 +1181,9 @@ export function useComercialProdutos(filters?: ComercialFilters, options?: { ena
       'endpoint-date-range-v2',
       filters?.periodo?.inicio,
       filters?.periodo?.fim,
-      filters?.ignorarEquipePadrao ? 'campanhas-venda-bruta-v4' : 'padrao',
       isContextoChevrolet10041Ativo ? 'chevrolet-10041' : 'contexto-normal',
       resolveComissao1004Path(isContextoChevrolet10041Ativo),
       usarTodasFiliais1004 ? 'todas-filiais-1004-endpoint-v2' : 'filial-ativa',
-      filters?.excluirVendedoresOcultos1004 ? 'sem-ocultos-1004-v1' : 'com-ocultos',
       isPelegriniComercial ? RECEITA_1004_RULE_VERSION : 'receita-padrao',
     ],
     queryFn: async () => {
