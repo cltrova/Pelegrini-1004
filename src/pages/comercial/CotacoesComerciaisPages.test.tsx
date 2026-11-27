@@ -245,6 +245,27 @@ describe('shared commercial quote components', () => {
     expect(within(mobileCard).getByText('15/08/2026')).toBeInTheDocument();
   });
 
+  it('mounts one page of quotes at a time and opens details from the next page', () => {
+    const list = Array.from({ length: 51 }, (_, index) => ({
+      ...rows[0], idCotacao: String(9100 + index), numeroCotacao: String(9100 + index),
+    }));
+    const select = vi.fn();
+    render(<CotacoesTable mode="abertas" rows={list} motivos={new Map()} onSelectCotacao={select} />);
+    const table = screen.getByRole('table');
+    expect(within(table).getAllByRole('row')).toHaveLength(51);
+    expect(screen.getByText('1–50 de 51')).toBeVisible();
+    expect(screen.queryByText('9150')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Próxima página' }));
+    expect(screen.getByText('51–51 de 51')).toBeVisible();
+    const last = within(table).getByRole('row', { name: /9150/ });
+    fireEvent.click(within(last).getByRole('button', { name: 'Ver detalhes da cotação' }));
+    expect(select).toHaveBeenCalledWith(list[50]);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Página anterior' }));
+    expect(screen.getByText('1–50 de 51')).toBeVisible();
+  });
+
   it('offers an accessible action to register a lost quote reason', () => {
     const onEditMotivo = vi.fn();
 
@@ -563,6 +584,22 @@ describe('open quotes page', () => {
     expect(vi.mocked(exportCotacoesExcel).mock.calls.at(-1)?.[0]).toMatchObject({
       mode: 'abertas',
       codigoEmpresaBi: '10041',
+    });
+  });
+
+  it('exports all filtered quotes from the second page', async () => {
+    const list = Array.from({ length: 51 }, (_, index) => ({
+      ...openRows[0], idCotacao: String(9300 + index), numeroCotacao: String(9300 + index),
+    }));
+    mockOpenQuotesQuery({ data: list });
+    await renderCotacoesAbertasPage();
+    fireEvent.click(screen.getByRole('button', { name: 'Próxima página' }));
+    expect(screen.getByText('51–51 de 51')).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: 'Baixar lista' }));
+    expect(vi.mocked(exportCotacoesExcel).mock.calls.at(-1)?.[0]).toMatchObject({
+      mode: 'abertas',
+      codigoEmpresaBi: '1004',
+      rows: expect.arrayContaining(list),
     });
   });
 

@@ -1,4 +1,5 @@
-import { Eye, MessageSquarePlus, Pencil } from 'lucide-react';
+import { useState } from 'react';
+import { ChevronLeft, ChevronRight, Eye, MessageSquarePlus, Pencil } from 'lucide-react';
 import { EnterpriseBadge, type EnterpriseTone } from '@/components/enterprise/EnterpriseBadge';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -17,6 +18,8 @@ interface CotacoesTableProps {
   onSelectCotacao?: (row: CotacaoComercial) => void;
   referenceDate?: string;
 }
+
+const PAGE_SIZE = 50;
 
 const statusLabels: Record<CotacaoStatus, string> = {
   aberta: 'Aberta',
@@ -106,6 +109,11 @@ function EmptyState({ mode }: { mode: CotacaoOrigem }) {
 }
 
 export function CotacoesTable({ mode, rows, motivos, onEditMotivo, onSelectCotacao, referenceDate }: CotacoesTableProps) {
+  const [page, setPage] = useState(0);
+  const lastPage = Math.max(0, Math.ceil(rows.length / PAGE_SIZE) - 1);
+  const currentPage = Math.min(page, lastPage);
+  const start = currentPage * PAGE_SIZE;
+  const visibleRows = rows.slice(start, start + PAGE_SIZE);
   const isOpenQuotes = mode === 'abertas';
   const isOverdue = ({ status, dataValidade }: CotacaoComercial) => (
     status === 'aberta' && Boolean(referenceDate && dataValidade && dataValidade < referenceDate)
@@ -113,6 +121,23 @@ export function CotacoesTable({ mode, rows, motivos, onEditMotivo, onSelectCotac
 
   return (
     <section aria-label="Lista de cotacoes" className="min-h-0">
+      {lastPage > 0 && (
+        <nav aria-label="Paginação das cotações" className="flex items-center justify-between border-b border-border px-3 py-1">
+          <span aria-live="polite" className="text-xs tabular-nums text-muted-foreground">
+            {formatInteger(start + 1)}–{formatInteger(start + visibleRows.length)} de {formatInteger(rows.length)}
+          </span>
+          <div className="flex items-center gap-1">
+            <Button type="button" variant="ghost" size="icon" className="h-8 w-8" aria-label="Página anterior"
+              disabled={currentPage === 0} onClick={() => setPage(currentPage - 1)}>
+              <ChevronLeft aria-hidden="true" className="h-4 w-4" />
+            </Button>
+            <Button type="button" variant="ghost" size="icon" className="h-8 w-8" aria-label="Próxima página"
+              disabled={currentPage === lastPage} onClick={() => setPage(currentPage + 1)}>
+              <ChevronRight aria-hidden="true" className="h-4 w-4" />
+            </Button>
+          </div>
+        </nav>
+      )}
       <div className="hidden min-w-0 border border-border md:block">
         {rows.length === 0 ? <EmptyState mode={mode} /> : (
             <table className="pelegrini-table w-full min-w-[56rem] text-left text-sm">
@@ -135,7 +160,7 @@ export function CotacoesTable({ mode, rows, motivos, onEditMotivo, onSelectCotac
                 </tr>
               </thead>
               <tbody>
-                {rows.map((row) => (
+                {visibleRows.map((row) => (
                   <tr key={row.idCotacao} data-attention={isOverdue(row) || statusTones[row.status] === 'negative' ? 'true' : undefined} className="h-10 border-b border-border/70 last:border-b-0">
                     <td className="px-3 py-2 font-semibold tabular-nums">{row.numeroCotacao}</td>
                     <td className="whitespace-nowrap px-3 py-2 tabular-nums">{formatCalendarDate(row.dataCotacao)}</td>
@@ -159,7 +184,7 @@ export function CotacoesTable({ mode, rows, motivos, onEditMotivo, onSelectCotac
       </div>
 
       <div className="space-y-2 md:hidden">
-        {rows.length === 0 ? <div className="border border-border"><EmptyState mode={mode} /></div> : rows.map((row) => (
+        {rows.length === 0 ? <div className="border border-border"><EmptyState mode={mode} /></div> : visibleRows.map((row) => (
           <article key={row.idCotacao} className="pelegrini-panel border p-3">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">

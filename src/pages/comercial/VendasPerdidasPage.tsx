@@ -310,7 +310,11 @@ export default function VendasPerdidasPage() {
         ) : (
           <div className="min-w-0">
             {filteredRows.length > 0 && <div aria-label="Download da lista" className="flex justify-end border-b border-border px-3 py-2"><Button type="button" variant="outline" size="sm" onClick={exportCurrentRows}><Download aria-hidden="true" className="h-4 w-4" />Baixar lista</Button></div>}
-            <CotacoesTable mode="perdidas" rows={filteredRows} motivos={filteredReasons} onEditMotivo={setSelectedQuote} onSelectCotacao={setDetailQuote} />
+            <CotacoesTable
+              key={JSON.stringify([resolvedView?.period, visibleFilters])}
+              mode="perdidas" rows={filteredRows} motivos={filteredReasons}
+              onEditMotivo={setSelectedQuote} onSelectCotacao={setDetailQuote}
+            />
           </div>
         )}
       </ComercialDataViewport>

@@ -98,6 +98,10 @@ As medições abaixo usaram Chromium autenticado no perfil Master com a Chevrole
 
 Comissões, Vendas perdidas, Estoque retroativo, Giro, DRE e Variação ainda precisam de aceite com dados exibidos. Em Cotações, a maior parte da espera pela resposta da API foi para o primeiro byte, 9,36 s.
 
+Em Cotações, o candidato monta 50 registros por página. Os indicadores, filtros e exportação usam a lista filtrada integral. Em uma comparação no mesmo Chromium autenticado e no mesmo período, o resultado ficou utilizável em 19,12 s sem paginação e 9,56 s com paginação. A atividade da thread principal foi de 11,31 s e 1,01 s, respectivamente. As respostas tiveram o mesmo tamanho decodificado e os indicadores tiveram a mesma assinatura. A troca para a segunda página levou 0,14 s. A consulta à API legada ainda levou 8,64 s no candidato.
+
+Em Vendas perdidas, o catálogo da Chevrolet mostrou 39 linhas em `VendaPerdida`. A projeção consulta também Estoque, Serviços e a visão de preços. Esta última depende de tabelas como `ItemListaPreco` e `Moedas`. Essas dependências ainda estão fora da configuração de Change Tracking de Produtos.
+
 O candidato inicia o download do módulo principal em paralelo com a consulta que identifica a sessão do visitador. O redirecionamento continua sendo decidido antes de montar o portal. Estoque começa a carregar o componente da aba ativa enquanto aguarda os dados da API.
 
 Na abertura fria de Estoque, o oficial ficou utilizável em 12,29 s e o candidato em 4,06 s, com uma medição de cada. O pedido de dados levou 7,36 s no oficial e 0,74 s no candidato. O código do gráfico começou a carregar junto da requisição de dados no candidato. No oficial, carregou depois da resposta. A variação do tempo de resposta da API impede atribuir toda a diferença ao frontend.
