@@ -53,6 +53,8 @@ Uma segunda comparação no navegador usou o mesmo período e uma assinatura do 
 
 A página de Produtos também deixou de solicitar comissões. Na medição desse ajuste, a assinatura dos indicadores permaneceu igual e a abertura ficou em 10,49 s, com 5,76 s na única chamada de Produtos. A variação da API entre as medições impediu confirmar ganho adicional no tempo total.
 
+Na medição de troca de abas do candidato na Chevrolet, a primeira abertura ficou em 9,99 s. Depois dela, Top Produtos, Categorias e Resumo NF levaram 0,37 s, 0,19 s e 0,44 s, respectivamente, sem novas requisições de produtos. O período foi o mês corrente.
+
 ### Rastreamento e carga
 
 O Change Tracking foi ativado com aprovação explícita em `RSYS2003_CT` e `RSYS2003_PELEGRINI`, com retenção de dois dias e limpeza automática. O rastreamento por coluna ficou desabilitado. As 12 tabelas são `NotasFiscais`, `MovEstoque`, `MovEstoqueImposto`, `Pedidos`, `Operacoes`, `Entidades`, `Produtos`, `Grupos`, `Vendedores`, `Cidades`, `Marcas` e `Empresas`.
@@ -63,7 +65,7 @@ A implementação usa o bloco de seleção de `sp_api_produto` de cada empresa, 
 
 ### Serviço e evidências
 
-`pelegrini-relatorios-carga.service` carrega as bases com até duas leituras simultâneas, retoma os lotes confirmados e dispara a medição após concluir as duas empresas. O estado fica em `/var/lib/pelegrini-relatorios-homologacao`. A consulta interna e o gateway ficam em `127.0.0.1:8328` e `127.0.0.1:8329`. A consulta abre cada base quando a carga e a primeira reconciliação estiverem confirmadas. A Transmissão já sincroniza e responde enquanto a carga da Chevrolet é executada. O gateway confere a sessão do portal, o perfil e a filial. Sem sessão, o gateway respondeu `401`. Os testes automatizados de autorização exercitam Master, Gerencial e Vendedor, incluindo filial indevida.
+`pelegrini-relatorios-carga.service` carrega as bases com até duas leituras simultâneas, retoma os lotes confirmados e dispara a medição após concluir as duas empresas. O estado fica em `/var/lib/pelegrini-relatorios-homologacao`. A consulta interna e o gateway ficam em `127.0.0.1:8328` e `127.0.0.1:8329`. A consulta abre cada base quando a carga e a primeira reconciliação estiverem confirmadas. A Transmissão respondeu durante a carga da Chevrolet. O gateway confere a sessão do portal, o perfil e a filial. Sem sessão, o gateway respondeu `401`. Os testes automatizados de autorização exercitam Master, Gerencial e Vendedor, incluindo filial indevida.
 
 A API de Produtos calcula totais sobre o recorte inteiro, entrega rankings e pagina os detalhes por versão. Os totais e rankings de todo o histórico são preparados em disco na mesma gravação do lote incremental. A API envia a hora UTC da leitura e a versão servida, e devolve `503` quando a base está incompleta ou a leitura atingiu 60 segundos. A sessão do portal oficial ainda usa a API legada. A paridade das métricas finais da interface, a troca da fonte no navegador, as exportações e demais telas e perfis fazem parte do aceite pendente.
 
@@ -75,13 +77,34 @@ Em uma rodada de todo o histórico da Transmissão, os máximos da API interna f
 
 Ao comparar a mesma página de todo o histórico, o gzip reduziu o corpo da resposta de 52.956 para 8.867 bytes, cerca de 83%. As três chamadas sem compressão levaram de 41 a 97 ms e as três com compressão, de 43 a 57 ms no VPS. A diferença de tempo inclui variação de consulta e serialização.
 
-Durante essa fase, o arquivo da Transmissão ocupava 348 MiB. Em uma amostra simultânea, carga, API interna e gateway usavam aproximadamente 534 MiB de RAM somados. Os picos individuais acumulados naquele momento foram 429 MiB, 148 MiB e 36 MiB. O uso durante a operação integral das duas bases ainda precisa ser medido.
+Durante essa fase, o arquivo da Transmissão ocupava 348 MiB. Em uma amostra simultânea, carga, API interna e gateway usavam aproximadamente 534 MiB de RAM somados. Os picos individuais acumulados naquele momento foram 429 MiB, 148 MiB e 36 MiB.
+
+Em uma fase posterior da carga da Chevrolet, oito amostras ao longo de 28 s registraram entre 943 e 1.016 MiB nos três serviços juntos. Os dois arquivos, incluindo os logs do DuckDB, chegaram a 972 MiB. Os serviços consumiram no total 3,43 s de CPU nessa janela.
 
 Um teste com 900 mil itens sintéticos no VPS, antes da preparação dos agregados, registrou máximos de 213 ms, 495 ms e 2,105 s com 1, 5 e 10 chamadas simultâneas. A RAM do processo ficou em 370 MiB em repouso, atingiu pico de 383 MiB e os arquivos ocuparam 110,6 MiB. São tempos da API interna. Em SQL Server isolado, foi exercitada uma carga seguida de mudança de nota, exclusão de item e imposto e alterações em marca e vendedor.
 
 Com os agregados em disco e o mesmo volume sintético, os máximos da API interna foram 79 ms com 1 chamada, 206 ms com 5 e 456 ms com 10. O máximo com 10 chamadas e gravações simultâneas nos dois arquivos foi 545 ms. As gravações levaram 546 e 584 ms. O processo ocupou 277 MiB em repouso e atingiu 390 MiB. Os arquivos ocuparam 109,8 MiB e a maior resposta gzip teve 2,5 KB com 50 itens detalhados. O teste usou limite de 1,5 GiB e cota de 1,25 vCPU. Em homologação, a sincronização das duas empresas é sequencial para limitar a carga no SQL Server.
 
 A amostragem no SQL Server durante a carga registrou espera por leitura de disco (`PAGEIOLATCH_SH`, `IO_COMPLETION`) e envio do resultado (`ASYNC_NETWORK_IO`). Uma consulta amostrada tinha acumulado 624 ms de CPU para 6.001 ms decorridos e 105.178 leituras lógicas. A carga usa lotes retomáveis para limitar o tempo de cada transação de leitura.
+
+### Aceite da API interna com as duas bases
+
+A Chevrolet concluiu a carga com 2.175.324 linhas. A primeira passagem incremental reconciliou 13 documentos e publicou a versão com 9,11 s de idade. O serviço de carga concluiu com sucesso e disparou a conferência automática. As duas bases ocuparam cerca de 1,07 GiB em disco.
+
+| Empresa | Período em novembro | Linhas | API interna | SQL Server | Idade da leitura |
+|---|---|---:|---:|---:|---:|
+| Transmissão | 01 a 05/11/2019 | 371 | 31,7 ms | 2,47 s | 5,65 s |
+| Transmissão | 24 a 26/11/2026 | 493 | 65,9 ms | 1,61 s | 8,19 s |
+| Chevrolet | 01 a 05/11/2019 | 957 | 39,5 ms | 1,69 s | 8,11 s |
+| Chevrolet | 24 a 26/11/2026 | 1.159 | 25,4 ms | 1,68 s | 9,82 s |
+
+Os quatro recortes coincidiram em contagem de linhas, quantidade, venda, devolução, líquido e custo. Essa conferência usa a seleção canônica do RSYS. Os cálculos de tela por equipe, marca e devolução têm aceite próprio pendente.
+
+No histórico integral, a conferência automática mediu até 61,2 ms com um acesso, 262,5 ms com cinco e 394,7 ms com dez acessos simultâneos. Nas duas rodadas com acesso concorrente, foram consultadas ambas as empresas. A maior idade foi de 13,97 s e a maior resposta teve 9.241 bytes com gzip e 50 itens. São medições da API interna no VPS.
+
+Uma segunda rodada com as duas bases ativas e a sincronização em execução completou 51 consultas ao histórico, em grupos de até dez. A maior resposta foi de 1,12 s, com dados de até 16,67 s. API interna e gateway usaram até 211 MiB sem consultas e 228 MiB nas amostras durante as consultas. Os picos individuais acumulados foram 223 MiB e 36 MiB. O maior grupo consumiu 0,50 s de CPU. Os arquivos ocuparam 1.095 MiB no disco, incluindo os logs de gravação.
+
+A revisão servida no site oficial ao fim da medição era `f408685` (`2.9.8`). As otimizações de tela foram validadas no candidato local com o navegador autenticado e chamadas à API oficial. Ligar as telas à base preparada e confirmar o histórico integral no navegador por perfil continuam como etapas de aceite.
 
 ### Demais telas na revisão 2.9.8
 
@@ -95,10 +118,14 @@ As medições abaixo usaram Chromium autenticado no perfil Master com a Chevrole
 | Estoque retroativo, abertura fria do formulário | 2,03 s | A consulta de 26/11 respondeu HTTP 200 em 4,02 s. A captura não comprovou uma tabela preenchida |
 | DRE, abertura fria do formulário | 2,50 a 3,39 s | O clique em Buscar retornou uma tela sem resultado para esse cenário |
 | Cotações abertas, clique em Aplicar | 23,87 s | Resposta de 343 KB gzip em 10,02 s, com 13,96 s de atividade na thread principal |
+| Vendas perdidas, clique em Aplicar | 4,63 s | Consulta do mês respondeu HTTP 200 em 4,60 s |
+| Giro, troca de aba a partir de Estoque | Acima de 21,08 s | Requisições de Giro e Estoque consolidado ainda pendentes |
 
-Comissões, Vendas perdidas, Estoque retroativo, Giro, DRE e Variação ainda precisam de aceite com dados exibidos. Em Cotações, a maior parte da espera pela resposta da API foi para o primeiro byte, 9,36 s.
+Comissões, Estoque retroativo, Giro, DRE e Variação ainda precisam de aceite com dados exibidos. Em Cotações, a maior parte da espera pela resposta da API foi para o primeiro byte, 9,36 s.
 
 Em Cotações, o candidato monta 50 registros por página. Os indicadores, filtros e exportação usam a lista filtrada integral. Em uma comparação no mesmo Chromium autenticado e no mesmo período, o resultado ficou utilizável em 19,12 s sem paginação e 9,56 s com paginação. A atividade da thread principal foi de 11,31 s e 1,01 s, respectivamente. As respostas tiveram o mesmo tamanho decodificado e os indicadores tiveram a mesma assinatura. A troca para a segunda página levou 0,14 s. A consulta à API legada ainda levou 8,64 s no candidato.
+
+Uma consulta de diagnóstico no SQL Server, com a mesma seleção de Cotações na Chevrolet, confirmou 555 linhas e a soma dos valores de 25 a 26/11. A primeira parte da procedure original levou 2,30 s e a consulta restrita a contagem e soma levou 1,92 s. A consulta restrita a contagem e soma no histórico integral atingiu o limite do teste de 10 s. Ela manteve as condições de filial e de visibilidade da procedure.
 
 Em Vendas perdidas, o catálogo da Chevrolet mostrou 39 linhas em `VendaPerdida`. A projeção consulta também Estoque, Serviços e a visão de preços. Esta última depende de tabelas como `ItemListaPreco` e `Moedas`. Essas dependências ainda estão fora da configuração de Change Tracking de Produtos.
 
@@ -107,3 +134,5 @@ O candidato inicia o download do módulo principal em paralelo com a consulta qu
 Na abertura fria de Estoque, o oficial ficou utilizável em 12,29 s e o candidato em 4,06 s, com uma medição de cada. O pedido de dados levou 7,36 s no oficial e 0,74 s no candidato. O código do gráfico começou a carregar junto da requisição de dados no candidato. No oficial, carregou depois da resposta. A variação do tempo de resposta da API impede atribuir toda a diferença ao frontend.
 
 No teste do carregamento da sessão, as leituras do perfil e do papel passaram a começar com diferença de até 1 ms. Antes, o papel esperava a consulta do perfil terminar, com diferença de 614 a 952 ms. Nas três aberturas frias do formulário de Comissões por candidato, a maior duração passou de 3,62 para 2,26 s, e a mediana de 2,92 para 2,14 s. A busca de comissões após preencher o formulário tem medição pendente.
+
+Os testes focados deste ciclo passaram com 51 casos de sessão, acesso e Produtos, 16 do serviço de relatórios, 2 do gateway e 2 casos novos de paginação e exportação. A comparação das suítes de Cotações e dos overlays registrou as mesmas 17 falhas preexistentes na base e no candidato.
