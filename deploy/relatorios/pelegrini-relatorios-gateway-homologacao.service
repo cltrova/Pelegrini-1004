@@ -1,0 +1,27 @@
+[Unit]
+Description=Pelegrini authenticated reports gateway (homologacao)
+After=network.target pelegrini-relatorios-homologacao.service
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/pelegrini-relatorios-homologacao
+EnvironmentFile=/etc/pelegrini/relatorios-homologacao.env
+Environment=RELATORIOS_TOKEN_FILE=%d/relatorios-token
+LoadCredentialEncrypted=relatorios-token:/etc/credstore.encrypted/pelegrini/relatorios-homologacao.cred
+ExecStart=/usr/bin/node services/relatorios/gateway.ts
+Restart=on-failure
+RestartSec=8s
+MemoryMax=192M
+CPUQuota=50%
+TasksMax=30
+UMask=0077
+ProtectSystem=strict
+ProtectHome=yes
+NoNewPrivileges=yes
+PrivateTmp=yes
+PrivateDevices=yes
+CapabilityBoundingSet=
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6 AF_NETLINK
+
+[Install]
+WantedBy=multi-user.target

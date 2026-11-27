@@ -1,4 +1,5 @@
 import { readFile } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
 import { resolve, sep } from 'node:path';
 import { performance } from 'node:perf_hooks';
 import { setTimeout as delay } from 'node:timers/promises';
@@ -175,10 +176,12 @@ async function state(s) {
 
 function summarize(captured, readyAt) {
   const paths = new Map();
+  const firstRequest = Math.min(...Array.from(captured.values(), r => r.startedAt));
   for (const r of captured.values()) {
     const path = `${r.kind} ${r.path}`;
     const group = paths.get(path) ?? { path, count: 0, bytes: 0, decoded: 0 };
     group.count += 1;
+    group.firstRequestMs = Math.min(group.firstRequestMs ?? Infinity, round(r.startedAt - firstRequest));
     group.bytes += r.transfer;
     group.decoded += r.decoded;
     if (r.fromCache) group.cached = (group.cached ?? 0) + 1;
@@ -247,8 +250,11 @@ try {
         if (amount !== null && amount >= 0) mainThreadMs[name] = amount;
       }
       const cut = result ? round(result.timeOrigin + result.time) : Date.now();
+      const metricText = outcome === 'ready' && s.metricSelector
+        ? await read(`document.querySelector(${JSON.stringify(s.metricSelector)})?.innerText`) : null;
       console.log(JSON.stringify({ name: s.name, outcome, path: result?.path, cold: Boolean(s.cold),
         localBuild: Boolean(staticRoot), observedMs,
+        metricsHash: metricText ? createHash('sha256').update(metricText).digest('hex') : undefined,
         navigationMs: s.path && result?.path === s.path && result.timeOrigin !== previous?.timeOrigin ? round(result.time) : null,
         mainThreadMs, requests: summarize(requests, cut) }));
     } catch (error) {

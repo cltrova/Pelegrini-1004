@@ -4,7 +4,7 @@ from datetime import date, datetime, timedelta, timezone
 import json
 import logging
 from threading import Event, Thread
-from time import perf_counter
+from time import perf_counter, sleep
 
 from historico import RelatorioVencido
 from produtos_rsys import (
@@ -12,13 +12,19 @@ from produtos_rsys import (
 )
 
 
-def conectar(credencial, empresa, *, timeout):
+def conectar(credencial, empresa, *, timeout, porta_tunel=None):
     import pymssql
 
     sql = json.loads(credencial.read_text(encoding='utf-8'))
-    return pymssql.connect(server=sql['host'], port=str(sql.get('port', 1433)), database=DATABASES[empresa],
+    host, port = sql['host'], int(sql.get('port', 1433))
+    encryption = sql.get('encryption', 'require')
+    if porta_tunel is not None:
+        if (host, port) != ('192.168.141.102', 1433) or not 1024 <= porta_tunel <= 65535:
+            raise ValueError('A credencial não corresponde ao túnel do RSYS')
+        host, port, encryption = '127.0.0.1', porta_tunel, 'off'
+    return pymssql.connect(server=host, port=str(port), database=DATABASES[empresa],
                            user=sql['user'], password=sql['password'], read_only=True, charset='UTF-8',
-                           encryption=sql.get('encryption', 'require'), login_timeout=5, timeout=timeout,
+                           encryption=encryption, login_timeout=5, timeout=timeout,
                            appname='T2A-Pelegrini-Produtos', autocommit=True)
 
 
@@ -113,7 +119,7 @@ def sincronizar(base, conectar_banco, *, carga=False, cobertura=(None, None), le
 
 
 @contextmanager
-def executar_atualizacoes(bases, credencial):
+def executar_atualizacoes(bases, credencial, *, porta_tunel=None):
     import duckdb
     import pymssql
 
@@ -126,7 +132,9 @@ def executar_atualizacoes(bases, credencial):
                 if parar.is_set():
                     return
                 try:
-                    sincronizar(base, lambda: conectar(credencial, empresa, timeout=12))
+                    resultado = sincronizar(base, lambda: conectar(credencial, empresa, timeout=12,
+                                                                 porta_tunel=porta_tunel))
+                    logger.info('Produtos %s', json.dumps(resultado))
                 except (RecargaNecessaria, RelatorioVencido, pymssql.Error, duckdb.Error, ValueError, OSError) as error:
                     logger.warning('Atualização de Produtos %s falhou (%s)', empresa, type(error).__name__)
             parar.wait(10)
@@ -142,31 +150,64 @@ def executar_atualizacoes(bases, credencial):
 
 def main():
     from argparse import ArgumentParser
+    from concurrent.futures import ThreadPoolExecutor
     from pathlib import Path
     from produtos import Produtos
     import pymssql
 
     parser = ArgumentParser(description=__doc__)
-    parser.add_argument('--empresa', choices=DATABASES, required=True)
+    scope = parser.add_mutually_exclusive_group(required=True)
+    scope.add_argument('--empresa', choices=DATABASES)
+    scope.add_argument('--preparar-todos', action='store_true')
     parser.add_argument('--diretorio', type=Path, required=True)
     parser.add_argument('--credencial', type=Path, required=True)
+    parser.add_argument('--porta-tunel', type=int)
     parser.add_argument('--carga', action='store_true')
-    parser.add_argument('--dias-por-lote', choices=(7, 30, 90), type=int, default=90)
+    parser.add_argument('--dias-por-lote', choices=(7, 30, 90, 180), type=int, default=90)
+    parser.add_argument('--simultaneas', choices=(1, 2), type=int, default=1)
     parser.add_argument('--intervalo-avulso', type=date.fromisoformat, nargs=2, metavar=('INICIO', 'FIM_EXCLUSIVO'))
     args = parser.parse_args()
+    if args.preparar_todos and (args.carga or args.intervalo_avulso):
+        parser.error('--preparar-todos prepara e sincroniza o histórico integral')
     logging.basicConfig(level=logging.INFO, format='%(message)s')
+
+    def importar(empresa):
+        with closing(Produtos(args.diretorio, empresa)) as base:
+            def abrir():
+                return conectar(args.credencial, empresa, timeout=30, porta_tunel=args.porta_tunel)
+
+            if args.preparar_todos:
+                estado = base.estado()
+                if not estado or not estado[7]:
+                    try:
+                        carga = sincronizar(base, abrir, carga=True, dias_por_lote=args.dias_por_lote)
+                    except pymssql.Error as error:
+                        number = error.args[0] if error.args else None
+                        if args.dias_por_lote == 7 or number not in (20002, 20003, 20047):
+                            raise
+                        lote = 30 if args.dias_por_lote > 30 else 7
+                        logging.warning('Retomando Produtos %s em lotes de %d dias', empresa, lote)
+                        sleep(3)
+                        carga = sincronizar(base, abrir, carga=True, dias_por_lote=lote)
+                    print(json.dumps(carga), flush=True)
+                resultado = sincronizar(base, abrir)
+            else:
+                resultado = sincronizar(base, abrir, carga=args.carga or bool(args.intervalo_avulso),
+                                        cobertura=tuple(args.intervalo_avulso or (None, None)),
+                                        leitura_avulsa=bool(args.intervalo_avulso), dias_por_lote=args.dias_por_lote)
+            print(json.dumps(resultado), flush=True)
+
     try:
-        with closing(Produtos(args.diretorio, args.empresa)) as base:
-            resultado = sincronizar(base, lambda: conectar(args.credencial, args.empresa, timeout=25),
-                                    carga=args.carga or bool(args.intervalo_avulso),
-                                    cobertura=tuple(args.intervalo_avulso or (None, None)),
-                                    leitura_avulsa=bool(args.intervalo_avulso), dias_por_lote=args.dias_por_lote)
+        if args.preparar_todos:
+            with ThreadPoolExecutor(max_workers=args.simultaneas) as executor:
+                list(executor.map(importar, DATABASES))
+        else:
+            importar(args.empresa)
     except pymssql.Error as error:
         number = error.args[0] if error.args and isinstance(error.args[0], int) else 'desconhecido'
         raise SystemExit(f'Falha na comunicação com o RSYS (código {number})') from None
     except (RecargaNecessaria, RelatorioVencido) as error:
         raise SystemExit(str(error)) from None
-    print(json.dumps(resultado), flush=True)
 
 
 if __name__ == '__main__':

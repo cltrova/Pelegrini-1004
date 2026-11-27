@@ -66,8 +66,10 @@ const DEFAULT_GIRO_FILTERS: GiroFiltersState = {
   periodoMeses: 3, statusFilter: [], empresas: [], marcas: [], grupos: [], searchTerm: '',
 };
 
-const LazyEstoqueOverview = lazy(() => import('@/components/operacional/estoque/EstoqueOverview').then(({ EstoqueOverview }) => ({ default: EstoqueOverview })));
-const LazyGiroEstoqueTab = lazy(() => import('@/components/operacional/GiroEstoqueTab').then(({ GiroEstoqueTab }) => ({ default: GiroEstoqueTab })));
+const carregarEstoqueOverview = () => import('@/components/operacional/estoque/EstoqueOverview').then(({ EstoqueOverview }) => ({ default: EstoqueOverview }));
+const carregarGiroEstoque = () => import('@/components/operacional/GiroEstoqueTab').then(({ GiroEstoqueTab }) => ({ default: GiroEstoqueTab }));
+const LazyEstoqueOverview = lazy(carregarEstoqueOverview);
+const LazyGiroEstoqueTab = lazy(carregarGiroEstoque);
 const LazyEstoqueAssistantTab = lazy(() => import('@/components/operacional/EstoqueAssistantTab').then(({ EstoqueAssistantTab }) => ({ default: EstoqueAssistantTab })));
 
 function EstoqueTabFallback() {
@@ -99,6 +101,12 @@ export function EstoqueProdutosPage({ initialTab = 'overview' }: EstoquePageProp
   const [pendingGiro, setPendingGiro] = useState<GiroFiltersState>(DEFAULT_GIRO_FILTERS);
   const [requestedProductCode, setRequestedProductCode] = useState<string | null>(null);
   const [sourceNoticeDismissed, setSourceNoticeDismissed] = useState(false);
+
+  useEffect(() => {
+    if (!empresa?.modulo_operacional) return;
+    if (activeTab === 'overview') void carregarEstoqueOverview().catch(() => {});
+    if (activeTab === 'giro') void carregarGiroEstoque().catch(() => {});
+  }, [activeTab, empresa?.modulo_operacional]);
 
   const estoqueData = useMemo(
     () => viewMode === 'consolidado' ? consolidadoData : detalhadoData,

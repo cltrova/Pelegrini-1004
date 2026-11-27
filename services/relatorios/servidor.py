@@ -132,6 +132,7 @@ def servidor(bases, token, porta, *, produtos=None):
 def main():
     import argparse
     from contextlib import ExitStack, closing
+    import logging
     from pathlib import Path
     from historico import FILIAIS, Historico
 
@@ -141,10 +142,17 @@ def main():
     parser.add_argument('--porta', type=int, default=8328)
     parser.add_argument('--produtos-sql-credencial', type=Path,
                         help='Abre as bases de Produtos e ativa a atualização incremental')
+    parser.add_argument('--produtos-porta-tunel', type=int)
+    parser.add_argument('--somente-produtos', action='store_true')
     options = parser.parse_args()
+    if options.somente_produtos and not options.produtos_sql_credencial:
+        parser.error('--somente-produtos exige --produtos-sql-credencial')
+    logging.basicConfig(level=logging.INFO, format='%(message)s')
     with ExitStack() as cleanup:
-        bases = {empresa: cleanup.enter_context(closing(Historico(options.diretorio, empresa, filial)))
-                 for empresa, filial in FILIAIS.items()}
+        bases = {} if options.somente_produtos else {
+            empresa: cleanup.enter_context(closing(Historico(options.diretorio, empresa, filial)))
+            for empresa, filial in FILIAIS.items()
+        }
         produtos = None
         if options.produtos_sql_credencial:
             from produtos import Produtos
@@ -152,7 +160,8 @@ def main():
 
             produtos = {empresa: cleanup.enter_context(closing(Produtos(options.diretorio, empresa)))
                         for empresa in FILIAIS}
-            cleanup.enter_context(executar_atualizacoes(produtos, options.produtos_sql_credencial))
+            cleanup.enter_context(executar_atualizacoes(produtos, options.produtos_sql_credencial,
+                                                        porta_tunel=options.produtos_porta_tunel))
         with servidor(bases, options.token_file.read_text(encoding='ascii').strip(), options.porta,
                       produtos=produtos) as api:
             api.serve_forever()

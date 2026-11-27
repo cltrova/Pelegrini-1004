@@ -1,0 +1,33 @@
+[Unit]
+Description=Retomada da carga inicial de Produtos do RSYS
+After=network.target
+OnSuccess=pelegrini-relatorios-homologacao.service
+StartLimitIntervalSec=600s
+StartLimitBurst=3
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/pelegrini-relatorios-homologacao
+Environment=PYTHONDONTWRITEBYTECODE=1
+Environment=PYTHONPATH=/opt/pelegrini-relatorios-homologacao/lib
+LoadCredentialEncrypted=sql.json:/etc/credstore.encrypted/pelegrini/sql.cred
+StateDirectory=pelegrini-relatorios-homologacao
+StateDirectoryMode=0700
+UMask=0077
+ExecStart=/usr/bin/python3 -u services/relatorios/sincronizar_produtos.py --preparar-todos --diretorio %S/pelegrini-relatorios-homologacao --credencial %d/sql.json --porta-tunel 15007 --dias-por-lote 30 --simultaneas 2
+Restart=on-failure
+RestartSec=20s
+TimeoutStartSec=45min
+MemoryHigh=1G
+MemoryMax=1536M
+CPUQuota=125%
+TasksMax=50
+ProtectSystem=strict
+ProtectHome=yes
+NoNewPrivileges=yes
+PrivateTmp=yes
+PrivateDevices=yes
+CapabilityBoundingSet=
+RestrictAddressFamilies=AF_UNIX AF_INET
+IPAddressDeny=any
+IPAddressAllow=localhost

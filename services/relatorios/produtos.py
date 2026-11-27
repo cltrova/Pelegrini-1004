@@ -14,6 +14,19 @@ from historico import FILIAIS, RelatorioVencido, VALIDADE, VersaoTrocada, linhas
 from produtos_rsys import RecargaNecessaria
 
 
+PRODUTOS_TOTAIS = '''SELECT count(*) AS total, coalesce(sum(quantidade),0) AS quantidade,
+    coalesce(sum(venda),0) AS vendas, coalesce(sum(devolucao),0) AS devolucoes,
+    coalesce(sum(liquido),0) AS liquido, coalesce(sum(custo),0) AS custo FROM produtos'''
+PRODUTOS_DIMENSOES = {'produto': 'codigo, produto', 'marca': 'marca', 'grupo': 'grupo'}
+
+
+def consulta_ranking(chave, filtro=''):
+    colunas = PRODUTOS_DIMENSOES[chave]
+    return f'''SELECT {colunas}, count(*) AS total, coalesce(sum(quantidade),0) AS quantidade,
+                        coalesce(sum(liquido),0) AS receita
+               FROM produtos{filtro} GROUP BY {colunas} ORDER BY receita DESC, {colunas} LIMIT 50'''
+
+
 class Produtos:
     def __init__(self, diretorio, empresa):
         self.empresa = empresa
@@ -39,6 +52,10 @@ class Produtos:
                 confirmado BOOLEAN NOT NULL, proximo_lote DATE
             );
         ''')
+        self._db.execute(f'CREATE TABLE IF NOT EXISTS produtos_totais AS {PRODUTOS_TOTAIS} LIMIT 0')
+        for chave in PRODUTOS_DIMENSOES:
+            self._db.execute(f'CREATE TABLE IF NOT EXISTS produtos_ranking_{chave} AS '
+                             f'{consulta_ranking(chave, " WHERE FALSE")}')
 
     def close(self):
         self._db.close()
@@ -81,11 +98,10 @@ class Produtos:
                 row['produto'], row['marca'], row['grupo_produto'], *valores, linhas_json(row))
 
     def _copiar_csv(self, arquivo, registros, inicio, fim_exclusivo, documentos):
-        writer = csv.writer(arquivo, quoting=csv.QUOTE_ALL)
+        writer = csv.writer(arquivo, quoting=csv.QUOTE_NOTNULL)
         inseridos = 0
         for row in registros:
-            writer.writerow([r'\N' if value is None else value
-                             for value in self._registro(row, inicio, fim_exclusivo, documentos)])
+            writer.writerow(self._registro(row, inicio, fim_exclusivo, documentos))
             inseridos += 1
         arquivo.flush()
         return inseridos
@@ -93,8 +109,16 @@ class Produtos:
     @staticmethod
     def _carregar_csv(db, arquivo, quantidade):
         if quantidade:
-            db.execute(r"COPY produtos FROM ? (FORMAT CSV, HEADER false, AUTO_DETECT false, NULLSTR '\N')",
-                       [arquivo.name])
+            copiados, = db.execute('COPY produtos FROM ? (FORMAT CSV, HEADER false, AUTO_DETECT false, '
+                                   'ALLOW_QUOTED_NULLS false)', [arquivo.name]).fetchone()
+            if copiados != quantidade:
+                raise ValueError('O lote em disco diverge da leitura de Produtos')
+
+    @staticmethod
+    def _preparar_historico(db):
+        db.execute(f'CREATE OR REPLACE TABLE produtos_totais AS {PRODUTOS_TOTAIS}')
+        for chave in PRODUTOS_DIMENSOES:
+            db.execute(f'CREATE OR REPLACE TABLE produtos_ranking_{chave} AS {consulta_ranking(chave)}')
 
     def gravar_lote_inicial(self, esperado, inicio, fim, registros):
         with NamedTemporaryFile(mode='w', encoding='utf-8', newline='', suffix='.csv', dir=self.diretorio) as arquivo:
@@ -141,6 +165,10 @@ class Produtos:
                     else:
                         versao, total = atual[0], atual[4]
                     self._carregar_csv(db, arquivo, inseridos)
+                    if confirmado and cobertura == (None, None) and (
+                        documentos is None or documentos or not db.execute('SELECT 1 FROM produtos_totais').fetchone()
+                    ):
+                        self._preparar_historico(db)
                     if verificar_idade:
                         verificar_frescor(snapshot.origem)
                     db.execute('DELETE FROM produtos_revisao')
@@ -177,18 +205,15 @@ class Produtos:
                         filtro += ' AND ' + clause
                         params.append(value)
 
-                total, quantidade, vendas, devolucoes, liquido, custo = db.execute('''
-                    SELECT count(*), coalesce(sum(quantidade),0), coalesce(sum(venda),0),
-                           coalesce(sum(devolucao),0), coalesce(sum(liquido),0), coalesce(sum(custo),0)
-                    FROM produtos''' + filtro, params).fetchone()
-                ranking = {}
-                for chave in ('produto', 'marca', 'grupo'):
-                    colunas = 'codigo, produto' if chave == 'produto' else chave
-                    ranking[chave] = db.execute(f'''
-                        SELECT {colunas}, count(*), coalesce(sum(quantidade),0), coalesce(sum(liquido),0) AS receita
-                        FROM produtos{filtro} GROUP BY {colunas}
-                        ORDER BY receita DESC, {colunas} LIMIT 50
-                    ''', params).fetchall()
+                preparados = db.execute('SELECT * FROM produtos_totais').fetchone() if not params else None
+                total, quantidade, vendas, devolucoes, liquido, custo = preparados or db.execute(
+                    PRODUTOS_TOTAIS + filtro, params,
+                ).fetchone()
+                ranking = {
+                    chave: db.execute(f'SELECT * FROM produtos_ranking_{chave} ORDER BY receita DESC, {colunas}'
+                                      if preparados else consulta_ranking(chave, filtro), params).fetchall()
+                    for chave, colunas in PRODUTOS_DIMENSOES.items()
+                }
                 detalhes = db.execute('SELECT registro FROM produtos' + filtro +
                                       ' ORDER BY dia DESC, tipo, documento, movimento, registro LIMIT ? OFFSET ?',
                                       [*params, limit, offset]).fetchall()

@@ -22,7 +22,6 @@ KEYS = {
     'Empresas': ('Codigo',),
 }
 REFERENCE_KEYS = {
-    'Pedidos': ('me.Empresa', 'me.CodPedido'),
     'Operacoes': ('nf.CodOperacao',),
     'Entidades': ('nf.CodEntidade',),
     'Produtos': ('me.CodProduto',),
@@ -62,13 +61,15 @@ class Projecao:
 
 
 def projecao_aprovada(definition, empresa):
+    if empresa not in DATABASES:
+        raise ValueError('Empresa inválida para a projeção de Produtos')
     definition = (definition or '').replace('\r\n', '\n')
     if sha256(definition.encode()).hexdigest() != PROCEDURE_DIGEST:
         raise ValueError('A definição de sp_api_produto mudou no RSYS')
     # Each IF block has its own SELECT but shares the procedure's output contract.
     block = re.search(rf'IF @cod_empresa_bi = {empresa}\s+BEGIN\s+(SELECT\s+.+?)\s+'
                       r'ORDER BY nf.DataMovimento, me.CodProduto;', definition, re.DOTALL)
-    if not block or empresa not in DATABASES:
+    if not block:
         raise ValueError('Projeção de Produtos indisponível para a empresa')
     query = block[1].replace('RSYS2003_PELEGRINI.dbo.', 'dbo.')
     select, tail = re.split(r'\s+FROM\s+', query, maxsplit=1)
@@ -86,35 +87,43 @@ def projecao_aprovada(definition, empresa):
     where = (f'{condition}\nAND nf.Empresa = %s\n'
              f'AND COALESCE(pd.CodVendInterno, nf.CodVendInterno, 0) NOT IN ({codes}){names}')
     if empresa == '10041':
-        where += "\nAND COALESCE(me.NumCFOP, 0) NOT IN (5933, 6933)"
+        # RSYS stores formatted codes such as '1.411' in a varchar field.
+        cfop = "COALESCE(CONVERT(varchar(40), me.NumCFOP), '')"
+        for separator in ("'.'", "' '", "'-'", "'/'", 'CHAR(9)', 'CHAR(160)'):
+            cfop = f"REPLACE({cfop}, {separator}, '')"
+        where += f"\nAND {cfop} NOT IN ('5933', '6933')"
         where += "\nAND LTRIM(RTRIM(COALESCE(prod.Descricao, ''))) COLLATE Latin1_General_CI_AI " \
                  "NOT IN ('SERVICO','SERVICOS')"
     return Projecao(select + ', nf.TipoControle AS tipo_documento', 'FROM ' + joins, where)
 
 
 def iniciar_snapshot(cursor, empresa, *, exigir_ct=True):
-    cursor.execute('SET NOCOUNT ON; SET DEADLOCK_PRIORITY LOW; SET LOCK_TIMEOUT 2000; '
-                   'SET TRANSACTION ISOLATION LEVEL SNAPSHOT; BEGIN TRANSACTION;')
-    cursor.execute('''
+    definicao_sql = "SELECT OBJECT_DEFINITION(OBJECT_ID('dbo.sp_api_produto'))" if empresa == '1004' else '''
+        SELECT definition FROM RSYS2003_CT.sys.sql_modules M
+        JOIN RSYS2003_CT.sys.objects O ON M.object_id=O.object_id
+        JOIN RSYS2003_CT.sys.schemas S ON O.schema_id=S.schema_id
+        WHERE O.name='sp_api_produto' AND S.name='dbo'
+    '''
+    cursor.execute(f'''
+        SET NOCOUNT ON; SET DEADLOCK_PRIORITY LOW; SET LOCK_TIMEOUT 2000;
+        SET TRANSACTION ISOLATION LEVEL SNAPSHOT; BEGIN TRANSACTION;
         SELECT DB_NAME(), SYSUTCDATETIME(), CHANGE_TRACKING_CURRENT_VERSION(),
             CONVERT(varchar(36),database_guid), CONVERT(varchar(36),recovery_fork_guid),
             CONVERT(varchar(128),DATABASEPROPERTYEX(DB_NAME(),'Collation'))
-        FROM sys.database_recovery_status WHERE database_id = DB_ID()
+        FROM sys.database_recovery_status WHERE database_id = DB_ID();
+        {definicao_sql};
     ''')
     nome, origem, versao, database_guid, fork, collation = cursor.fetchone()
     if nome != DATABASES[empresa] or not database_guid or not fork or collation != 'Latin1_General_CI_AS':
         raise RecargaNecessaria('A origem do RSYS não corresponde à empresa')
     if versao is None and exigir_ct:
         raise RecargaNecessaria('Change Tracking está desativado na origem')
-    cursor.execute("SELECT OBJECT_DEFINITION(OBJECT_ID('RSYS2003_CT.dbo.sp_api_produto'))"
-                   if empresa == '1004' else
-                   "SELECT definition FROM RSYS2003_CT.sys.sql_modules M "
-                   "JOIN RSYS2003_CT.sys.objects O ON M.object_id=O.object_id "
-                   "JOIN RSYS2003_CT.sys.schemas S ON O.schema_id=S.schema_id "
-                   "WHERE O.name='sp_api_produto' AND S.name='dbo'")
-    row = cursor.fetchone()
+    row = cursor.fetchone() if cursor.nextset() else None
     projection = projecao_aprovada(row[0] if row else None, empresa)
-    fingerprint = sha256(f'{database_guid}:{fork}:{collation}:{PROCEDURE_DIGEST}'.encode()).hexdigest()
+    base_identity = f'{database_guid}:{fork}:{collation}:{PROCEDURE_DIGEST}'
+    if empresa == '10041':
+        base_identity += ':cfop-texto'
+    fingerprint = sha256(base_identity.encode()).hexdigest()
     return Snapshot(origem.replace(tzinfo=timezone.utc), versao, fingerprint), projection
 
 
@@ -127,18 +136,23 @@ def validar_versao(cursor, anterior, atual):
         raise RecargaNecessaria('A versão anterior saiu da retenção do SQL Server ou a tabela perdeu Change Tracking')
 
 
-def chaves_alteradas(cursor, table, filial, since, current):
-    columns = KEYS[table]
-    scope = ' AND Empresa = %s' if 'Empresa' in columns else ''
-    params = (since, current, filial) if scope else (since, current)
-    cursor.execute(f'''DECLARE @since bigint=%s;
-        SELECT TOP ({MAX_DOCUMENTS + 1}) {', '.join(columns)}
-        FROM CHANGETABLE(CHANGES dbo.[{table}], @since) T
-        WHERE T.SYS_CHANGE_VERSION <= %s {scope} OPTION (MAXDOP 1)''', params)
-    rows = cursor.fetchall()
-    if len(rows) > MAX_DOCUMENTS:
-        raise RecargaNecessaria('Volume de mudanças acima do limite de atualização de Produtos')
-    return rows
+def chaves_alteradas(cursor, filial, since, current):
+    statements = ['DECLARE @since bigint=%s, @through bigint=%s, @filial int=%s;']
+    for table, columns in KEYS.items():
+        scope = ' AND T.Empresa = @filial' if 'Empresa' in columns else ''
+        statements.append(f'''SELECT TOP ({MAX_DOCUMENTS + 1}) {', '.join(columns)}
+            FROM CHANGETABLE(CHANGES dbo.[{table}], @since) T
+            WHERE T.SYS_CHANGE_VERSION <= @through {scope} OPTION (MAXDOP 1);''')
+    cursor.execute('\n'.join(statements), (since, current, filial))
+    results = {}
+    for table in KEYS:
+        if results and not cursor.nextset():
+            raise RecargaNecessaria('O RSYS não retornou todas as tabelas de Change Tracking')
+        rows = cursor.fetchall()
+        if len(rows) > MAX_DOCUMENTS:
+            raise RecargaNecessaria('Volume de mudanças acima do limite de atualização de Produtos')
+        results[table] = rows
+    return results
 
 
 def lotes(rows):
@@ -151,10 +165,9 @@ def lotes(rows):
 def documentos_alterados(cursor, projection, filial, since, current, documentos_anteriores):
     if since == current:
         return set()
-    docs = {(int(kind), int(code)) for _, kind, code in chaves_alteradas(
-        cursor, 'NotasFiscais', filial, since, current) if kind in (1, 2)}
-    movements = {int(number) for table in MOVEMENTS for _, number in chaves_alteradas(
-        cursor, table, filial, since, current)}
+    changes = chaves_alteradas(cursor, filial, since, current)
+    docs = {(int(kind), int(code)) for _, kind, code in changes['NotasFiscais'] if kind in (1, 2)}
+    movements = {int(number) for table in MOVEMENTS for _, number in changes[table]}
     docs.update(documentos_anteriores(sorted(movements)))
     for placeholders, params in lotes([(number,) for number in sorted(movements)]):
         cursor.execute(f'''SELECT M.TipoControle, M.CodControle FROM dbo.MovEstoque M
@@ -162,8 +175,16 @@ def documentos_alterados(cursor, projection, filial, since, current, documentos_
             WHERE M.Empresa=%s AND M.TipoControle IN (1,2) OPTION (MAXDOP 1)''', (*params, filial))
         docs.update((int(kind), int(code)) for kind, code in cursor.fetchall() if code is not None)
 
+    # The movement retains the foreign key when the order itself was deleted.
+    for placeholders, params in lotes(changes['Pedidos']):
+        cursor.execute(f'''SELECT DISTINCT TOP ({MAX_DOCUMENTS + 1}) M.TipoControle, M.CodControle
+            FROM dbo.MovEstoque M JOIN (VALUES {placeholders}) K(Empresa, CodPedido)
+            ON K.Empresa=M.Empresa AND K.CodPedido=M.CodPedido
+            WHERE M.TipoControle IN (1,2) AND M.CodControle IS NOT NULL OPTION (MAXDOP 1)''', params)
+        docs.update((int(kind), int(code)) for kind, code in cursor.fetchall())
+
     for table, references in REFERENCE_KEYS.items():
-        changed = chaves_alteradas(cursor, table, filial, since, current)
+        changed = changes[table]
         key_names = ','.join(KEYS[table])
         predicate = ' AND '.join(f'K.{key}={ref}' for key, ref in zip(KEYS[table], references, strict=True))
         for placeholders, params in lotes(changed):

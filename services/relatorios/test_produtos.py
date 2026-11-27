@@ -131,9 +131,9 @@ class SourceTest(unittest.TestCase):
         keys = {'NotasFiscais': [(1, 1, 20)], 'MovEstoque': [(1, 10), (1, 11)],
                 'MovEstoqueImposto': [(1, 12)], 'Pedidos': [(1, 90)], 'Vendedores': [(8,)]}
         cursor = Cursor([(2, 7), (2, 8)], [(2, 32)], [(2, 40)])
-        with patch('produtos_rsys.chaves_alteradas', side_effect=lambda _, table, *_args: keys.get(table, [])):
+        with patch('produtos_rsys.chaves_alteradas', return_value={table: keys.get(table, []) for table in KEYS}):
             docs = documentos_alterados(cursor, Projecao('', 'FROM dbo.NotasFiscais nf', ''), 1, 5, 6,
                                        lambda movements: [(2, 5)] if movements == [10, 11, 12] else [])
         self.assertEqual(docs, {(1, 20), (2, 5), (2, 7), (2, 8), (2, 32), (2, 40)})
-        self.assertIn('K.CodPedido=me.CodPedido', cursor.calls[1][0])
+        self.assertIn('K.CodPedido=M.CodPedido', cursor.calls[1][0])
         self.assertIn('K.Codigo=ISNULL(pd.CodVendInterno, nf.CodVendInterno)', cursor.calls[2][0])

@@ -1,0 +1,33 @@
+[Unit]
+Description=Pelegrini Produtos prepared HTTP and sync (homologacao)
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/pelegrini-relatorios-homologacao
+Environment=PYTHONDONTWRITEBYTECODE=1
+Environment=PYTHONPATH=/opt/pelegrini-relatorios-homologacao/lib
+LoadCredentialEncrypted=sql.json:/etc/credstore.encrypted/pelegrini/sql.cred
+LoadCredentialEncrypted=relatorios-token:/etc/credstore.encrypted/pelegrini/relatorios-homologacao.cred
+StateDirectory=pelegrini-relatorios-homologacao
+StateDirectoryMode=0700
+UMask=0077
+ExecStart=/usr/bin/python3 services/relatorios/servidor.py --somente-produtos --porta 8328 --diretorio %S/pelegrini-relatorios-homologacao --token-file %d/relatorios-token --produtos-sql-credencial %d/sql.json --produtos-porta-tunel 15007
+Restart=on-failure
+RestartSec=8s
+MemoryHigh=1G
+MemoryMax=1536M
+CPUQuota=125%
+TasksMax=50
+ProtectSystem=strict
+ProtectHome=yes
+NoNewPrivileges=yes
+PrivateTmp=yes
+PrivateDevices=yes
+CapabilityBoundingSet=
+RestrictAddressFamilies=AF_UNIX AF_INET
+IPAddressDeny=any
+IPAddressAllow=localhost
+
+[Install]
+WantedBy=multi-user.target

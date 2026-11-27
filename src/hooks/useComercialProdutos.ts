@@ -763,6 +763,7 @@ async function fetchFromEndpoint(empresa: Empresa, periodo?: { inicio: string; f
   const codBiParam = resolveCodEmpresaBiParam(empresa, filialAtiva);
   const codEmpresaConfig = String(empresa.cod_empresa_bi ?? '').trim();
   const isPelegrini1004Config = codEmpresaConfig === '1004' || codEmpresaConfig === '10041';
+  const preferredPageSize = isPelegrini1004Config ? 10_000 : 5_000;
   const keyIni = usaVps || codEmpresaConfig === '1003' || isPelegrini1004Config ? 'data_ini' : 'data_inicio';
 
   // Log da URL upstream final (útil para diagnosticar roteamento VPS/proxy)
@@ -771,7 +772,7 @@ async function fetchFromEndpoint(empresa: Empresa, periodo?: { inicio: string; f
       ? `${(empresa.vps_base_url || '').replace(/\/+$/, '')}/${(empresa.vps_cliente_identificador || '').replace(/^\/+|\/+$/g, '')}`
       : (empresa.endpoint_url || '');
     const debugCodBi = codBiParam ? `&cod_empresa_bi=${codBiParam}` : '';
-    console.log(`[ComercialProdutos] URL final upstream: ${debugBase}${pathOnly}?${keyIni}=${ini}&data_fim=${fim}&page_size=5000${debugCodBi}`);
+    console.log(`[ComercialProdutos] URL final upstream: ${debugBase}${pathOnly}?${keyIni}=${ini}&data_fim=${fim}&page_size=${preferredPageSize}${debugCodBi}`);
   }
 
   const buildUrl = (di: string, df: string, page: number, pageSize: number) => {
@@ -799,7 +800,7 @@ async function fetchFromEndpoint(empresa: Empresa, periodo?: { inicio: string; f
   ].join('|');
 
   const fetchRange = async (di: string, df: string): Promise<any[]> => {
-    const pageSize = 5000;
+    let pageSize = preferredPageSize;
     const allPages: any[] = [];
     const seen = new Set<string>();
 
@@ -817,6 +818,10 @@ async function fetchFromEndpoint(empresa: Empresa, periodo?: { inicio: string; f
         }
         const json = await readJsonOrFallback(res, []);
         const arr = extractArray(json);
+        if (page === 1 && pageSize > 5_000 && arr.length === 5_000) {
+          // Some upstream releases cap the size to 5,000 even when a larger page is requested.
+          pageSize = 5_000;
+        }
 
         // A VPS/ERP ignora o parâmetro `page` em alguns endpoints e devolve
         // sempre o mesmo conjunto. Sem essa proteção o loop repetia 20x o
@@ -831,10 +836,6 @@ async function fetchFromEndpoint(empresa: Empresa, periodo?: { inicio: string; f
         }
 
         console.log(`[ComercialProdutos] ${di}..${df} página ${page}: ${arr.length} registros (${novos} novos)`);
-        if (page === 1 && arr.length > 0) {
-          console.log('[ComercialProdutos] Campos da API (amostra):', Object.keys(arr[0]));
-          console.log('[ComercialProdutos] Primeiro registro:', arr[0]);
-        }
         if (novos === 0) {
           if (page > 1) console.warn(`[ComercialProdutos] ${di}..${df}: paginação não avança (página ${page} repetida) — encerrando.`);
           break;

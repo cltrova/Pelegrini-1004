@@ -44,3 +44,37 @@ A RAM em repouso após a carga foi de 85 MiB. O disco passou de 1,62 MiB para um
 Os testes do piloto rodam com `python -m unittest discover -s services/relatorios`. A carga de homologação recebe JSONL conferido na origem, com os campos `filial`, `dia`, `pedido`, `vendedor`, `valor` e `original`, pelo comando `carregar.py`, junto com o horário UTC efetivo da leitura. Execute a carga de arquivo em uma base que o servidor ainda vá abrir. `medir.py` gera seu próprio conjunto sintético, publica novas versões no mesmo processo do servidor e mede as consultas.
 
 Os testes focados passaram com 100 casos no frontend e 7 no piloto. A suíte geral registrou 50 falhas na execução desta rodada. A execução da base inicial já registrava 51.
+
+## Produtos em homologação no VPS
+
+A branch local passou a usar como base a revisão `f408685`, publicada como `2.9.8` no site oficial. Em uma abertura fria em que a Casa do Chevrolet estava selecionada, a tela de Produtos oficial ficou utilizável em 25,85 s. Três aberturas do candidato com a mesma API levaram 14,89 s, 9,81 s e 9,16 s. O candidato monta a lista de vendedores ao abrir os filtros e evita baixar pedidos para montar a tela inicial. A consulta de Produtos caiu de quatro para duas requisições e de aproximadamente 2,22 MB para 0,99 MB transferidos.
+
+Uma segunda comparação no navegador usou o mesmo período e uma assinatura do texto dos indicadores. Ao aproveitar uma página maior da API atual, os indicadores se mantiveram iguais, as duas consultas de Produtos viraram uma e a abertura passou de 10,20 s para 7,72 s nas duas medições. A transferência permaneceu próxima de 0,99 MB. Esses testes usaram a sessão Master e a API atual do site.
+
+### Rastreamento e carga
+
+O Change Tracking foi ativado com aprovação explícita em `RSYS2003_CT` e `RSYS2003_PELEGRINI`, com retenção de dois dias e limpeza automática. O rastreamento por coluna ficou desabilitado. As 12 tabelas são `NotasFiscais`, `MovEstoque`, `MovEstoqueImposto`, `Pedidos`, `Operacoes`, `Entidades`, `Produtos`, `Grupos`, `Vendedores`, `Cidades`, `Marcas` e `Empresas`.
+
+O serviço `PelegriniRelatoriosTunel` do Windows se conecta ao VPS com chave própria e host fixado. A porta `15007` do VPS se limita a `127.0.0.1` e leva ao SQL Server interno. A leitura de produção usa a credencial criptografada já existente e o modo de conexão somente leitura. O VPS validou a consulta das versões de Change Tracking nos dois bancos pelo novo túnel.
+
+A implementação usa o bloco de seleção de `sp_api_produto` de cada empresa, valida a assinatura da definição, restringe a filial e aplica as exclusões de Força P na origem. A Chevrolet também aplica o recorte de serviços usado em Produtos. A carga em DuckDB grava cada lote e o próximo intervalo na mesma transação. Ao final, o sincronizador reconsulta os documentos afetados desde a versão inicial. Ele usa a chave anterior e a atual para movimentos transferidos ou excluídos. Se uma restauração ou perda de retenção invalidar a versão, a atualização fica pendente de uma nova carga.
+
+### Serviço e evidências
+
+`pelegrini-relatorios-carga.service` carrega as bases com até duas leituras simultâneas, retoma os lotes confirmados e inicia `pelegrini-relatorios-homologacao.service` ao concluir. O estado fica em `/var/lib/pelegrini-relatorios-homologacao`. A consulta interna e o gateway ficam em `127.0.0.1:8328` e `127.0.0.1:8329`. O gateway confere a sessão do portal, o perfil e a filial. Sem sessão, o gateway respondeu `401`. Os testes de autorização exercitam Master, Gerencial e Vendedor, incluindo filial indevida.
+
+A API de Produtos calcula totais sobre o recorte inteiro, entrega rankings e pagina os detalhes por versão. Os totais e rankings de todo o histórico são preparados em disco na mesma gravação do lote incremental. A API envia a hora UTC da leitura e a versão servida, e devolve `503` quando a base está incompleta ou a leitura atingiu 60 segundos. A sessão do portal oficial ainda usa a API legada. A paridade das métricas finais da interface, a troca da fonte no navegador, as exportações e demais telas e perfis fazem parte do aceite pendente.
+
+Na amostra real de 24 a 26/11 pelo novo túnel, as contagens e o total líquido coincidiram com a mesma seleção na origem. Foram 493 linhas da Transmissão e 1.159 da Chevrolet. A publicação das amostras ocorreu com 4,70 s e 5,54 s de idade, respectivamente. As consultas em disco levaram 9,3 ms e 11,7 ms. A leitura incremental encontrou 32 e 111 chaves modificadas desde as versões consultadas no primeiro teste do túnel.
+
+Um teste com 900 mil itens sintéticos no VPS, antes da preparação dos agregados, registrou máximos de 213 ms, 495 ms e 2,105 s com 1, 5 e 10 chamadas simultâneas. A RAM do processo ficou em 370 MiB em repouso, atingiu pico de 383 MiB e os arquivos ocuparam 110,6 MiB. São tempos da API interna. Em SQL Server isolado, foi exercitada uma carga seguida de mudança de nota, exclusão de item e imposto e alterações em marca e vendedor.
+
+Com os agregados em disco e o mesmo volume sintético, os máximos da API interna foram 79 ms com 1 chamada, 206 ms com 5 e 456 ms com 10. O máximo com 10 chamadas e gravações simultâneas nos dois arquivos foi 545 ms. As gravações levaram 546 e 584 ms. O processo ocupou 277 MiB em repouso e atingiu 390 MiB. Os arquivos ocuparam 109,8 MiB e a maior resposta gzip teve 2,5 KB com 50 itens detalhados. O teste usou limite de 1,5 GiB e cota de 1,25 vCPU. Em homologação, a sincronização das duas empresas é sequencial para limitar a carga no SQL Server.
+
+A amostragem no SQL Server durante a carga registrou espera por leitura de disco (`PAGEIOLATCH_SH`, `IO_COMPLETION`) e envio do resultado (`ASYNC_NETWORK_IO`). Uma consulta amostrada tinha acumulado 624 ms de CPU para 6.001 ms decorridos e 105.178 leituras lógicas. A carga usa lotes retomáveis para limitar o tempo de cada transação de leitura.
+
+### Demais telas na revisão 2.9.8
+
+Uma abertura fria por tela foi medida no Chromium autenticado com o perfil Master e a Chevrolet selecionada. Visitas no Comercial ficou utilizável em 7,75 s e Produtividade em 14,55 s. A resposta de Produtividade levou 11,48 s. Na DRE, a captura carregou o arquivo de dados de cerca de 721 KB e não confirmou prontidão em 23,03 s. Cliente, Comissão, Cotações, Vendas perdidas, Estoque retroativo, Giro, DRE e Variação seguem com aceite de desempenho pendente. A camada de origem continua sendo a API oficial nesses fluxos. A idade da origem não foi aferida nas respostas oficiais medidas.
+
+O candidato inicia o download do módulo principal em paralelo com a consulta que identifica a sessão do visitador. O redirecionamento continua sendo decidido antes de montar o portal. Estoque começa a carregar o componente da aba ativa enquanto aguarda os dados da API.

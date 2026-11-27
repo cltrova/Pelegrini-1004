@@ -19,16 +19,19 @@ const pathname = window.location.pathname.replace(/\/$/, "");
 const isVisitas = pathname === "/visitas";
 
 async function iniciar() {
-  if (!isVisitas && !isLocalPreviewEnabled()) {
-    const sessao = await consultarSessaoVisitas(undefined, AbortSignal.timeout?.(1500)).catch(() => null);
-    if (sessao) {
+  const redirecionamento = !isVisitas && !isLocalPreviewEnabled()
+    ? consultarSessaoVisitas(undefined, AbortSignal.timeout?.(1500)).catch(() => null).then(sessao => {
+      if (!sessao) return false;
       window.location.replace('/visitas');
-      return;
-    }
-  }
+      return true;
+    })
+    : Promise.resolve(false);
 
-  const { default: App } = await (isVisitas ? import("./pages/visitas/VisitasApp") : import("./App"));
-  root.render(<App />);
+  const [{ default: App }, redirecionado] = await Promise.all([
+    isVisitas ? import("./pages/visitas/VisitasApp") : import("./App"),
+    redirecionamento,
+  ]);
+  if (!redirecionado) root.render(<App />);
 }
 
 void iniciar();
