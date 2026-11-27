@@ -518,10 +518,9 @@ describe('ProdutosPage compacta', () => {
     expect(within(table).getByText('Oficina Central')).toBeVisible();
     expect(indicators.textContent).toBe(values);
     fireEvent.click(screen.getByRole('button', { name: 'Tentar atualizar produtos novamente' }));
-    expect(refetchQueries).toHaveBeenCalledTimes(3);
+    expect(refetchQueries).toHaveBeenCalledTimes(2);
     for (const queryKey of [
       ['comercial-produtos', '1004'],
-      ['comercial-receita-comissao-1004', '1004'],
       ['comercial', 'raw', '1004'],
     ]) {
       expect(refetchQueries).toHaveBeenCalledWith({ queryKey, type: 'active' });

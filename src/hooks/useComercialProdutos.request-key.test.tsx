@@ -55,4 +55,22 @@ describe('requisição de produtos do Comercial', () => {
       .filter(key => key[0] === 'comercial-produtos');
     expect(new Set(keys.map(key => JSON.stringify(key))).size).toBe(3);
   });
+
+  it('permite carregar Produtos mesmo com indisponibilidade na consulta de comissão', () => {
+    vi.mocked(useQuery).mockImplementation(({ queryKey }) => ({
+      isLoading: false,
+      isFetching: false,
+      data: undefined,
+      error: queryKey[0] === 'comercial-receita-comissao-1004' ? new Error('Comissão indisponível') : null,
+    }) as ReturnType<typeof useQuery>);
+    const { result } = renderHook(() => useComercialProdutos(undefined, { consultarComissao: false }));
+    expect(result.current.error).toBeNull();
+    expect(useQuery).toHaveBeenCalledWith(expect.objectContaining({
+      queryKey: expect.arrayContaining(['comercial-receita-comissao-1004']),
+      enabled: false,
+    }));
+    vi.mocked(useQuery).mockReset().mockReturnValue({
+      isLoading: false, isFetching: false, data: undefined, error: null,
+    } as ReturnType<typeof useQuery>);
+  });
 });

@@ -51,6 +51,8 @@ A branch local passou a usar como base a revisão `f408685`, publicada como `2.9
 
 Uma segunda comparação no navegador usou o mesmo período e uma assinatura do texto dos indicadores. Ao aproveitar uma página maior da API atual, os indicadores se mantiveram iguais, as duas consultas de Produtos viraram uma e a abertura passou de 10,20 s para 7,72 s nas duas medições. A transferência permaneceu próxima de 0,99 MB. Esses testes usaram a sessão Master e a API atual do site.
 
+A página de Produtos também deixou de solicitar comissões. Na medição desse ajuste, a assinatura dos indicadores permaneceu igual e a abertura ficou em 10,49 s, com 5,76 s na única chamada de Produtos. A variação da API entre as medições impediu confirmar ganho adicional no tempo total.
+
 ### Rastreamento e carga
 
 O Change Tracking foi ativado com aprovação explícita em `RSYS2003_CT` e `RSYS2003_PELEGRINI`, com retenção de dois dias e limpeza automática. O rastreamento por coluna ficou desabilitado. As 12 tabelas são `NotasFiscais`, `MovEstoque`, `MovEstoqueImposto`, `Pedidos`, `Operacoes`, `Entidades`, `Produtos`, `Grupos`, `Vendedores`, `Cidades`, `Marcas` e `Empresas`.
@@ -71,6 +73,8 @@ A Transmissão concluiu a carga integral com 916.939 linhas. Após a reconcilia�
 
 Em uma rodada de todo o histórico da Transmissão, os máximos da API interna foram 45,6 ms com 1 acesso, 234,3 ms com 5 e 357,7 ms com 10. A maior idade foi de 8,46 s e a resposta gzip de 50 linhas teve cerca de 8,9 KB. O processo atingiu 210 MiB de RSS. Em outra rodada de 72 s, com a carga real da Chevrolet em paralelo, a Transmissão respondeu a 26 consultas, com máximo de 1,09 s e idade de até 18,15 s. A Chevrolet retornou `503` durante a carga incompleta, conforme esperado.
 
+Ao comparar a mesma página de todo o histórico, o gzip reduziu o corpo da resposta de 52.956 para 8.867 bytes, cerca de 83%. As três chamadas sem compressão levaram de 41 a 97 ms e as três com compressão, de 43 a 57 ms no VPS. A diferença de tempo inclui variação de consulta e serialização.
+
 Durante essa fase, o arquivo da Transmissão ocupava 348 MiB. Em uma amostra simultânea, carga, API interna e gateway usavam aproximadamente 534 MiB de RAM somados. Os picos individuais acumulados naquele momento foram 429 MiB, 148 MiB e 36 MiB. O uso durante a operação integral das duas bases ainda precisa ser medido.
 
 Um teste com 900 mil itens sintéticos no VPS, antes da preparação dos agregados, registrou máximos de 213 ms, 495 ms e 2,105 s com 1, 5 e 10 chamadas simultâneas. A RAM do processo ficou em 370 MiB em repouso, atingiu pico de 383 MiB e os arquivos ocuparam 110,6 MiB. São tempos da API interna. Em SQL Server isolado, foi exercitada uma carga seguida de mudança de nota, exclusão de item e imposto e alterações em marca e vendedor.
@@ -81,8 +85,21 @@ A amostragem no SQL Server durante a carga registrou espera por leitura de disco
 
 ### Demais telas na revisão 2.9.8
 
-Uma abertura fria por tela foi medida no Chromium autenticado com o perfil Master e a Chevrolet selecionada. Visitas no Comercial ficou utilizável em 7,75 s e Produtividade em 14,55 s. A resposta de Produtividade levou 11,48 s. Na DRE, a captura carregou o arquivo de dados de cerca de 721 KB e não confirmou prontidão em 23,03 s. Cliente, Comissão, Cotações, Vendas perdidas, Estoque retroativo, Giro, DRE e Variação seguem com aceite de desempenho pendente. A camada de origem continua sendo a API oficial nesses fluxos. A idade da origem não foi aferida nas respostas oficiais medidas.
+As medições abaixo usaram Chromium autenticado no perfil Master com a Chevrolet selecionada. A camada de origem continua sendo a API oficial nesses fluxos. A idade da origem não foi aferida nessas respostas.
+
+| Tela e ação | Tempo no navegador | Observação |
+|---|---:|---|
+| Produtividade, abertura fria | 14,55 s | API 11,48 s |
+| Visitas no Comercial, abertura fria | 5,97 s | Listagem HTTP 200 concluída em 1,98 s após a sessão gerencial |
+| Clientes, abertura fria | 8,54 s | Pedidos levaram 4,09 s |
+| Estoque retroativo, abertura fria do formulário | 2,03 s | A consulta de 26/11 respondeu HTTP 200 em 4,02 s. A captura não comprovou uma tabela preenchida |
+| DRE, abertura fria do formulário | 2,50 a 3,39 s | O clique em Buscar retornou uma tela sem resultado para esse cenário |
+| Cotações abertas, clique em Aplicar | 23,87 s | Resposta de 343 KB gzip em 10,02 s, com 13,96 s de atividade na thread principal |
+
+Comissões, Vendas perdidas, Estoque retroativo, Giro, DRE e Variação ainda precisam de aceite com dados exibidos. Em Cotações, a maior parte da espera pela resposta da API foi para o primeiro byte, 9,36 s.
 
 O candidato inicia o download do módulo principal em paralelo com a consulta que identifica a sessão do visitador. O redirecionamento continua sendo decidido antes de montar o portal. Estoque começa a carregar o componente da aba ativa enquanto aguarda os dados da API.
 
 Na abertura fria de Estoque, o oficial ficou utilizável em 12,29 s e o candidato em 4,06 s, com uma medição de cada. O pedido de dados levou 7,36 s no oficial e 0,74 s no candidato. O código do gráfico começou a carregar junto da requisição de dados no candidato. No oficial, carregou depois da resposta. A variação do tempo de resposta da API impede atribuir toda a diferença ao frontend.
+
+No teste do carregamento da sessão, as leituras do perfil e do papel passaram a começar com diferença de até 1 ms. Antes, o papel esperava a consulta do perfil terminar, com diferença de 614 a 952 ms. Nas três aberturas frias do formulário de Comissões por candidato, a maior duração passou de 3,62 para 2,26 s, e a mediana de 2,92 para 2,14 s. A busca de comissões após preencher o formulário tem medição pendente.

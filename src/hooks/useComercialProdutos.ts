@@ -1155,7 +1155,11 @@ export function resolveComissaoPlaceholderData<T>(
   );
 }
 
-export function useComercialProdutos(filters?: ComercialFilters, options?: { enabled?: boolean; keepPreviousData?: boolean }) {
+export function useComercialProdutos(filters?: ComercialFilters, options?: {
+  enabled?: boolean;
+  keepPreviousData?: boolean;
+  consultarComissao?: boolean;
+}) {
   const { empresa, codEmpresaAtiva, isLoading: loadingEmpresa } = useEmpresaAtiva();
   const { filialAtiva } = useFilialSelecionada();
   const codEmpresaAtivaNorm = String(codEmpresaAtiva ?? '').trim();
@@ -1168,6 +1172,7 @@ export function useComercialProdutos(filters?: ComercialFilters, options?: { ena
   const hasJson = !!resolveComercialJsonPath('produtos', empresa, filialAtiva);
   const hasEndpoint = !!(empresa?.endpoint_url || empresa?.usar_vps_intermediaria);
   const hasSource = hasJson || hasEndpoint;
+  const consultarComissao = isPelegriniComercial && hasEndpoint && options?.consultarComissao !== false;
 
   const query = useQuery({
     queryKey: [
@@ -1239,7 +1244,7 @@ export function useComercialProdutos(filters?: ComercialFilters, options?: { ena
       RECEITA_1004_RULE_VERSION,
     ],
     queryFn: () => fetchReceitaComissao1004(empresa, filters?.periodo, filialAtiva, isContextoChevrolet10041Ativo),
-    enabled: !loadingEmpresa && isPelegriniComercial && hasEndpoint && enabledFlag,
+    enabled: !loadingEmpresa && enabledFlag && consultarComissao,
     staleTime: 0,
     gcTime: 0,
     refetchOnWindowFocus: false,
@@ -1599,6 +1604,7 @@ export function useComercialProdutos(filters?: ComercialFilters, options?: { ena
   }, [allEscopoPelegrini, filters?.periodo, codEmpresaAtiva]);
 
   const receitaOficial1004 = useMemo(() => {
+    if (!consultarComissao) return null;
     const linhas = comissao1004Query.data || [];
     if (!isEmpresaPelegrini1004Like(codEmpresaAtiva) || linhas.length === 0) return null;
 
@@ -1654,7 +1660,8 @@ export function useComercialProdutos(filters?: ComercialFilters, options?: { ena
       detalhePorVendedor,
       isContextoChevrolet10041Ativo,
     );
-  }, [comissao1004Query.data, cfop6933PorVendedor1004, baseReceita1004, filters?.excluirVendedoresOcultos1004, codEmpresaAtiva, isContextoChevrolet10041Ativo]);
+  }, [consultarComissao, comissao1004Query.data, cfop6933PorVendedor1004, baseReceita1004,
+    filters?.excluirVendedoresOcultos1004, codEmpresaAtiva, isContextoChevrolet10041Ativo]);
 
   const podeUsarReceitaOficial1004 = useMemo(() => {
     const codEmpresaNorm = String(codEmpresaParaFiltro10041 ?? codEmpresaAtiva ?? '').trim();
@@ -1896,9 +1903,9 @@ export function useComercialProdutos(filters?: ComercialFilters, options?: { ena
 
     pedidosDistintosTotalizados,
     hasSource,
-    isLoading: query.isLoading || (isPelegriniComercial && hasEndpoint && comissao1004Query.isLoading),
-    isFetching: query.isFetching || (isPelegriniComercial && hasEndpoint && comissao1004Query.isFetching),
-    error: query.error || comissao1004Query.error,
+    isLoading: query.isLoading || (consultarComissao && comissao1004Query.isLoading),
+    isFetching: query.isFetching || (consultarComissao && comissao1004Query.isFetching),
+    error: query.error || (consultarComissao ? comissao1004Query.error : null),
     refetch: query.refetch,
   };
 }

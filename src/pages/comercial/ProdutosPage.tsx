@@ -57,7 +57,7 @@ export default function ProdutosPage() {
   const {
     topProdutos, porMarca, porCategoria, produtosSemGiro, resumoVendas,
     hasSource, isLoading, isFetching, error: productsError,
-  } = useComercialProdutos(appliedFilters);
+  } = useComercialProdutos(appliedFilters, { consultarComissao: false });
 
   const resolvedScopeRef = useRef<string | null>(null);
   const companyKey = String(codEmpresaAtiva ?? '').trim();
@@ -313,7 +313,6 @@ export default function ProdutosPage() {
                   onClick={() => {
                     void Promise.all([
                       queryClient.refetchQueries({ queryKey: ['comercial-produtos', codEmpresaAtiva], type: 'active' }),
-                      queryClient.refetchQueries({ queryKey: ['comercial-receita-comissao-1004', codEmpresaAtiva], type: 'active' }),
                       queryClient.refetchQueries({ queryKey: ['comercial', 'raw', codEmpresaAtiva], type: 'active' }),
                     ]);
                   }}

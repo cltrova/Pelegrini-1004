@@ -85,29 +85,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Carregar perfil e roles do usuário
   const loadUserData = async (userId: string) => {
     try {
-      // Carregar perfil
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('user_id', userId)
-        .maybeSingle();
+      const [profileResult, rolesResult] = await Promise.all([
+        supabase.from('profiles').select('*').eq('user_id', userId).maybeSingle(),
+        supabase.from('user_roles').select('role').eq('user_id', userId),
+      ]);
 
-      if (profileError) {
-        console.error('Erro ao carregar perfil:', profileError);
+      if (profileResult.error) {
+        console.error('Erro ao carregar perfil:', profileResult.error);
       } else {
-        setProfile(profileData as Profile | null);
+        setProfile(profileResult.data as Profile | null);
       }
 
-      // Carregar roles
-      const { data: rolesData, error: rolesError } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', userId);
-
-      if (rolesError) {
-        console.error('Erro ao carregar roles:', rolesError);
+      if (rolesResult.error) {
+        console.error('Erro ao carregar roles:', rolesResult.error);
       } else {
-        const userRoles = (rolesData || []).map(r => r.role as AppRole);
+        const userRoles = (rolesResult.data || []).map(r => r.role as AppRole);
         setRoles(userRoles);
       }
     } catch (error) {
