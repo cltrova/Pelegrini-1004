@@ -60,6 +60,19 @@ class Produtos:
     def close(self):
         self._db.close()
 
+    @classmethod
+    def abrir_se_confirmado(cls, diretorio, empresa):
+        caminho = diretorio / f'produtos-{empresa}.duckdb'
+        if not caminho.is_file():
+            return None
+        try:
+            with closing(duckdb.connect(str(caminho), read_only=True, config={'threads': 1})) as db:
+                pronto = db.execute('SELECT confirmado FROM produtos_revisao').fetchone()
+            return cls(diretorio, empresa) if pronto and pronto[0] else None
+        except duckdb.IOException:
+            # The preparation process still owns this company's file.
+            return None
+
     def estado(self):
         with closing(self._db.cursor()) as db:
             return self._revisao(db)
@@ -76,6 +89,17 @@ class Produtos:
         with closing(self._db.cursor()) as db:
             return db.execute('SELECT DISTINCT tipo, documento FROM produtos '
                               'WHERE movimento IN (SELECT unnest(?::BIGINT[]))', [movimentos]).fetchall()
+
+    def descricoes_de_produtos(self, codigos):
+        with closing(self._db.cursor()) as db:
+            return db.execute("""SELECT DISTINCT codigo, produto, grupo,
+                json_extract_string(registro, '$.cod_marca'), marca
+                FROM produtos WHERE codigo IN (SELECT unnest(?::VARCHAR[]))""", [codigos]).fetchall()
+
+    def movimentos_de_produtos(self, codigos):
+        with closing(self._db.cursor()) as db:
+            return db.execute('SELECT DISTINCT tipo, documento, movimento FROM produtos '
+                              'WHERE codigo IN (SELECT unnest(?::VARCHAR[]))', [codigos]).fetchall()
 
     def _registro(self, row, inicio, fim_exclusivo, documentos):
         tipo, documento = int(row['tipo_documento']), int(row['cod_documento'])

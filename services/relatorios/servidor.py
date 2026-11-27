@@ -104,9 +104,13 @@ def servidor(bases, token, porta, *, produtos=None):
             except ValueError:
                 self.enviar(422, {'code': 'INVALID_FILTER'})
                 return
-            base = rotas[url.path].get(params.get('cod_empresa_bi'))
-            if not base:
+            empresa = params.get('cod_empresa_bi')
+            if empresa not in rotas[url.path]:
                 self.enviar(403, {'code': 'FORBIDDEN'})
+                return
+            base = rotas[url.path][empresa]
+            if base is None:
+                self.enviar(503, {'code': 'DATA_UNAVAILABLE'})
                 return
             if not consultas.acquire(blocking=False):
                 self.enviar(503, {'code': 'DATA_UNAVAILABLE'})
@@ -158,10 +162,14 @@ def main():
             from produtos import Produtos
             from sincronizar_produtos import executar_atualizacoes
 
-            produtos = {empresa: cleanup.enter_context(closing(Produtos(options.diretorio, empresa)))
-                        for empresa in FILIAIS}
+            produtos = dict.fromkeys(FILIAIS)
+
+            def abrir_base(empresa):
+                return Produtos.abrir_se_confirmado(options.diretorio, empresa)
+
             cleanup.enter_context(executar_atualizacoes(produtos, options.produtos_sql_credencial,
-                                                        porta_tunel=options.produtos_porta_tunel))
+                                                        porta_tunel=options.produtos_porta_tunel,
+                                                        abrir_base=abrir_base))
         with servidor(bases, options.token_file.read_text(encoding='ascii').strip(), options.porta,
                       produtos=produtos) as api:
             api.serve_forever()

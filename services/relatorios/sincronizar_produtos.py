@@ -100,7 +100,7 @@ def sincronizar(base, conectar_banco, *, carga=False, cobertura=(None, None), le
                     raise RecargaNecessaria('Produtos precisa de uma carga inicial de todo o histórico')
                 validar_versao(cursor, esperado[3], snapshot.versao)
                 documentos = documentos_alterados(cursor, projection, base.filial, esperado[3], snapshot.versao,
-                                                   base.documentos_anteriores)
+                                                   base, confirmado=esperado[7])
 
             def extrair():
                 nonlocal fim_sql
@@ -119,7 +119,7 @@ def sincronizar(base, conectar_banco, *, carga=False, cobertura=(None, None), le
 
 
 @contextmanager
-def executar_atualizacoes(bases, credencial, *, porta_tunel=None):
+def executar_atualizacoes(bases, credencial, *, porta_tunel=None, abrir_base=None):
     import duckdb
     import pymssql
 
@@ -132,6 +132,10 @@ def executar_atualizacoes(bases, credencial, *, porta_tunel=None):
                 if parar.is_set():
                     return
                 try:
+                    if base is None and abrir_base:
+                        base = bases[empresa] = abrir_base(empresa)
+                    if base is None:
+                        continue
                     resultado = sincronizar(base, lambda: conectar(credencial, empresa, timeout=12,
                                                                  porta_tunel=porta_tunel))
                     logger.info('Produtos %s', json.dumps(resultado))
@@ -146,11 +150,15 @@ def executar_atualizacoes(bases, credencial, *, porta_tunel=None):
     finally:
         parar.set()
         thread.join()
+        if abrir_base:
+            for base in bases.values():
+                if base is not None:
+                    base.close()
 
 
 def main():
     from argparse import ArgumentParser
-    from concurrent.futures import ThreadPoolExecutor
+    from concurrent.futures import ThreadPoolExecutor, as_completed
     from pathlib import Path
     from produtos import Produtos
     import pymssql
@@ -158,6 +166,7 @@ def main():
     parser = ArgumentParser(description=__doc__)
     scope = parser.add_mutually_exclusive_group(required=True)
     scope.add_argument('--empresa', choices=DATABASES)
+    scope.add_argument('--preparar-empresa', choices=DATABASES)
     scope.add_argument('--preparar-todos', action='store_true')
     parser.add_argument('--diretorio', type=Path, required=True)
     parser.add_argument('--credencial', type=Path, required=True)
@@ -167,8 +176,9 @@ def main():
     parser.add_argument('--simultaneas', choices=(1, 2), type=int, default=1)
     parser.add_argument('--intervalo-avulso', type=date.fromisoformat, nargs=2, metavar=('INICIO', 'FIM_EXCLUSIVO'))
     args = parser.parse_args()
-    if args.preparar_todos and (args.carga or args.intervalo_avulso):
-        parser.error('--preparar-todos prepara e sincroniza o histórico integral')
+    preparar = args.preparar_todos or bool(args.preparar_empresa)
+    if preparar and (args.carga or args.intervalo_avulso):
+        parser.error('A preparação de Produtos carrega e sincroniza o histórico integral')
     logging.basicConfig(level=logging.INFO, format='%(message)s')
 
     def importar(empresa):
@@ -176,7 +186,7 @@ def main():
             def abrir():
                 return conectar(args.credencial, empresa, timeout=30, porta_tunel=args.porta_tunel)
 
-            if args.preparar_todos:
+            if preparar:
                 estado = base.estado()
                 if not estado or not estado[7]:
                     try:
@@ -200,9 +210,16 @@ def main():
     try:
         if args.preparar_todos:
             with ThreadPoolExecutor(max_workers=args.simultaneas) as executor:
-                list(executor.map(importar, DATABASES))
+                tarefas = {executor.submit(importar, empresa): empresa for empresa in DATABASES}
+                for tarefa in as_completed(tarefas):
+                    try:
+                        tarefa.result()
+                    except Exception as error:
+                        logging.error('Carga ou reconciliação de Produtos %s falhou (%s)',
+                                      tarefas[tarefa], type(error).__name__)
+                        raise
         else:
-            importar(args.empresa)
+            importar(args.empresa or args.preparar_empresa)
     except pymssql.Error as error:
         number = error.args[0] if error.args and isinstance(error.args[0], int) else 'desconhecido'
         raise SystemExit(f'Falha na comunicação com o RSYS (código {number})') from None

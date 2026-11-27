@@ -3,6 +3,7 @@ from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal
 from pathlib import Path
 import tempfile
+from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 
@@ -131,9 +132,32 @@ class SourceTest(unittest.TestCase):
         keys = {'NotasFiscais': [(1, 1, 20)], 'MovEstoque': [(1, 10), (1, 11)],
                 'MovEstoqueImposto': [(1, 12)], 'Pedidos': [(1, 90)], 'Vendedores': [(8,)]}
         cursor = Cursor([(2, 7), (2, 8)], [(2, 32)], [(2, 40)])
+        base = SimpleNamespace(documentos_anteriores=lambda movements: [(2, 5)] if movements == [10, 11, 12] else [])
         with patch('produtos_rsys.chaves_alteradas', return_value={table: keys.get(table, []) for table in KEYS}):
-            docs = documentos_alterados(cursor, Projecao('', 'FROM dbo.NotasFiscais nf', ''), 1, 5, 6,
-                                       lambda movements: [(2, 5)] if movements == [10, 11, 12] else [])
+            docs = documentos_alterados(cursor, Projecao('', 'FROM dbo.NotasFiscais nf', ''), 1, 5, 6, base,
+                                        confirmado=True)
         self.assertEqual(docs, {(1, 20), (2, 5), (2, 7), (2, 8), (2, 32), (2, 40)})
         self.assertIn('K.CodPedido=M.CodPedido', cursor.calls[1][0])
         self.assertIn('K.Codigo=ISNULL(pd.CodVendInterno, nf.CodVendInterno)', cursor.calls[2][0])
+
+    def test_product_price_changes_do_not_reprocess_history(self):
+        keys = {table: [(8,)] if table == 'Produtos' else [] for table in KEYS}
+        cursor = Cursor([(8, 'Produto', 'Grupo', 'MAR', 'Marca')])
+        base = SimpleNamespace(documentos_anteriores=lambda _: [],
+                               descricoes_de_produtos=lambda _: [('8', 'Produto', 'Grupo', 'MAR', 'Marca')])
+        with patch('produtos_rsys.chaves_alteradas', return_value=keys):
+            docs = documentos_alterados(cursor, Projecao('', 'FROM dbo.NotasFiscais nf', ''), 1, 5, 6, base,
+                                        confirmado=False)
+        self.assertEqual(docs, set())
+        self.assertEqual(len(cursor.calls), 1)
+
+    def test_first_chevrolet_reconciliation_corrects_product_membership(self):
+        keys = {table: [(8,)] if table == 'Produtos' else [] for table in KEYS}
+        cursor = Cursor([(8, 'Produto', 'Grupo', 'MAR', 'Marca')], [(2, 1, 100), (2, 2, 200)])
+        base = SimpleNamespace(documentos_anteriores=lambda _: [],
+                               descricoes_de_produtos=lambda _: [('8', 'Produto', 'Grupo', 'MAR', 'Marca')],
+                               movimentos_de_produtos=lambda _: [(2, 2, 200), (2, 3, 300)])
+        with patch('produtos_rsys.chaves_alteradas', return_value=keys):
+            docs = documentos_alterados(cursor, Projecao('', 'FROM dbo.NotasFiscais nf', ''), 2, 5, 6, base,
+                                        confirmado=False)
+        self.assertEqual(docs, {(2, 1), (2, 3)})

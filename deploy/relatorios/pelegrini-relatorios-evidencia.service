@@ -1,0 +1,24 @@
+[Unit]
+Description=Reconciliacao e medicao de Produtos no VPS de homologacao
+Requires=pelegrini-relatorios-homologacao.service
+After=pelegrini-relatorios-homologacao.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/pelegrini-relatorios-homologacao
+Environment=PYTHONDONTWRITEBYTECODE=1
+Environment=PYTHONPATH=/opt/pelegrini-relatorios-homologacao/services/relatorios:/opt/pelegrini-relatorios-homologacao/lib
+LoadCredentialEncrypted=sql.json:/etc/credstore.encrypted/pelegrini/sql.cred
+LoadCredentialEncrypted=relatorios-token:/etc/credstore.encrypted/pelegrini/relatorios-homologacao.cred
+ExecStart=/usr/bin/python3 -u scripts/performance/verificar-produtos.py
+TimeoutStartSec=120s
+MemoryMax=384M
+CPUQuota=50%
+UMask=0077
+ProtectSystem=strict
+ProtectHome=yes
+NoNewPrivileges=yes
+CapabilityBoundingSet=
+RestrictAddressFamilies=AF_UNIX AF_INET
+IPAddressDeny=any
+IPAddressAllow=localhost

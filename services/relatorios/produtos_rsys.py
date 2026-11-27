@@ -1,4 +1,5 @@
 """Read the approved Produtos projection and its changed documents in one RSYS snapshot."""
+from collections import defaultdict
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from hashlib import sha256
@@ -24,7 +25,6 @@ KEYS = {
 REFERENCE_KEYS = {
     'Operacoes': ('nf.CodOperacao',),
     'Entidades': ('nf.CodEntidade',),
-    'Produtos': ('me.CodProduto',),
     'Grupos': ('prod.CodGrupo',),
     'Vendedores': ('ISNULL(pd.CodVendInterno, nf.CodVendInterno)',),
     'Cidades': ('et.CodCidade',),
@@ -162,13 +162,55 @@ def lotes(rows):
         yield ','.join([placeholders] * len(batch)), tuple(value for row in batch for value in row)
 
 
-def documentos_alterados(cursor, projection, filial, since, current, documentos_anteriores):
+def documentos_de_produtos(cursor, projection, filial, alterados, base, *, confirmado):
+    if not alterados:
+        return set()
+    ids = [str(row[0]) for row in alterados]
+    anteriores = defaultdict(set)
+    for codigo, *descricao in base.descricoes_de_produtos(ids):
+        anteriores[codigo].add(tuple(descricao))
+
+    diferentes, conferir_cobertura = [], []
+    for placeholders, params in lotes(alterados):
+        cursor.execute(f'''SELECT K.Codigo, P.Descricao, G.Nome, M.Codigo, M.Nome
+            FROM (VALUES {placeholders}) K(Codigo)
+            LEFT JOIN dbo.Produtos P ON P.Codigo=K.Codigo
+            LEFT JOIN dbo.Grupos G ON G.Codigo=P.CodGrupo
+            LEFT JOIN dbo.Marcas M ON M.Codigo=P.CodMarca OPTION (MAXDOP 1)''', params)
+        for codigo, nome, grupo, cod_marca, marca in cursor.fetchall():
+            visivel = (nome, grupo, None if cod_marca is None else str(cod_marca), marca)
+            anterior = anteriores[str(codigo)]
+            if anterior and anterior != {visivel}:
+                diferentes.append((codigo,))
+            elif filial == 2 and (not anterior or not confirmado):
+                conferir_cobertura.append((codigo,))
+
+    documentos = set()
+    for placeholders, params in lotes(diferentes):
+        cursor.execute(f'''SELECT DISTINCT TOP ({MAX_DOCUMENTS + 1}) M.TipoControle, M.CodControle
+            FROM dbo.MovEstoque M JOIN (VALUES {placeholders}) K(Codigo) ON K.Codigo=M.CodProduto
+            WHERE M.Empresa=%s AND M.TipoControle IN (1,2) AND M.CodControle IS NOT NULL
+            OPTION (MAXDOP 1)''', (*params, filial))
+        documentos.update((int(kind), int(code)) for kind, code in cursor.fetchall())
+
+    for placeholders, params in lotes(conferir_cobertura):
+        # A description can move a Chevrolet product into or out of the scope while batches are loaded.
+        cursor.execute(f'''SELECT DISTINCT nf.TipoControle, nf.CodControle, me.NumLancamento
+            {projection.joins} JOIN (VALUES {placeholders}) K(Codigo) ON K.Codigo=me.CodProduto
+            WHERE {projection.eligibility} AND nf.DataMovimento IS NOT NULL OPTION (MAXDOP 1)''', (*params, filial))
+        origem = {tuple(int(value) for value in row) for row in cursor.fetchall()}
+        local = set(base.movimentos_de_produtos([str(value) for value in params]))
+        documentos.update((tipo, doc) for tipo, doc, _ in origem ^ local)
+    return documentos
+
+
+def documentos_alterados(cursor, projection, filial, since, current, base, *, confirmado):
     if since == current:
         return set()
     changes = chaves_alteradas(cursor, filial, since, current)
     docs = {(int(kind), int(code)) for _, kind, code in changes['NotasFiscais'] if kind in (1, 2)}
     movements = {int(number) for table in MOVEMENTS for _, number in changes[table]}
-    docs.update(documentos_anteriores(sorted(movements)))
+    docs.update(base.documentos_anteriores(sorted(movements)))
     for placeholders, params in lotes([(number,) for number in sorted(movements)]):
         cursor.execute(f'''SELECT M.TipoControle, M.CodControle FROM dbo.MovEstoque M
             JOIN (VALUES {placeholders}) K(lancamento) ON K.lancamento=M.NumLancamento
@@ -182,6 +224,8 @@ def documentos_alterados(cursor, projection, filial, since, current, documentos_
             ON K.Empresa=M.Empresa AND K.CodPedido=M.CodPedido
             WHERE M.TipoControle IN (1,2) AND M.CodControle IS NOT NULL OPTION (MAXDOP 1)''', params)
         docs.update((int(kind), int(code)) for kind, code in cursor.fetchall())
+
+    docs.update(documentos_de_produtos(cursor, projection, filial, changes['Produtos'], base, confirmado=confirmado))
 
     for table, references in REFERENCE_KEYS.items():
         changed = changes[table]

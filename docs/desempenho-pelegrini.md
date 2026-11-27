@@ -20,7 +20,7 @@ Na revisão oficial da Chevrolet, a volta à Visão geral levou 0,33 s em uma se
 
 ## Origem e capacidade
 
-Os catálogos de `RSYS2003_CT` e `RSYS2003_PELEGRINI` mostraram `SNAPSHOT` ativo e Change Tracking e CDC desativados. `MovEstoque` tinha aproximadamente 2,12 milhões e 5,38 milhões de registros, respectivamente. A chamada da procedure de perdas na Chevrolet levou cerca de 2,08 s para retornar zero linhas em novembro e atingiu o limite do teste de 22 s no recorte integral. A segunda medida é um limite inferior para a duração dessa leitura.
+Na medição inicial, `RSYS2003_CT` e `RSYS2003_PELEGRINI` tinham `SNAPSHOT` ativo, com Change Tracking e CDC desativados. `MovEstoque` tinha aproximadamente 2,12 milhões e 5,38 milhões de registros, respectivamente. A chamada da procedure de perdas na Chevrolet levou cerca de 2,08 s para retornar zero linhas em novembro e atingiu o limite do teste de 22 s no recorte integral. A segunda medida é um limite inferior para a duração dessa leitura.
 
 O piloto `services/relatorios` usa DuckDB em disco, um arquivo por empresa e publicação transacional de uma leitura completa. A API interna aceita período, página e versão, calcula contagens e ranking sobre o recorte inteiro e envia `X-Data-As-Of` e `X-Data-Version`. Ao atingir 60 segundos devolve `503 DATA_UNAVAILABLE`. A troca de versão durante a paginação devolve `409 VERSION_CHANGED`. O gateway responsável por expor a rota deverá validar a sessão e o escopo antes de chamá-la. O serviço escuta apenas em loopback e requer o segredo do gateway.
 
@@ -38,8 +38,8 @@ A RAM em repouso após a carga foi de 85 MiB. O disco passou de 1,62 MiB para um
 ## Pendências de aceite
 
 - Todas as medições confirmadas de Dashboard e Produtos acima ainda excedem 3 s. O histórico completo com dados reais, as demais abas e os demais perfis continuam com aceite pendente.
-- Validar uma fonte incremental com todas as dependências e exclusões ou demonstrar uma leitura completa que sustente a janela de atualização. A preparação inicial do piloto foi exercitada com dados sintéticos. A integração com a sessão do portal, os filtros completos, as exportações e a paridade com a origem ainda precisam de validação.
-- Medir novamente as telas oficiais após autorização de publicação. O piloto executado no VPS foi temporário. A publicação do portal e a configuração do RSYS seguem fora desta execução.
+- Integrar ao navegador os cálculos de tela, filtros completos e exportações da base preparada. Conferir cada perfil no portal autenticado. A homologação de Produtos descrita abaixo usa a origem real.
+- Medir novamente as telas oficiais após autorização de publicação.
 
 Os testes do piloto rodam com `python -m unittest discover -s services/relatorios`. A carga de homologação recebe JSONL conferido na origem, com os campos `filial`, `dia`, `pedido`, `vendedor`, `valor` e `original`, pelo comando `carregar.py`, junto com o horário UTC efetivo da leitura. Execute a carga de arquivo em uma base que o servidor ainda vá abrir. `medir.py` gera seu próprio conjunto sintético, publica novas versões no mesmo processo do servidor e mede as consultas.
 
@@ -61,11 +61,17 @@ A implementação usa o bloco de seleção de `sp_api_produto` de cada empresa, 
 
 ### Serviço e evidências
 
-`pelegrini-relatorios-carga.service` carrega as bases com até duas leituras simultâneas, retoma os lotes confirmados e inicia `pelegrini-relatorios-homologacao.service` ao concluir. O estado fica em `/var/lib/pelegrini-relatorios-homologacao`. A consulta interna e o gateway ficam em `127.0.0.1:8328` e `127.0.0.1:8329`. O gateway confere a sessão do portal, o perfil e a filial. Sem sessão, o gateway respondeu `401`. Os testes de autorização exercitam Master, Gerencial e Vendedor, incluindo filial indevida.
+`pelegrini-relatorios-carga.service` carrega as bases com até duas leituras simultâneas, retoma os lotes confirmados e dispara a medição após concluir as duas empresas. O estado fica em `/var/lib/pelegrini-relatorios-homologacao`. A consulta interna e o gateway ficam em `127.0.0.1:8328` e `127.0.0.1:8329`. A consulta abre cada base quando a carga e a primeira reconciliação estiverem confirmadas. A Transmissão já sincroniza e responde enquanto a carga da Chevrolet é executada. O gateway confere a sessão do portal, o perfil e a filial. Sem sessão, o gateway respondeu `401`. Os testes automatizados de autorização exercitam Master, Gerencial e Vendedor, incluindo filial indevida.
 
 A API de Produtos calcula totais sobre o recorte inteiro, entrega rankings e pagina os detalhes por versão. Os totais e rankings de todo o histórico são preparados em disco na mesma gravação do lote incremental. A API envia a hora UTC da leitura e a versão servida, e devolve `503` quando a base está incompleta ou a leitura atingiu 60 segundos. A sessão do portal oficial ainda usa a API legada. A paridade das métricas finais da interface, a troca da fonte no navegador, as exportações e demais telas e perfis fazem parte do aceite pendente.
 
 Na amostra real de 24 a 26/11 pelo novo túnel, as contagens e o total líquido coincidiram com a mesma seleção na origem. Foram 493 linhas da Transmissão e 1.159 da Chevrolet. A publicação das amostras ocorreu com 4,70 s e 5,54 s de idade, respectivamente. As consultas em disco levaram 9,3 ms e 11,7 ms. A leitura incremental encontrou 32 e 111 chaves modificadas desde as versões consultadas no primeiro teste do túnel.
+
+A Transmissão concluiu a carga integral com 916.939 linhas. Após a reconciliação pelo Change Tracking, dois recortes reais coincidiram em contagem, quantidade, venda, devolução, líquido e custo. São 371 linhas de 01 a 05/11/2019 e 493 linhas de 24 a 26/11/2026. As leituras em disco por API ficaram em 48,8 e 19,6 ms. As respectivas comparações no SQL Server levaram 1,51 e 1,10 s.
+
+Em uma rodada de todo o histórico da Transmissão, os máximos da API interna foram 45,6 ms com 1 acesso, 234,3 ms com 5 e 357,7 ms com 10. A maior idade foi de 8,46 s e a resposta gzip de 50 linhas teve cerca de 8,9 KB. O processo atingiu 210 MiB de RSS. Em outra rodada de 72 s, com a carga real da Chevrolet em paralelo, a Transmissão respondeu a 26 consultas, com máximo de 1,09 s e idade de até 18,15 s. A Chevrolet retornou `503` durante a carga incompleta, conforme esperado.
+
+Durante essa fase, o arquivo da Transmissão ocupava 348 MiB. Em uma amostra simultânea, carga, API interna e gateway usavam aproximadamente 534 MiB de RAM somados. Os picos individuais acumulados naquele momento foram 429 MiB, 148 MiB e 36 MiB. O uso durante a operação integral das duas bases ainda precisa ser medido.
 
 Um teste com 900 mil itens sintéticos no VPS, antes da preparação dos agregados, registrou máximos de 213 ms, 495 ms e 2,105 s com 1, 5 e 10 chamadas simultâneas. A RAM do processo ficou em 370 MiB em repouso, atingiu pico de 383 MiB e os arquivos ocuparam 110,6 MiB. São tempos da API interna. Em SQL Server isolado, foi exercitada uma carga seguida de mudança de nota, exclusão de item e imposto e alterações em marca e vendedor.
 
@@ -78,3 +84,5 @@ A amostragem no SQL Server durante a carga registrou espera por leitura de disco
 Uma abertura fria por tela foi medida no Chromium autenticado com o perfil Master e a Chevrolet selecionada. Visitas no Comercial ficou utilizável em 7,75 s e Produtividade em 14,55 s. A resposta de Produtividade levou 11,48 s. Na DRE, a captura carregou o arquivo de dados de cerca de 721 KB e não confirmou prontidão em 23,03 s. Cliente, Comissão, Cotações, Vendas perdidas, Estoque retroativo, Giro, DRE e Variação seguem com aceite de desempenho pendente. A camada de origem continua sendo a API oficial nesses fluxos. A idade da origem não foi aferida nas respostas oficiais medidas.
 
 O candidato inicia o download do módulo principal em paralelo com a consulta que identifica a sessão do visitador. O redirecionamento continua sendo decidido antes de montar o portal. Estoque começa a carregar o componente da aba ativa enquanto aguarda os dados da API.
+
+Na abertura fria de Estoque, o oficial ficou utilizável em 12,29 s e o candidato em 4,06 s, com uma medição de cada. O pedido de dados levou 7,36 s no oficial e 0,74 s no candidato. O código do gráfico começou a carregar junto da requisição de dados no candidato. No oficial, carregou depois da resposta. A variação do tempo de resposta da API impede atribuir toda a diferença ao frontend.
