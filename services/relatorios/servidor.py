@@ -11,6 +11,7 @@ from historico import RelatorioVencido, VALIDADE, VersaoTrocada, linhas_json
 
 
 ROTA = '/interno/relatorios/vendas-perdidas'
+ROTA_PRODUTOS = '/interno/relatorios/produtos'
 PARAMETROS = {'cod_empresa_bi', 'inicio', 'fim', 'offset', 'limit', 'versao'}
 
 
@@ -31,11 +32,14 @@ def aceita_gzip(header):
     return False
 
 
-def servidor(bases, token, porta):
+def servidor(bases, token, porta, *, produtos=None):
     if len(token) < 32 or not token.isascii():
         raise ValueError('Configure o segredo do gateway interno')
     esperado = ('Bearer ' + token).encode('ascii')
     consultas = BoundedSemaphore(10)
+    rotas = {ROTA: bases}
+    if produtos is not None:
+        rotas[ROTA_PRODUTOS] = produtos
 
     class Consulta(BaseHTTPRequestHandler):
         timeout = 5
@@ -73,7 +77,7 @@ def servidor(bases, token, porta):
 
         def do_GET(self):
             url = urlsplit(self.path)
-            if url.path != ROTA:
+            if url.path not in rotas:
                 self.enviar(404, {'code': 'NOT_FOUND'})
                 return
             autorizacao = self.headers.get_all('Authorization') or []
@@ -81,8 +85,9 @@ def servidor(bases, token, porta):
                 self.enviar(401, {'code': 'UNAUTHORIZED'})
                 return
             try:
-                pares = parse_qs(url.query, keep_blank_values=True, max_num_fields=len(PARAMETROS))
-                if set(pares) - PARAMETROS or any(len(v) != 1 for v in pares.values()):
+                filtros = PARAMETROS | {'vendedor'} if url.path == ROTA_PRODUTOS else PARAMETROS
+                pares = parse_qs(url.query, keep_blank_values=True, max_num_fields=len(filtros))
+                if set(pares) - filtros or any(len(v) != 1 for v in pares.values()):
                     raise ValueError('Filtro desconhecido ou repetido')
                 params = {key: value[0] for key, value in pares.items()}
                 inicio, fim = data(params.get('inicio')), data(params.get('fim'))
@@ -90,10 +95,16 @@ def servidor(bases, token, porta):
                 if offset > 2_147_483_647:
                     raise ValueError('Página muito grande')
                 versao = params.get('versao')
+                extra = {}
+                if 'vendedor' in params:
+                    vendedor = int(params['vendedor'])
+                    if not 0 <= vendedor <= 2_147_483_647:
+                        raise ValueError('Vendedor inválido')
+                    extra['vendedor'] = vendedor
             except ValueError:
                 self.enviar(422, {'code': 'INVALID_FILTER'})
                 return
-            base = bases.get(params.get('cod_empresa_bi'))
+            base = rotas[url.path].get(params.get('cod_empresa_bi'))
             if not base:
                 self.enviar(403, {'code': 'FORBIDDEN'})
                 return
@@ -102,7 +113,7 @@ def servidor(bases, token, porta):
                 return
             try:
                 start = perf_counter()
-                resultado = base.consultar(inicio, fim, offset, limit, versao=versao)
+                resultado = base.consultar(inicio, fim, offset, limit, versao=versao, **extra)
                 elapsed = (perf_counter() - start) * 1000
             except ValueError:
                 self.enviar(422, {'code': 'INVALID_FILTER'})
@@ -128,11 +139,22 @@ def main():
     parser.add_argument('--diretorio', type=Path, required=True)
     parser.add_argument('--token-file', type=Path, required=True)
     parser.add_argument('--porta', type=int, default=8328)
+    parser.add_argument('--produtos-sql-credencial', type=Path,
+                        help='Abre as bases de Produtos e ativa a atualização incremental')
     options = parser.parse_args()
     with ExitStack() as cleanup:
         bases = {empresa: cleanup.enter_context(closing(Historico(options.diretorio, empresa, filial)))
                  for empresa, filial in FILIAIS.items()}
-        with servidor(bases, options.token_file.read_text(encoding='ascii').strip(), options.porta) as api:
+        produtos = None
+        if options.produtos_sql_credencial:
+            from produtos import Produtos
+            from sincronizar_produtos import executar_atualizacoes
+
+            produtos = {empresa: cleanup.enter_context(closing(Produtos(options.diretorio, empresa)))
+                        for empresa in FILIAIS}
+            cleanup.enter_context(executar_atualizacoes(produtos, options.produtos_sql_credencial))
+        with servidor(bases, options.token_file.read_text(encoding='ascii').strip(), options.porta,
+                      produtos=produtos) as api:
             api.serve_forever()
 
 

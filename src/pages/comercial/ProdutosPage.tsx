@@ -36,6 +36,7 @@ export default function ProdutosPage() {
   const { filialAtiva } = useFilialSelecionada();
   const isLayoutPremium = String(codEmpresaAtiva ?? '') === '1004';
   const [searchTerm, setSearchTerm] = useState('');
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('marcas');
   const [resumoMode, setResumoMode] = useState<'receitas' | 'devolucoes'>('receitas');
   const [pendingFilters, setPendingFilters] = useState<ComercialFiltersType>(() => getDefaultFiltersForEmpresa(codEmpresaAtiva));
@@ -52,7 +53,7 @@ export default function ProdutosPage() {
     isFetching: fetchingBase,
     vendedoresDisponiveis,
     error: baseError,
-  } = useComercialData(appliedFilters);
+  } = useComercialData(appliedFilters, { enabled: filtersOpen, keepPreviousData: false });
   const {
     topProdutos, porMarca, porCategoria, produtosSemGiro, resumoVendas,
     hasSource, isLoading, isFetching, error: productsError,
@@ -68,14 +69,13 @@ export default function ProdutosPage() {
     || produtosSemGiro.length > 0
     || resumoVendas.length > 0;
   if (!isLoadingEmpresa && companyKey
-    && !isLoading && !loadingBase && !isFetching && !fetchingBase
-    && !productsError && !baseError) {
+    && !isLoading && !isFetching && !productsError) {
     resolvedScopeRef.current = dataScopeKey;
   }
   const hasResolvedData = resolvedScopeRef.current === dataScopeKey && dataScopeKey !== '';
   const isRefreshing = (isFetching || fetchingBase || isLoading || loadingBase) && hasResolvedData;
-  const blockingError = (productsError || baseError) && !hasResolvedData;
-  const showBlockingLoading = isLoadingEmpresa || (!productsError && !baseError && !hasResolvedData);
+  const blockingError = productsError && !hasResolvedData;
+  const showBlockingLoading = isLoadingEmpresa || (!productsError && !hasResolvedData);
   const pageClassName = 'commercial-products commercial-products-columns-centered h-[calc(100dvh-9.5rem)] max-h-[calc(100dvh-9.5rem)] overflow-hidden overflow-x-hidden px-3 pb-3 pt-2 sm:px-4 md:h-full md:max-h-full';
 
   const hasChanges = JSON.stringify(pendingFilters) !== JSON.stringify(appliedFilters);
@@ -251,6 +251,8 @@ export default function ProdutosPage() {
         vendedores={vendedoresDisponiveis}
         showVendedorFilter
         useNativeControls
+        isOpen={filtersOpen}
+        onOpenChange={setFiltersOpen}
       />
 
       <ComercialMetricStrip

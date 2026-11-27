@@ -401,6 +401,17 @@ describe('ProdutosPage compacta', () => {
     expect(screen.queryByText('Fonte de produtos não configurada')).not.toBeInTheDocument();
   });
 
+  it('exibe os produtos sem buscar pedidos para o filtro fechado', () => {
+    vi.mocked(useComercialData).mockReturnValue({
+      periodoDisponivel: null, vendedoresDisponiveis: [], isLoading: true, isFetching: true,
+    } as ReturnType<typeof useComercialData>);
+    renderPage();
+    expect(screen.getByLabelText('Indicadores de produtos')).toBeVisible();
+    expect(useComercialData).toHaveBeenLastCalledWith(expect.anything(), { enabled: false, keepPreviousData: false });
+    fireEvent.click(screen.getByRole('button', { name: 'Expandir filtros' }));
+    expect(useComercialData).toHaveBeenLastCalledWith(expect.anything(), { enabled: true, keepPreviousData: false });
+  });
+
   it('bloqueia os produtos resolvidos de transmissao enquanto chevrolet esta pendente', () => {
     const view = renderPage();
 

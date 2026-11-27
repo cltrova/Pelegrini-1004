@@ -67,6 +67,7 @@ export async function authorizePortal(
   fetchPortal: typeof fetch,
   requestSignal: AbortSignal,
   branch?: InsightsBranch,
+  rolesAllowed?: readonly string[],
 ): Promise<PortalFailure | undefined> {
   if (authorization?.length !== 1 || authorization[0].length > 8192 + 'Bearer '.length) return 401;
   const bearer = bearerPattern.exec(authorization[0]);
@@ -106,6 +107,9 @@ export async function authorizePortal(
     const roles = await get('/rest/v1/user_roles', { user_id: actorFilter, select: 'role' });
     if (!Array.isArray(roles)) return 503;
     if (roles.some((row) => isRecord(row) && row.role === 'master')) return;
+    if (rolesAllowed && !roles.some((row) => isRecord(row) && typeof row.role === 'string' && rolesAllowed.includes(row.role))) {
+      return 403;
+    }
 
     const profile = singleRow(await get('/rest/v1/profiles', {
       user_id: actorFilter,
