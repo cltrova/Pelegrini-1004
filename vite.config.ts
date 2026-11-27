@@ -122,6 +122,36 @@ function localApiProxyPlugin() {
   };
 }
 
+// Keep the static imports needed on the first Produtos screen in a few files.
+function chunksIniciais(): NonNullable<import('rollup').OutputOptions['manualChunks']> {
+  let chunks: Map<string, string> | undefined;
+  return (id, { getModuleIds, getModuleInfo }) => {
+    if (!chunks) {
+      const modulos = [...getModuleIds()];
+      const dependencias = (...arquivos: string[]) => {
+        const encontrados = new Set<string>();
+        const pendentes = modulos.filter(modulo => arquivos.some(arquivo => modulo.endsWith(arquivo)));
+        while (pendentes.length) {
+          const modulo = pendentes.pop()!;
+          if (encontrados.has(modulo)) continue;
+          encontrados.add(modulo);
+          pendentes.push(...(getModuleInfo(modulo)?.importedIds ?? []));
+        }
+        return encontrados;
+      };
+      const entrada = dependencias('/src/main.tsx', '/src/pages/visitas/VisitasApp.tsx');
+      const portal = dependencias('/src/App.tsx');
+      const produtos = dependencias('/src/pages/comercial/ProdutosPage.tsx');
+      chunks = new Map();
+      for (const modulo of new Set([...portal, ...produtos])) {
+        if (/\.css(?:\?|$)/.test(modulo)) continue;
+        chunks.set(modulo, entrada.has(modulo) ? 'entrada-comum' : portal.has(modulo) ? 'portal' : 'produtos');
+      }
+    }
+    return chunks.get(id);
+  };
+}
+
 // https://vitejs.dev/config/
 export default defineConfig(async ({ command, mode }) => {
   const productionBuild = command === 'build' && mode === 'production';
@@ -129,6 +159,9 @@ export default defineConfig(async ({ command, mode }) => {
   const release = await releaseVersionConfig(productionBuild);
   return {
   define: release.define,
+  build: productionBuild ? {
+    rollupOptions: { output: { onlyExplicitManualChunks: true, manualChunks: chunksIniciais() } },
+  } : undefined,
   server: {
     host: "::",
     port: 8080,
