@@ -736,6 +736,7 @@ export function CampanhasTab({ periodoFiltro, dashboardFilterTarget }: Campanhas
   const campaignFilters = dashboardFilterTarget && createPortal(
     <EnterpriseFilterBar
       presentation="popover"
+      hideActiveCount
       activeCount={activeFilterCount}
       onClear={() => {
         setStatusFilter('todas');

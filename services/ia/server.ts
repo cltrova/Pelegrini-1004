@@ -18,6 +18,8 @@ import { handleAiRequest as transcribe } from '../../supabase/functions/transcri
 import { handleSmartReplyRequest } from '../../supabase/functions/_shared/smart-replies.ts';
 import { createAiServer } from './http.ts';
 import type { AiHandlers } from './http.ts';
+import { createDailyCommercialInsights, readGeneratedInsights } from './daily-commercial-insights.ts';
+import { loadCommercialAnalysisInput } from './daily-commercial-source.ts';
 
 const handlers = {
   'ai-compose': compose,
@@ -33,14 +35,31 @@ const handlers = {
   'comercial-ai-chat': comercialChat,
   'comercial-ai-feed': comercialFeed,
   'marcas-insights': marcasInsights,
-  'metas-insights': metasInsights,
   'produtos-insights': produtosInsights,
   'smart-replies': handleSmartReplyRequest,
   'transcribe-audio': transcribe,
 } satisfies AiHandlers;
 
 export function createPelegriniAiServer() {
-  return createAiServer({ handlers });
+  const dataDir = process.env.PELEGRINI_INSIGHTS_DIR?.trim();
+  const dailyInsights = dataDir && createDailyCommercialInsights({
+    dataDir,
+    async generate(branch, periodo) {
+      if (!process.env.OPENAI_API_KEY?.trim()) throw new Error('Chave de IA indisponível');
+      const input = await loadCommercialAnalysisInput(branch, periodo, process.env);
+      if (input.vendedores.length === 0) return [];
+      const request = new Request('http://localhost/api/ia/metas-insights', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(input),
+        signal: AbortSignal.timeout(90_000),
+      });
+      return readGeneratedInsights(await metasInsights(request));
+    },
+  });
+  const server = createAiServer({ handlers, readDailyInsights: dailyInsights ? dailyInsights.read : undefined });
+  if (dailyInsights) server.once('listening', () => server.once('close', dailyInsights.start()));
+  return server;
 }
 
 function listen(): void {

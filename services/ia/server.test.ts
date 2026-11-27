@@ -5,6 +5,7 @@ import { test } from 'node:test';
 import type { TestContext } from 'node:test';
 import { createAiServer } from './http.ts';
 import type { AiHandler, AiHandlers } from './http.ts';
+import type { DailyInsightSnapshot, InsightsBranch } from './daily-insight-types.ts';
 
 const portalOrigin = 'https://portal.example.test';
 const portalKey = 'configured-portal-public-key';
@@ -25,7 +26,6 @@ const accessMatrix = {
   'campanhas-insights': ['modulo_comercial'],
   'categorias-insights': ['modulo_comercial'],
   'marcas-insights': ['modulo_comercial'],
-  'metas-insights': ['modulo_comercial'],
   'produtos-insights': ['modulo_comercial'],
   'ai-compose': ['modulo_whatsapp'],
   'smart-replies': ['modulo_whatsapp'],
@@ -38,6 +38,7 @@ type FixtureOptions = {
   handler?: AiHandler;
   asMaster?: boolean;
   env?: NodeJS.ProcessEnv;
+  readDailyInsights?: (branch: InsightsBranch) => Promise<DailyInsightSnapshot | null>;
   interceptPortal?: (call: PortalCall) => Response | undefined;
 };
 
@@ -52,6 +53,7 @@ async function start(t: TestContext, options: FixtureOptions = {}) {
   const handlers = Object.fromEntries(Object.keys(accessMatrix).map((slug) => [slug, handler])) as AiHandlers;
   const server = createAiServer({
     handlers,
+    readDailyInsights: options.readDailyInsights,
     env: { PORTAL_AUTH_URL: portalOrigin, PORTAL_PUBLIC_KEY: portalKey, OPENAI_API_KEY: openAiKey, ...options.env },
     fetchPortal: async (input, init) => {
       const url = new URL(String(input));
@@ -213,6 +215,33 @@ test('only a Master from user_roles bypasses the company and module policies', a
   assert.deepEqual(await response.json(), { ok: true });
   assert.deepEqual(ia.calls.map(({ url }) => url.pathname), ['/auth/v1/user', '/rest/v1/user_roles']);
   assert.equal(ia.handled.length, 1);
+});
+
+test('reading daily insights requires the commercial module and the requested branch', async (t) => {
+  const snapshot = { dia: '2026-11-27', periodo: { inicio: '2026-11-01', fim: '2026-11-26' }, insights: [] };
+  let profile = { cod_empresa_bi: 1004, filiais_permitidas: ['chevrolet'], filial_id: 'transmissao' };
+  const reads: InsightsBranch[] = [];
+  const ia = await start(t, {
+    env: { OPENAI_API_KEY: undefined },
+    interceptPortal: ({ url }) => url.pathname === '/rest/v1/profiles' ? Response.json([profile]) : undefined,
+    readDailyInsights: async (branch) => { reads.push(branch); return snapshot; },
+  });
+  const get = (branch: InsightsBranch, authorized = true) => fetch(`${ia.origin}/api/ia/metas-insights-${branch}`, {
+    headers: authorized ? { Authorization: `Bearer ${actorToken}` } : {},
+  });
+  await assertError(await get('chevrolet', false), 401);
+  await assertError(await get('chevrolet'), 403);
+  ia.permissions.modulo_comercial = true;
+  await assertError(await get('transmissao'), 403);
+  const result = await get('chevrolet');
+  assert.equal(result.status, 200);
+  assert.equal(result.headers.get('cache-control'), 'private, no-store');
+  assert.deepEqual(await result.json(), { snapshot });
+  profile = { ...profile, cod_empresa_bi: 10041, filiais_permitidas: ['transmissao'] };
+  await assertError(await get('transmissao'), 403);
+  await assertError(await ia.post('metas-insights-chevrolet'), 405);
+  await assertError(await ia.post('metas-insights'), 404);
+  assert.deepEqual(reads, ['chevrolet']);
 });
 
 test('module access is specific to each slug and any listed permission grants access', async (t) => {

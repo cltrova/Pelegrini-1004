@@ -1,4 +1,4 @@
-import { useId, useMemo, useRef, useState } from 'react';
+import { useId, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { useReducedMotion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -10,7 +10,7 @@ import {
 } from 'recharts';
 import { ArrowUpRight, BarChart3, CalendarDays, ChartNoAxesCombined, Percent, TrendingUp, Trophy, X } from 'lucide-react';
 import { RankingVendedoresChart } from './RankingVendedoresChart';
-import { DashboardGoalPace, DashboardPageHeading, DashboardTeamGoals, formatDashboardPeriod, getTeamGoalStatus, type TeamGoalStatus } from './DashboardOverviewManagement';
+import { DashboardGoalPace, DashboardTeamGoals, formatDashboardPeriod, getTeamGoalStatus, type TeamGoalStatus } from './DashboardOverviewManagement';
 import { useEmpresaAtiva } from '@/hooks/useEmpresaAtiva';
 import { useFilialSelecionada } from '@/contexts/FilialSelecionadaContext';
 import { getFeriadosComerciaisMeta } from '@/utils/feriadosComerciais';
@@ -88,7 +88,7 @@ const PIE_COLORS = [
 const analysisTitles = {
   evolucao: 'Faturamento no mês',
   participacao: 'Participação nas vendas',
-  mapa: 'Faturamento por dia e vendedor',
+  mapa: 'Faturamento diário',
 };
 
 const QUICK_GOAL_SCALE = 120;
@@ -395,7 +395,6 @@ export function VisaoGeralRapida1004<TVendedor extends VendedorVisaoGeral>({
 
   return (
     <div className="dashboard-overview-grid min-w-0 text-foreground">
-      <DashboardPageHeading title="Desempenho comercial" period={periodLabel} />
       <DashboardGoalPace
         revenue={totais.receita}
         goal={hasGoal ? kpiDecisao.meta : null}
@@ -420,12 +419,25 @@ export function VisaoGeralRapida1004<TVendedor extends VendedorVisaoGeral>({
         />
       </section>
 
-      <section ref={rankingRef} className="dashboard-frame dashboard-quick-ranking" id="dashboard-quick-ranking" aria-label="Metas por vendedor">
+      <section
+        ref={rankingRef}
+        className="dashboard-frame dashboard-quick-ranking"
+        id="dashboard-quick-ranking"
+        aria-label="Metas por vendedor"
+        style={{ '--dashboard-quick-row-count': ranking.rows.length } as CSSProperties}
+      >
         <header className="dashboard-panel-heading">
           <h2><Trophy aria-hidden="true" /> Metas por vendedor</h2>
           <div className="dashboard-ranking-actions">
-            {teamFilter && (
-              <Button type="button" variant="ghost" size="sm" className="h-7 gap-1 px-2 text-xs" onClick={() => setTeamFilter(null)}>
+            {ranking.rows.length > 0 && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className={cn('h-7 gap-1 px-2 text-xs', !teamFilter && 'invisible')}
+                disabled={!teamFilter}
+                onClick={() => setTeamFilter(null)}
+              >
                 Todos <X aria-hidden="true" className="size-3" />
               </Button>
             )}
@@ -499,7 +511,11 @@ export function VisaoGeralRapida1004<TVendedor extends VendedorVisaoGeral>({
         onSelect={handleTeamFilter}
       />
 
-      <section aria-label="Análise do faturamento" className="dashboard-frame dashboard-overview-panel commercial-dashboard-panel commercial-chart-frame">
+      <section
+        aria-label="Análise do faturamento"
+        className="dashboard-frame dashboard-overview-panel commercial-dashboard-panel commercial-chart-frame"
+        style={{ '--dashboard-analysis-rows': Math.max(heatmap.linhas.length, participacao.length) } as CSSProperties}
+      >
         <Tabs value={analysisView} onValueChange={(value) => setAnalysisView(value as keyof typeof analysisTitles)} className="flex min-h-0 flex-1 flex-col">
           <div className="dashboard-panel-heading dashboard-overview-chart-heading">
             <div className="dashboard-chart-name">
@@ -613,7 +629,7 @@ export function VisaoGeralRapida1004<TVendedor extends VendedorVisaoGeral>({
             {participacao.length === 0 ? (
               <div className="grid flex-1 place-items-center text-xs text-muted-foreground">Sem dados no período</div>
             ) : (
-              <ol className="min-h-0 flex-1 divide-y divide-border/50 overflow-y-auto pr-1">
+              <ol className="dashboard-overview-participants" data-two-columns={participacao.length > 6}>
                 {participacao.map((vendedor, index) => {
                   const color = getCorParticipacaoVendedor(vendedor.nome, index);
                   return (
@@ -650,7 +666,7 @@ export function VisaoGeralRapida1004<TVendedor extends VendedorVisaoGeral>({
                 <div className="dashboard-overview-heatmap" style={{ gridTemplateColumns: `6.5rem repeat(${totalDiasMes}, minmax(0, 1fr))` }}>
                   <span className="text-xs font-medium text-muted-foreground">Vendedor</span>
                   {Array.from({ length: totalDiasMes }, (_, index) => index + 1).map(dia => (
-                    <span key={dia} className="text-center text-[10px] tabular-nums text-muted-foreground">
+                    <span key={dia} className="whitespace-nowrap text-center text-[10px] leading-4 tabular-nums text-muted-foreground">
                       {dia === 1 || dia % 5 === 0 ? dia : ''}
                     </span>
                   ))}

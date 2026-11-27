@@ -1,3 +1,5 @@
+import type { InsightsBranch } from './daily-insight-types.ts';
+
 export type PortalModule =
   | 'modulo_comercial'
   | 'modulo_dre'
@@ -64,6 +66,7 @@ export async function authorizePortal(
   env: NodeJS.ProcessEnv,
   fetchPortal: typeof fetch,
   requestSignal: AbortSignal,
+  branch?: InsightsBranch,
 ): Promise<PortalFailure | undefined> {
   if (authorization?.length !== 1 || authorization[0].length > 8192 + 'Bearer '.length) return 401;
   const bearer = bearerPattern.exec(authorization[0]);
@@ -104,8 +107,16 @@ export async function authorizePortal(
     if (!Array.isArray(roles)) return 503;
     if (roles.some((row) => isRecord(row) && row.role === 'master')) return;
 
-    const profile = singleRow(await get('/rest/v1/profiles', { user_id: actorFilter, select: 'cod_empresa_bi' }));
-    if (!companyCodes.has(profile?.cod_empresa_bi)) return 403;
+    const profile = singleRow(await get('/rest/v1/profiles', {
+      user_id: actorFilter,
+      select: branch ? 'cod_empresa_bi,filiais_permitidas,filial_id' : 'cod_empresa_bi',
+    }));
+    if (!profile || !companyCodes.has(profile.cod_empresa_bi)) return 403;
+    if (branch) {
+      if (String(profile.cod_empresa_bi) === '10041' && branch !== 'chevrolet') return 403;
+      const branches = Array.isArray(profile.filiais_permitidas) ? profile.filiais_permitidas : [profile.filial_id];
+      if (!branches.includes(branch)) return 403;
+    }
 
     const permissions = singleRow(await get('/rest/v1/user_module_permissions', {
       user_id: actorFilter,

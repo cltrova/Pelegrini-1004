@@ -1,5 +1,5 @@
 import { formatCurrency, formatPercent } from '@/utils/formatters';
-import { getRankingVendedoresChartLayout } from './rankingVendedoresChartLayout';
+import { getRankingVendedoresChartLayout, PELEGRINI_RANKING_PLOT } from './rankingVendedoresChartLayout';
 import { cn } from '@/lib/utils';
 
 type Modo = 'faturamento' | 'meta';
@@ -29,9 +29,12 @@ export function RankingVendedoresLabels({ data, modo, variant, onSelect, onHighl
     <div
       className={cn(
         "grid items-start gap-0",
-        isPelegrini ? "min-h-9 shrink-0 pl-[52px] pr-[18px] pt-0.5" : "min-h-[104px] pl-[68px] pr-4 pt-2",
+        isPelegrini ? "min-h-9 shrink-0 pt-0.5" : "min-h-[104px] pl-[68px] pr-4 pt-2",
       )}
-      style={{ gridTemplateColumns: `repeat(${data.length}, minmax(0, 1fr))` }}
+      style={{
+        gridTemplateColumns: `repeat(${data.length}, minmax(0, 1fr))`,
+        ...(isPelegrini && { paddingLeft: PELEGRINI_RANKING_PLOT.left, paddingRight: PELEGRINI_RANKING_PLOT.right }),
+      }}
     >
       {data.map((row, index) => {
         const valueLabel = modo === 'meta'

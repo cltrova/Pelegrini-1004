@@ -7,16 +7,16 @@ import { useEmpresaAtiva } from '@/hooks/useEmpresaAtiva';
 import { useFilialSelecionada } from '@/contexts/FilialSelecionadaContext';
 import { LoadingState } from '@/components/common/LoadingState';
 import { VendedorMetaDiariaCard } from '@/components/comercial/VendedorMetaDiariaCard';
-import { AlertTriangle, BarChart3, Calendar, CheckCircle2, DollarSign, RefreshCw, Target, TrendingDown, TrendingUp, UsersRound } from 'lucide-react';
+import { AlertTriangle, BarChart3, Calendar, CheckCircle2, DollarSign, RefreshCw, Target, TrendingDown, TrendingUp } from 'lucide-react';
 import { getDiasUteisNoMes, getDiasUteisDecorridos } from '@/types/comercial';
 import type { VendedorMetaDiaria, ComercialFilters as ComercialFiltersType } from '@/types/comercial';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { CollapsibleFilterBar } from '@/components/common/CollapsibleFilterBar';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { EnterpriseComercialFilters } from '@/components/comercial/EnterpriseComercialFilters';
-import { ComercialDataViewport, ComercialMetricStrip, type ComercialMetric } from '@/components/comercial/compact';
-import { DashboardExecutiveSummary, DashboardMeter, DashboardPageHeading, DashboardPanelHeading, formatDashboardPeriod } from '@/components/comercial/DashboardOverviewManagement';
+import { EnterpriseBadge } from '@/components/enterprise/EnterpriseBadge';
+import { ComercialDataViewport, type ComercialMetric } from '@/components/comercial/compact';
+import { DashboardMeter, getTeamGoalStatus } from '@/components/comercial/DashboardOverviewManagement';
 import { 
   ComercialFilters, 
   getDefaultFiltersForEmpresa, 
@@ -24,7 +24,7 @@ import {
   countActiveFilters 
 } from '@/components/comercial/ComercialFilters';
 import { AnaliseDiariaLayout } from '@/components/comercial/AnaliseDiariaLayout';
-import { formatCurrency, formatPercent, formatPeriod } from '@/utils/formatters';
+import { formatCurrency, formatPercent } from '@/utils/formatters';
 import { getFeriadosComerciaisMeta } from '@/utils/feriadosComerciais';
 import { cn } from '@/lib/utils';
 
@@ -43,6 +43,12 @@ const METAS_VENDEDORES: Record<string | number, number> = {
 
 // Meta padrão para vendedores sem meta definida
 const META_PADRAO = 0;
+
+const META_STATUS = {
+  atingida: { label: 'Acima da meta', tone: 'positive' },
+  proxima: { label: 'Próximo da meta', tone: 'warning' },
+  abaixo: { label: 'Abaixo da meta', tone: 'negative' },
+} as const;
 
 // Anos disponíveis para seleção
 const ANOS_DISPONIVEIS = ['2023', '2024', '2025', '2026'];
@@ -332,6 +338,7 @@ export default function MetasDiariasPage({ dashboardFilterTarget }: { dashboardF
       showVendedorFilter
       useNativeControls
       presentation="popover"
+      hideActiveCount
       isOpen={filtersOpen}
       onOpenChange={setFiltersOpen}
     />,
@@ -382,14 +389,8 @@ export default function MetasDiariasPage({ dashboardFilterTarget }: { dashboardF
   ];
 
   return (
-    <div className={compactDashboard ? 'dashboard-management-tab' : 'enterprise-page-shell'}>
+    <div className={compactDashboard ? 'dashboard-management-tab dashboard-meta-tab' : 'enterprise-page-shell'}>
       {dashboardFilter}
-      {compactDashboard && (
-        <DashboardPageHeading
-          title="Metas diárias"
-          period={formatDashboardPeriod(appliedFilters?.periodo) ?? formatPeriod(`${anoAtual}-${String(mesAtual + 1).padStart(2, '0')}`)}
-        />
-      )}
       {!compactDashboard && rankingVendedores.length > 0 && (
       <CollapsibleFilterBar
         title="Filtros"
@@ -418,81 +419,53 @@ export default function MetasDiariasPage({ dashboardFilterTarget }: { dashboardF
           <p className="text-sm text-muted-foreground">Selecione um período diferente ou verifique os filtros.</p>
         </div>
       ) : compactDashboard ? (
-        <>
-          <DashboardExecutiveSummary
-            label="Resumo das metas diárias"
-            primary={{
-              label: 'Realizado no período',
-              icon: DollarSign,
-              value: formatCurrency(resumoMetas1004.totalRealizado),
-              context: 'Meta diária indisponível para o período.',
-              readings: [
-                { label: 'Meta até hoje', value: formatCurrency(resumoMetas1004.totalEsperado) },
-                { label: 'Diferença', value: formatCurrency(resumoMetas1004.diferenca, true), tone: resumoMetas1004.diferenca >= 0 ? 'atingida' : 'abaixo' },
-              ],
-            }}
-            secondary={{
-              label: 'No caminho da meta',
-              icon: Target,
-              value: `${resumoMetas1004.acima + resumoMetas1004.proximo} de ${resumoMetas1004.totalVendedores}`,
-              readings: [
-                { label: 'No ritmo', value: resumoMetas1004.acima, tone: 'atingida' },
-                { label: 'Próximos', value: resumoMetas1004.proximo, tone: 'proxima' },
-              ],
-            }}
-            progress={resumoMetas1004.totalEsperado > 0 ? {
-              percent: resumoMetas1004.percentual,
-              context: 'da meta até hoje',
-              tone: resumoMetas1004.percentual >= 100 ? 'atingida' : resumoMetas1004.percentual >= 80 ? 'proxima' : 'abaixo',
-            } : undefined}
-          />
-          <ComercialMetricStrip
-            ariaLabel="Indicadores de metas diárias"
-            className="dashboard-layout-metrics dashboard-layout-metrics-3"
-            metrics={[
-              { label: 'Meta mensal', value: formatCurrency(resumoMetas1004.totalMensal) },
-              { label: 'Dias úteis', value: `${diasUteisDecorridos} de ${diasUteisNoMes}` },
-              { label: 'Em atenção', value: resumoMetas1004.abaixo, tone: resumoMetas1004.abaixo > 0 ? 'warning' : 'neutral' },
-            ]}
-          />
-          <section className="dashboard-frame dashboard-meta-panel" aria-label="Metas por vendedor">
-            <DashboardPanelHeading title="Metas por vendedor" icon={UsersRound} />
-            <div className="dashboard-meta-header" aria-hidden="true">
-              <div className="dashboard-meta-vendor">
-                <span>Vendedor</span>
-                <span>Realizado</span>
-                <span className="dashboard-meta-track">Meta até hoje</span>
-                <span>Atingimento</span>
-              </div>
-            </div>
-            <ComercialDataViewport ariaLabel="Lista de metas diárias" className="dashboard-meta-list">
-              <Accordion type="single" collapsible>
-                {rankingVendedores.map((vendedor) => (
-                  <AccordionItem key={String(vendedor.codigo)} value={String(vendedor.codigo)}>
-                    <AccordionTrigger className="dashboard-meta-trigger min-w-0 gap-2 text-left text-xs hover:no-underline">
-                      <span className="dashboard-meta-vendor">
-                        <span className="dashboard-meta-name" title={vendedor.nome}>{vendedor.nome}</span>
-                        <span>{formatCurrency(vendedor.metaReal)}</span>
-                        <span className="dashboard-meta-track" aria-hidden="true">
-                          {vendedor.metaEsperada > 0 && <DashboardMeter percent={vendedor.percentualAtingimento} label="" />}
-                        </span>
-                        <span
-                          className="dashboard-toned-number"
-                          data-goal-tone={vendedor.metaEsperada > 0 ? vendedor.status === 'acima' ? 'atingida' : vendedor.status === 'proximo' ? 'proxima' : 'abaixo' : undefined}
-                        >
-                          {vendedor.metaEsperada > 0 ? formatPercent(vendedor.percentualAtingimento) : '—'}
-                        </span>
-                      </span>
-                    </AccordionTrigger>
-                    <AccordionContent className="dashboard-meta-vendor-detail px-2 pb-2">
-                      <VendedorMetaDiariaCard vendedor={vendedor} compact1004={isEmpresa1004} />
-                    </AccordionContent>
-                  </AccordionItem>
-                ))}
-              </Accordion>
-            </ComercialDataViewport>
-          </section>
-        </>
+        <section className="dashboard-meta-panel flex min-h-0 min-w-0 flex-col" aria-label="Metas por vendedor">
+          <ComercialDataViewport ariaLabel="Lista de metas diárias">
+            <ol role="list" className="dashboard-seller-list">
+              {rankingVendedores.map((vendedor) => {
+                const metaMensal = vendedor.metaMensal ?? 0;
+                const temMetaAteHoje = vendedor.metaEsperada > 0;
+                const percentual = vendedor.percentualAtingimento;
+                const situacao = temMetaAteHoje ? getTeamGoalStatus(percentual) : undefined;
+                const status = situacao ? META_STATUS[situacao] : undefined;
+                const labelSemBase = metaMensal > 0 ? 'Sem meta até hoje' : 'Sem meta cadastrada';
+                const aviso = situacao === 'atingida' && percentual === 100 ? 'Meta atingida' : status?.label ?? labelSemBase;
+                const atingimento = temMetaAteHoje ? formatPercent(percentual) : '—';
+                return (
+                  <li key={vendedor.codigo} className="dashboard-meta-row" data-goal-tone={situacao}>
+                    <div className="dashboard-meta-seller">
+                      <span className="dashboard-meta-position" aria-hidden="true">{vendedor.ranking}</span>
+                      <div className="min-w-0">
+                        <h2>{vendedor.nome}</h2>
+                        <EnterpriseBadge tone={status?.tone} className="mt-1 py-px leading-tight">{aviso}</EnterpriseBadge>
+                      </div>
+                    </div>
+                    <dl className="dashboard-meta-readings">
+                      <div><dt>Realizado</dt><dd>{formatCurrency(vendedor.metaReal)}</dd></div>
+                      <div><dt>Meta até hoje</dt><dd>{temMetaAteHoje ? formatCurrency(vendedor.metaEsperada) : '—'}</dd></div>
+                      <div>
+                        <dt>Diferença</dt>
+                        <dd className={temMetaAteHoje ? vendedor.diferenca >= 0 ? 'text-success' : 'text-destructive' : undefined}>
+                          {temMetaAteHoje ? formatCurrency(vendedor.diferenca, true) : '—'}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt>Atingimento até hoje</dt>
+                        <dd className="dashboard-meta-attainment">
+                          {atingimento}
+                          {temMetaAteHoje && <span aria-hidden="true"><DashboardMeter percent={percentual} label="" /></span>}
+                        </dd>
+                      </div>
+                      <div><dt>Meta mensal</dt><dd>{metaMensal > 0 ? formatCurrency(metaMensal) : '—'}</dd></div>
+                      <div><dt>Meta diária</dt><dd>{metaMensal > 0 ? formatCurrency(vendedor.metaDiaria) : '—'}</dd></div>
+                      <div><dt>Média por dia</dt><dd>{formatCurrency(vendedor.mediaDiaria)}</dd></div>
+                    </dl>
+                  </li>
+                );
+              })}
+            </ol>
+          </ComercialDataViewport>
+        </section>
       ) : (
         <>
 

@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import type { DailyInsightSnapshot, InsightsBranch } from '../../services/ia/daily-insight-types';
 
 type JsonSlug =
   | 'ai-compose'
@@ -11,7 +12,6 @@ type JsonSlug =
   | 'comercial-ai-chat'
   | 'comercial-ai-feed'
   | 'marcas-insights'
-  | 'metas-insights'
   | 'produtos-insights'
   | 'smart-replies'
   | 'transcribe-audio';
@@ -32,18 +32,21 @@ async function readErrorMessage(response: Response, fallback: string): Promise<s
   ) ?? fallback;
 }
 
+async function getPortalToken(): Promise<string> {
+  const { data: { session }, error } = await supabase.auth.getSession();
+  if (error || !session?.access_token) {
+    throw new AiApiError(401, 'Sessão expirada. Faça login novamente.');
+  }
+  return session.access_token;
+}
+
 async function postAi(
   slug: JsonSlug | StreamSlug,
   payload: object,
   accept: string,
   errorFallback?: string,
 ): Promise<Response> {
-  const { data: { session }, error } = await supabase.auth.getSession();
-  if (error || !session?.access_token) {
-    throw new AiApiError(401, 'Sessão expirada. Faça login novamente.');
-  }
-
-  const headers = new Headers({ Accept: accept, Authorization: `Bearer ${session.access_token}` });
+  const headers = new Headers({ Accept: accept, Authorization: `Bearer ${await getPortalToken()}` });
   const isMultipart = payload instanceof FormData;
   if (!isMultipart) headers.set('Content-Type', 'application/json');
 
@@ -63,6 +66,18 @@ async function postAi(
 export async function postAiJson<T>(slug: JsonSlug, payload: object): Promise<T> {
   const response = await postAi(slug, payload, 'application/json');
   return response.json();
+}
+
+export async function getDailyCommercialInsights(filial: InsightsBranch, signal?: AbortSignal): Promise<DailyInsightSnapshot | null> {
+  const response = await fetch(`/api/ia/metas-insights-${filial}`, {
+    method: 'GET',
+    mode: 'same-origin',
+    headers: { Accept: 'application/json', Authorization: `Bearer ${await getPortalToken()}` },
+    signal,
+  });
+  if (!response.ok) throw new AiApiError(response.status, 'Análises diárias indisponíveis.');
+  const { snapshot } = await response.json();
+  return snapshot;
 }
 
 interface StreamHandlers<T> {

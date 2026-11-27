@@ -356,8 +356,8 @@ describe('Pelegrini visual foundation', () => {
     const metasSource = readFileSync(join(process.cwd(), 'src/components/comercial/PremiumMetasView.tsx'), 'utf8');
 
     expect(insightsSource).not.toMatch(/Insights com IA|Gerados pela IA|Analisando dados com IA|Sparkles/);
-    expect(insightsSource).toContain('Análises comerciais');
-    expect(insightsSource).toContain('min-h-48');
+    expect(insightsSource).toContain('getDailyCommercialInsights');
+    expect(insightsSource).not.toMatch(/Análises comerciais|Gerar análises/);
     expect(metasSource).not.toContain('Insights Inteligentes');
     expect(metasSource).toContain('Sinais do período');
   });

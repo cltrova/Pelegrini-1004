@@ -40,6 +40,7 @@ interface EnterpriseComercialFiltersProps {
   isOpen?: boolean;
   onOpenChange?: (open: boolean) => void;
   presentation?: 'inline' | 'popover';
+  hideActiveCount?: boolean;
 }
 
 const toOptions = (
@@ -108,6 +109,7 @@ export function EnterpriseComercialFilters({
   isOpen,
   onOpenChange,
   presentation,
+  hideActiveCount,
 }: EnterpriseComercialFiltersProps) {
   const summary = getComercialFiltersSummary(appliedFilters, vendedores, clientes)
     .map((item) => `${item.label}: ${item.value}`)
@@ -140,6 +142,7 @@ export function EnterpriseComercialFilters({
         isOpen={isOpen}
         onOpenChange={onOpenChange}
         presentation={presentation}
+        hideActiveCount={hideActiveCount}
         summary={summary}
       >
         <div className="basis-full min-w-0">
@@ -180,6 +183,7 @@ export function EnterpriseComercialFilters({
       isOpen={isOpen}
       onOpenChange={onOpenChange}
       presentation={presentation}
+      hideActiveCount={hideActiveCount}
       summary={summary}
     >
       <EnterpriseSelectFilter

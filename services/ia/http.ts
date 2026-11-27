@@ -4,6 +4,7 @@ import { Readable } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
 import { authorizePortal } from './portal-auth.ts';
 import type { PortalModule } from './portal-auth.ts';
+import type { DailyInsightSnapshot, InsightsBranch } from './daily-insight-types.ts';
 
 const apiPrefix = '/api/ia/';
 const mib = 1024 * 1024;
@@ -21,13 +22,17 @@ const requiredModules = {
   'campanhas-insights': ['modulo_comercial'],
   'categorias-insights': ['modulo_comercial'],
   'marcas-insights': ['modulo_comercial'],
-  'metas-insights': ['modulo_comercial'],
   'produtos-insights': ['modulo_comercial'],
   'ai-compose': ['modulo_whatsapp'],
   'smart-replies': ['modulo_whatsapp'],
   'transcribe-audio': ['modulo_operacional', 'modulo_whatsapp'],
   'cobranca-simulate': ['modulo_resumo'],
 } as const satisfies Record<string, readonly PortalModule[]>;
+
+const dailyInsightsRoutes = new Map<string, InsightsBranch>([
+  ['metas-insights-transmissao', 'transmissao'],
+  ['metas-insights-chevrolet', 'chevrolet'],
+]);
 
 const errors = {
   401: 'Sessão do portal inválida ou expirada.',
@@ -47,6 +52,7 @@ type AiServerOptions = {
   handlers: AiHandlers;
   env?: NodeJS.ProcessEnv;
   fetchPortal?: typeof fetch;
+  readDailyInsights?: (branch: InsightsBranch) => Promise<DailyInsightSnapshot | null>;
 };
 
 function isAiSlug(slug: string): slug is AiSlug {
@@ -82,7 +88,7 @@ async function readBody(incoming: IncomingMessage, limit: number): Promise<Buffe
   return Buffer.concat(chunks, bytes);
 }
 
-export function createAiServer({ handlers, env = process.env, fetchPortal = globalThis.fetch }: AiServerOptions) {
+export function createAiServer({ handlers, env = process.env, fetchPortal = globalThis.fetch, readDailyInsights }: AiServerOptions) {
   async function serve(incoming: IncomingMessage, outgoing: ServerResponse, waitingForContinue = false): Promise<void> {
     outgoing.setHeader('Cache-Control', 'private, no-store');
     outgoing.setHeader('X-Content-Type-Options', 'nosniff');
@@ -105,6 +111,19 @@ export function createAiServer({ handlers, env = process.env, fetchPortal = glob
         return reject(405);
       }
       const slug = path.startsWith(apiPrefix) ? path.slice(apiPrefix.length) : '';
+      const branch = dailyInsightsRoutes.get(slug);
+      if (branch) {
+        if (incoming.method !== 'GET') {
+          outgoing.setHeader('Allow', 'GET');
+          return reject(405);
+        }
+        const failure = await authorizePortal(incoming.headersDistinct.authorization, ['modulo_comercial'], env, fetchPortal, signal, branch);
+        if (signal.aborted) return;
+        if (failure) return reject(failure);
+        const snapshot = await readDailyInsights?.(branch) ?? null;
+        if (!signal.aborted) sendJson(outgoing, 200, { snapshot });
+        return;
+      }
       if (!isAiSlug(slug)) return reject(404);
       if (incoming.method !== 'POST') {
         outgoing.setHeader('Allow', 'POST');

@@ -11,6 +11,11 @@ services:
     environment:
       PELEGRINI_AI_HOST: '0.0.0.0'
       PELEGRINI_AI_PORT: '4319'
+      PELEGRINI_INSIGHTS_DIR: '/var/lib/pelegrini-ia'
+      PELEGRINI_RSYS_URL: ${PELEGRINI_RSYS_URL:-http://187.77.203.16/pelegrini}
+      PELEGRINI_RSYS_HOST: ${PELEGRINI_RSYS_HOST:-rsys.cyft.com.br}
+    volumes:
+      - daily-insights:/var/lib/pelegrini-ia
     networks:
       - pelegrini
     restart: unless-stopped
@@ -19,3 +24,6 @@ networks:
   pelegrini:
     external: true
     name: pelegrini-web-vps
+
+volumes:
+  daily-insights:

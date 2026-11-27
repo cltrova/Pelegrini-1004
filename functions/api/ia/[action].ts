@@ -1,13 +1,15 @@
 const primarySite = 'https://pelegrini.t2a.ia.br';
 const routePattern = /^\/api\/ia\/[a-z]+(?:-[a-z]+)*$/;
 const uncached = { 'Cache-Control': 'private, no-store' };
+const readOnlyPaths = new Set(['/api/ia/health', '/api/ia/metas-insights-transmissao', '/api/ia/metas-insights-chevrolet']);
 
 export async function onRequest({ request }: { request: Request }) {
   const incoming = new URL(request.url);
   if (!routePattern.test(incoming.pathname)) {
     return Response.json({ error: 'Função de IA não encontrada.' }, { status: 404, headers: uncached });
   }
-  if (request.method !== 'POST' && !(request.method === 'GET' && incoming.pathname === '/api/ia/health')) {
+  const method = readOnlyPaths.has(incoming.pathname) ? 'GET' : 'POST';
+  if (request.method !== method) {
     return Response.json({ error: 'Método inválido para esta função.' }, { status: 405, headers: uncached });
   }
   if (incoming.origin === primarySite) {

@@ -1,8 +1,7 @@
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 import { ComposicaoVendasTab } from './ComposicaoVendasTab';
-import { InsightsIATab } from './InsightsIATab';
 import { RepresentatividadeMarcasList } from './RepresentatividadeMarcasList';
 
 vi.mock('@/integrations/supabase/client', () => ({
@@ -28,15 +27,5 @@ describe('residual commercial loading states', () => {
     const status = screen.getByRole('status', { name: 'Carregando representatividade de marcas' });
     expect(within(status).getByTestId('loading-indicator')).toBeInTheDocument();
     expect(screen.queryByText('Carregando marcas...')).not.toBeInTheDocument();
-  });
-
-  it('uses shared loading primitives for initial and refresh insight requests', () => {
-    render(<InsightsIATab vendedores={[]} kpis={{}} />);
-
-    fireEvent.click(screen.getByRole('button', { name: 'Gerar análises' }));
-
-    const status = screen.getByRole('status', { name: 'Carregando análises comerciais' });
-    expect(within(status).getByTestId('loading-indicator')).toBeInTheDocument();
-    expect(screen.queryByText('Analisando dados comerciais...')).not.toBeInTheDocument();
   });
 });

@@ -21,6 +21,7 @@ export interface EnterpriseFilterBarProps {
   isApplying?: boolean;
   className?: string;
   presentation?: 'inline' | 'popover';
+  hideActiveCount?: boolean;
 }
 
 export function EnterpriseFilterBar({
@@ -35,11 +36,13 @@ export function EnterpriseFilterBar({
   isApplying = false,
   className,
   presentation = 'inline',
+  hideActiveCount = false,
 }: EnterpriseFilterBarProps) {
   const [internalOpen, setInternalOpen] = useState(defaultOpen);
   const panelId = useId();
   const activeCountId = `${panelId}-active`;
   const activeFilters = activeCount > 0 ? `${activeCount} ${activeCount === 1 ? 'filtro ativo' : 'filtros ativos'}` : '';
+  const showCount = activeCount > 0 && !hideActiveCount;
   const activeDescription = activeFilters && <span id={activeCountId} className="sr-only">{activeFilters}</span>;
   const open = isOpen ?? internalOpen;
   const setOpen = onOpenChange ?? setInternalOpen;
@@ -91,11 +94,15 @@ export function EnterpriseFilterBar({
             size="icon"
             aria-label={open ? 'Recolher filtros' : 'Expandir filtros'}
             aria-describedby={activeFilters ? activeCountId : undefined}
-            title={activeFilters || 'Filtros'}
-            className={cn('relative size-9 shrink-0 data-[state=open]:border-primary/60 data-[state=open]:bg-primary/10', className)}
+            title={showCount ? activeFilters : 'Filtros'}
+            className={cn(
+              'relative size-9 shrink-0 data-[state=open]:border-primary/60 data-[state=open]:bg-primary/10',
+              hideActiveCount && activeCount > 0 && 'border-primary/50 text-primary',
+              className,
+            )}
           >
-            <Filter aria-hidden="true" className={cn('size-4', activeCount > 0 && '-translate-x-0.5 translate-y-0.5')} />
-            {activeCount > 0 && (
+            <Filter aria-hidden="true" className={cn('size-4', showCount && '-translate-x-0.5 translate-y-0.5')} />
+            {showCount && (
               <span aria-hidden="true" className="absolute right-0.5 top-0.5 min-w-3 rounded-full bg-primary px-0.5 text-[9px] font-bold leading-3 tabular-nums text-primary-foreground">
                 {activeCount}
               </span>
@@ -112,7 +119,7 @@ export function EnterpriseFilterBar({
         >
           <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
             <h2 className="text-sm font-semibold">Filtros</h2>
-            {activeFilters && <EnterpriseBadge tone="info">{activeFilters}</EnterpriseBadge>}
+            {showCount && <EnterpriseBadge tone="info">{activeFilters}</EnterpriseBadge>}
           </div>
           <div className="flex min-w-0 flex-wrap items-end gap-2">{children}</div>
           {(onApply || (activeCount > 0 && onClear)) && (
@@ -137,7 +144,7 @@ export function EnterpriseFilterBar({
         >
           <Filter aria-hidden="true" className="h-3.5 w-3.5 text-muted-foreground" />
           Filtros
-          {activeCount > 0 && <EnterpriseBadge tone="info">{activeCount} {activeCount === 1 ? 'ativo' : 'ativos'}</EnterpriseBadge>}
+          {showCount && <EnterpriseBadge tone="info">{activeCount} {activeCount === 1 ? 'ativo' : 'ativos'}</EnterpriseBadge>}
           {activeDescription}
           <ChevronDown aria-hidden="true" className={cn('ml-auto h-3.5 w-3.5 text-muted-foreground transition-transform duration-200', open && 'rotate-180')} />
         </button>

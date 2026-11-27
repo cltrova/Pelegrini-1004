@@ -1,4 +1,4 @@
-import type { CSSProperties, ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { ArrowUpRight, CalendarDays, CheckCircle2, ChevronRight, CircleAlert, Gauge, Target, TrendingUp, UsersRound, type LucideIcon } from 'lucide-react';
 import { formatCalendarDate, formatCurrency, formatPercent } from '@/utils/formatters';
 import './DashboardOverview.css';
@@ -119,26 +119,6 @@ export function DashboardExecutiveSummary({ label, primary, secondary, progress 
         <ExecutiveReadings readings={secondary.readings} />
       </div>
     </section>
-  );
-}
-
-export function DashboardGoalRing({ percent }: { percent: number | null }) {
-  const display = percent === null ? '—' : formatPercent(percent);
-  const progress = Math.max(0, Math.min(percent ?? 0, 100));
-
-  return (
-    <div
-      className="dashboard-goal-ring"
-      style={{ '--dashboard-ring-progress': `${progress}%` } as CSSProperties}
-      data-goal-tone={percent === null ? undefined : getTeamGoalStatus(percent)}
-      role="img"
-      aria-label={percent === null ? 'Sem percentual de atingimento' : `${display} da meta realizada`}
-    >
-      <span className="dashboard-goal-ring-value" aria-hidden="true">
-        <strong>{display}</strong>
-        <small>da meta</small>
-      </span>
-    </div>
   );
 }
 

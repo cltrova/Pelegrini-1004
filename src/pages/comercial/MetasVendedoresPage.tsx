@@ -5,39 +5,22 @@ import { useEmpresaAtiva } from '@/hooks/useEmpresaAtiva';
 import { useFilialSelecionada } from '@/contexts/FilialSelecionadaContext';
 import { LoadingState } from '@/components/common/LoadingState';
 import { ErrorState } from '@/components/common/ErrorState';
-import { 
-  Target, TrendingUp, TrendingDown, Calendar, Trophy, AlertTriangle, ArrowUpRight, DollarSign, Wallet,
-  ChevronUp, ChevronDown, Minus, Crown, Medal, Award, User, Eye
-} from 'lucide-react';
 import { VendedorDetailsDialog } from '@/components/comercial/VendedorDetailsDialog';
 import { getDiasUteisNoMes, getDiasUteisDecorridos, type ComercialFilters as ComercialFiltersType, type Pedido } from '@/types/comercial';
 import type { ProdutoItem } from '@/types/comercialProdutos';
-import { formatCurrency, formatPercent, formatCompactNumber, formatPeriod, formatPeriodShort } from '@/utils/formatters';
-import { Badge } from '@/components/ui/badge';
+import { formatCurrency } from '@/utils/formatters';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { Progress } from '@/components/ui/progress';
-import { TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { 
-  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
-  Legend, ReferenceLine
-} from 'recharts';
-import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { 
   getDefaultFiltersForEmpresa, 
 } from '@/components/comercial/ComercialFilters';
 import { EnterpriseComercialFilters } from '@/components/comercial/EnterpriseComercialFilters';
 import { LayoutAlternativoComercial } from '@/components/comercial/LayoutAlternativoComercial';
-import { getVendedorAvatar } from '@/config/vendedorAvatars';
 import { getFeriadosComerciaisMeta } from '@/utils/feriadosComerciais';
 import { VisaoGeralRapida1004 } from '@/components/comercial/VisaoGeralRapida1004';
-import { RankingVendedoresChart } from '@/components/comercial/RankingVendedoresChart';
-import { DashboardExecutiveSummary, DashboardPageHeading, DashboardPanelHeading, formatDashboardPeriod, getTeamGoalStatus } from '@/components/comercial/DashboardOverviewManagement';
 import { ReceitaDetalheDialog } from '@/components/comercial/ReceitaDetalheDialog';
 import { useComercialProdutos } from '@/hooks/useComercialProdutos';
 import { useComercialTotaisIdeal } from '@/hooks/useComercialTotais';
-import { PremiumSectionCard } from '@/components/comercial/premium1004';
 import {
   aplicarEquipeContextualPelegrini1004AoFiltro,
   criarFiltroTotalizadores1004,
@@ -50,7 +33,7 @@ import {
 } from '@/utils/vendedores1004';
 import { invalidarConsultasComerciais } from '@/utils/comercialQueryInvalidation';
 import { resolverContagemTotalizadorPelegrini } from '@/utils/comercialKpiFallback';
-import { ComercialCompactPage, ComercialDataViewport, ComercialMetricStrip } from '@/components/comercial/compact';
+import { ComercialCompactPage, ComercialDataViewport } from '@/components/comercial/compact';
 import { getMesesDoFiltro, getPeriodoReferencia, preservarPeriodoExplicito } from '@/utils/metasFilterPeriod';
 import '@/components/comercial/DashboardTabs.css';
 
@@ -74,12 +57,10 @@ type VendedorDetalheRow = {
 const loadMetasDiarias = () => import('@/pages/comercial/MetasDiariasPage');
 const loadPremiumMetas = () => import('@/components/comercial/PremiumMetasView').then(module => ({ default: module.PremiumMetasView }));
 const loadMetasLegacy = () => import('@/components/comercial/legacy/MetasViewLegacy').then(module => ({ default: module.MetasViewLegacy }));
-const loadInsights = () => import('@/components/comercial/InsightsIATab').then(module => ({ default: module.InsightsIATab }));
 const loadCampanhas = () => import('@/components/comercial/CampanhasTab').then(module => ({ default: module.CampanhasTab }));
 const LazyMetasDiariasPage = lazy(loadMetasDiarias);
 const LazyPremiumMetasView = lazy(loadPremiumMetas);
 const LazyMetasViewLegacy = lazy(loadMetasLegacy);
-const LazyInsightsIATab = lazy(loadInsights);
 const LazyCampanhasTab = lazy(loadCampanhas);
 
 function ComercialTabFallback() {
@@ -130,6 +111,7 @@ export default function MetasVendedoresPage() {
   const [activeTab, setActiveTab] = useState<string>(() => {
     try {
       const saved = sessionStorage.getItem('comercial:metas:tab');
+      if (saved === 'ranking') return 'metas-diarias';
       return saved === 'insights' ? 'visao-geral' : saved || 'visao-geral';
     } catch { return 'visao-geral'; }
   });
@@ -171,10 +153,9 @@ export default function MetasVendedoresPage() {
     });
   }, [codEmpresaAtiva, isPelegriniPage, pendingFilters]);
 
-  const { vendedoresPerformance, pedidos, devolucoes, evolucaoDiaria, evolucaoMensal, clientesPerformance, insights, kpis, periodoDisponivel, vendedoresDisponiveis, isLoading, isFetching: isCommercialDataFetching, error } = useComercialData(filtrosAplicadosParaDados, {
+  const { vendedoresPerformance, pedidos, devolucoes, kpis, periodoDisponivel, vendedoresDisponiveis, isLoading, isFetching: isCommercialDataFetching, error } = useComercialData(filtrosAplicadosParaDados, {
     keepPreviousData: true,
   });
-  const [chartView, setChartView] = useState<'mensal' | 'diario'>('diario');
   const [vendedorDetalhe, setVendedorDetalhe] = useState<{ row: VendedorDetalheRow; ranking: number } | null>(null);
   const [receitaDetalheOpen, setReceitaDetalheOpen] = useState(false);
   const {
@@ -448,13 +429,6 @@ export default function MetasVendedoresPage() {
     .sort((a, b) => b.percentualMetaFaturado - a.percentualMetaFaturado);
   }, [vendedoresPerformance, pedidos, diasUteisNoMes, diasUteisDecorridos, mesesSelecionadosSet, isPelegriniPage]);
 
-  // Vendedores exibidos no ranking: somente quem tem meta OU venda
-  const vendedoresRanking = useMemo(() => {
-    return vendedoresComMeta
-      .filter(v => (v.metaMensal > 0) || (Math.abs(v.faturamentoMesAtual) > 0) || (Math.abs(v.valorTotal) > 0))
-      .sort((a, b) => b.faturamentoMesAtual - a.faturamentoMesAtual);
-  }, [vendedoresComMeta]);
-
   const vendedoresComMetaFonteFinal = useMemo(() => {
     if (!isPelegriniPage) return vendedoresComMeta;
 
@@ -612,15 +586,6 @@ export default function MetasVendedoresPage() {
   }, [vendedoresComMeta, vendedoresComMetaFonteFinal, devolucoes, pedidos, kpis, receita1004TotalizadaGeral, pedidos1004DistintosGeral, produtos1004Totalizadores, pedidosTotalizadorOficial?.quantidade_pedidos, produtosTotalizadorOficial?.quantidade_total_vendida, isEmpresa10041Page, isPelegriniPage]);
 
 
-  // Dados para gráfico de evolução
-  const dadosEvolucao = useMemo(() => {
-    // Dados já filtrados pelo hook useComercialData
-    return evolucaoDiaria.map(d => ({
-      ...d,
-      dataFormatada: new Date(d.data).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
-    }));
-  }, [evolucaoDiaria]);
-
   // Se empresa não possui metas de vendedor, renderiza layout alternativo
   if (!isLoadingEmpresa && empresa && empresa.possui_meta_vendedor === false) {
     return <LayoutAlternativoComercial />;
@@ -643,23 +608,11 @@ export default function MetasVendedoresPage() {
   // (mais abaixo), mantendo o shell do dashboard (header, filtros e abas)
   // sempre montado — evita a regressão do empty state em tela cheia.
   const vendedoresBaseVisual = isPelegriniPage ? vendedoresComMetaFonteFinal : vendedoresComMeta;
-  const vendedoresRankingVisual = isPelegriniPage ? vendedoresComMetaFonteFinal : vendedoresRanking;
-  const resumoRanking = isLayoutPremium && activeTab === 'ranking'
-    ? vendedoresRankingVisual.reduce((totais, vendedor) => ({
-      faturado: totais.faturado + vendedor.faturamentoMesAtual,
-      emAberto: totais.emAberto + vendedor.valorPendente,
-      meta: totais.meta + vendedor.metaMensal,
-    }), { faturado: 0, emAberto: 0, meta: 0 })
-    : null;
-  const rankingPercent = resumoRanking && resumoRanking.meta > 0 ? resumoRanking.faturado / resumoRanking.meta * 100 : null;
-  const periodoDashboard = formatDashboardPeriod(appliedFilters?.periodo)
-    ?? formatPeriod(`${periodoFiltros.ano}-${String(periodoFiltros.mes).padStart(2, '0')}`);
   const vendedoresGraficoVisaoGeral1004 = isEmpresa10041Page
     && (!receita1004PorVendedor || receita1004PorVendedor.size === 0)
       ? []
       : vendedoresComMetaFonteFinal;
   const pedidosDetalheVisual: Array<Pedido | ProdutoItem> = isPelegriniPage ? pedidosFonteFinal : pedidos;
-  const semVendedores = !vendedoresBaseVisual.length;
   const tabUsaFiltroProprio = activeTab === 'metas-diarias' || (isPelegriniPage && activeTab === 'campanhas');
   const tabTriggerClass = cn(
     'h-8 flex-none whitespace-nowrap px-3 text-xs',
@@ -668,22 +621,6 @@ export default function MetasVendedoresPage() {
       : undefined,
   );
 
-
-  // Badge ranking icon
-  const getRankingIcon = (position: number) => {
-    if (position === 1) return <Crown className="h-3 w-3" />;
-    if (position === 2) return <Medal className="h-3 w-3" />;
-    if (position === 3) return <Award className="h-3 w-3" />;
-    return <span className="text-xs font-bold">#{position}</span>;
-  };
-
-  // Badge ranking color
-  const getRankingBgColor = (position: number) => {
-    if (position === 1) return 'bg-amber-500 text-black';
-    if (position === 2) return 'bg-slate-300 text-slate-900';
-    if (position === 3) return 'bg-amber-700 text-white';
-    return 'bg-muted text-muted-foreground';
-  };
 
   const commercialFilters = !tabUsaFiltroProprio && (
     <EnterpriseComercialFilters
@@ -702,6 +639,7 @@ export default function MetasVendedoresPage() {
       isOpen={filtersOpen}
       onOpenChange={setFiltersOpen}
       presentation={isLayoutPremium ? 'popover' : 'inline'}
+      hideActiveCount={isLayoutPremium}
     />
   );
 
@@ -731,7 +669,6 @@ export default function MetasVendedoresPage() {
               <TabsTrigger value="visao-geral" className={tabTriggerClass}>Visão geral</TabsTrigger>
               {isPelegriniPage && <TabsTrigger value="detalhes" className={tabTriggerClass}>Detalhes</TabsTrigger>}
               <TabsTrigger value="metas-diarias" className={tabTriggerClass}>Metas</TabsTrigger>
-              <TabsTrigger value="ranking" className={tabTriggerClass}>Ranking</TabsTrigger>
               <TabsTrigger value="comparativos" className={tabTriggerClass}>Comparativos</TabsTrigger>
               {isPelegriniPage && <TabsTrigger value="campanhas" className={tabTriggerClass}>Campanhas</TabsTrigger>}
             </TabsList>
@@ -778,6 +715,7 @@ export default function MetasVendedoresPage() {
           <TabsContent value="detalhes" className="dashboard-tab-content mt-0 min-h-0 flex-1 overflow-auto">
             <LazyPremiumMetasView
               compactDashboard
+              filialAnalises={isEmpresa10041Page ? 'chevrolet' : filialAtiva === 'transmissao' ? 'transmissao' : undefined}
               vendedoresComMeta={vendedoresComMetaFonteFinal}
               pedidos={pedidosFonteFinal}
               kpisGerais={kpisGerais}
@@ -793,382 +731,64 @@ export default function MetasVendedoresPage() {
         <TabsContent value="metas-diarias" className="dashboard-tab-content mt-0 min-h-0 flex-1 overflow-auto">
           <LazyMetasDiariasPage dashboardFilterTarget={isLayoutPremium ? dashboardFilterTarget : undefined} />
         </TabsContent>
-
-
-
-
-        {/* ==================== ABA: RANKING ==================== */}
-        <TabsContent value="ranking" className="dashboard-tab-content mt-0 min-h-0 flex-1 overflow-auto">
-          <div className={isLayoutPremium ? 'dashboard-management-tab' : 'min-h-0 flex-1 overflow-auto'}>
-            {resumoRanking && (
-              <>
-                <DashboardPageHeading title="Desempenho por vendedor" period={periodoDashboard} />
-                <DashboardExecutiveSummary
-                  label="Resumo do ranking"
-                  primary={{
-                    label: 'Faturamento do ranking',
-                    icon: DollarSign,
-                    value: formatCurrency(resumoRanking.faturado),
-                    context: vendedoresRankingVisual.length ? 'Meta indisponível no ranking atual.' : 'Nenhum vendedor nos filtros selecionados.',
-                    readings: [{ label: 'Meta mensal da equipe', value: resumoRanking.meta > 0 ? formatCurrency(resumoRanking.meta) : '—' }],
-                  }}
-                  secondary={{
-                    label: 'Valor em aberto',
-                    icon: Wallet,
-                    value: formatCurrency(resumoRanking.emAberto),
-                    readings: [{ label: 'Vendedores no ranking', value: vendedoresRankingVisual.length }],
-                  }}
-                  progress={rankingPercent === null ? undefined : {
-                    percent: rankingPercent, context: 'da meta mensal', tone: getTeamGoalStatus(rankingPercent),
-                  }}
-                />
-                <section className="dashboard-inline-ranking dashboard-tab-ranking-chart" aria-label="Gráfico do ranking">
-                  <RankingVendedoresChart
-                    data={vendedoresRankingVisual.map((row) => ({
-                      codigo: row.codigo,
-                      nome: row.nome,
-                      mes: row.faturamentoMesAtual,
-                      meta: row.metaMensal,
-                      metaDiaria: row.metaDiaria,
-                      status: row.status,
-                      _row: row,
-                    }))}
-                    periodo={appliedFilters?.periodo}
-                    variant="pelegriniBlue"
-                    onClick={(row) => setVendedorDetalhe({
-                      row,
-                      ranking: vendedoresRankingVisual.findIndex((current) => current.codigo === row.codigo) + 1,
-                    })}
-                  />
-                </section>
-              </>
-            )}
-            <section
-              aria-label="Tabela do ranking"
-              className={cn(isLayoutPremium && 'dashboard-frame dashboard-ranking-panel')}
-            >
-              {isLayoutPremium && <DashboardPanelHeading title="Resultados por vendedor" icon={Trophy} />}
-              <ComercialDataViewport ariaLabel="Ranking de vendedores" className={cn(
-                'dashboard-ranking-viewport',
-                !isLayoutPremium && 'commercial-dashboard-panel border border-border/70 bg-card',
-              )}>
-                <table className="dashboard-ranking-table w-full text-xs">
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead scope="col">Vendedor</TableHead>
-                      <TableHead className="text-right">Valor Faturado</TableHead>
-                      <TableHead className="text-center">% Meta Faturado</TableHead>
-                      <TableHead className="text-right">Valor em Aberto</TableHead>
-                      <TableHead className="text-right">Valor Total</TableHead>
-                      <TableHead className="text-center">% Meta Total</TableHead>
-                      <TableHead className="text-right">Meta</TableHead>
-                      <TableHead className="text-center">Status</TableHead>
-                      {!isLayoutPremium && <TableHead className="text-center w-12">Ações</TableHead>}
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {vendedoresRankingVisual.map((v, idx) => (
-                      <TableRow key={String(v.codigo)}>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <div className={cn(
-                              "h-6 w-6 rounded-full flex items-center justify-center text-xs font-bold",
-                              idx === 0 ? "bg-amber-500 text-black" :
-                              idx === 1 ? "bg-slate-300 text-slate-900" :
-                              idx === 2 ? "bg-amber-700 text-white" :
-                              "bg-muted text-muted-foreground"
-                            )}>
-                              {idx + 1}
-                            </div>
-                            {isLayoutPremium ? (
-                              <button
-                                type="button"
-                                className="dashboard-ranking-seller"
-                                onClick={() => setVendedorDetalhe({ row: v, ranking: idx + 1 })}
-                                aria-label={`Ver detalhes de ${v.nome}`}
-                                title={v.nome}
-                              >
-                                <span>{v.nome}</span>
-                                <ArrowUpRight aria-hidden="true" className="size-3.5" />
-                              </button>
-                            ) : (
-                              <span className="truncate font-medium" title={v.nome}>{v.nome}</span>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell className={cn('text-right font-mono', !isLayoutPremium && 'text-emerald-500')}>
-                          {formatCurrency(v.faturamentoMesAtual)}
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <Badge variant="outline" className={cn(
-                            "font-mono",
-                            v.percentualMetaFaturado >= 100 ? "text-emerald-500 border-emerald-500/50" :
-                            v.percentualMetaFaturado >= 80 ? "text-amber-500 border-amber-500/50" :
-                            "text-destructive border-destructive/50"
-                          )}>
-                            {formatPercent(v.percentualMetaFaturado)}
-                          </Badge>
-                        </TableCell>
-                        <TableCell
-                          className={cn('text-right font-mono', isLayoutPremium ? 'dashboard-toned-number' : 'text-amber-500')}
-                          data-goal-tone={isLayoutPremium && v.valorPendente > 0 ? 'proxima' : undefined}
-                        >
-                          {formatCurrency(v.valorPendente)}
-                        </TableCell>
-                        <TableCell className="text-right font-mono">
-                          {formatCurrency(v.valorTotal)}
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <Badge variant="outline" className={cn(
-                            "font-mono",
-                            v.percentualMetaTotal >= 100 ? "text-emerald-500 border-emerald-500/50" :
-                            v.percentualMetaTotal >= 80 ? "text-amber-500 border-amber-500/50" :
-                            "text-destructive border-destructive/50"
-                          )}>
-                            {formatPercent(v.percentualMetaTotal)}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right font-mono">
-                          {formatCurrency(v.metaMensal)}
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <Badge className={cn(
-                            v.status === 'acima' ? "bg-emerald-500/20 text-emerald-500 hover:bg-emerald-500/30" :
-                            v.status === 'proximo' ? "bg-amber-500/20 text-amber-500 hover:bg-amber-500/30" :
-                            "bg-destructive/20 text-destructive hover:bg-destructive/30"
-                          )}>
-                            {v.status === 'acima' ? 'Acima da meta' :
-                             v.status === 'proximo' ? 'Próximo' : 'Abaixo da meta'}
-                          </Badge>
-                        </TableCell>
-                        {!isLayoutPremium && <TableCell className="text-center">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="size-7"
-                            onClick={() => setVendedorDetalhe({ row: v, ranking: idx + 1 })}
-                            aria-label={`Ver detalhes de ${v.nome}`}
-                            title={`Ver detalhes de ${v.nome}`}
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                        </TableCell>}
-                      </TableRow>
-                    ))}
-                    {vendedoresRankingVisual.length === 0 && (
-                      <TableRow>
-                        <TableCell colSpan={isLayoutPremium ? 8 : 9} className="h-24 text-center text-muted-foreground">
-                          Nenhum vendedor para os filtros selecionados.
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </table>
-              </ComercialDataViewport>
-            </section>
-          </div>
-        </TabsContent>
-
         {/* ==================== ABA: COMPARATIVOS ==================== */}
-        <TabsContent value="comparativos" className="dashboard-tab-content mt-0 min-h-0 flex-1 gap-2 overflow-auto">
-          <div className={isLayoutPremium ? 'dashboard-management-tab' : 'flex min-h-0 flex-1 flex-col gap-2'}>
-            {isLayoutPremium && (
-              <>
-                <DashboardPageHeading title="Comparativos comerciais" period={periodoDashboard} />
-                <DashboardExecutiveSummary
-                  label="Resumo de comparativos"
-                  primary={{
-                    label: 'Faturado no período',
-                    icon: DollarSign,
-                    value: formatCurrency(kpisGerais.totalFaturado),
-                    context: 'Sem valor de pedidos para comparar.',
-                    readings: [{ label: 'Valor dos pedidos usado na comparação', value: formatCurrency(kpisGerais.totalPedidos) }],
-                  }}
-                  secondary={{
-                    label: 'Valor em aberto',
-                    icon: Wallet,
-                    value: formatCurrency(kpisGerais.totalPendente),
-                    readings: [
-                      { label: 'Pedidos', value: kpisGerais.qtdPedidos.toLocaleString('pt-BR') },
-                      { label: 'Ticket médio', value: formatCurrency(kpisGerais.ticketMedio) },
-                    ],
-                  }}
-                  progress={kpisGerais.totalPedidos > 0 ? { percent: kpisGerais.fatVsPed, context: 'do valor dos pedidos' } : undefined}
-                />
-              </>
-            )}
-            <ComercialMetricStrip
-              ariaLabel="Indicadores de comparativos"
-              className={isLayoutPremium ? 'dashboard-layout-metrics' : 'dashboard-tab-metrics dashboard-tab-metrics-6'}
-              metrics={[
-                ...(!isLayoutPremium ? [{ label: 'Faturado', value: formatCurrency(kpisGerais.totalFaturado), tone: 'success' as const }] : []),
-                { label: isLayoutPremium ? 'Faturado + em aberto' : 'Valor em pedidos', value: formatCurrency(kpisGerais.totalFaturado + kpisGerais.totalPendente) },
-                { label: 'Meta total', value: formatCurrency(kpisGerais.totalMeta) },
-                { label: 'Média da meta', value: formatPercent(kpisGerais.mediaMetaVendedores), tone: 'warning' },
-                { label: 'Clientes', value: kpisGerais.clientesAtendidos.toLocaleString('pt-BR') },
-                ...(!isLayoutPremium ? [{ label: 'Faturado × pedidos', value: formatPercent(kpisGerais.fatVsPed) }] : []),
-              ]}
-            />
-            <Tabs defaultValue="desempenho" className="dashboard-section-tabs">
-              <div className="dashboard-section-toolbar">
-                <TabsList aria-label="Comparativos do Dashboard" className={isLayoutPremium ? 'dashboard-overview-views' : 'dashboard-section-list'}>
-                  <TabsTrigger value="desempenho">Desempenho</TabsTrigger>
-                  <TabsTrigger value="cenarios">Cenários</TabsTrigger>
-                </TabsList>
-              </div>
+        <TabsContent value="comparativos" className="dashboard-tab-content mt-0 min-h-0 flex-1 overflow-auto">
+          <div className="dashboard-management-tab dashboard-scenario-tab">
+            <section aria-label="Cenários" className="dashboard-comparison-panel flex min-h-0 min-w-0 flex-col">
+              {vendedoresBaseVisual.length > 0 ? (
+                <ComercialDataViewport ariaLabel="Cenários por vendedor">
+                  <ul role="list" className="dashboard-seller-list">
+                    {vendedoresBaseVisual.map((vendedor) => {
+                      const diasRestantes = diasUteisNoMes - diasUteisDecorridos;
+                      const temMeta = vendedor.metaMensal > 0;
+                      const ritmoAtual = diasUteisDecorridos > 0 ? vendedor.faturamentoMesAtual / diasUteisDecorridos : 0;
+                      const cenarios = [
+                        { label: 'Ritmo atual', ritmo: ritmoAtual },
+                        { label: '+5% no ritmo diário', ritmo: ritmoAtual * 1.05 },
+                        { label: '+10% no ritmo diário', ritmo: ritmoAtual * 1.1 },
+                      ];
 
-              <TabsContent value="desempenho" className="dashboard-section-view mt-0">
-                <div className="dashboard-comparison-grid grid grid-cols-1 gap-2 lg:grid-cols-3">
-                {/* Análises executivas */}
-                <PremiumSectionCard
-                  title="Análises executivas"
-                  icon={TrendingUp}
-                  tone="azul"
-                  className={cn('commercial-dashboard-panel lg:col-span-2', isLayoutPremium && 'dashboard-frame dashboard-comparison-panel')}
-                  contentClassName="p-3 pt-2"
-                >
-                  <LazyInsightsIATab vendedores={vendedoresBaseVisual} kpis={kpisGerais} />
-                </PremiumSectionCard>
-
-                {/* Ranking de Performance */}
-                <PremiumSectionCard
-                  title="Ranking de Performance"
-                  icon={Trophy}
-                  tone="amarelo"
-                  className={cn('commercial-dashboard-panel', isLayoutPremium && 'dashboard-frame dashboard-comparison-panel')}
-                  contentClassName="space-y-3 p-3 pt-2"
-                >
-                    {vendedoresBaseVisual.slice(0, 3).map((v, idx) => (
-                      <div key={String(v.codigo)} className="space-y-2">
-                        <div className="flex items-center gap-2">
-                          <div className={cn(
-                            "h-6 w-6 rounded-full flex items-center justify-center",
-                            getRankingBgColor(idx + 1)
-                          )}>
-                            {getRankingIcon(idx + 1)}
+                      return (
+                        <li key={vendedor.codigo} className="dashboard-scenario-row">
+                          <div className="dashboard-scenario-seller">
+                            <h2>{vendedor.nome}</h2>
+                            <dl>
+                              <div><dt>Realizado</dt><dd>{formatCurrency(vendedor.faturamentoMesAtual)}</dd></div>
+                              {temMeta && <div><dt>Meta</dt><dd>{formatCurrency(vendedor.metaMensal)}</dd></div>}
+                            </dl>
                           </div>
-                          <span className="font-medium text-sm uppercase flex-1">{v.nome}</span>
-                          <span className={cn(
-                            "text-sm font-semibold",
-                            v.percentualMetaFaturado >= 100 ? "text-emerald-500" :
-                            v.percentualMetaFaturado >= 80 ? "text-amber-500" : "text-red-500"
-                          )}>
-                            {formatPercent(v.percentualMetaFaturado)}
-                          </span>
-                        </div>
-                        <Progress
-                          value={Math.max(0, Math.min(v.percentualMetaFaturado, 100))}
-                          className={cn(
-                            "h-2",
-                            v.percentualMetaFaturado >= 100 ? "[&>div]:bg-emerald-500" :
-                            v.percentualMetaFaturado >= 80 ? "[&>div]:bg-amber-500" : "[&>div]:bg-red-500"
-                          )}
-                        />
-                        <div className="flex flex-wrap justify-between gap-1 text-xs text-muted-foreground">
-                          <span>Faturado: {formatCurrency(v.faturamentoMesAtual)}</span>
-                          <span>Meta: {formatCurrency(v.metaMensal)}</span>
-                        </div>
-                      </div>
-                    ))}
-
-                    {/* Precisam de atenção */}
-                    <div className="pt-2 border-t border-border/50">
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground mb-2">
-                        <AlertTriangle className="h-3.5 w-3.5" />
-                        <span>Precisam de atenção</span>
-                      </div>
-                      {vendedoresBaseVisual
-                        .filter(v => v.percentualMetaFaturado < 50)
-                        .slice(0, 2)
-                        .map((v) => (
-                          <div key={String(v.codigo)} className="flex items-center justify-between py-2">
-                            <span className="text-sm uppercase">{v.nome}</span>
-                            <Badge className="bg-red-500/20 text-red-500 text-xs">
-                              {formatPercent(v.percentualMetaFaturado)}
-                            </Badge>
-                          </div>
-                        ))
-                    }
-                    </div>
-                </PremiumSectionCard>
-                </div>
-              </TabsContent>
-
-              <TabsContent value="cenarios" className="dashboard-section-view mt-0">
-                <PremiumSectionCard
-                  className={cn('commercial-dashboard-panel', isLayoutPremium && 'dashboard-frame dashboard-comparison-panel')}
-                  contentClassName="space-y-2 p-3"
-                >
-                  <p className="text-xs text-muted-foreground">
-                    Projeção até o fim do mês pelo ritmo atual e com aumentos simulados de 5% e 10% no ritmo diário.
-                  </p>
-                  {vendedoresBaseVisual.length > 0 ? (
-                    <Accordion type="single" collapsible defaultValue={String(vendedoresBaseVisual[0].codigo)} className="space-y-2">
-                      {vendedoresBaseVisual.slice(0, 4).map((vendedor) => {
-                        const diasRestantes = diasUteisNoMes - diasUteisDecorridos;
-                        const ritmoAtual = diasUteisDecorridos > 0 ? vendedor.faturamentoMesAtual / diasUteisDecorridos : 0;
-                        const cenarios = [
-                          { label: 'Se mantiver ritmo atual', ritmo: ritmoAtual, color: 'text-primary' },
-                          { label: 'Ritmo diário 5% maior', ritmo: ritmoAtual * 1.05, color: 'text-amber-600 dark:text-amber-400' },
-                          { label: 'Ritmo diário 10% maior', ritmo: ritmoAtual * 1.1, color: 'text-violet-600 dark:text-violet-400' },
-                        ].map((cenario) => {
-                          const projecao = vendedor.faturamentoMesAtual + cenario.ritmo * diasRestantes;
-                          return { ...cenario, projecao, atingeMeta: projecao >= vendedor.metaMensal };
-                        });
-                        const cenariosPositivos = cenarios.filter((cenario) => cenario.atingeMeta).length;
-
-                        return (
-                          <AccordionItem
-                            key={String(vendedor.codigo)}
-                            value={String(vendedor.codigo)}
-                            className="commercial-scenario-panel rounded-md border border-border/70 bg-muted/30"
-                          >
-                            <AccordionTrigger className="gap-2 rounded-md px-3 py-2 text-left hover:bg-muted/60 hover:no-underline">
-                              <span className="flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-1">
-                                <span className="text-xs font-semibold">{vendedor.nome}</span>
-                                <Badge variant="outline" className="text-[10px]">
-                                  {cenariosPositivos}/3 cenários atingem a meta
-                                </Badge>
-                                <span className="text-xs font-normal text-muted-foreground lg:ml-auto">
-                                  {formatCurrency(vendedor.faturamentoMesAtual)} de {formatCurrency(vendedor.metaMensal)} · {formatPercent(vendedor.percentualMetaFaturado)}
-                                </span>
-                              </span>
-                            </AccordionTrigger>
-                            <AccordionContent className="grid gap-2 px-2 pb-2 md:grid-cols-3">
-                              {cenarios.map((cenario) => (
-                                <div key={cenario.label} className="min-w-0 rounded-md border bg-background p-2.5 text-xs">
-                                  <p className={cn('mb-1.5 font-semibold', cenario.color)}>{cenario.label}</p>
-                                  <dl className="space-y-1">
-                                    <div className="flex flex-wrap justify-between gap-x-2">
-                                      <dt className="text-muted-foreground">Ritmo/dia útil</dt>
-                                      <dd className="tabular-nums">{formatCurrency(cenario.ritmo)}</dd>
-                                    </div>
-                                    <div className="flex flex-wrap justify-between gap-x-2">
-                                      <dt className="text-muted-foreground">Projeção no fim do mês</dt>
-                                      <dd className="tabular-nums">{formatCurrency(cenario.projecao)}</dd>
-                                    </div>
-                                    <div className="flex justify-between gap-2 border-t pt-1">
-                                      <dt className="text-muted-foreground">Atinge a meta?</dt>
-                                      <dd className={cn('font-semibold', cenario.atingeMeta ? 'text-emerald-600 dark:text-emerald-400' : 'text-destructive')}>
-                                        {cenario.atingeMeta ? 'Sim' : 'Não'}
-                                      </dd>
-                                    </div>
-                                  </dl>
+                          <dl className="dashboard-scenario-options">
+                            {cenarios.map((cenario) => {
+                              const projecao = vendedor.faturamentoMesAtual + cenario.ritmo * diasRestantes;
+                              const atingeMeta = projecao >= vendedor.metaMensal;
+                              return (
+                                <div key={cenario.label} className="dashboard-scenario-option">
+                                  <dt>{cenario.label}</dt>
+                                  <dd>
+                                    <span className="dashboard-scenario-projection">
+                                      <strong>{formatCurrency(projecao)}</strong>
+                                      <span>no fim do mês</span>
+                                    </span>
+                                    <span className="dashboard-scenario-footnote">
+                                      <span>{formatCurrency(cenario.ritmo)} por dia útil</span>
+                                      <span data-goal-tone={temMeta ? atingeMeta ? 'atingida' : 'abaixo' : undefined}>
+                                        {temMeta ? atingeMeta ? 'Atinge a meta' : 'Abaixo da meta' : 'Sem meta'}
+                                      </span>
+                                    </span>
+                                  </dd>
                                 </div>
-                              ))}
-                            </AccordionContent>
-                          </AccordionItem>
-                        );
-                      })}
-                    </Accordion>
-                  ) : (
-                    <p className="rounded-md border border-dashed p-4 text-center text-sm text-muted-foreground">
-                      Nenhum vendedor para o período selecionado.
-                    </p>
-                  )}
-                </PremiumSectionCard>
-              </TabsContent>
-            </Tabs>
+                              );
+                            })}
+                          </dl>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </ComercialDataViewport>
+              ) : (
+                <p className="dashboard-analytics-empty">Nenhum vendedor para o período selecionado.</p>
+              )}
+            </section>
           </div>
         </TabsContent>
 

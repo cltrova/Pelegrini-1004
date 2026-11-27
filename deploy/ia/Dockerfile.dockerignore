@@ -7,4 +7,7 @@
 !supabase/functions/
 !supabase/functions/**/
 !supabase/functions/**/*.ts
+!src/
+!src/utils/
+!src/utils/vendedores1004.ts
 **/*.test.ts

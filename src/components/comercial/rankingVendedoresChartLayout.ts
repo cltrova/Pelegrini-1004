@@ -1,3 +1,5 @@
+export const PELEGRINI_RANKING_PLOT = { left: 64, right: 14 } as const;
+
 export function getRankingVendedoresChartLayout(vendedores: number) {
   const dense = vendedores > 6;
   return {

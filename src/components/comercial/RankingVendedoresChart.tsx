@@ -3,7 +3,7 @@ import { useReducedMotion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { formatCompactNumber, formatCurrency, formatPercent } from '@/utils/formatters';
+import { formatCurrency, formatPercent } from '@/utils/formatters';
 import {
   Trophy, TrendingUp, Flame, Target, ChevronLeft, ChevronRight,
 } from 'lucide-react';
@@ -16,6 +16,7 @@ import {
   resolveMetaReferenciaRankingVendedor,
 } from '@/utils/rankingVendedoresMeta';
 import { RankingVendedoresLabels } from './RankingVendedoresLabels';
+import { PELEGRINI_RANKING_PLOT } from './rankingVendedoresChartLayout';
 
 interface VendedorRow<T> {
   codigo: string | number;
@@ -53,6 +54,7 @@ const STATUS_COLORS: Record<StatusKey, { solid: string }> = {
   abaixo: { solid: 'hsl(142 71% 45%)' },
   default: { solid: 'hsl(var(--primary))' },
 };
+const axisNumberFormat = new Intl.NumberFormat('pt-BR', { notation: 'compact', maximumFractionDigits: 1 });
 
 export function RankingVendedoresChart<T>({ data, periodo, onClick, variant = 'default' }: Props<T>) {
   const [modo, setModo] = useState<Modo>('faturamento');
@@ -87,15 +89,15 @@ export function RankingVendedoresChart<T>({ data, periodo, onClick, variant = 'd
     return enriched.reduce((width, row) => Math.max(width, 8 * formatCurrency(row.mes || 0).length + 12), 84);
   }, [enriched, modo]);
 
-  // Os 70 px correspondem ao eixo vertical e às margens laterais do gráfico.
   const pageSize = isBlue && chartWidth > 0
-    ? Math.max(1, Math.floor((chartWidth - 70) / minColumnWidth))
+    ? Math.max(1, Math.floor((chartWidth - PELEGRINI_RANKING_PLOT.left - PELEGRINI_RANKING_PLOT.right) / minColumnWidth))
     : Math.max(1, enriched.length);
   const lastPage = Math.max(0, Math.ceil(enriched.length / pageSize) - 1);
   const page = Math.min(Math.floor(firstVisibleIndex / pageSize), lastPage);
   const pageStart = page * pageSize;
   const visibleRows = useMemo(() => enriched.slice(pageStart, pageStart + pageSize), [enriched, pageStart, pageSize]);
   const dataKey = modo === 'faturamento' ? 'mes' : 'pctMeta';
+  const highlightedVendor = isBlue && hoverKey ? visibleRows.find((row) => String(row.codigo) === hoverKey) : undefined;
   const domain = useMemo(() => enriched.reduce<[number, number]>(([min, max], row) => [
     Math.min(min, row[dataKey]), Math.max(max, row[dataKey]),
   ], [0, modo === 'meta' ? 100 : 1]), [enriched, dataKey, modo]);
@@ -161,32 +163,31 @@ export function RankingVendedoresChart<T>({ data, periodo, onClick, variant = 'd
           </div>
         </div>
 
-        {/* Mini stat strip */}
-        <div className={cn('grid', isBlue ? 'mt-2 grid-cols-3 gap-1.5' : 'mt-4 grid-cols-1 gap-2 md:grid-cols-3')}>
-          <StatChip
-            icon={<Trophy className={cn('h-3.5 w-3.5', isBlue ? 'text-primary' : 'text-amber-400')} />}
-            label="Líder"
-            value={lider?.nome || '—'}
-            hint={lider ? formatCurrency(lider.mes) : ''}
-            accent={isBlue ? 'bg-muted/25 text-foreground border-border/60' : 'bg-amber-500/10'}
-          />
-          <StatChip
-            icon={<TrendingUp className={cn('h-3.5 w-3.5', isBlue ? 'text-primary' : 'text-violet-400')} />}
-            label="Média por vendedor"
-            shortLabel={isBlue ? 'Média' : undefined}
-            value={formatCurrency(media)}
-            hint={`${enriched.length} vendedor(es)`}
-            accent={isBlue ? 'bg-muted/25 text-foreground border-border/60' : 'bg-violet-500/10'}
-          />
-          <StatChip
-            icon={<Flame className={cn('h-3.5 w-3.5', isBlue ? 'text-primary' : 'text-emerald-400')} />}
-            label="Bateram meta"
-            shortLabel={isBlue ? 'Na meta' : undefined}
-            value={`${acima}/${enriched.length}`}
-            hint={enriched.length ? `${((acima / enriched.length) * 100).toFixed(0)}%` : ''}
-            accent={isBlue ? 'bg-muted/25 text-foreground border-border/60' : 'bg-emerald-500/10'}
-          />
-        </div>
+        {!isBlue && (
+          <div className="mt-4 grid grid-cols-1 gap-2 md:grid-cols-3">
+            <StatChip
+              icon={<Trophy className="size-3.5 text-amber-400" />}
+              label="Líder"
+              value={lider?.nome || '—'}
+              hint={lider ? formatCurrency(lider.mes) : ''}
+              accent="bg-amber-500/10"
+            />
+            <StatChip
+              icon={<TrendingUp className="size-3.5 text-violet-400" />}
+              label="Média por vendedor"
+              value={formatCurrency(media)}
+              hint={`${enriched.length} vendedor(es)`}
+              accent="bg-violet-500/10"
+            />
+            <StatChip
+              icon={<Flame className="size-3.5 text-emerald-400" />}
+              label="Bateram meta"
+              value={`${acima}/${enriched.length}`}
+              hint={enriched.length ? `${((acima / enriched.length) * 100).toFixed(0)}%` : ''}
+              accent="bg-emerald-500/10"
+            />
+          </div>
+        )}
       </CardHeader>
 
       <CardContent className={cn('relative', isBlue && 'flex min-h-0 flex-1 flex-col p-0 px-2.5 pb-2')}>
@@ -205,76 +206,100 @@ export function RankingVendedoresChart<T>({ data, periodo, onClick, variant = 'd
                 <ResponsiveContainer width="100%" height="100%" onResize={isBlue ? setChartWidth : undefined}>
                   <BarChart
                     data={visibleRows}
-                    margin={isBlue ? { top: narrowChart ? 5 : 10, right: 18, left: -8, bottom: 3 } : { top: 24, right: 16, left: 8, bottom: 12 }}
+                    margin={isBlue ? { top: 10, right: PELEGRINI_RANKING_PLOT.right, left: 0, bottom: 3 } : { top: 24, right: 16, left: 8, bottom: 12 }}
+                    accessibilityLayer={isBlue}
+                    onMouseMove={isBlue ? ({ activeTooltipIndex, isTooltipActive }) => {
+                      const vendor = isTooltipActive && activeTooltipIndex !== undefined ? visibleRows[activeTooltipIndex] : undefined;
+                      setHoverKey(vendor ? String(vendor.codigo) : null);
+                    } : undefined}
                     onMouseLeave={() => setHoverKey(null)}
                     barCategoryGap={isBlue ? '22%' : undefined}
                   >
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} opacity={isBlue ? 0.42 : 0.4} />
-                <XAxis
-                  dataKey="nome"
-                  tick={false}
-                  interval={0}
-                  height={narrowChart ? 6 : 12}
-                  stroke="hsl(var(--border))"
-                />
-                <YAxis
-                  stroke="hsl(var(--muted-foreground))"
-                  domain={isBlue && lastPage > 0 ? domain : undefined}
-                  tickCount={narrowChart ? 3 : isBlue ? 4 : undefined}
-                  tick={{ fontSize: isBlue ? 11 : 15, fill: isBlue ? 'hsl(var(--muted-foreground))' : 'currentColor' }}
-                  tickFormatter={(v) => modo === 'faturamento' ? (isBlue ? formatCompactNumber(v) : compactCurrency(v)) : `${v}%`}
-                />
-                <RTooltip
-                  cursor={{ fill: 'hsl(var(--muted) / 0.35)', radius: 8 }}
-                  content={<CustomTooltip modo={modo} variant={variant} />}
-                  isAnimationActive={!reduceMotion}
-                />
+                    <CartesianGrid
+                      strokeDasharray={isBlue ? '2 4' : '3 3'}
+                      stroke={isBlue ? 'hsl(var(--muted-foreground) / 0.32)' : 'hsl(var(--border))'}
+                      vertical={false}
+                      opacity={isBlue ? 1 : 0.4}
+                    />
+                    <XAxis
+                      dataKey="nome"
+                      tick={false}
+                      interval={0}
+                      height={narrowChart ? 6 : 12}
+                      stroke="hsl(var(--border))"
+                    />
+                    <YAxis
+                      stroke="hsl(var(--muted-foreground))"
+                      width={isBlue ? PELEGRINI_RANKING_PLOT.left : undefined}
+                      axisLine={isBlue ? false : undefined}
+                      tickLine={isBlue ? { stroke: 'hsl(var(--muted-foreground) / 0.7)' } : undefined}
+                      tickSize={isBlue ? 4 : undefined}
+                      tickMargin={isBlue ? 7 : undefined}
+                      domain={isBlue && lastPage > 0 ? domain : undefined}
+                      tickCount={narrowChart ? 3 : isBlue ? 4 : undefined}
+                      tick={{ fontSize: isBlue ? 11 : 15, fill: isBlue ? 'hsl(var(--muted-foreground))' : 'currentColor' }}
+                      tickFormatter={(v: number) => modo === 'faturamento' ? (isBlue ? axisNumberFormat.format(v) : compactCurrency(v)) : formatPercent(v)}
+                    />
+                    <RTooltip
+                      cursor={{ fill: isBlue ? 'hsl(var(--primary) / 0.08)' : 'hsl(var(--muted) / 0.35)', radius: 4 }}
+                      content={<CustomTooltip modo={modo} variant={variant} />}
+                      isAnimationActive={!reduceMotion}
+                    />
 
-                {modo === 'meta' && (
-                  <ReferenceLine
-                    y={100}
-                    stroke="hsl(var(--foreground))"
-                    strokeDasharray="4 4"
-                    strokeOpacity={0.5}
-                    label={{ value: 'Meta 100%', position: 'insideTopRight', fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
-                  />
-                )}
-                {modo === 'faturamento' && media > 0 && (
-                  <ReferenceLine
-                    y={media}
-                    stroke={isBlue ? '#2563eb' : 'hsl(var(--primary))'}
-                    strokeDasharray="4 4"
-                    strokeOpacity={0.55}
-                    label={{ value: isBlue ? 'Média' : `Média ${compactCurrency(media)}`, position: 'insideTopRight', fill: 'hsl(var(--primary))', fontSize: 12 }}
-                  />
-                )}
-
-                <Bar
-                  dataKey={dataKey}
-                  radius={isBlue ? [4, 4, 0, 0] : [10, 10, 4, 4]}
-                  maxBarSize={isBlue ? 80 : undefined}
-                  onMouseOver={(d: EnrichedVendedorRow) => setHoverKey(String(d.codigo))}
-                  onClick={(d: EnrichedVendedorRow<T>) => onClick?.(d._row)}
-                  animationDuration={220}
-                  isAnimationActive={!reduceMotion}
-                  cursor={onClick ? 'pointer' : undefined}
-                >
-                  {visibleRows.map((v) => {
-                    const key = paletteKey(v, modo);
-                    const isHover = hoverKey === String(v.codigo);
-                    const dim = hoverKey && !isHover;
-                    return (
-                      <Cell
-                        key={String(v.codigo)}
-                        className={isBlue ? 'dashboard-ranking-bar' : undefined}
-                        fill={isBlue ? 'hsl(var(--primary))' : STATUS_COLORS[key].solid}
-                        opacity={dim ? 0.35 : 1}
-                        stroke={isHover ? 'hsl(var(--foreground))' : 'transparent'}
-                        strokeWidth={isHover ? 1.5 : 0}
+                    {modo === 'meta' && (
+                      <ReferenceLine
+                        y={100}
+                        stroke="hsl(var(--foreground))"
+                        strokeDasharray="4 4"
+                        strokeOpacity={0.5}
+                        label={{ value: 'Meta 100%', position: 'insideTopRight', fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
                       />
-                    );
-                  })}
-                </Bar>
+                    )}
+                    {modo === 'faturamento' && media > 0 && (
+                      <ReferenceLine
+                        y={media}
+                        stroke="hsl(var(--primary))"
+                        strokeDasharray="4 4"
+                        strokeOpacity={0.55}
+                        label={{ value: isBlue ? 'Média' : `Média ${compactCurrency(media)}`, position: 'insideTopRight', fill: 'hsl(var(--primary))', fontSize: 12 }}
+                      />
+                    )}
+
+                    <Bar
+                      dataKey={dataKey}
+                      radius={isBlue ? [4, 4, 0, 0] : [10, 10, 4, 4]}
+                      maxBarSize={isBlue ? 80 : undefined}
+                      onMouseOver={isBlue ? undefined : (d: EnrichedVendedorRow) => setHoverKey(String(d.codigo))}
+                      onClick={(d: EnrichedVendedorRow<T>) => onClick?.(d._row)}
+                      animationDuration={220}
+                      isAnimationActive={!reduceMotion}
+                      cursor={onClick ? 'pointer' : undefined}
+                    >
+                      {visibleRows.map((v) => {
+                        const key = paletteKey(v, modo);
+                        const isHover = hoverKey === String(v.codigo);
+                        const dim = hoverKey && !isHover;
+                        return (
+                          <Cell
+                            key={String(v.codigo)}
+                            className={isBlue ? 'dashboard-ranking-bar' : undefined}
+                            fill={isBlue ? 'hsl(var(--primary))' : STATUS_COLORS[key].solid}
+                            opacity={dim ? 0.35 : 1}
+                            stroke={isHover ? 'hsl(var(--foreground))' : 'transparent'}
+                            strokeWidth={isHover ? 1.5 : 0}
+                          />
+                        );
+                      })}
+                    </Bar>
+                    {highlightedVendor && (
+                      <ReferenceLine
+                        className="dashboard-ranking-guide"
+                        y={highlightedVendor[dataKey]}
+                        stroke="hsl(var(--primary))"
+                        strokeWidth={1.25}
+                        pointerEvents="none"
+                      />
+                    )}
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -374,8 +399,8 @@ function Row({ label, value, strong, accent }: { label: string; value: string; s
 }
 
 function StatChip({
-  icon, label, shortLabel, value, hint, accent,
-}: { icon: React.ReactNode; label: string; shortLabel?: string; value: string; hint?: string; accent: string }) {
+  icon, label, value, hint, accent,
+}: { icon: React.ReactNode; label: string; value: string; hint?: string; accent: string }) {
   return (
     <div className={cn(
       'dashboard-ranking-stat relative rounded-lg border border-border/50 px-3 py-2 overflow-hidden',
@@ -383,8 +408,7 @@ function StatChip({
     )}>
       <div className="dashboard-ranking-stat-heading flex items-center gap-1.5 text-[10px] uppercase tracking-[0.14em] text-muted-foreground font-medium" title={label}>
         {icon}
-        <span className={shortLabel ? 'dashboard-ranking-stat-full' : undefined}>{label}</span>
-        {shortLabel && <span className="dashboard-ranking-stat-short hidden">{shortLabel}</span>}
+        <span>{label}</span>
       </div>
       <div className="dashboard-ranking-stat-value mt-0.5 truncate font-mono text-sm font-bold" title={value}>{value}</div>
       {hint && <div className="dashboard-ranking-stat-hint truncate text-[10px] text-muted-foreground">{hint}</div>}

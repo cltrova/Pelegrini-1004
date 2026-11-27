@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { postAiJson, streamAi } from './aiApi';
+import { getDailyCommercialInsights, postAiJson, streamAi } from './aiApi';
 
 const { getSession } = vi.hoisted(() => ({ getSession: vi.fn() }));
 
@@ -63,9 +63,21 @@ describe('browser AI API', () => {
     fetchMock.mockResolvedValueOnce(Response.json({ error: 'Tente novamente' }, { status: 429 }));
     fetchMock.mockResolvedValueOnce(new Response('Unavailable', { status: 502 }));
 
-    await expect(postAiJson('metas-insights', {})).resolves.toEqual({ error: 'Sem dados' });
-    await expect(postAiJson('metas-insights', {})).rejects.toThrow('Tente novamente');
-    await expect(postAiJson('metas-insights', {})).rejects.toThrow('502');
+    await expect(postAiJson('campanhas-insights', {})).resolves.toEqual({ error: 'Sem dados' });
+    await expect(postAiJson('campanhas-insights', {})).rejects.toThrow('Tente novamente');
+    await expect(postAiJson('campanhas-insights', {})).rejects.toThrow('502');
+  });
+
+  it('lê as análises prontas da filial usando a sessão, sem enviar dados ao servidor', async () => {
+    const snapshot = { dia: '2026-11-27', periodo: { inicio: '2026-11-01', fim: '2026-11-26' }, insights: [] };
+    fetchMock.mockResolvedValueOnce(Response.json({ snapshot }));
+
+    await expect(getDailyCommercialInsights('chevrolet')).resolves.toEqual(snapshot);
+    const [url, request] = fetchMock.mock.calls[0];
+    expect(url).toBe('/api/ia/metas-insights-chevrolet');
+    expect(request?.method).toBe('GET');
+    expect(request?.body).toBeUndefined();
+    expect(new Headers(request?.headers).get('authorization')).toBe('Bearer portal-token');
   });
 
   it('delivers split UTF-8 deltas and tool actions before completion and stops at [DONE]', async () => {

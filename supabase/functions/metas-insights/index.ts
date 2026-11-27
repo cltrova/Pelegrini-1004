@@ -28,7 +28,7 @@ export async function handleAiRequest(req: Request): Promise<Response> {
       meta_esperada: v.metaEsperada,
     }));
 
-    const prompt = `Você é um analista comercial sênior. Analise os dados abaixo e gere de 4 a 6 insights práticos, curtos (máx 2 linhas cada), em português, focados em ação. Use emojis sutis. Destaque: vendedores em risco, oportunidades, ritmo necessário, próximos a bater meta, líderes e quem precisa de atenção.
+    const prompt = `Você é um analista comercial. Escreva de 4 a 6 análises curtas, em português do Brasil, para o gestor. Use títulos de até 70 caracteres e uma frase de até 220 caracteres por descrição. Baseie cada análise nos números informados e sugira uma ação concreta. Respeite o período e a fonte. Não invente métricas, tendências, resultados ou causas. Use ícones somente na interface, mantenha o texto sem emojis.
 
 KPIs Gerais:
 ${JSON.stringify(kpis, null, 2)}
@@ -49,6 +49,7 @@ Responda APENAS com JSON válido no formato: {"insights":[{"tipo":"alerta|oportu
         messages: [{ role: "user", content: prompt }],
         response_format: { type: "json_object" },
       }),
+      signal: req.signal,
     });
 
     if (!resp.ok) {
@@ -77,8 +78,8 @@ Responda APENAS com JSON válido no formato: {"insights":[{"tipo":"alerta|oportu
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
-    console.error("metas-insights error:", e);
-    return new Response(JSON.stringify({ insights: [], error: String(e) }), {
+    console.error("metas-insights error:", e instanceof Error ? e.name : "unknown");
+    return new Response(JSON.stringify({ insights: [], error: "IA indisponível" }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

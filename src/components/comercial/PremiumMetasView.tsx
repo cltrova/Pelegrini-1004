@@ -20,7 +20,9 @@ import { cn } from '@/lib/utils';
 import { formatCurrency, formatPercent, formatCompactNumber } from '@/utils/formatters';
 import { getDiasUteisNoMes } from '@/types/comercial';
 import { ComercialMetricStrip } from '@/components/comercial/compact';
-import { DashboardGoalRing } from './DashboardOverviewManagement';
+import { DashboardMeter, getTeamGoalStatus } from './DashboardOverviewManagement';
+import { InsightsIATab } from './InsightsIATab';
+import type { InsightsBranch } from '../../../services/ia/daily-insight-types';
 
 /** Converte valores em formato brasileiro ("R$ 61.000,00", "61.000,00") para number puro. */
 function parseBRLToNumber(value: unknown): number {
@@ -75,6 +77,7 @@ function getReceitaPedido(p: PedidoMin): number {
 
 interface Props {
   compactDashboard?: boolean;
+  filialAnalises?: InsightsBranch;
   vendedoresComMeta: VendedorComMeta[];
   pedidos: PedidoMin[];
   kpisGerais: {
@@ -115,6 +118,7 @@ const MES_NOMES = [
 
 export function PremiumMetasView({
   compactDashboard = false,
+  filialAnalises,
   vendedoresComMeta,
   pedidos,
   kpisGerais,
@@ -127,11 +131,12 @@ export function PremiumMetasView({
   const [chartView, setChartView] = useState<ChartView>('diario');
   const reduceMotion = useReducedMotion();
 
-  const pedidosNoPeriodo = useMemo(() => {
-    const inicioMes = `${periodoFiltros.ano}-${String(periodoFiltros.mes).padStart(2, '0')}-01`;
-    const fimMes = `${periodoFiltros.ano}-${String(periodoFiltros.mes).padStart(2, '0')}-${String(new Date(periodoFiltros.ano, periodoFiltros.mes, 0).getDate()).padStart(2, '0')}`;
-    return filtrarPedidosPorPeriodo(pedidos, periodoAplicado || { inicio: inicioMes, fim: fimMes });
-  }, [pedidos, periodoAplicado, periodoFiltros]);
+  const periodo = useMemo(() => {
+    const mes = `${periodoFiltros.ano}-${String(periodoFiltros.mes).padStart(2, '0')}`;
+    const ultimoDia = new Date(periodoFiltros.ano, periodoFiltros.mes, 0).getDate();
+    return periodoAplicado ?? { inicio: `${mes}-01`, fim: `${mes}-${ultimoDia}` };
+  }, [periodoAplicado, periodoFiltros]);
+  const pedidosNoPeriodo = useMemo(() => filtrarPedidosPorPeriodo(pedidos, periodo), [pedidos, periodo]);
 
   // Lista de vendedores (somente os com meta ou venda)
   const vendedoresLista = useMemo(() => {
@@ -539,11 +544,13 @@ export function PremiumMetasView({
   );
 
   const periodSignals = (
-    <div>
-      <div className="flex items-center gap-2 mb-2">
-        <TrendingDown className="h-4 w-4 text-primary" />
-        <span className="text-xs font-semibold text-foreground">Sinais do período</span>
-      </div>
+    <div className={compactDashboard ? 'contents' : undefined}>
+      {!compactDashboard && (
+        <div className="mb-2 flex items-center gap-2">
+          <TrendingDown className="h-4 w-4 text-primary" />
+          <span className="text-xs font-semibold text-foreground">Sinais do período</span>
+        </div>
+      )}
       <div className={cn('grid grid-cols-1 md:grid-cols-3 gap-3', compactDashboard && 'dashboard-detail-signals')}>
         {insights.map((ins, i) => {
           const Icon = ins.icon;
@@ -934,7 +941,7 @@ export function PremiumMetasView({
   );
 
   const overallAverages = (
-    <Card className={cn('commercial-dashboard-panel commercial-chart-frame', compactDashboard ? 'dashboard-frame dashboard-detail-average-panel' : 'lg:col-span-5')}>
+    <Card className={cn('commercial-dashboard-panel commercial-chart-frame', compactDashboard ? 'dashboard-frame dashboard-detail-average-panel dashboard-detail-monthly-averages' : 'lg:col-span-5')}>
       <CardHeader className={compactDashboard ? 'dashboard-detail-average-header space-y-0 p-0' : 'pb-2'}>
         <CardTitle className="text-base">Média Mensal Geral</CardTitle>
         <p className="text-xs text-muted-foreground">Faturamento e meta por período · evolução vs mesmo mês ano anterior</p>
@@ -1008,49 +1015,65 @@ export function PremiumMetasView({
   );
 
   if (compactDashboard) {
+    const temMeta = totais.metaTotal > 0;
+    const percentual = temMeta ? formatPercent(totais.percentual) : null;
     const gap = totais.valorTotal - totais.metaTotal;
     return (
       <div className="dashboard-details-dashboard">
         {metrics}
-        <div className="dashboard-detail-main">
-          {salesChart}
-          <section className="dashboard-frame dashboard-detail-goal" aria-label="Resumo da meta">
-            <header className="dashboard-panel-heading">
-              <h3><Target aria-hidden="true" /> Resumo da meta</h3>
-              <Select
-                value={vendedorFoco ?? 'todos'}
-                onValueChange={(value) => setVendedorFoco(value === 'todos' ? null : value)}
-              >
-                <SelectTrigger aria-label="Destacar vendedor" className="h-8 w-40 max-w-full min-w-0 text-xs [&>span]:truncate">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="commercial-overlay">
-                  <SelectItem value="todos">Todos os vendedores</SelectItem>
-                  {vendedoresLista.map((vendedor) => (
-                    <SelectItem key={String(vendedor.codigo)} value={String(vendedor.codigo)}>{vendedor.nome}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </header>
-            <div className="dashboard-detail-goal-body">
-              <DashboardGoalRing percent={totais.metaTotal > 0 ? totais.percentual : null} />
-              <dl className="dashboard-detail-goal-readings">
-                <div><dt>Valor realizado</dt><dd>{formatCurrency(totais.valorTotal)}</dd></div>
-                <div><dt>Meta total</dt><dd>{totais.metaTotal > 0 ? formatCurrency(totais.metaTotal) : '—'}</dd></div>
-                {totais.metaTotal > 0 && (
-                  <div>
-                    <dt>{gap < 0 ? 'Falta para a meta' : 'Acima da meta'}</dt>
-                    <dd className={gap < 0 ? 'text-destructive' : 'text-success'}>{formatCurrency(Math.abs(gap))}</dd>
-                  </div>
-                )}
-              </dl>
-            </div>
-          </section>
-        </div>
-        {periodSignals}
-        <div className="dashboard-detail-averages">
-          {sellerAverages}
-          {overallAverages}
+        <InsightsIATab filial={vendedorFoco ? undefined : filialAnalises} periodo={periodo}>
+          {periodSignals}
+        </InsightsIATab>
+        <div className="dashboard-detail-grid">
+          <div className="dashboard-detail-column">
+            <section
+              className="dashboard-frame dashboard-detail-goal"
+              aria-label="Resumo da meta"
+              data-goal-tone={temMeta ? getTeamGoalStatus(totais.percentual) : undefined}
+            >
+              <header className="dashboard-panel-heading">
+                <h3><Target aria-hidden="true" /> Resumo da meta</h3>
+                <Select
+                  value={vendedorFoco ?? 'todos'}
+                  onValueChange={(value) => setVendedorFoco(value === 'todos' ? null : value)}
+                >
+                  <SelectTrigger aria-label="Destacar vendedor" className="h-8 w-44 max-w-full min-w-0 text-xs [&>span]:truncate">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="commercial-overlay">
+                    <SelectItem value="todos">Todos os vendedores</SelectItem>
+                    {vendedoresLista.map((vendedor) => (
+                      <SelectItem key={String(vendedor.codigo)} value={String(vendedor.codigo)}>{vendedor.nome}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </header>
+              <div className="dashboard-detail-goal-body">
+                <div className="dashboard-detail-goal-progress">
+                  <p>
+                    <span>{temMeta ? 'Atingimento da meta' : 'Sem meta cadastrada'}</span>
+                    {percentual && <strong>{percentual}</strong>}
+                  </p>
+                  {percentual && <DashboardMeter percent={totais.percentual} label={`${percentual} da meta atingida`} />}
+                </div>
+                <dl className="dashboard-detail-goal-readings">
+                  <div><dt>Valor realizado</dt><dd>{formatCurrency(totais.valorTotal)}</dd></div>
+                  <div><dt>Meta total</dt><dd>{temMeta ? formatCurrency(totais.metaTotal) : '—'}</dd></div>
+                  {temMeta && (
+                    <div>
+                      <dt>{gap < 0 ? 'Falta para a meta' : gap > 0 ? 'Acima da meta' : 'Meta atingida'}</dt>
+                      <dd className={gap < 0 ? 'text-destructive' : 'text-success'}>{formatCurrency(Math.abs(gap))}</dd>
+                    </div>
+                  )}
+                </dl>
+              </div>
+            </section>
+            {salesChart}
+          </div>
+          <div className="dashboard-detail-column">
+            {sellerAverages}
+            {overallAverages}
+          </div>
         </div>
       </div>
     );

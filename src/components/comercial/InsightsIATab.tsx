@@ -1,117 +1,61 @@
-import { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { BarChart3, AlertTriangle, TrendingUp, Info, CheckCircle2, RefreshCw } from 'lucide-react';
-import { postAiJson } from '@/lib/aiApi';
+import type { ReactNode } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { AlertTriangle, TrendingUp, Info, CheckCircle2 } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { getDailyCommercialInsights } from '@/lib/aiApi';
 import { cn } from '@/lib/utils';
-import { toast } from 'sonner';
-import { LoadingIndicator, LoadingState } from '@/components/common/LoadingState';
-
-interface Insight {
-  tipo: 'alerta' | 'oportunidade' | 'info' | 'sucesso';
-  titulo: string;
-  descricao: string;
-}
+import { formatCalendarDate } from '@/utils/formatters';
+import type { InsightsBranch } from '../../../services/ia/daily-insight-types';
 
 interface Props {
-  vendedores: unknown[];
-  kpis: Record<string, unknown>;
+  filial?: InsightsBranch;
+  periodo: { inicio: string; fim: string };
+  children?: ReactNode;
 }
 
 const tipoConfig = {
-  alerta: { icon: AlertTriangle, color: 'text-rose-500', bg: 'bg-rose-500/10 border-rose-500/20' },
-  oportunidade: { icon: TrendingUp, color: 'text-emerald-500', bg: 'bg-emerald-500/10 border-emerald-500/20' },
-  sucesso: { icon: CheckCircle2, color: 'text-emerald-500', bg: 'bg-emerald-500/10 border-emerald-500/20' },
-  info: { icon: Info, color: 'text-sky-500', bg: 'bg-sky-500/10 border-sky-500/20' },
+  alerta: { icon: AlertTriangle, color: 'text-destructive' },
+  oportunidade: { icon: TrendingUp, color: 'text-success' },
+  sucesso: { icon: CheckCircle2, color: 'text-success' },
+  info: { icon: Info, color: 'text-primary' },
 };
 
-export function InsightsIATab({ vendedores, kpis }: Props) {
-  const [insights, setInsights] = useState<Insight[] | null>(null);
-  const [loading, setLoading] = useState(false);
-  const hasRenderedData = insights !== null;
-  const showInitialLoading = loading && !hasRenderedData;
-  const isRefreshing = loading && hasRenderedData;
-
-  const gerarInsights = async () => {
-    setLoading(true);
-    try {
-      const data = await postAiJson<{ insights?: Insight[]; error?: string }>('metas-insights', { vendedores, kpis });
-      if (data?.error) {
-        toast.error(data.error);
-      }
-      setInsights(data?.insights || []);
-    } catch (e: unknown) {
-      console.error(e);
-      toast.error('Falha ao gerar análises');
-      setInsights([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  if (!insights && !loading) {
-    return (
-      <div className="commercial-dashboard-panel flex min-h-48 flex-col items-center justify-center rounded-md border border-border/70 bg-card p-6 text-center">
-        <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-md bg-muted">
-          <BarChart3 className="h-5 w-5 text-primary" />
-        </div>
-        <h3 className="mb-1 text-sm font-semibold">Análises comerciais</h3>
-        <p className="mb-4 max-w-md text-xs text-muted-foreground">
-          Consulte oportunidades e pontos de atenção com base no desempenho do período.
-        </p>
-        <Button onClick={gerarInsights} size="sm">
-          <BarChart3 className="mr-2 h-4 w-4" />
-          Gerar análises
-        </Button>
-      </div>
-    );
-  }
-
-  if (showInitialLoading) {
-    return <LoadingState message="Carregando análises comerciais" variant="content" className="min-h-48" />;
-  }
+export function InsightsIATab({ filial, periodo, children }: Props) {
+  const { user } = useAuth();
+  const { data } = useQuery({
+    queryKey: ['analises-comerciais-diarias', user?.id, filial],
+    queryFn: ({ signal }) => filial ? getDailyCommercialInsights(filial, signal) : null,
+    enabled: Boolean(user && filial),
+    staleTime: 5 * 60_000,
+    refetchInterval: 15 * 60_000,
+    retry: false,
+  });
+  const snapshot = filial && user && data && data.periodo.inicio === periodo.inicio && data.periodo.fim <= periodo.fim ? data : null;
 
   return (
-    <div className="space-y-2">
-      <div className="flex justify-between items-center">
-        <div className="flex items-center gap-2">
-          <BarChart3 className="h-4 w-4 text-primary" />
-          <h3 className="text-sm font-semibold">Análises comerciais</h3>
-        </div>
-        <Button variant="outline" size="sm" onClick={gerarInsights} disabled={loading}>
-          {isRefreshing ? <LoadingIndicator size="sm" className="mr-2" /> : <RefreshCw className={cn('h-4 w-4 mr-2')} />}
-          {isRefreshing ? 'Atualizando' : 'Atualizar'}
-        </Button>
-      </div>
-
-      {insights && insights.length === 0 ? (
-        <div className="commercial-dashboard-panel border border-border/60 bg-card py-10 text-center text-muted-foreground">
-          Nenhum insight foi gerado. Tente novamente.
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
-          {insights?.map((ins, i) => {
-            const cfg = tipoConfig[ins.tipo] || tipoConfig.info;
-            const Icon = cfg.icon;
-            return (
-              <article
-                key={i}
-                className={cn(
-                  'commercial-dashboard-panel rounded-md border border-border/60 p-3 shadow-none transition-colors hover:border-primary/30 hover:bg-muted/30',
-                  cfg.bg,
-                )}
-              >
-                <div className="flex items-start gap-3">
-                  <Icon className={cn('h-5 w-5 mt-0.5 shrink-0', cfg.color)} />
-                  <div className="min-w-0 flex-1">
-                    <h4 className="font-semibold text-sm mb-1">{ins.titulo}</h4>
-                    <p className="commercial-insight-action whitespace-normal break-words text-sm text-muted-foreground">{ins.descricao}</p>
+    <section className="dashboard-detail-insights" aria-label="Indicadores e análises diárias">
+      {children}
+      {snapshot && snapshot.insights.length > 0 && (
+        <>
+          <div className="dashboard-detail-generated-insights">
+            {snapshot.insights.map((insight, index) => {
+              const { icon: Icon, color } = tipoConfig[insight.tipo] ?? tipoConfig.info;
+              return (
+                <article key={index} className="dashboard-frame dashboard-detail-generated-insight p-2 text-xs">
+                  <Icon aria-hidden="true" className={cn('mt-0.5 size-4 shrink-0', color)} />
+                  <div className="min-w-0">
+                    <h4 className="font-semibold">{insight.titulo}</h4>
+                    <p className="commercial-insight-action break-words text-muted-foreground">{insight.descricao}</p>
                   </div>
-                </div>
-              </article>
-            );
-          })}
-        </div>
+                </article>
+              );
+            })}
+          </div>
+          <p className="text-right text-xs text-muted-foreground">
+            Comissões do RSYS até <time dateTime={snapshot.periodo.fim}>{formatCalendarDate(snapshot.periodo.fim)}</time>
+          </p>
+        </>
       )}
-    </div>
+    </section>
   );
 }

@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { useIsFetching } from '@tanstack/react-query';
+import { useIsFetching, useQuery } from '@tanstack/react-query';
 import { useComercialData } from '@/hooks/useComercialData';
 import { CampanhasTab } from '@/components/comercial/CampanhasTab';
 import { InsightsIATab } from '@/components/comercial/InsightsIATab';
@@ -17,11 +17,11 @@ const {
   filialState,
   fetchingState,
   insightsQueryState,
+  dailyInsightsState,
   produtosState,
   produtosTotalizadoresState,
   produtosFiltroState,
   totaisState,
-  supabaseInvoke,
 } = vi.hoisted(() => ({
   campanhasState: {
     value: {
@@ -42,6 +42,11 @@ const {
   },
   fetchingState: { value: 0 },
   insightsQueryState: { value: { data: [], isFetching: false } },
+  dailyInsightsState: { data: null as {
+    dia: string;
+    periodo: { inicio: string; fim: string };
+    insights: { tipo: string; titulo: string; descricao: string }[];
+  } | null },
   produtosState: {
     value: {
       produtos: [],
@@ -59,7 +64,6 @@ const {
   produtosTotalizadoresState: { value: {} as Record<string, unknown> },
   produtosFiltroState: { value: {} as Record<string, unknown> },
   totaisState: { value: {} as Record<string, unknown> },
-  supabaseInvoke: vi.fn(),
 }));
 
 vi.mock('@tanstack/react-query', async (importOriginal) => {
@@ -67,7 +71,7 @@ vi.mock('@tanstack/react-query', async (importOriginal) => {
   return {
     ...actual,
     useIsFetching: vi.fn(),
-    useQuery: vi.fn(() => insightsQueryState.value),
+    useQuery: vi.fn(({ queryKey }) => queryKey[0] === 'analises-comerciais-diarias' ? dailyInsightsState : insightsQueryState.value),
     useQueryClient: () => ({ invalidateQueries: vi.fn() }),
   };
 });
@@ -96,9 +100,7 @@ vi.mock('@/components/comercial/VisaoGeralRapida1004', () => ({
 }));
 vi.mock('@/components/comercial/ReceitaDetalheDialog', () => ({ ReceitaDetalheDialog: () => null }));
 vi.mock('@/components/comercial/VendedorDetailsDialog', () => ({ VendedorDetailsDialog: () => null }));
-vi.mock('@/integrations/supabase/client', () => ({
-  supabase: { functions: { invoke: supabaseInvoke } },
-}));
+vi.mock('@/lib/aiApi', () => ({ getDailyCommercialInsights: vi.fn() }));
 vi.mock('recharts', async (importOriginal) => {
   const actual = await importOriginal<typeof import('recharts')>();
   return {
@@ -174,6 +176,7 @@ describe('MetasVendedoresPage commercial dashboard', () => {
     const trigger = screen.getByRole('button', { name: 'Expandir filtros' });
     expect(tabs.parentElement?.parentElement).toContainElement(trigger);
     expect(tabs.compareDocumentPosition(trigger) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(within(trigger).queryByText(/^\d+$/)).not.toBeInTheDocument();
 
     fireEvent.click(trigger);
     const panel = await screen.findByRole('dialog', { name: 'Filtros comerciais' });
@@ -187,7 +190,7 @@ describe('MetasVendedoresPage commercial dashboard', () => {
     expect(vi.mocked(useComercialData).mock.lastCall?.[0]?.anos).toEqual(['2025', '2026']);
   });
 
-  it.each(['Detalhes', 'Ranking', 'Comparativos'])('mantém o filtro à direita das abas em %s', async (name) => {
+  it.each(['Detalhes', 'Comparativos'])('mantém o filtro à direita das abas em %s', async (name) => {
     render(<MetasVendedoresPage />);
 
     const dashboard = await screen.findByRole('tablist', { name: 'Dashboard comercial' });
@@ -444,35 +447,86 @@ describe('MetasVendedoresPage commercial dashboard', () => {
     expect(screen.queryByText('Análises executivas')).not.toBeInTheDocument();
   });
 
-  it('usa uma estrutura neutra para os cenarios dentro da secao premium', async () => {
+  it('mostra os três cenários de cada vendedor diretamente na lista', async () => {
     sessionStorage.setItem('comercial:metas:tab', 'comparativos');
+    const vendedores = ['DANIEL', 'ELIANA', 'MARCOS', 'ANA', 'PEDRO', 'JULIA']
+      .map((nome, index) => ({ nome, codigo: 90 + index }));
     vi.mocked(useComercialData).mockReturnValue({
       ...comercialData,
-      vendedoresPerformance: [{ codigo: 98, nome: 'DANIEL' }],
-      pedidos: [{
-        vendedor_codigo: 98,
-        vendedor_nome: 'DANIEL',
+      vendedoresPerformance: vendedores,
+      pedidos: vendedores.slice(0, 5).map(({ nome, codigo }) => ({
+        vendedor_codigo: codigo,
+        vendedor_nome: nome,
         data_faturamento: '2026-06-05',
         valor_liquido_final: 1000,
         valor_bruto: 1000,
         meta_vendedor: 2000,
         tipo: 'PEDIDO',
-      }],
+      })),
     } as ReturnType<typeof useComercialData>);
 
     render(<MetasVendedoresPage />);
-    const scenarios = await screen.findByRole('tab', { name: 'Cenários' });
-    const summary = screen.getByRole('region', { name: 'Resumo de comparativos' });
-    expect(within(summary).getByRole('heading', { name: 'Faturado no período' })).toBeVisible();
-    expect(scenarios).toHaveAttribute('aria-selected', 'false');
-    fireEvent.mouseDown(scenarios, { button: 0 });
-    expect(summary).toBeVisible();
-    const section = (await screen.findByText(/Se mantiver ritmo atual/)).closest('.commercial-dashboard-panel');
-    expect(section).not.toBeNull();
-    expect(screen.queryByText('Projeções por Cenário - Vai Bater a Meta?')).not.toBeInTheDocument();
-    expect(screen.queryByText('Análise de cada vendedor com base em diferentes cenários de performance')).not.toBeInTheDocument();
-    expect(section?.querySelector('.commercial-scenario-panel')).toBeInTheDocument();
-    expect(section?.querySelectorAll('.bg-card')).toHaveLength(0);
+    const section = await screen.findByRole('region', { name: 'Cenários' });
+    expect(screen.queryByRole('tab', { name: 'Desempenho' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('tab', { name: 'Cenários' })).not.toBeInTheDocument();
+    expect(within(section).queryByRole('heading', { name: 'Cenários' })).not.toBeInTheDocument();
+    expect(within(section).queryByText(/Projeção até o fim do mês pelo ritmo atual/)).not.toBeInTheDocument();
+    expect(within(section).queryByRole('button')).not.toBeInTheDocument();
+    expect(within(section).getByRole('list')).toHaveClass('dashboard-seller-list');
+    expect(within(section).getAllByRole('listitem')).toHaveLength(6);
+    for (const { nome } of vendedores) {
+      const heading = within(section).getByRole('heading', { name: nome });
+      expect(heading).toBeVisible();
+      const seller = within(heading.closest('li')!);
+      expect(seller.getByText('Ritmo atual', { exact: true })).toBeVisible();
+      expect(seller.getByText('+5% no ritmo diário', { exact: true })).toBeVisible();
+      expect(seller.getByText('+10% no ritmo diário', { exact: true })).toBeVisible();
+    }
+    const sellerWithoutGoal = within(section).getByRole('heading', { name: 'JULIA' }).closest('li')!;
+    expect(within(sellerWithoutGoal).getAllByText('Sem meta', { exact: true })).toHaveLength(3);
+  });
+
+  it('exibe os detalhes e a situação da meta até hoje de cada vendedor', async () => {
+    sessionStorage.setItem('comercial:metas:tab', 'metas-diarias');
+    const vendedores = [
+      { codigo: 90, nome: 'DANIEL', realizado: 1700, meta: 2000, aviso: 'Abaixo da meta' },
+      { codigo: 91, nome: 'JULIA', realizado: 250, meta: 0, aviso: 'Sem meta cadastrada' },
+      { codigo: 92, nome: 'ALINE', realizado: 2200, meta: 2000, aviso: 'Acima da meta' },
+      { codigo: 93, nome: 'RAFAEL', realizado: 1900, meta: 2000, aviso: 'Próximo da meta' },
+      { codigo: 94, nome: 'ELIANA', realizado: 2000, meta: 2000, aviso: 'Meta atingida' },
+    ];
+    vi.mocked(useComercialData).mockReturnValue({
+      ...comercialData,
+      vendedoresPerformance: vendedores.map(({ codigo, nome }) => ({ codigo, nome })),
+      pedidos: vendedores.map(({ codigo, nome, realizado, meta }) => ({
+        vendedor_codigo: codigo,
+        vendedor_nome: nome,
+        data_pedido: '2026-06-05',
+        data_faturamento: '2026-06-05',
+        valor_liquido: realizado,
+        valor_liquido_final: realizado,
+        valor_bruto: realizado,
+        meta_vendedor: meta,
+        status: 'faturado',
+        tipo: 'PEDIDO',
+      })),
+    } as ReturnType<typeof useComercialData>);
+
+    render(<MetasVendedoresPage />);
+
+    const list = await screen.findByRole('region', { name: 'Metas por vendedor' });
+    expect(screen.queryByRole('heading', { name: 'Metas diárias' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: 'Resumo das metas diárias' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: 'Indicadores de metas diárias' })).not.toBeInTheDocument();
+    expect(within(list).queryByRole('button')).not.toBeInTheDocument();
+    expect(within(list).getByRole('list')).toHaveClass('dashboard-seller-list');
+    expect(within(list).getAllByRole('listitem')).toHaveLength(vendedores.length);
+    for (const { nome, aviso } of vendedores) {
+      const heading = within(list).getByRole('heading', { name: nome });
+      const row = within(heading.closest('li')!);
+      expect(row.getByText(aviso)).toBeVisible();
+      expect(row.getByText('Média por dia')).toBeVisible();
+    }
   });
 
   it('keeps only the metas filter when the metas tab is active', async () => {
@@ -482,7 +536,6 @@ describe('MetasVendedoresPage commercial dashboard', () => {
     await waitFor(() => expect(screen.queryByTestId('enterprise-filter-bar')).not.toBeInTheDocument());
     expect(await screen.findByRole('tab', { name: 'Metas' })).toHaveAttribute('data-state', 'active');
     expect(await screen.findByRole('heading', { name: 'Nenhum dado encontrado para o período' }, { timeout: 10000 })).toBeVisible();
-    expect(screen.getByRole('heading', { name: 'Metas diárias' })).toBeVisible();
     const trigger = screen.getByRole('button', { name: 'Expandir filtros' });
     expect(screen.getByRole('tablist', { name: 'Dashboard comercial' }).parentElement?.parentElement).toContainElement(trigger);
     fireEvent.click(trigger);
@@ -511,14 +564,13 @@ describe('MetasVendedoresPage commercial dashboard', () => {
     expect(screen.queryByRole('tab', { name: 'Análises' })).not.toBeInTheDocument();
   });
 
-  it('apresenta o gráfico junto à tabela do ranking', async () => {
+  it('abre Metas quando a aba Ranking removida estava salva', async () => {
     sessionStorage.setItem('comercial:metas:tab', 'ranking');
     render(<MetasVendedoresPage />);
 
-    expect(await screen.findByRole('heading', { name: 'Desempenho por vendedor' })).toBeVisible();
-    expect(within(screen.getByRole('region', { name: 'Gráfico do ranking' })).getByRole('button', { name: 'Faturamento' })).toBeVisible();
-    expect(within(screen.getByRole('region', { name: 'Tabela do ranking' })).getByRole('table')).toBeVisible();
-    expect(screen.queryByText('Performance por vendedor ordenada por valor líquido')).not.toBeInTheDocument();
+    expect(await screen.findByRole('tabpanel', { name: 'Metas' })).toBeVisible();
+    expect(screen.getByRole('tab', { name: 'Metas' })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.queryByRole('tab', { name: 'Ranking' })).not.toBeInTheDocument();
   });
 });
 
@@ -669,52 +721,30 @@ describe('CampanhasTab loading lifecycle', () => {
   });
 });
 
-describe('InsightsIATab management actions', () => {
-  beforeEach(() => {
-    supabaseInvoke.mockReset();
-  });
+describe('análises diárias em Detalhes', () => {
+  it('apresenta a análise salva para a filial e o período sem geração manual', () => {
+    const periodo = { inicio: '2026-06-01', fim: '2026-06-05' };
+    dailyInsightsState.data = {
+      dia: '2026-06-06', periodo,
+      insights: [{ tipo: 'oportunidade', titulo: 'Revisar carteira', descricao: 'Priorize os pedidos próximos de faturar.' }],
+    };
+    const panel = (filtros: typeof periodo) => (
+      <InsightsIATab filial="chevrolet" periodo={filtros}><p>Indicadores do período</p></InsightsIATab>
+    );
+    const { rerender } = render(panel({ ...periodo, fim: '2026-06-06' }));
 
-  it('marca os estados inicial e de carregamento como paineis do dashboard', async () => {
-    supabaseInvoke.mockImplementationOnce(() => new Promise(() => undefined));
-    const { container } = render(<InsightsIATab vendedores={[]} kpis={{}} />);
+    expect(useQuery).toHaveBeenLastCalledWith(expect.objectContaining({
+      queryKey: ['analises-comerciais-diarias', 'user-1', 'chevrolet'], enabled: true,
+    }));
+    expect(screen.getByText('Revisar carteira')).toBeVisible();
+    expect(screen.getByText('05/06/2026')).toHaveAttribute('datetime', '2026-06-05');
+    expect(screen.queryByText('Análises comerciais')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button')).not.toBeInTheDocument();
 
-    expect(screen.getByText('Análises comerciais').closest('.commercial-dashboard-panel')).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Gerar análises' }));
-
-    expect(await screen.findByRole('status', { name: 'Carregando análises comerciais' }))
-      .toHaveClass('commercial-dashboard-panel', 'commercial-insight-loading');
-    expect(container.querySelector('.commercial-chart-frame')).toBeNull();
-  });
-
-  it('mantem a recomendacao completa montada enquanto atualiza', async () => {
-    let finishRefresh: (value: unknown) => void = () => undefined;
-    supabaseInvoke
-      .mockResolvedValueOnce({
-        data: {
-          insights: [{
-            tipo: 'oportunidade',
-            titulo: 'Recuperar carteira prioritaria',
-            descricao: 'Contatar todos os clientes sem recompra e revisar a proposta comercial ainda nesta semana.',
-          }],
-        },
-        error: null,
-      })
-      .mockImplementationOnce(() => new Promise((resolve) => { finishRefresh = resolve; }));
-
-    render(<InsightsIATab vendedores={[]} kpis={{}} />);
-    fireEvent.click(screen.getByRole('button', { name: 'Gerar análises' }));
-
-    const action = await screen.findByText(/Contatar todos os clientes/);
-    expect(action).toHaveClass('commercial-insight-action');
-    expect(action).not.toHaveClass('truncate', 'line-clamp-1', 'line-clamp-2');
-
-    fireEvent.click(screen.getByRole('button', { name: 'Atualizar' }));
-    expect(screen.getByText(/Contatar todos os clientes/)).toBeInTheDocument();
-    expect(screen.getByRole('status', { name: 'Atualizando análises comerciais' })).toBeInTheDocument();
-
-    await act(async () => {
-      finishRefresh({ data: { insights: [] }, error: null });
-    });
+    rerender(panel({ ...periodo, fim: '2026-06-04' }));
+    expect(screen.queryByText('Revisar carteira')).not.toBeInTheDocument();
+    expect(screen.getByText('Indicadores do período')).toBeVisible();
+    dailyInsightsState.data = null;
   });
 });
 
@@ -803,9 +833,22 @@ describe('PremiumMetasView management signals', () => {
     const totalRealizado = screen.getByText('Total Realizado').parentElement!;
     expect(totalRealizado).toHaveTextContent('R$ 1.000,00');
     expect(screen.queryByRole('tablist', { name: 'Detalhes do Dashboard' })).not.toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Resumo da meta' })).toBeVisible();
-    expect(screen.getByRole('heading', { name: 'Média Mensal por Vendedor' })).toBeVisible();
-    expect(screen.getByRole('heading', { name: 'Média Mensal Geral' })).toBeVisible();
+    const panels = screen.getAllByRole('heading');
+    expect(panels.map((panel) => panel.textContent?.trim())).toEqual([
+      'Resumo da meta',
+      'Realizado vs Meta Diária',
+      'Média Mensal por Vendedor',
+      'Média Mensal Geral',
+    ]);
+    const signal = screen.getByText(/Faltam R\$ 1\.000,00 para a meta/);
+    expect(signal.compareDocumentPosition(panels[0]) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Gerar análises' })).not.toBeInTheDocument();
+    expect(screen.queryByText('Sinais do período')).not.toBeInTheDocument();
+    const goal = within(screen.getByRole('region', { name: 'Resumo da meta' }));
+    expect(goal.getByText('50,0%')).toBeVisible();
+    expect(goal.getByRole('img', { name: '50,0% da meta atingida' })).toHaveClass('dashboard-meter');
+    expect(goal.getByText('R$ 2.000,00')).toBeVisible();
+    expect(goal.getByRole('combobox', { name: 'Destacar vendedor' })).toBeVisible();
     fireEvent.click(screen.getByRole('button', { name: 'Mensal' }));
     expect(screen.getByRole('heading', { name: 'Realizado vs Meta Mensal' })).toBeVisible();
     expect(screen.getByRole('heading', { name: 'Média Mensal Geral' })).toBeVisible();
@@ -821,7 +864,7 @@ describe('CampanhasTab commercial overlays', () => {
       join(process.cwd(), 'src/components/comercial/CampanhasTab.tsx'),
       'utf8',
     );
-    const portalledContents = source.match(
+    const portalledContents: string[] = source.match(
       /<(?:PopoverContent|SelectContent|DialogContent|AlertDialogContent|TooltipContent)\b[^>]*>/g,
     ) ?? [];
 
