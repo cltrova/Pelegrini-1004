@@ -15,6 +15,7 @@ interface Props {
   mode?: 'receitas' | 'devolucoes';
   selectedMarca: string | null;
   onSelectMarca: (marca: string | null) => void;
+  paginacaoRemota?: { pagina: number; total: number };
 }
 
 const PAGE_SIZE = 50;
@@ -22,7 +23,7 @@ const PAGE_SIZE = 50;
 /**
  * Legacy view (pré-Premium) — tabela paginada simples.
  */
-export function TopProdutosLegacy({ produtos, mode = 'receitas', selectedMarca, onSelectMarca }: Props) {
+export function TopProdutosLegacy({ produtos, mode = 'receitas', selectedMarca, onSelectMarca, paginacaoRemota }: Props) {
   const isDevolucao = mode === 'devolucoes';
   const [page, setPage] = useState(0);
 
@@ -32,8 +33,9 @@ export function TopProdutosLegacy({ produtos, mode = 'receitas', selectedMarca, 
   );
 
   const totalPages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));
-  const currentPage = Math.min(page, totalPages - 1);
-  const slice = sorted.slice(currentPage * PAGE_SIZE, (currentPage + 1) * PAGE_SIZE);
+  const currentPage = paginacaoRemota?.pagina ?? Math.min(page, totalPages - 1);
+  const slice = paginacaoRemota ? sorted : sorted.slice(currentPage * PAGE_SIZE, (currentPage + 1) * PAGE_SIZE);
+  const totalProdutos = paginacaoRemota?.total ?? sorted.length;
 
   return (
     <Card>
@@ -45,7 +47,7 @@ export function TopProdutosLegacy({ produtos, mode = 'receitas', selectedMarca, 
           )}
         </CardTitle>
         <p className="text-xs text-muted-foreground mt-1">
-          {sorted.length} produto{sorted.length !== 1 ? 's' : ''} no período
+          {totalProdutos} produto{totalProdutos !== 1 ? 's' : ''} no período
         </p>
       </CardHeader>
       <CardContent>
@@ -97,7 +99,7 @@ export function TopProdutosLegacy({ produtos, mode = 'receitas', selectedMarca, 
           </Table>
         </div>
 
-        {totalPages > 1 && (
+        {!paginacaoRemota && totalPages > 1 && (
           <div className="flex items-center justify-between mt-3">
             <span className="text-xs text-muted-foreground">
               Página {currentPage + 1} de {totalPages}

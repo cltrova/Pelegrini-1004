@@ -17,13 +17,14 @@ async function listen(t: TestContext, server: Server) {
   return (server.address() as AddressInfo).port;
 }
 
-function portal(role: string) {
+function portal(role: string, moduloUsuario = true, moduloEmpresa = true) {
   return (async (input) => {
     const path = new URL(String(input)).pathname;
     if (path === '/auth/v1/user') return Response.json({ id: userId, email: 'test@example.test', email_confirmed_at: 'a-date' });
     if (path === '/rest/v1/user_roles') return Response.json([{ role }]);
     if (path === '/rest/v1/profiles') return Response.json([{ cod_empresa_bi: 10041, filiais_permitidas: ['chevrolet'] }]);
-    if (path === '/rest/v1/user_module_permissions') return Response.json([{ modulo_comercial: true }]);
+    if (path === '/rest/v1/user_module_permissions') return Response.json([{ modulo_comercial: moduloUsuario }]);
+    if (path === '/rest/v1/empresas') return Response.json([{ modulo_comercial: moduloEmpresa }]);
     return new Response(null, { status: 404 });
   }) satisfies typeof fetch;
 }
@@ -48,15 +49,19 @@ test('valida o gerente e a filial antes de encaminhar a consulta com seu própri
     assert.deepEqual(hits, [['/interno/relatorios/produtos?cod_empresa_bi=10041&limit=1', `Bearer ${shared}`]]);
 });
 
-test('bloqueia o perfil vendedor e rejeita um resultado vencido para o master', async (t) => {
+test('aplica o módulo Comercial do usuário e da empresa, e rejeita dados vencidos', async (t) => {
     const db = await listen(t, createServer((_req, res) => {
       res.setHeader('X-Data-As-Of', new Date(Date.now() - 60_100).toISOString());
       res.end(JSON.stringify({ total: 1 }));
     }));
-    const seller = await listen(t, createReportsGateway(shared, db, env, portal('vendedor')));
+    const seller = await listen(t, createReportsGateway(shared, db, env, portal('vendedor', false)));
+    const sellerAllowed = await listen(t, createReportsGateway(shared, db, env, portal('vendedor')));
+    const moduleDisabled = await listen(t, createReportsGateway(shared, db, env, portal('gerencial', true, false)));
     const master = await listen(t, createReportsGateway(shared, db, env, portal('master')));
     const read = (port: number) => fetch(`http://127.0.0.1:${port}/api/comercial/preparado/produtos?cod_empresa_bi=10041`,
       { headers: { authorization: jwt } });
     assert.equal((await read(seller)).status, 403);
+    assert.equal((await read(moduleDisabled)).status, 403);
+    assert.equal((await read(sellerAllowed)).status, 503);
     assert.equal((await read(master)).status, 503);
 });

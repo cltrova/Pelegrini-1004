@@ -36,7 +36,7 @@ export function createReportsGateway(token: string, port: number, env = process.
     outgoing.on('close', () => client.abort());
     const started = performance.now();
     const failure = await authorizePortal(incoming.headersDistinct.authorization, ['modulo_comercial'],
-      env, fetchPortal, client.signal, branch, ['gerencial']);
+      env, fetchPortal, client.signal, branch, '1004');
     if (client.signal.aborted) return;
     if (failure) return fail(failure, failure === 401 ? 'UNAUTHORIZED' : failure === 403 ? 'FORBIDDEN' : 'AUTH_UNAVAILABLE');
     const authMs = (performance.now() - started).toFixed(1);

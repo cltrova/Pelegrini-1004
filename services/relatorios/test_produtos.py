@@ -103,6 +103,50 @@ class ProdutosTest(unittest.TestCase):
         self.base.publicar(self.snapshot(2), [], documentos=set(), esperado=load)
         self.assertEqual(self.base.consultar(None, None, 0, 1)['total'], 2)
 
+    def test_painel_preserva_devolucoes_paginacao_busca_e_atualizacao_dos_totais(self):
+        entrada = {'cod_pedido': '38', 'num_nf': '7740', 'cliente': 'Oficina União',
+                   'vendedor': 'Pessoa de teste'}
+        venda_a = registro(11, 1, liquido='30') | entrada
+        venda_b = registro(12, 2, liquido='20') | entrada | {'cod_produto': '456', 'produto': 'Outra peça'}
+        devolucao_a = registro(13, 3, tipo=1, liquido='-7') | entrada | {
+            'num_cfop': '1.411', 'valordevolucao': Decimal('10'),
+        }
+        devolucao_b = registro(14, 4, tipo=1, liquido='-8.25') | entrada | {
+            'num_cfop': '2.202', 'valordescontoitem': Decimal('2'),
+            'cod_produto': '789', 'marca': 'Somente devolução',
+        }
+        self.base.publicar(self.snapshot(1), [venda_a, venda_b, devolucao_a, devolucao_b])
+        self.base.preparar_painel()
+
+        def ler(aba, offset=0, limit=50, **params):
+            opcoes = dict(aba=aba, vendedores=[], busca='', marca='', tipo=2, codigo='')
+            return self.base.consultar_painel(None, None, offset, limit, **(opcoes | params))
+
+        overview = ler('marcas')
+        self.assertEqual(overview['totalSkus'], 2)
+        self.assertEqual(overview['semGiro'], 1)
+        self.assertEqual(ler('sem-giro')['total'], overview['semGiro'])
+        self.assertEqual(ler('marcas', movimento=1)['totalSkus'], 0)
+        self.assertEqual(ler('resumo', tipo=1, movimento=2)['total'], 0)
+        self.assertEqual(ler('categoria', movimento=2)['categorias'][0]['faturamento'], 50)
+        self.assertEqual([(x['marca'], x['faturamento']) for x in overview['porMarca']],
+                         [('MARCA', 50), ('SOMENTE DEVOLUÇÃO', -6.25)])
+        ranking = ler('top', offset=1, limit=1, busca='uniao')
+        self.assertEqual((ranking['total'], ranking['somaReceita']), (2, 50))
+        self.assertEqual(ranking['produtos'][0]['cod_produto'], '456')
+        devolucoes = ler('resumo', limit=1, tipo=1)
+        self.assertEqual(devolucoes['total'], 2)
+        self.assertEqual(devolucoes['linhas'][0]['receita'], -7)
+        self.assertEqual(ler('resumo', offset=1, limit=1, tipo=1)['linhas'][0]['receita'], -6.25)
+        self.assertEqual(ler('produto', codigo='123')['pedidos'], 1)
+        self.assertEqual(ler('marcas', vendedores=['16'])['totalSkus'], 0)
+        old = self.base.estado()
+        self.base.publicar(self.snapshot(2), [], documentos={(2, 11)}, esperado=old)
+        self.assertEqual(ler('top')['somaReceita'], 20)
+        self.assertEqual(ler('marcas')['totalSkus'], 1)
+        with self.assertRaises(VersaoTrocada):
+            ler('resumo', versao=old[0])
+
 
 class Cursor:
     def __init__(self, *results):

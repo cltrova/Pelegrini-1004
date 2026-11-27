@@ -1,6 +1,7 @@
 """Consulta por um gateway interno que já autorizou a empresa e o usuário."""
 from datetime import date, datetime, timezone
 import gzip
+import json
 from hmac import compare_digest
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from threading import BoundedSemaphore
@@ -8,11 +9,32 @@ from time import perf_counter
 from urllib.parse import parse_qs, urlsplit
 
 from historico import RelatorioVencido, VALIDADE, VersaoTrocada, linhas_json
+from produtos_painel import ABAS
 
 
 ROTA = '/interno/relatorios/vendas-perdidas'
 ROTA_PRODUTOS = '/interno/relatorios/produtos'
 PARAMETROS = {'cod_empresa_bi', 'inicio', 'fim', 'offset', 'limit', 'versao'}
+FILTROS_PAINEL = {'painel', 'vendedores', 'busca', 'busca_top', 'marca', 'tipo', 'codigo', 'movimento'}
+
+
+def filtros_painel(params):
+    aba = params['painel']
+    if aba not in ABAS or 'vendedor' in params:
+        raise ValueError('Painel de Produtos inválido')
+    vendedores = json.loads(params.get('vendedores', '[]'))
+    busca, marca, codigo = (params.get(k, '') for k in ('busca', 'marca', 'codigo'))
+    busca_top = params.get('busca_top', '')
+    tipo = int(params.get('tipo', '2'))
+    movimento = int(params['movimento']) if 'movimento' in params else None
+    if (not isinstance(vendedores, list) or len(vendedores) > 64 or
+            any(not isinstance(v, str) or not 0 < len(v.strip()) <= 64 for v in vendedores) or
+            len(busca) > 160 or len(busca_top) > 160 or len(marca) > 200 or len(codigo) > 64 or tipo not in (1, 2)
+            or movimento not in (None, 1, 2) or (busca_top and aba != 'top')
+            or (aba == 'produto' and not codigo)):
+        raise ValueError('Filtro do painel de Produtos inválido')
+    return dict(aba=aba, vendedores=[v.strip() for v in vendedores],
+                busca=busca, busca_top=busca_top, marca=marca, tipo=tipo, codigo=codigo, movimento=movimento)
 
 
 def data(texto):
@@ -85,7 +107,7 @@ def servidor(bases, token, porta, *, produtos=None):
                 self.enviar(401, {'code': 'UNAUTHORIZED'})
                 return
             try:
-                filtros = PARAMETROS | {'vendedor'} if url.path == ROTA_PRODUTOS else PARAMETROS
+                filtros = PARAMETROS | {'vendedor'} | FILTROS_PAINEL if url.path == ROTA_PRODUTOS else PARAMETROS
                 pares = parse_qs(url.query, keep_blank_values=True, max_num_fields=len(filtros))
                 if set(pares) - filtros or any(len(v) != 1 for v in pares.values()):
                     raise ValueError('Filtro desconhecido ou repetido')
@@ -96,7 +118,12 @@ def servidor(bases, token, porta, *, produtos=None):
                     raise ValueError('Página muito grande')
                 versao = params.get('versao')
                 extra = {}
-                if 'vendedor' in params:
+                painel = 'painel' in params
+                if painel:
+                    extra = filtros_painel(params)
+                elif params.keys() & FILTROS_PAINEL:
+                    raise ValueError('Informe o painel de Produtos')
+                elif 'vendedor' in params:
                     vendedor = int(params['vendedor'])
                     if not 0 <= vendedor <= 2_147_483_647:
                         raise ValueError('Vendedor inválido')
@@ -117,7 +144,8 @@ def servidor(bases, token, porta, *, produtos=None):
                 return
             try:
                 start = perf_counter()
-                resultado = base.consultar(inicio, fim, offset, limit, versao=versao, **extra)
+                consultar = base.consultar_painel if painel else base.consultar
+                resultado = consultar(inicio, fim, offset, limit, versao=versao, **extra)
                 elapsed = (perf_counter() - start) * 1000
             except ValueError:
                 self.enviar(422, {'code': 'INVALID_FILTER'})

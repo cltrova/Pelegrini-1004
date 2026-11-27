@@ -144,7 +144,7 @@ function normalizeText(value: unknown): string {
     .toUpperCase();
 }
 
-function isLinhaResumoTotaisProduto(p: ProdutoItem): boolean {
+export function isLinhaResumoTotaisProduto(p: ProdutoItem): boolean {
   const fields = [
     p.cod_pedido,
     p.num_nf,
@@ -166,7 +166,7 @@ function isCfopExcluidoReceita1004(p: ProdutoItem): boolean {
   return cfop === '6933';
 }
 
-function isVendaSemPedidoValido1004(p: ProdutoItem): boolean {
+export function isVendaSemPedidoValido1004(p: ProdutoItem): boolean {
   if (p.tipo === 'DEVOLUCAO') return false;
   const codPedido = String(p.cod_pedido ?? '').trim();
   return !codPedido || codPedido === '0';
@@ -327,7 +327,7 @@ export function normalizeComissao1004(row: Record<string, unknown>): ReceitaComi
   };
 }
 
-function getProdutoUniqueKey(p: ProdutoItem): string {
+export function getProdutoUniqueKey(p: ProdutoItem): string {
   // Chave técnica oficial do item (Pelegrini 1004/10041):
   //   cod_empresa + cod_documento + num_lancamento
   // O campo num_lancamento é obrigatório para diferenciar lançamentos reais
@@ -512,7 +512,7 @@ function produtoMatchesVendedor(p: ProdutoItem, target: unknown): boolean {
   ].some(value => textMatch(value, target));
 }
 
-function produtoMatchesVendedorEmpresa(p: ProdutoItem, target: unknown, codEmpresaAtiva?: string): boolean {
+export function produtoMatchesVendedorEmpresa(p: ProdutoItem, target: unknown, codEmpresaAtiva?: string): boolean {
   const codEmpresa = String(codEmpresaAtiva ?? '').trim();
   if (codEmpresa === '10041') {
     const vendedor = getVendedorProduto10041(p);
@@ -538,7 +538,7 @@ function getVendedorProduto10041(p: ProdutoItem): { codigo: string; nome: string
     || { codigo: 'SEM_VENDEDOR', nome: 'SEM VENDEDOR' };
 }
 
-function normalizeProduto(raw: any, empresaFromPath?: string): ProdutoItem {
+export function normalizeProduto(raw: any, empresaFromPath?: string): ProdutoItem {
   const vendedorCorrigido1004 = corrigirVendedorAusente1004(raw);
   const rawTipo = getField<string>(raw, 'tipo', 'Tipo', 'TIPO', 'tipo_movimento', 'TipoMovimento');
   const tipo: 'PEDIDO' | 'DEVOLUCAO' = rawTipo

@@ -1,11 +1,13 @@
-import { useMemo, useState, useCallback, useRef } from 'react';
+import { useMemo, useState, useCallback, useRef, useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useComercialProdutos } from '@/hooks/useComercialProdutos';
+import { tamanhoPaginaProdutos, useProdutosPreparados, type AbaProdutos } from '@/hooks/useProdutosPreparados';
 import { formatCurrency, formatNumber } from '@/utils/formatters';
 import { LoadingIndicator, LoadingState } from '@/components/common/LoadingState';
 import { ErrorState } from '@/components/common/ErrorState';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getDefaultFiltersForEmpresa } from '@/components/comercial/ComercialFilters';
@@ -29,17 +31,53 @@ import {
 } from '@/components/comercial/compact';
 
 const ANOS = ['2023', '2024', '2025', '2026'];
+type FiltrosProdutos = ComercialFiltersType & { todoHistorico?: boolean };
+
+function PaginacaoProdutos({ pagina, total, onChange, label }: {
+  pagina: number;
+  total: number;
+  onChange: (pag: number) => void;
+  label: string;
+}) {
+  if (total <= tamanhoPaginaProdutos) return null;
+  const primeiro = pagina * tamanhoPaginaProdutos + 1;
+  const ultimo = Math.min((pagina + 1) * tamanhoPaginaProdutos, total);
+  return (
+    <nav aria-label={label} className="flex items-center justify-between border-t border-border px-2 py-1">
+      <span aria-live="polite" className="text-xs tabular-nums text-muted-foreground">
+        {formatNumber(primeiro, 0)}–{formatNumber(ultimo, 0)} de {formatNumber(total, 0)}
+      </span>
+      <div className="flex gap-1">
+        <Button type="button" size="sm" variant="ghost" disabled={pagina === 0}
+          onClick={() => onChange(pagina - 1)}>Página anterior</Button>
+        <Button type="button" size="sm" variant="ghost" disabled={ultimo >= total}
+          onClick={() => onChange(pagina + 1)}>Próxima página</Button>
+      </div>
+    </nav>
+  );
+}
 
 export default function ProdutosPage() {
   const queryClient = useQueryClient();
   const { codEmpresaAtiva, isLoading: isLoadingEmpresa } = useEmpresaAtiva();
   const { filialAtiva } = useFilialSelecionada();
   const isLayoutPremium = String(codEmpresaAtiva ?? '') === '1004';
+  const empresaAtual = String(codEmpresaAtiva ?? '');
+  const usarPreparado = import.meta.env.VITE_PRODUTOS_PREPARADOS === 'true'
+    && ['1004', '10041'].includes(empresaAtual);
+  const empresaPreparada = usarPreparado
+    ? empresaAtual === '10041' || filialAtiva === 'chevrolet' ? '10041'
+      : filialAtiva === 'transmissao' ? '1004' : undefined
+    : undefined;
   const [searchTerm, setSearchTerm] = useState('');
   const [filtersOpen, setFiltersOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState('marcas');
+  const [activeTab, setActiveTab] = useState<AbaProdutos>('marcas');
   const [resumoMode, setResumoMode] = useState<'receitas' | 'devolucoes'>('receitas');
-  const [pendingFilters, setPendingFilters] = useState<ComercialFiltersType>(() => getDefaultFiltersForEmpresa(codEmpresaAtiva));
+  const [resumoPagina, setResumoPagina] = useState(0);
+  const [paginaRanking, setPaginaRanking] = useState(0);
+  const [buscaRanking, setBuscaRanking] = useState('');
+  const [codigoDetalhe, setCodigoDetalhe] = useState<string | null>(null);
+  const [pendingFilters, setPendingFilters] = useState<FiltrosProdutos>(() => getDefaultFiltersForEmpresa(codEmpresaAtiva));
   const [appliedFilters, setAppliedFilters] = useState(pendingFilters);
   // Filtro cruzado: marca selecionada via clique no gráfico/tabela/produto
   const [selectedMarca, setSelectedMarca] = useState<string | null>(null);
@@ -51,19 +89,34 @@ export default function ProdutosPage() {
     periodoDisponivel,
     isLoading: loadingBase,
     isFetching: fetchingBase,
-    vendedoresDisponiveis,
+    vendedoresDisponiveis: vendedoresLegados,
     error: baseError,
-  } = useComercialData(appliedFilters, { enabled: filtersOpen, keepPreviousData: false });
+  } = useComercialData(appliedFilters, { enabled: filtersOpen && !usarPreparado, keepPreviousData: false });
   const {
     topProdutos, porMarca, porCategoria, produtosSemGiro, resumoVendas,
-    hasSource, isLoading, isFetching, error: productsError,
-  } = useComercialProdutos(appliedFilters, { consultarComissao: false });
+    hasSource, isLoading, isFetching, error: erroLegado,
+  } = useComercialProdutos(appliedFilters, { enabled: !usarPreparado, consultarComissao: false });
+  const painel = useProdutosPreparados({
+    empresa: empresaPreparada, filtros: appliedFilters, aba: activeTab, busca: searchTerm,
+    marca: selectedMarca, tipo: resumoMode, pagina: resumoPagina, abrirFiltros: filtersOpen,
+    codigoDetalhe, paginaRanking, buscaRanking,
+  });
+  const productsError = usarPreparado ? painel.erro : erroLegado;
+  const vendedoresDisponiveis = usarPreparado ? painel.opcoes?.vendedores ?? [] : vendedoresLegados;
+  const anosDisponiveis = painel.opcoes?.anos.length ? painel.opcoes.anos : ANOS;
+  useEffect(() => setResumoPagina(0), [appliedFilters, resumoMode, searchTerm, selectedMarca, empresaPreparada]);
+  useEffect(() => setPaginaRanking(0), [appliedFilters, searchTerm, selectedMarca, empresaPreparada, buscaRanking]);
+  const statusAba = usarPreparado && activeTab !== 'marcas' && !painel.tab
+    ? painel.erroAba
+      ? <ErrorState message="Não foi possível consultar os dados atualizados desta aba." onRetry={painel.atualizar} />
+      : <LoadingState message="Carregando dados da aba" variant="content" surface={false} />
+    : null;
 
   const resolvedScopeRef = useRef<string | null>(null);
   const companyKey = String(codEmpresaAtiva ?? '').trim();
   const branchKey = String(filialAtiva ?? '').trim() || 'sem-filial';
   const dataScopeKey = companyKey ? `${companyKey}:${branchKey}` : '';
-  const hasProductData = topProdutos.length > 0
+  const hasProductData = usarPreparado ? !!painel.visao?.encontrouDados : topProdutos.length > 0
     || porMarca.length > 0
     || porCategoria.length > 0
     || produtosSemGiro.length > 0
@@ -72,8 +125,10 @@ export default function ProdutosPage() {
     && !isLoading && !isFetching && !productsError) {
     resolvedScopeRef.current = dataScopeKey;
   }
-  const hasResolvedData = resolvedScopeRef.current === dataScopeKey && dataScopeKey !== '';
-  const isRefreshing = (isFetching || fetchingBase || isLoading || loadingBase) && hasResolvedData;
+  const hasResolvedData = usarPreparado ? !!painel.visao
+    : resolvedScopeRef.current === dataScopeKey && dataScopeKey !== '';
+  const isRefreshing = (usarPreparado ? painel.carregando : isFetching || fetchingBase || isLoading || loadingBase)
+    && hasResolvedData;
   const blockingError = productsError && !hasResolvedData;
   const showBlockingLoading = isLoadingEmpresa || (!productsError && !hasResolvedData);
   const pageClassName = 'commercial-products commercial-products-columns-centered h-[calc(100dvh-9.5rem)] max-h-[calc(100dvh-9.5rem)] overflow-hidden overflow-x-hidden px-3 pb-3 pt-2 sm:px-4 md:h-full md:max-h-full';
@@ -86,6 +141,9 @@ export default function ProdutosPage() {
     const d = getDefaultFiltersForEmpresa(codEmpresaAtiva, periodoDisponivel);
     setPendingFilters(d); setAppliedFilters(d);
   }, [periodoDisponivel, codEmpresaAtiva]);
+  const handlePendingFilters = (novo: FiltrosProdutos) => setPendingFilters(
+    novo.todoHistorico && novo.periodo ? { ...novo, todoHistorico: false } : novo,
+  );
 
   // Filtros locais (busca + marca selecionada via clique)
   const matchMarca = useCallback(
@@ -129,7 +187,7 @@ export default function ProdutosPage() {
     );
   }, [matchesSearch, normalizedSearch, resumoVendas]);
 
-  const porMarcaFiltrada = useMemo(
+  const porMarcaLegadaFiltrada = useMemo(
     () => porMarca.filter((marca) =>
       matchMarca(marca.marca) && (
         !normalizedSearch
@@ -138,13 +196,17 @@ export default function ProdutosPage() {
       )),
     [matchesSearch, matchingMarcaNames, matchMarca, normalizedSearch, porMarca],
   );
+  const porMarcaFiltrada = usarPreparado ? painel.visao?.porMarca ?? [] : porMarcaLegadaFiltrada;
 
-  const porCategoriaFiltrada = useMemo(
+  const porCategoriaLegadaFiltrada = useMemo(
     () => porCategoria.filter((categoria) => matchesSearch(categoria.chave, (categoria as { categoria?: string }).categoria)),
     [matchesSearch, porCategoria],
   );
+  const porCategoriaFiltrada = usarPreparado
+    ? painel.tab && 'categorias' in painel.tab ? painel.tab.categorias : []
+    : porCategoriaLegadaFiltrada;
 
-  const produtosSemGiroFiltrados = useMemo(
+  const produtosSemGiroLegados = useMemo(
     () => produtosSemGiro.filter((produto) => matchMarca(produto.marca) && matchesSearch(
       produto.descricao,
       produto.marca,
@@ -152,8 +214,12 @@ export default function ProdutosPage() {
     )),
     [matchesSearch, matchMarca, produtosSemGiro],
   );
+  const produtosSemGiroFiltrados = usarPreparado
+    ? painel.tab && 'produtos' in painel.tab && !('somaReceita' in painel.tab) ? painel.tab.produtos : []
+    : produtosSemGiroLegados;
+  const totalSemGiro = usarPreparado ? painel.visao?.semGiro ?? 0 : produtosSemGiroFiltrados.length;
 
-  const topFiltrado = useMemo(
+  const topLegadoFiltrado = useMemo(
     () => topProdutos.filter(p =>
       matchMarca(p.marca) && (
         matchesSearch(p.descricao, p.marca, p.cod_produto)
@@ -162,13 +228,15 @@ export default function ProdutosPage() {
     ),
     [matchingMarcaNames, matchMarca, matchesSearch, topProdutos]
   );
+  const rankingPreparado = painel.tab && 'somaReceita' in painel.tab ? painel.tab : undefined;
+  const topFiltrado = usarPreparado ? rankingPreparado?.produtos ?? [] : topLegadoFiltrado;
 
   const resumoReceitas = useMemo(
     () => resumoVendas.filter((linha) => linha.tipo === 'PEDIDO'),
     [resumoVendas],
   );
 
-  const resumoFiltrado = useMemo(
+  const resumoLegadoFiltrado = useMemo(
     () => resumoVendas
       .filter(r => r.tipo === (resumoMode === 'receitas' ? 'PEDIDO' : 'DEVOLUCAO'))
       .filter(r =>
@@ -179,17 +247,22 @@ export default function ProdutosPage() {
       .slice(0, 500),
     [matchesSearch, matchMarca, resumoMode, resumoVendas]
   );
+  const resumoFiltrado = usarPreparado
+    ? painel.tab && 'linhas' in painel.tab ? painel.tab.linhas : []
+    : resumoLegadoFiltrado;
+  const totalNFs = painel.tab && 'linhas' in painel.tab ? painel.tab.total : 0;
 
   // Top KPIs da página — reativos a selectedMarca
   const marcasFiltradas = useMemo(
     () => porMarcaFiltrada,
     [porMarcaFiltrada]
   );
-  const totalSkusGeral = topProdutos.length;
+  const totalSkusGeral = usarPreparado ? painel.visao?.totalSkus ?? 0 : topProdutos.length;
+  const totalMarcas = usarPreparado ? painel.visao?.totalMarcas ?? 0 : porMarca.length;
 
   const totalReceita = useMemo(() => marcasFiltradas.reduce((a, m) => a + m.faturamento, 0), [marcasFiltradas]);
   const totalQtd = useMemo(() => marcasFiltradas.reduce((a, m) => a + m.quantidade, 0), [marcasFiltradas]);
-  const totalProdutos = useMemo(() => topFiltrado.length, [topFiltrado]);
+  const totalProdutos = usarPreparado ? painel.visao?.totalSkusVisiveis ?? 0 : topFiltrado.length;
 
   const isFiltered = !!selectedMarca;
 
@@ -206,13 +279,13 @@ export default function ProdutosPage() {
         >
           {showBlockingLoading
             ? <LoadingState message="Carregando produtos" variant="content" surface={false} />
-            : <ErrorState message="Erro ao carregar produtos" />}
+            : <ErrorState message="Erro ao carregar produtos" onRetry={usarPreparado ? painel.atualizar : undefined} />}
         </section>
       </ComercialCompactPage>
     );
   }
 
-  if (!hasSource) {
+  if (!usarPreparado && !hasSource) {
     return (
       <ComercialCompactPage
         as="div"
@@ -237,22 +310,29 @@ export default function ProdutosPage() {
       as="div"
       className={pageClassName}
     >
-      <ComercialCommandBar title="Produtos" />
+      <ComercialCommandBar title="Produtos" context={appliedFilters.todoHistorico ? 'Todo o histórico' : undefined} />
 
       <EnterpriseComercialFilters
         pendingFilters={pendingFilters}
         appliedFilters={appliedFilters}
-        onPendingFiltersChange={setPendingFilters}
+        onPendingFiltersChange={handlePendingFilters}
         onApply={handleBuscar}
         isApplying={isRefreshing}
         onClear={handleClear}
         hasChanges={hasChanges}
-        anos={ANOS}
+        anos={usarPreparado ? anosDisponiveis : ANOS}
         vendedores={vendedoresDisponiveis}
         showVendedorFilter
         useNativeControls
         isOpen={filtersOpen}
         onOpenChange={setFiltersOpen}
+        extraFields={usarPreparado && (
+          <Button type="button" size="sm" variant={pendingFilters.todoHistorico ? 'default' : 'outline'}
+            aria-pressed={!!pendingFilters.todoHistorico}
+            onClick={() => setPendingFilters((f) => ({ ...f, todoHistorico: true, periodo: undefined, anos: [], meses: [] }))}>
+            Todo o histórico
+          </Button>
+        )}
       />
 
       <ComercialMetricStrip
@@ -266,7 +346,7 @@ export default function ProdutosPage() {
           },
           {
             label: isFiltered ? 'Marca selecionada' : 'Marcas ativas',
-            value: isFiltered ? `1 / ${porMarca.length}` : formatNumber(porMarcaFiltrada.length, 0),
+            value: isFiltered ? `1 / ${totalMarcas}` : formatNumber(porMarcaFiltrada.length, 0),
             tone: 'success',
             tooltip: 'Quantidade de marcas com venda no período.',
           },
@@ -289,21 +369,24 @@ export default function ProdutosPage() {
         <ComercialDataViewport ariaLabel="Estado dos produtos" className="commercial-detail-panel flex flex-1 items-center justify-center">
           <p className="p-8 text-center text-sm text-muted-foreground">Nenhum produto encontrado no período.</p>
         </ComercialDataViewport>
-      ) : <Tabs value={activeTab} onValueChange={setActiveTab} className="flex min-h-0 flex-1 flex-col gap-2 overflow-hidden">
+      ) : <Tabs value={activeTab} onValueChange={(value) => {
+        setActiveTab(value as AbaProdutos);
+        if (value !== 'top') setCodigoDetalhe(null);
+      }} className="flex min-h-0 flex-1 flex-col gap-2 overflow-hidden">
         <div data-testid="produtos-navigation" className="flex min-w-0 shrink-0 flex-col gap-2 overflow-visible sm:flex-row sm:items-center sm:justify-between">
           <TabsList className="h-9 w-fit max-w-full shrink-0 justify-start overflow-x-auto">
             <TabsTrigger value="marcas">Marcas</TabsTrigger>
             <TabsTrigger value="top">Top Produtos</TabsTrigger>
             <TabsTrigger value="categoria">Categorias</TabsTrigger>
             <TabsTrigger value="sem-giro">Sem Giro
-              {produtosSemGiroFiltrados.length > 0 && <Badge variant="secondary" className="ml-1 h-4 text-[10px] px-1.5">{produtosSemGiroFiltrados.length}</Badge>}
+              {totalSemGiro > 0 && <Badge variant="secondary" className="ml-1 h-4 text-[10px] px-1.5">{totalSemGiro}</Badge>}
             </TabsTrigger>
             <TabsTrigger value="resumo">Resumo NF</TabsTrigger>
           </TabsList>
           <div className="flex min-w-0 flex-1 items-center justify-end gap-2">
-            {(productsError || baseError) ? (
+            {(productsError || (usarPreparado ? painel.erroFiltros : baseError)) ? (
               <span role="status" aria-label="Falha ao atualizar produtos" className="flex min-w-0 items-center gap-1 text-warning">
-                <span className="truncate" title="Falha ao atualizar produtos. Dados anteriores mantidos.">Falha ao atualizar</span>
+                <span className="truncate" title="Falha ao atualizar produtos.">Falha ao atualizar</span>
                 <button
                   type="button"
                   aria-label="Tentar atualizar produtos novamente"
@@ -311,6 +394,7 @@ export default function ProdutosPage() {
                   className="flex h-6 w-6 shrink-0 items-center justify-center rounded-sm hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
                   disabled={isRefreshing}
                   onClick={() => {
+                    if (usarPreparado) { painel.atualizar(); return; }
                     void Promise.all([
                       queryClient.refetchQueries({ queryKey: ['comercial-produtos', codEmpresaAtiva], type: 'active' }),
                       queryClient.refetchQueries({ queryKey: ['comercial', 'raw', codEmpresaAtiva], type: 'active' }),
@@ -376,16 +460,29 @@ export default function ProdutosPage() {
               onSelectMarca={setSelectedMarca}
               onHoverMarca={setHoverMarca}
               showInsights={false}
+              onDetalhePreparado={usarPreparado ? setCodigoDetalhe : undefined}
+              detalhePreparado={painel.detalhe}
+              erroDetalhePreparado={!!painel.erroDetalhe}
+              rankingPreparado={usarPreparado ? {
+                pagina: paginaRanking, tamanho: tamanhoPaginaProdutos,
+                somaReceita: rankingPreparado?.somaReceita ?? 0,
+                somaQuantidade: rankingPreparado?.somaQuantidade ?? 0,
+                busca: buscaRanking, pesquisar: setBuscaRanking, status: statusAba,
+              } : undefined}
             />
-          ) : (
+          ) : statusAba ?? (
             <TopProdutosLegacy
               produtos={topFiltrado}
               mode="receitas"
               selectedMarca={selectedMarca}
               onSelectMarca={setSelectedMarca}
+              paginacaoRemota={usarPreparado && rankingPreparado
+                ? { pagina: paginaRanking, total: rankingPreparado.total } : undefined}
             />
           )}
           </ComercialDataViewport>
+          {usarPreparado && <PaginacaoProdutos label="Paginação do ranking" pagina={paginaRanking}
+            total={rankingPreparado?.total ?? 0} onChange={setPaginaRanking} />}
         </TabsContent>
 
         <TabsContent value="categoria" className="mt-0 flex h-full max-h-full min-h-0 flex-1 flex-col overflow-hidden data-[state=inactive]:hidden">
@@ -393,7 +490,7 @@ export default function ProdutosPage() {
             ariaLabel="Desempenho por categoria"
             className={cn('h-full max-h-full', !isLayoutPremium && 'commercial-table-frame')}
           >
-          {isLayoutPremium ? (
+          {statusAba ?? (isLayoutPremium ? (
             <PremiumCategoriasView
               porCategoria={porCategoriaFiltrada}
               selectedCategoria={selectedCategoria}
@@ -408,12 +505,13 @@ export default function ProdutosPage() {
               selectedCategoria={selectedCategoria}
               onSelectCategoria={setSelectedCategoria}
             />
-          )}
+          ))}
           </ComercialDataViewport>
         </TabsContent>
 
         <TabsContent value="sem-giro" className="mt-0 flex h-full max-h-full min-h-0 flex-1 flex-col overflow-hidden data-[state=inactive]:hidden">
           <ComercialDataViewport ariaLabel="Produtos sem giro" className="commercial-table-frame h-full max-h-full overflow-auto">
+            {statusAba ?? <>
             <table aria-label="Produtos sem giro" className="w-full min-w-max border-collapse text-xs">
               <caption className="sr-only">Produtos sem giro no período</caption>
                     <thead className="sticky top-0 z-10 bg-muted">
@@ -454,6 +552,7 @@ export default function ProdutosPage() {
             {produtosSemGiroFiltrados.length === 0 && (
               <p className="p-8 text-center text-sm text-muted-foreground">Todos os produtos movimentaram no período.</p>
             )}
+            </>}
           </ComercialDataViewport>
         </TabsContent>
 
@@ -485,6 +584,7 @@ export default function ProdutosPage() {
             </div>
           </div>
           <ComercialDataViewport ariaLabel="Resumo de vendas por nota fiscal" className="commercial-table-frame h-full max-h-full overflow-x-hidden overflow-y-auto">
+            {statusAba ?? <>
                 <table aria-label="Resumo de vendas por nota fiscal" className="w-full min-w-0 table-fixed border-collapse text-[11px] xl:text-xs">
                   <caption className="sr-only">Resumo de vendas por nota fiscal</caption>
                   <colgroup>
@@ -543,7 +643,10 @@ export default function ProdutosPage() {
                       : 'Nenhuma devolução encontrada no recorte atual.'}
                   </p>
                 )}
+            </>}
           </ComercialDataViewport>
+          {usarPreparado && <PaginacaoProdutos label="Paginação do resumo de notas fiscais" pagina={resumoPagina}
+            total={totalNFs} onChange={setResumoPagina} />}
         </TabsContent>
       </Tabs>}
     </ComercialCompactPage>

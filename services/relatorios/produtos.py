@@ -9,6 +9,7 @@ from threading import Lock
 from uuid import uuid4
 
 import duckdb
+import produtos_painel
 
 from historico import FILIAIS, RelatorioVencido, VALIDADE, VersaoTrocada, linhas_json
 from produtos_rsys import RecargaNecessaria
@@ -56,6 +57,9 @@ class Produtos:
         for chave in PRODUTOS_DIMENSOES:
             self._db.execute(f'CREATE TABLE IF NOT EXISTS produtos_ranking_{chave} AS '
                              f'{consulta_ranking(chave, " WHERE FALSE")}')
+        self._painel = self._db.execute('SELECT count(*) FROM duckdb_tables() WHERE table_name IN (?,?,?)',
+                                        [produtos_painel.FATOS, produtos_painel.RESUMO,
+                                         produtos_painel.RANKING]).fetchone()[0] == 3
 
     def close(self):
         self._db.close()
@@ -68,7 +72,15 @@ class Produtos:
         try:
             with closing(duckdb.connect(str(caminho), read_only=True, config={'threads': 1})) as db:
                 pronto = db.execute('SELECT confirmado FROM produtos_revisao').fetchone()
-            return cls(diretorio, empresa) if pronto and pronto[0] else None
+            if not pronto or not pronto[0]:
+                return None
+            base = cls(diretorio, empresa)
+            try:
+                base.preparar_painel()
+            except BaseException:
+                base.close()
+                raise
+            return base
         except duckdb.IOException:
             # The preparation process still owns this company's file.
             return None
@@ -76,6 +88,19 @@ class Produtos:
     def estado(self):
         with closing(self._db.cursor()) as db:
             return self._revisao(db)
+
+    def preparar_painel(self):
+        if self._painel:
+            return
+        with self._escrita, closing(self._db.cursor()) as db:
+            db.begin()
+            try:
+                produtos_painel.preparar(db, self.empresa)
+                db.commit()
+            except BaseException:
+                db.rollback()
+                raise
+        self._painel = True
 
     @staticmethod
     def _revisao(db):
@@ -193,6 +218,8 @@ class Produtos:
                         documentos is None or documentos or not db.execute('SELECT 1 FROM produtos_totais').fetchone()
                     ):
                         self._preparar_historico(db)
+                    if self._painel and (documentos is None or documentos):
+                        produtos_painel.atualizar(db, self.empresa, alterados=bool(documentos))
                     if verificar_idade:
                         verificar_frescor(snapshot.origem)
                     db.execute('DELETE FROM produtos_revisao')
@@ -246,6 +273,28 @@ class Produtos:
                         'resumo': dict(quantidade=quantidade, vendas=vendas, devolucoes=devolucoes,
                                        liquido=liquido, custo=custo),
                         'ranking': ranking, 'linhas': [json.loads(row[0]) for row in detalhes]}
+            finally:
+                db.rollback()
+
+    def consultar_painel(self, inicio, fim, offset, limit, *, versao=None, aba, **filtros):
+        if not 1 <= limit <= 100 or not 0 <= offset <= 2_147_483_647 or (inicio and fim and inicio > fim):
+            raise ValueError('Página ou período inválido')
+        if not self._painel:
+            raise RelatorioVencido('A preparação do painel ainda está em andamento')
+        with closing(self._db.cursor()) as db:
+            db.begin()
+            try:
+                revisao = self._revisao(db)
+                if not revisao or not revisao[7] or revisao[5:7] != (None, None):
+                    raise RelatorioVencido('O histórico de Produtos ainda está indisponível')
+                atual, origem = revisao[:2]
+                verificar_frescor(origem)
+                if versao and versao != atual:
+                    raise VersaoTrocada('A lista precisa ser aberta na versão atual')
+                resultado = produtos_painel.consultar(db, aba=aba, inicio=inicio, fim=fim, offset=offset,
+                                                      limit=limit, **filtros)
+                verificar_frescor(origem)
+                return {**resultado, 'versao': atual, 'origem': origem}
             finally:
                 db.rollback()
 

@@ -36,6 +36,16 @@ function safePath(raw) {
   return url.pathname.replace(/\/[\da-f]{8}-[\da-f-]{27}(?=\/|$)/gi, '/:id');
 }
 
+function recortePreparado(raw, path) {
+  if (path !== '/api/comercial/preparado/produtos') return undefined;
+  const p = new URL(raw).searchParams;
+  return {
+    empresa: p.get('cod_empresa_bi'), aba: p.get('painel'),
+    todoHistorico: !p.has('inicio') && !p.has('fim'),
+    offset: Number(p.get('offset') ?? 0), tipo: p.get('tipo'), movimento: p.get('movimento'),
+  };
+}
+
 function timing(headers) {
   const value = String(header(headers, 'server-timing') ?? '');
   return Object.fromEntries(Array.from(value.matchAll(/(?:^|,)\s*(db|sql|auth|api|serialize|queue|source|local);\s*dur=(\d+(?:\.\d+)?)/gi),
@@ -63,7 +73,9 @@ ws.addEventListener('message', ({ data }) => {
     case 'Network.requestWillBeSent': {
       const kind = p.type;
       if (!['XHR', 'Fetch', 'Document', 'Script', 'Stylesheet', 'Preflight'].includes(kind)) break;
-      requests.set(p.requestId, { path: safePath(p.request.url), kind, startedAt: p.timestamp * 1000, transfer: 0, decoded: 0 });
+      const path = safePath(p.request.url);
+      requests.set(p.requestId, { path, kind, startedAt: p.timestamp * 1000, transfer: 0, decoded: 0,
+        recorte: recortePreparado(p.request.url, path) });
       break;
     }
     case 'Network.responseReceived': {
@@ -84,7 +96,7 @@ ws.addEventListener('message', ({ data }) => {
       if (r) r.decoded += p.dataLength;
       break;
     case 'Network.loadingFinished':
-      if (r) { r.finishedAt = p.timestamp * 1000; r.transfer = p.encodedDataLength; }
+      if (r) { r.finishedAt = p.timestamp * 1000; r.finishedObservedAt = performance.now(); r.transfer = p.encodedDataLength; }
       break;
     case 'Network.loadingFailed':
       if (r) { r.finishedAt = p.timestamp * 1000; r.failed = true; }
@@ -131,11 +143,12 @@ async function read(expression) {
   return answer.result?.value;
 }
 
-async function click(label) {
+async function click(label, selector = null) {
   const matched = await read(`(() => {
     const label = ${JSON.stringify(label)};
-    const items = [...document.querySelectorAll('button, a, [role="tab"], [role="option"], [role="checkbox"]')];
-    const item = items.find(x => (x.getAttribute('aria-label') || x.textContent).trim() === label && x.getClientRects().length);
+    const selector = ${JSON.stringify(selector)};
+    const items = [...document.querySelectorAll(selector || 'button, a, [role="tab"], [role="option"], [role="checkbox"]')];
+    const item = items.find(x => (selector || (x.getAttribute('aria-label') || x.textContent).trim() === label) && x.getClientRects().length);
     if (!item) return {error: 'Controle ausente'};
     if (item.disabled || item.getAttribute('aria-disabled') === 'true') return {error: 'Controle desabilitado'};
     item.scrollIntoView({block:'nearest'});
@@ -179,7 +192,9 @@ function summarize(captured, readyAt) {
   const firstRequest = Math.min(...Array.from(captured.values(), r => r.startedAt));
   for (const r of captured.values()) {
     const path = `${r.kind} ${r.path}`;
-    const group = paths.get(path) ?? { path, count: 0, bytes: 0, decoded: 0 };
+    const scope = JSON.stringify(r.recorte ?? null);
+    const groupKey = path + scope;
+    const group = paths.get(groupKey) ?? { path, recorte: r.recorte, count: 0, bytes: 0, decoded: 0 };
     group.count += 1;
     group.firstRequestMs = Math.min(group.firstRequestMs ?? Infinity, round(r.startedAt - firstRequest));
     group.bytes += r.transfer;
@@ -194,7 +209,7 @@ function summarize(captured, readyAt) {
     if (r.encoding) group.encoding = r.encoding;
     const source = Date.parse(r.asOf ?? '');
     if (Number.isFinite(source)) group.maxAgeMs = Math.max(group.maxAgeMs ?? 0, readyAt - source);
-    paths.set(path, group);
+    paths.set(groupKey, group);
   }
   return [...paths.values()].sort((a, b) => b.maxMs - a.maxMs);
 }
@@ -222,11 +237,12 @@ try {
         if (url.pathname === previous?.path && !url.search) await call('Page.reload', { ignoreCache: Boolean(s.cold) });
         else await call('Page.navigate', { url: url.href });
       } else {
-        await click(s.click);
+        await click(s.click, s.clickSelector);
       }
       let result;
       let outcome = 'timeout';
       let readySince;
+      let respostaPreparada;
       while (performance.now() - started < (s.timeoutMs ?? 45_000)) {
         result = await state(s);
         if (result?.origin && result.origin !== origin) { outcome = 'redirected'; break; }
@@ -235,14 +251,17 @@ try {
           if (result?.denied) { outcome = 'denied'; break; }
           if (result?.fault) { outcome = 'upstream_error'; break; }
           const calls = [...requests.values()].filter(r => (s.requests ?? []).some(path => r.path === path));
-          if (result?.ready && (!s.requests?.length || (calls.length && calls.every(r => r.finishedAt)))) {
+          if (s.recorte) respostaPreparada = [...calls].reverse().find(r => r.status === 200 && r.finishedObservedAt &&
+            r.recorte && Object.entries(s.recorte).every(([key, value]) => value === r.recorte[key]));
+          if (result?.ready && (s.recorte ? respostaPreparada : !s.requests?.length || (calls.length && calls.every(r => r.finishedAt)))) {
             readySince ??= performance.now();
             if (performance.now() - readySince >= (s.settleMs ?? 0)) { outcome = 'ready'; break; }
           } else readySince = undefined;
         }
         await delay(100);
       }
-      const observedMs = round(performance.now() - started);
+      const observedAt = performance.now();
+      const observedMs = round(observedAt - started);
       const after = await metrics();
       const mainThreadMs = {};
       for (const name of ['ScriptDuration', 'LayoutDuration', 'RecalcStyleDuration', 'TaskDuration']) {
@@ -254,6 +273,7 @@ try {
         ? await read(`document.querySelector(${JSON.stringify(s.metricSelector)})?.innerText`) : null;
       console.log(JSON.stringify({ name: s.name, outcome, path: result?.path, cold: Boolean(s.cold),
         localBuild: Boolean(staticRoot), observedMs,
+        afterResponseMs: respostaPreparada && outcome === 'ready' ? elapsed(observedAt, respostaPreparada.finishedObservedAt) : undefined,
         metricsHash: metricText ? createHash('sha256').update(metricText).digest('hex') : undefined,
         navigationMs: s.path && result?.path === s.path && result.timeOrigin !== previous?.timeOrigin ? round(result.time) : null,
         mainThreadMs, requests: summarize(requests, cut) }));

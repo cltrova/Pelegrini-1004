@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect, type ReactNode } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -16,6 +16,7 @@ import { cn } from '@/lib/utils';
 import { postAiJson } from '@/lib/aiApi';
 import { toast } from 'sonner';
 import type { TopProdutoAgg, ResumoVendaLinha } from '@/types/comercialProdutos';
+import type { ProdutoDetalhesPreparados } from '@/hooks/useProdutosPreparados';
 import { LoadingIndicator, LoadingState } from '@/components/common/LoadingState';
 
 interface AIInsight {
@@ -34,19 +35,37 @@ interface PremiumTopProdutosProps {
   onSelectMarca: (marca: string | null) => void;
   onHoverMarca?: (marca: string | null) => void;
   showInsights?: boolean;
+  onDetalhePreparado?: (codigo: string | null) => void;
+  detalhePreparado?: ProdutoDetalhesPreparados;
+  erroDetalhePreparado?: boolean;
+  rankingPreparado?: {
+    pagina: number;
+    tamanho: number;
+    somaReceita: number;
+    somaQuantidade: number;
+    busca: string;
+    pesquisar: (text: string) => void;
+    status: ReactNode;
+  };
 }
 
 const PAGE_SIZE = 20;
 
 export function PremiumTopProdutos({
   produtos, resumoVendas = [], mode = 'receitas', selectedMarca, onSelectMarca, showInsights = true,
+  onDetalhePreparado, detalhePreparado, erroDetalhePreparado, rankingPreparado,
 }: PremiumTopProdutosProps) {
   const isDevolucao = mode === 'devolucoes';
   const [busca, setBusca] = useState('');
   const [mostrar, setMostrar] = useState(PAGE_SIZE);
   const [produtoDetalhe, setProdutoDetalhe] = useState<TopProdutoAgg | null>(null);
+  const mudarProduto = (produto: TopProdutoAgg | null) => {
+    setProdutoDetalhe(produto);
+    onDetalhePreparado?.(produto ? String(produto.cod_produto) : null);
+  };
 
   const filtrados = useMemo(() => {
+    if (rankingPreparado) return produtos;
     const base = selectedMarca
       ? produtos.filter(p => (p.marca || '').toUpperCase().trim() === selectedMarca.toUpperCase().trim())
       : produtos;
@@ -57,14 +76,15 @@ export function PremiumTopProdutos({
       String(p.cod_produto).toLowerCase().includes(q) ||
       (p.marca || '').toLowerCase().includes(q)
     );
-  }, [produtos, selectedMarca, busca]);
+  }, [produtos, selectedMarca, busca, rankingPreparado]);
 
-  const totalReceita = useMemo(() => filtrados.reduce((a, p) => a + p.faturamento, 0), [filtrados]);
-  const totalQtd = useMemo(() => filtrados.reduce((a, p) => a + p.quantidade, 0), [filtrados]);
+  const totalReceita = rankingPreparado?.somaReceita ?? filtrados.reduce((a, p) => a + p.faturamento, 0);
+  const totalQtd = rankingPreparado?.somaQuantidade ?? filtrados.reduce((a, p) => a + p.quantidade, 0);
   const ticketMedio = filtrados.length > 0 ? totalReceita / filtrados.length : 0;
   const maxFat = filtrados.length > 0 ? Math.max(...filtrados.slice(0, 50).map(p => Math.abs(p.faturamento))) : 1;
 
-  const visiveis = filtrados.slice(0, mostrar);
+  const visiveis = rankingPreparado ? filtrados : filtrados.slice(0, mostrar);
+  const rankOffset = rankingPreparado ? rankingPreparado.pagina * rankingPreparado.tamanho : 0;
 
   // ============= IA INSIGHTS =============
   const [aiInsights, setAiInsights] = useState<AIInsight[]>([]);
@@ -204,6 +224,7 @@ export function PremiumTopProdutos({
   // Detalhes do produto selecionado (via resumoVendas)
   const detalhesProduto = useMemo(() => {
     if (!produtoDetalhe) return null;
+    if (onDetalhePreparado) return detalhePreparado ?? null;
     const cod = String(produtoDetalhe.cod_produto);
     const tipo = isDevolucao ? 'DEVOLUCAO' : 'PEDIDO';
     const linhas = resumoVendas.filter(l => String(l.cod_produto) === cod && l.tipo === tipo);
@@ -248,7 +269,7 @@ export function PremiumTopProdutos({
       pedidos: linhas.length,
       topClientes, evolucaoMensal, ultimasNFs,
     };
-  }, [produtoDetalhe, resumoVendas, isDevolucao]);
+  }, [produtoDetalhe, resumoVendas, isDevolucao, onDetalhePreparado, detalhePreparado]);
 
   return (
     <div className="min-w-0 max-w-full space-y-4 animate-fade-in">
@@ -320,8 +341,11 @@ export function PremiumTopProdutos({
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
                 <Input
                   placeholder="Buscar produto, código ou marca..."
-                  value={busca}
-                  onChange={e => { setBusca(e.target.value); setMostrar(PAGE_SIZE); }}
+                  value={rankingPreparado?.busca ?? busca}
+                  onChange={e => {
+                    if (rankingPreparado) rankingPreparado.pesquisar(e.target.value);
+                    else { setBusca(e.target.value); setMostrar(PAGE_SIZE); }
+                  }}
                   className="pl-9 h-9 text-sm bg-background"
                 />
               </div>
@@ -340,7 +364,7 @@ export function PremiumTopProdutos({
         </div>
 
         <CardContent className="p-0">
-          {visiveis.length === 0 ? (
+          {rankingPreparado?.status ?? (visiveis.length === 0 ? (
             <div className="text-center py-16 text-sm text-muted-foreground">
               Nenhum produto encontrado.
             </div>
@@ -356,7 +380,7 @@ export function PremiumTopProdutos({
               </div>
 
               {visiveis.map((p, i) => {
-                const rank = i + 1;
+                const rank = rankOffset + i + 1;
                 const share = totalReceita > 0 ? (p.faturamento / totalReceita) * 100 : 0;
                 const barPct = (Math.abs(p.faturamento) / maxFat) * 100;
                 const isTop3 = rank <= 3;
@@ -391,7 +415,7 @@ export function PremiumTopProdutos({
                       {/* Produto - título clicável */}
                       <div className="commercial-products-primary-column min-w-0">
                         <button
-                          onClick={() => setProdutoDetalhe(p)}
+                          onClick={() => mudarProduto(p)}
                           className="group/title w-full text-left"
                         >
                           <span className={cn(
@@ -469,7 +493,7 @@ export function PremiumTopProdutos({
                       </div>
                       <div className="flex-1 min-w-0">
                         <button
-                          onClick={() => setProdutoDetalhe(p)}
+                          onClick={() => mudarProduto(p)}
                           className="text-left w-full"
                         >
                           <span className="font-medium text-sm leading-tight text-foreground hover:text-primary inline-flex items-center gap-1">
@@ -506,10 +530,10 @@ export function PremiumTopProdutos({
                 );
               })}
             </div>
-          )}
+          ))}
 
           {/* Footer */}
-          {filtrados.length > mostrar && (
+          {!rankingPreparado && filtrados.length > mostrar && (
             <div className="p-3 border-t border-border/50 flex items-center justify-between bg-muted/20">
               <span className="text-xs text-muted-foreground">
                 Mostrando {visiveis.length} de {formatNumber(filtrados.length)} produtos
@@ -524,7 +548,7 @@ export function PremiumTopProdutos({
               </Button>
             </div>
           )}
-          {filtrados.length > 0 && filtrados.length <= mostrar && (
+          {!rankingPreparado?.status && filtrados.length > 0 && (rankingPreparado || filtrados.length <= mostrar) && (
             <div className="p-3 border-t border-border/50 text-xs text-muted-foreground text-center bg-muted/20">
               {formatNumber(filtrados.length)} produtos exibidos · {isDevolucao ? 'Total devolvido' : 'Receita total'} {formatCurrency(totalReceita, true)} · {formatNumber(totalQtd)} unidades
             </div>
@@ -533,7 +557,7 @@ export function PremiumTopProdutos({
       </Card>
 
       {/* DRAWER LATERAL - detalhes do produto */}
-      <Sheet open={!!produtoDetalhe} onOpenChange={(open) => !open && setProdutoDetalhe(null)}>
+      <Sheet open={!!produtoDetalhe} onOpenChange={(open) => !open && mudarProduto(null)}>
         <SheetContent className="commercial-overlay commercial-detail-panel w-full overflow-y-auto sm:max-w-2xl">
           {produtoDetalhe && (
             <>
@@ -550,7 +574,7 @@ export function PremiumTopProdutos({
                         <>
                           <span>·</span>
                           <button
-                            onClick={() => { onSelectMarca(produtoDetalhe.marca!); setProdutoDetalhe(null); }}
+                            onClick={() => { onSelectMarca(produtoDetalhe.marca!); mudarProduto(null); }}
                             className="text-primary hover:underline font-medium inline-flex items-center gap-1"
                           >
                             {produtoDetalhe.marca}
@@ -703,7 +727,12 @@ export function PremiumTopProdutos({
                   </div>
                 )}
 
-                {!detalhesProduto?.ultimasNFs.length && resumoVendas.length === 0 && (
+                {onDetalhePreparado && !detalhesProduto && (
+                  erroDetalhePreparado
+                    ? <p role="alert" className="py-4 text-sm text-muted-foreground">Detalhamento por NF indisponível.</p>
+                    : <LoadingState message="Carregando detalhes do produto" variant="content" surface={false} />
+                )}
+                {!onDetalhePreparado && !detalhesProduto?.ultimasNFs.length && resumoVendas.length === 0 && (
                   <p className="text-xs text-muted-foreground text-center py-6">
                     Detalhamento por NF não disponível neste período.
                   </p>

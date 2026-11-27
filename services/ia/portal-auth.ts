@@ -67,7 +67,7 @@ export async function authorizePortal(
   fetchPortal: typeof fetch,
   requestSignal: AbortSignal,
   branch?: InsightsBranch,
-  rolesAllowed?: readonly string[],
+  empresaDoModulo?: string,
 ): Promise<PortalFailure | undefined> {
   if (authorization?.length !== 1 || authorization[0].length > 8192 + 'Bearer '.length) return 401;
   const bearer = bearerPattern.exec(authorization[0]);
@@ -80,7 +80,7 @@ export async function authorizePortal(
   const signal = AbortSignal.any([requestSignal, AbortSignal.timeout(portalTimeoutMs)]);
   const headers = { authorization: `Bearer ${bearer[1]}`, apikey: apiKey, accept: 'application/json' };
 
-  const get = async (path: string, fields?: { user_id: string; select: string }): Promise<unknown> => {
+  const get = async (path: string, fields?: Record<string, string>): Promise<unknown> => {
     const url = new URL(path, origin);
     if (fields) url.search = new URLSearchParams(fields).toString();
     const reply = await fetchPortal(url, { method: 'GET', headers, signal, redirect: 'error', cache: 'no-store' });
@@ -107,9 +107,6 @@ export async function authorizePortal(
     const roles = await get('/rest/v1/user_roles', { user_id: actorFilter, select: 'role' });
     if (!Array.isArray(roles)) return 503;
     if (roles.some((row) => isRecord(row) && row.role === 'master')) return;
-    if (rolesAllowed && !roles.some((row) => isRecord(row) && typeof row.role === 'string' && rolesAllowed.includes(row.role))) {
-      return 403;
-    }
 
     const profile = singleRow(await get('/rest/v1/profiles', {
       user_id: actorFilter,
@@ -122,11 +119,15 @@ export async function authorizePortal(
       if (!branches.includes(branch)) return 403;
     }
 
-    const permissions = singleRow(await get('/rest/v1/user_module_permissions', {
-      user_id: actorFilter,
-      select: requiredModules.join(','),
-    }));
-    if (!permissions || !requiredModules.some((module) => permissions[module] === true)) return 403;
+    const select = requiredModules.join(',');
+    const [permissionRows, companyRows] = await Promise.all([
+      get('/rest/v1/user_module_permissions', { user_id: actorFilter, select }),
+      empresaDoModulo ? get('/rest/v1/empresas', { cod_empresa_bi: `eq.${empresaDoModulo}`, select }) : [],
+    ]);
+    const permissions = singleRow(permissionRows);
+    const company = singleRow(companyRows);
+    if (!Array.isArray(companyRows) || (companyRows.length && !company)) return 503;
+    if (!permissions || !requiredModules.some((module) => permissions[module] === true && (!company || company[module] === true))) return 403;
   } catch (error) {
     return error instanceof PortalLookupError ? error.status : 503;
   }

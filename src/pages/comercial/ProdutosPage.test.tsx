@@ -33,6 +33,11 @@ vi.mock('@/hooks/useComercialProdutos', () => ({
   useComercialProdutos: vi.fn(),
 }));
 
+vi.mock('@/hooks/useProdutosPreparados', () => ({
+  tamanhoPaginaProdutos: 50,
+  useProdutosPreparados: () => ({}),
+}));
+
 vi.mock('@/hooks/useEmpresaAtiva', () => ({
   useEmpresaAtiva: () => empresaAtivaMock.current,
 }));

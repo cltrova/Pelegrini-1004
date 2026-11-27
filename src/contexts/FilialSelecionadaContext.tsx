@@ -23,6 +23,10 @@ const FilialSelecionadaContext = createContext<FilialSelecionadaContextType | un
 
 const STORAGE_PREFIX = 'bi-reports-filial-';
 
+export function lerFilialSelecionada(empresa: string) {
+  return localStorage.getItem(`${STORAGE_PREFIX}${empresa}`);
+}
+
 export function FilialSelecionadaProvider({ children }: { children: ReactNode }) {
   const { empresaSelecionada } = useEmpresaSelecionada();
   const { codEmpresa: codEmpresaPerfil, isMaster, profile } = useAuth() as any;
@@ -46,7 +50,7 @@ export function FilialSelecionadaProvider({ children }: { children: ReactNode })
 
   const [filialAtiva, setFilialAtivaState] = useState<string | null>(() => {
     if (!codEmpresaContexto) return null;
-    const stored = localStorage.getItem(`${STORAGE_PREFIX}${codEmpresaContexto}`);
+    const stored = lerFilialSelecionada(codEmpresaContexto);
     const initialAccess = getFilialAccessState({
       codEmpresa: codEmpresaContexto,
       isMaster,

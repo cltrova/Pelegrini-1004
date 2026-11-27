@@ -3,11 +3,11 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import { PelegriniThemeProvider } from "@/components/common/PelegriniThemeProvider";
 import { AuthProvider } from "@/contexts/AuthContext";
-import { EmpresaSelecionadaProvider } from "@/contexts/EmpresaSelecionadaContext";
-import { FilialSelecionadaProvider, useFilialSelecionada } from "@/contexts/FilialSelecionadaContext";
+import { EmpresaSelecionadaProvider, useEmpresaSelecionada } from "@/contexts/EmpresaSelecionadaContext";
+import { FilialSelecionadaProvider, lerFilialSelecionada, useFilialSelecionada } from "@/contexts/FilialSelecionadaContext";
 import { FinanceiroLayout } from "@/components/layout/FinanceiroLayout";
 import { ComercialLayout } from "@/components/layout/ComercialLayout";
 import { WhatsappLayout } from "@/components/layout/WhatsappLayout";
@@ -24,6 +24,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useEmpresaAtiva } from "@/hooks/useEmpresaAtiva";
 import { useUserModulePermissions } from "@/hooks/useUserModulePermissions";
 import { filialPermiteRelatoriosVisitas } from "@/utils/acessoRelatoriosVisitas";
+import { anteciparProdutosPreparados } from "@/hooks/useProdutosPreparados";
 const DrePage = lazy(() => import('./pages/financeiro/DrePage'));
 const VariacaoPage = lazy(() => import('./pages/financeiro/VariacaoPage'));
 const ResumoPage = lazy(() => import('./pages/financeiro/ResumoPage'));
@@ -32,7 +33,8 @@ const SaldoAVencerPage = lazy(() => import('./pages/financeiro/SaldoAVencerPage'
 // ComercialDashboardPage removido do roteamento: layout antigo (MetasVendedoresPage) restaurado para todas as empresas.
 const MetasVendedoresPage = lazy(() => import('./pages/comercial/MetasVendedoresPage'));
 const ClientesAnalysePage = lazy(() => import('./pages/comercial/ClientesAnalysePage'));
-const ProdutosPage = lazy(() => import('./pages/comercial/ProdutosPage'));
+const carregarProdutosPage = () => import('./pages/comercial/ProdutosPage');
+const ProdutosPage = lazy(carregarProdutosPage);
 const ComissaoPage = lazy(() => import('./pages/comercial/ComissaoPage'));
 const CotacoesAbertasPage = lazy(() => import('./pages/comercial/CotacoesAbertasPage'));
 const VendasPerdidasPage = lazy(() => import('./pages/comercial/VendasPerdidasPage'));
@@ -68,6 +70,24 @@ const queryClient = new QueryClient({
 
 function GuardSpinner() {
   return <LoadingState message="Carregando aplicacao" variant="screen" />;
+}
+
+function PrecarregarProdutos() {
+  const { user, codEmpresa, isMaster } = useAuth();
+  const { empresaSelecionada } = useEmpresaSelecionada();
+  const usuario = user?.id;
+  const empresa = isMaster ? empresaSelecionada : codEmpresa ?? empresaSelecionada;
+  useEffect(() => {
+    if (window.location.pathname !== '/comercial/produtos') return;
+    void carregarProdutosPage().catch(() => {});
+  }, []);
+  useEffect(() => {
+    if (usuario && empresa && window.location.pathname === '/comercial/produtos') {
+      const filial = empresa === '10041' ? 'chevrolet' : lerFilialSelecionada(empresa);
+      anteciparProdutosPreparados(queryClient, usuario, filial);
+    }
+  }, [usuario, empresa]);
+  return null;
 }
 
 // Enquanto auth/empresa ainda carregam, nenhum guard pode redirecionar
@@ -175,6 +195,7 @@ const App = () => (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <EmpresaSelecionadaProvider>
+          {import.meta.env.VITE_PRODUTOS_PREPARADOS === 'true' && <PrecarregarProdutos />}
           <FilialSelecionadaProvider>
             <AppInstallBranding />
           <TooltipProvider>
