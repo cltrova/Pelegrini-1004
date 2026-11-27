@@ -256,7 +256,7 @@ describe('ProdutosPage compacta', () => {
     expect(screen.queryByText('ZF')).not.toBeInTheDocument();
   });
 
-  it('mantem abas compactas rolaveis e somente o painel ativo no layout', () => {
+  it('mantem abas compactas rolaveis e somente o painel ativo no layout', async () => {
     renderPage();
 
     const tabs = screen.getByRole('tablist');
@@ -268,10 +268,10 @@ describe('ProdutosPage compacta', () => {
     expect(screen.getAllByRole('tabpanel')).toHaveLength(1);
 
     fireEvent.mouseDown(screen.getByRole('tab', { name: 'Top Produtos' }), { button: 0, ctrlKey: false });
-    expect(screen.getByText('Conteudo Premium Top Produtos')).toHaveAttribute('data-show-insights', 'false');
+    expect(await screen.findByText('Conteudo Premium Top Produtos')).toHaveAttribute('data-show-insights', 'false');
 
     fireEvent.mouseDown(screen.getByRole('tab', { name: 'Categorias' }), { button: 0, ctrlKey: false });
-    expect(screen.getByText('Conteudo Premium Categorias')).toHaveAttribute('data-show-insights', 'false');
+    expect(await screen.findByText('Conteudo Premium Categorias')).toHaveAttribute('data-show-insights', 'false');
     expect(screen.getByText('Conteudo Premium Categorias')).toHaveAttribute('data-embedded', 'true');
 
     fireEvent.mouseDown(screen.getByRole('tab', { name: /Sem Giro/ }), { button: 0, ctrlKey: false });
@@ -294,13 +294,13 @@ describe('ProdutosPage compacta', () => {
     expect(viewport.querySelector('.premium-card')).not.toBeInTheDocument();
   });
 
-  it('mantem Top Produtos dedicado ao ranking de receitas', () => {
+  it('mantem Top Produtos dedicado ao ranking de receitas', async () => {
     renderPage();
     fireEvent.mouseDown(screen.getByRole('tab', { name: 'Top Produtos' }), { button: 0, ctrlKey: false });
 
-    expect(screen.getByText('Cambio completo')).toBeInTheDocument();
+    expect(await screen.findByText('Cambio completo')).toBeInTheDocument();
     expect(screen.queryByText('Produto devolvido')).not.toBeInTheDocument();
-    expect(screen.getByText('Conteudo Premium Top Produtos')).toHaveAttribute('data-mode', 'receitas');
+    expect(await screen.findByText('Conteudo Premium Top Produtos')).toHaveAttribute('data-mode', 'receitas');
     expect(screen.queryByRole('tab', { name: 'Receitas' })).not.toBeInTheDocument();
     expect(screen.queryByRole('tab', { name: 'Devoluções' })).not.toBeInTheDocument();
   });

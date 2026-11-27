@@ -33,8 +33,7 @@ const SaldoAVencerPage = lazy(() => import('./pages/financeiro/SaldoAVencerPage'
 // ComercialDashboardPage removido do roteamento: layout antigo (MetasVendedoresPage) restaurado para todas as empresas.
 const MetasVendedoresPage = lazy(() => import('./pages/comercial/MetasVendedoresPage'));
 const ClientesAnalysePage = lazy(() => import('./pages/comercial/ClientesAnalysePage'));
-const carregarProdutosPage = () => import('./pages/comercial/ProdutosPage');
-const ProdutosPage = lazy(carregarProdutosPage);
+const ProdutosPage = lazy(() => import('./pages/comercial/ProdutosPage'));
 const ComissaoPage = lazy(() => import('./pages/comercial/ComissaoPage'));
 const CotacoesAbertasPage = lazy(() => import('./pages/comercial/CotacoesAbertasPage'));
 const VendasPerdidasPage = lazy(() => import('./pages/comercial/VendasPerdidasPage'));
@@ -77,10 +76,6 @@ function PrecarregarProdutos() {
   const { empresaSelecionada } = useEmpresaSelecionada();
   const usuario = user?.id;
   const empresa = isMaster ? empresaSelecionada : codEmpresa ?? empresaSelecionada;
-  useEffect(() => {
-    if (window.location.pathname !== '/comercial/produtos') return;
-    void carregarProdutosPage().catch(() => {});
-  }, []);
   useEffect(() => {
     if (usuario && empresa && window.location.pathname === '/comercial/produtos') {
       const filial = empresa === '10041' ? 'chevrolet' : lerFilialSelecionada(empresa);

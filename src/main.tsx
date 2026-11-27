@@ -18,6 +18,10 @@ const root = createRoot(document.getElementById("root")!);
 const pathname = window.location.pathname.replace(/\/$/, "");
 const isVisitas = pathname === "/visitas";
 
+if (pathname === '/comercial/produtos' && import.meta.env.VITE_PRODUTOS_PREPARADOS === 'true') {
+  void import('./pages/comercial/ProdutosPage').catch(() => {});
+}
+
 async function iniciar() {
   const redirecionamento = !isVisitas && !isLocalPreviewEnabled()
     ? consultarSessaoVisitas(undefined, AbortSignal.timeout?.(1500)).catch(() => null).then(sessao => {

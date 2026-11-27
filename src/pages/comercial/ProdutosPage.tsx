@@ -1,4 +1,4 @@
-import { useMemo, useState, useCallback, useRef, useEffect } from 'react';
+import { useMemo, useState, useCallback, useRef, useEffect, lazy, Suspense } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useComercialProdutos } from '@/hooks/useComercialProdutos';
 import { tamanhoPaginaProdutos, useProdutosPreparados, type AbaProdutos } from '@/hooks/useProdutosPreparados';
@@ -14,11 +14,6 @@ import { getDefaultFiltersForEmpresa } from '@/components/comercial/ComercialFil
 import { useComercialData } from '@/hooks/useComercialData';
 import type { ComercialFilters as ComercialFiltersType } from '@/types/comercial';
 import { PremiumMarcasView } from '@/components/comercial/PremiumMarcasView';
-import { PremiumTopProdutos } from '@/components/comercial/PremiumTopProdutos';
-import { PremiumCategoriasView } from '@/components/comercial/PremiumCategoriasView';
-import { MarcasViewLegacy } from '@/components/comercial/legacy/MarcasViewLegacy';
-import { TopProdutosLegacy } from '@/components/comercial/legacy/TopProdutosLegacy';
-import { CategoriasViewLegacy } from '@/components/comercial/legacy/CategoriasViewLegacy';
 import { useEmpresaAtiva } from '@/hooks/useEmpresaAtiva';
 import { useFilialSelecionada } from '@/contexts/FilialSelecionadaContext';
 import { EnterpriseSearchFilter } from '@/components/enterprise';
@@ -29,6 +24,12 @@ import {
   ComercialDataViewport,
   ComercialMetricStrip,
 } from '@/components/comercial/compact';
+
+const PremiumTopProdutos = lazy(() => import('@/components/comercial/PremiumTopProdutos').then(m => ({ default: m.PremiumTopProdutos })));
+const PremiumCategoriasView = lazy(() => import('@/components/comercial/PremiumCategoriasView').then(m => ({ default: m.PremiumCategoriasView })));
+const MarcasViewLegacy = lazy(() => import('@/components/comercial/legacy/MarcasViewLegacy').then(m => ({ default: m.MarcasViewLegacy })));
+const TopProdutosLegacy = lazy(() => import('@/components/comercial/legacy/TopProdutosLegacy').then(m => ({ default: m.TopProdutosLegacy })));
+const CategoriasViewLegacy = lazy(() => import('@/components/comercial/legacy/CategoriasViewLegacy').then(m => ({ default: m.CategoriasViewLegacy })));
 
 const ANOS = ['2023', '2024', '2025', '2026'];
 type FiltrosProdutos = ComercialFiltersType & { todoHistorico?: boolean };
@@ -427,22 +428,24 @@ export default function ProdutosPage() {
             ariaLabel="Desempenho por marca"
             className={cn('h-full max-h-full', !isLayoutPremium && 'commercial-table-frame')}
           >
-          {isLayoutPremium ? (
-            <PremiumMarcasView
-              porMarca={porMarcaFiltrada}
-              selectedMarca={selectedMarca}
-              onSelectMarca={setSelectedMarca}
-              periodoLabel={[appliedFilters.anos?.join('/'), appliedFilters.meses?.join('/')].filter(Boolean).join(' • ')}
-              showInsights={false}
-              embedded
-            />
-          ) : (
-            <MarcasViewLegacy
-              porMarca={porMarcaFiltrada}
-              selectedMarca={selectedMarca}
-              onSelectMarca={setSelectedMarca}
-            />
-          )}
+            <Suspense fallback={<LoadingState message="Carregando dados da aba" variant="content" surface={false} />}>
+              {isLayoutPremium ? (
+                <PremiumMarcasView
+                  porMarca={porMarcaFiltrada}
+                  selectedMarca={selectedMarca}
+                  onSelectMarca={setSelectedMarca}
+                  periodoLabel={[appliedFilters.anos?.join('/'), appliedFilters.meses?.join('/')].filter(Boolean).join(' • ')}
+                  showInsights={false}
+                  embedded
+                />
+              ) : (
+                <MarcasViewLegacy
+                  porMarca={porMarcaFiltrada}
+                  selectedMarca={selectedMarca}
+                  onSelectMarca={setSelectedMarca}
+                />
+              )}
+            </Suspense>
           </ComercialDataViewport>
         </TabsContent>
 
@@ -451,35 +454,37 @@ export default function ProdutosPage() {
             ariaLabel="Ranking de receitas por produto"
             className={cn('h-full max-h-full', !isLayoutPremium && 'commercial-table-frame')}
           >
-          {isLayoutPremium ? (
-            <PremiumTopProdutos
-              produtos={topFiltrado}
-              resumoVendas={resumoReceitas}
-              mode="receitas"
-              selectedMarca={selectedMarca}
-              onSelectMarca={setSelectedMarca}
-              onHoverMarca={setHoverMarca}
-              showInsights={false}
-              onDetalhePreparado={usarPreparado ? setCodigoDetalhe : undefined}
-              detalhePreparado={painel.detalhe}
-              erroDetalhePreparado={!!painel.erroDetalhe}
-              rankingPreparado={usarPreparado ? {
-                pagina: paginaRanking, tamanho: tamanhoPaginaProdutos,
-                somaReceita: rankingPreparado?.somaReceita ?? 0,
-                somaQuantidade: rankingPreparado?.somaQuantidade ?? 0,
-                busca: buscaRanking, pesquisar: setBuscaRanking, status: statusAba,
-              } : undefined}
-            />
-          ) : statusAba ?? (
-            <TopProdutosLegacy
-              produtos={topFiltrado}
-              mode="receitas"
-              selectedMarca={selectedMarca}
-              onSelectMarca={setSelectedMarca}
-              paginacaoRemota={usarPreparado && rankingPreparado
-                ? { pagina: paginaRanking, total: rankingPreparado.total } : undefined}
-            />
-          )}
+            <Suspense fallback={<LoadingState message="Carregando dados da aba" variant="content" surface={false} />}>
+              {isLayoutPremium ? (
+                <PremiumTopProdutos
+                  produtos={topFiltrado}
+                  resumoVendas={resumoReceitas}
+                  mode="receitas"
+                  selectedMarca={selectedMarca}
+                  onSelectMarca={setSelectedMarca}
+                  onHoverMarca={setHoverMarca}
+                  showInsights={false}
+                  onDetalhePreparado={usarPreparado ? setCodigoDetalhe : undefined}
+                  detalhePreparado={painel.detalhe}
+                  erroDetalhePreparado={!!painel.erroDetalhe}
+                  rankingPreparado={usarPreparado ? {
+                    pagina: paginaRanking, tamanho: tamanhoPaginaProdutos,
+                    somaReceita: rankingPreparado?.somaReceita ?? 0,
+                    somaQuantidade: rankingPreparado?.somaQuantidade ?? 0,
+                    busca: buscaRanking, pesquisar: setBuscaRanking, status: statusAba,
+                  } : undefined}
+                />
+              ) : statusAba ?? (
+                <TopProdutosLegacy
+                  produtos={topFiltrado}
+                  mode="receitas"
+                  selectedMarca={selectedMarca}
+                  onSelectMarca={setSelectedMarca}
+                  paginacaoRemota={usarPreparado && rankingPreparado
+                    ? { pagina: paginaRanking, total: rankingPreparado.total } : undefined}
+                />
+              )}
+            </Suspense>
           </ComercialDataViewport>
           {usarPreparado && <PaginacaoProdutos label="Paginação do ranking" pagina={paginaRanking}
             total={rankingPreparado?.total ?? 0} onChange={setPaginaRanking} />}
@@ -490,22 +495,24 @@ export default function ProdutosPage() {
             ariaLabel="Desempenho por categoria"
             className={cn('h-full max-h-full', !isLayoutPremium && 'commercial-table-frame')}
           >
-          {statusAba ?? (isLayoutPremium ? (
-            <PremiumCategoriasView
-              porCategoria={porCategoriaFiltrada}
-              selectedCategoria={selectedCategoria}
-              onSelectCategoria={setSelectedCategoria}
-              periodoLabel={[appliedFilters.anos?.join('/'), appliedFilters.meses?.join('/')].filter(Boolean).join(' • ')}
-              showInsights={false}
-              embedded
-            />
-          ) : (
-            <CategoriasViewLegacy
-              porCategoria={porCategoriaFiltrada}
-              selectedCategoria={selectedCategoria}
-              onSelectCategoria={setSelectedCategoria}
-            />
-          ))}
+            <Suspense fallback={<LoadingState message="Carregando dados da aba" variant="content" surface={false} />}>
+              {statusAba ?? (isLayoutPremium ? (
+                <PremiumCategoriasView
+                  porCategoria={porCategoriaFiltrada}
+                  selectedCategoria={selectedCategoria}
+                  onSelectCategoria={setSelectedCategoria}
+                  periodoLabel={[appliedFilters.anos?.join('/'), appliedFilters.meses?.join('/')].filter(Boolean).join(' • ')}
+                  showInsights={false}
+                  embedded
+                />
+              ) : (
+                <CategoriasViewLegacy
+                  porCategoria={porCategoriaFiltrada}
+                  selectedCategoria={selectedCategoria}
+                  onSelectCategoria={setSelectedCategoria}
+                />
+              ))}
+            </Suspense>
           </ComercialDataViewport>
         </TabsContent>
 
