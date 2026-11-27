@@ -8,15 +8,11 @@ import { Empresa } from '@/hooks/useEmpresaConfig';
 import { supabase } from '@/integrations/supabase/client';
 import { buildApiProxyUrl } from '@/utils/apiEndpointResolver';
 import { useEmpresaConfig } from '@/hooks/useEmpresaConfig';
+import { loadLocalDreData } from '@/data/dreLocalData';
 
 const loadLocalVariacaoData = async (): Promise<VariacaoRecord[]> => {
   const module = await import('@/data/variacaoData.json');
   return module.default as VariacaoRecord[];
-};
-
-const loadLocalDreData = async (): Promise<DreRecord[]> => {
-  const module = await import('@/data/dreData.json');
-  return module.default as DreRecord[];
 };
 
 // Mapeamento de nomes de JSON para imports locais - Variação

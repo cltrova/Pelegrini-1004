@@ -198,6 +198,17 @@ describe('MetasVendedoresPage commercial dashboard', () => {
     expect(vi.mocked(useComercialData).mock.lastCall?.[0]?.anos).toEqual(['2025', '2026']);
   });
 
+  it('permite aplicar o período enquanto as opções de vendedores carregam', async () => {
+    const { rerender } = render(<MetasVendedoresPage />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Expandir filtros' }));
+    produtosFiltroState.value = { ...produtosFiltroState.value, isFetching: true };
+    fetchingState.value = 1;
+    await act(async () => rerender(<MetasVendedoresPage />));
+    expect(screen.getByRole('button', { name: 'Buscar' })).toBeEnabled();
+    fireEvent.click(screen.getByRole('button', { name: 'Buscar' }));
+    expect(screen.queryByRole('dialog', { name: 'Filtros comerciais' })).not.toBeInTheDocument();
+  });
+
   it.each(['Detalhes', 'Comparativos'])('mantém o filtro à direita das abas em %s', async (name) => {
     render(<MetasVendedoresPage />);
 
@@ -297,7 +308,10 @@ describe('MetasVendedoresPage commercial dashboard', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Expandir filtros' }));
     const page = screen.getByRole('tablist').closest('.commercial-dashboard')!;
 
-    fetchingState.value = 1;
+    vi.mocked(useComercialData).mockReturnValue({
+      ...comercialData,
+      isFetching: true,
+    } as ReturnType<typeof useComercialData>);
     await act(async () => rerender(<MetasVendedoresPage />));
 
     const searchButton = screen.getByRole('button', { name: 'Buscar' });
@@ -309,7 +323,7 @@ describe('MetasVendedoresPage commercial dashboard', () => {
     expect(screen.queryByRole('status', { name: 'Atualizando dados comerciais' })).not.toBeInTheDocument();
     expect(screen.queryByText('Carregando visão comercial...')).not.toBeInTheDocument();
 
-    fetchingState.value = 0;
+    vi.mocked(useComercialData).mockReturnValue(comercialData as ReturnType<typeof useComercialData>);
     await act(async () => rerender(<MetasVendedoresPage />));
     expect(within(screen.getByRole('button', { name: 'Buscar' })).queryByTestId('loading-indicator')).not.toBeInTheDocument();
     expect(page).toContainElement(screen.getByText('Conteudo preservado'));

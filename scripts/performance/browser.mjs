@@ -153,15 +153,18 @@ async function metrics() {
 async function state(s) {
   return await read(`(() => {
     const body = document.body?.innerText ?? '';
+    const includes = text => body.toLocaleLowerCase('pt-BR').includes(text.toLocaleLowerCase('pt-BR'));
     const activeTab = document.querySelector('[role="tab"][aria-selected="true"]')?.textContent?.trim();
+    const selector = ${JSON.stringify(s.selector ?? null)};
     return {
       origin: location.origin,
       path: location.pathname,
       isLogin: !!document.querySelector('input[type="password"]'),
       denied: /Acesso Negado|Você não tem permissão para acessar/i.test(body),
-      fault: ${JSON.stringify(s.error ?? [])}.some(text => body.includes(text)),
-      ready: ${JSON.stringify(s.ready)}.every(text => body.includes(text)) &&
-        ${JSON.stringify(s.hide ?? [])}.every(text => !body.includes(text)) &&
+      fault: ${JSON.stringify(s.error ?? [])}.some(includes),
+      ready: ${JSON.stringify(s.ready)}.every(includes) &&
+        ${JSON.stringify(s.hide ?? [])}.every(text => !includes(text)) &&
+        (!selector || [...document.querySelectorAll(selector)].some(x => x.getClientRects().length)) &&
         (${JSON.stringify(s.activeTab ?? null)} === null || activeTab === ${JSON.stringify(s.activeTab ?? null)}),
       time: performance.now(),
       timeOrigin: performance.timeOrigin,
@@ -219,6 +222,7 @@ try {
       }
       let result;
       let outcome = 'timeout';
+      let readySince;
       while (performance.now() - started < (s.timeoutMs ?? 45_000)) {
         result = await state(s);
         if (result?.origin && result.origin !== origin) { outcome = 'redirected'; break; }
@@ -226,7 +230,11 @@ try {
           if (result?.isLogin) { outcome = 'login'; break; }
           if (result?.denied) { outcome = 'denied'; break; }
           if (result?.fault) { outcome = 'upstream_error'; break; }
-          if (result?.ready) { outcome = 'ready'; break; }
+          const calls = [...requests.values()].filter(r => (s.requests ?? []).some(path => r.path === path));
+          if (result?.ready && (!s.requests?.length || (calls.length && calls.every(r => r.finishedAt)))) {
+            readySince ??= performance.now();
+            if (performance.now() - readySince >= (s.settleMs ?? 0)) { outcome = 'ready'; break; }
+          } else readySince = undefined;
         }
         await delay(100);
       }

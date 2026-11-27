@@ -5,7 +5,7 @@ import { useEmpresaAtiva } from '@/hooks/useEmpresaAtiva';
 import { Empresa } from '@/hooks/useEmpresaConfig';
 import { supabase } from '@/integrations/supabase/client';
 import { buildApiProxyUrl } from '@/utils/apiEndpointResolver';
-import dreDataLocal from '@/data/dreData.json';
+import { loadLocalDreData } from '@/data/dreLocalData';
 import { useEmpresaConfig } from '@/hooks/useEmpresaConfig';
 import { defaultDreConfig, shouldInvertSign } from '@/config/dreConfig';
 
@@ -42,9 +42,9 @@ export function getTransformedValue(record: DreRecord): number {
 }
 
 // Mapeamento de nomes de JSON para imports locais (fallback)
-const JSON_IMPORTS: Record<string, () => Promise<{ default: DreRecord[] }>> = {
-  'dreData': () => Promise.resolve({ default: dreDataLocal as DreRecord[] }),
-  '/data/dreData.json': () => Promise.resolve({ default: dreDataLocal as DreRecord[] }),
+const JSON_IMPORTS: Record<string, () => Promise<DreRecord[]>> = {
+  'dreData': loadLocalDreData,
+  '/data/dreData.json': loadLocalDreData,
 };
 
 // Normalizar campos do JSON para o formato esperado
@@ -211,8 +211,7 @@ async function fetchLocalJson(jsonPath: string, codEmpresa?: string): Promise<Dr
   const importer = JSON_IMPORTS[importKey] || JSON_IMPORTS[jsonPath];
   
   if (importer) {
-    const module = await importer();
-    const data = module.default;
+    const data = await importer();
     console.log(`[DRE] Carregados ${data.length} registros do JSON local`);
     
     if (codEmpresa && data.length > 0 && data[0].empresa) {
@@ -225,7 +224,7 @@ async function fetchLocalJson(jsonPath: string, codEmpresa?: string): Promise<Dr
   }
   
   console.warn(`[DRE] JSON não encontrado: ${jsonPath}, usando fallback`);
-  return dreDataLocal as DreRecord[];
+  return loadLocalDreData();
 }
 
 // Verificar se URL é acessível (não é IP local/privado)
@@ -329,7 +328,7 @@ async function fetchDreData(empresa?: Empresa | null, codEmpresa?: string, isMas
     }
     if (isMaster) {
       console.log('[DRE] Master sem dados configurados - usando dados de demonstração');
-      rawData = dreDataLocal as DreRecord[];
+      rawData = await loadLocalDreData();
       dataSource = 'fallback';
     } else {
       // Não-master sem dados configurados = empresa sem dados

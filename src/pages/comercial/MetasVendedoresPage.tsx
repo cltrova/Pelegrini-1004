@@ -1,5 +1,5 @@
 import { lazy, Suspense, useMemo, useState, useCallback, useEffect, useRef } from 'react';
-import { useIsFetching, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { useComercialData } from '@/hooks/useComercialData';
 import { useEmpresaAtiva } from '@/hooks/useEmpresaAtiva';
 import { useFilialSelecionada } from '@/contexts/FilialSelecionadaContext';
@@ -88,12 +88,6 @@ const ANOS_DISPONIVEIS = ['2023', '2024', '2025', '2026'];
 
 export default function MetasVendedoresPage() {
   const queryClient = useQueryClient();
-  const commercialFetchCount = useIsFetching({
-    predicate: (query) => {
-      const rootKey = query.queryKey[0];
-      return typeof rootKey === 'string' && rootKey.startsWith('comercial');
-    },
-  });
   const { empresa, codEmpresaAtiva, isLoading: isLoadingEmpresa } = useEmpresaAtiva();
   const { filialAtiva, filialNome } = useFilialSelecionada();
   const codEmpresaNorm = String(codEmpresaAtiva ?? '').trim();
@@ -209,7 +203,7 @@ export default function MetasVendedoresPage() {
     || (isPelegriniPage ? errorProdutos1004 || errorProdutosTotalizadores1004 : null)
     || (isEmpresa10041Page ? errorTotalizadorOficial : null)
     || (isFiltroProdutosRequired ? errorVendedoresFiltro1004 : null);
-  const isCompanyDataPending = isLoading
+  const isAppliedDataPending = isLoading
     || isCommercialDataFetching
     || (isPelegriniPage && (
       isLoadingProdutos1004
@@ -217,7 +211,8 @@ export default function MetasVendedoresPage() {
       || isLoadingProdutosTotalizadores1004
       || isFetchingProdutosTotalizadores1004
     ))
-    || (isEmpresa10041Page && (isLoadingTotalizadorOficial || isFetchingTotalizadorOficial))
+    || (isEmpresa10041Page && (isLoadingTotalizadorOficial || isFetchingTotalizadorOficial));
+  const isCompanyDataPending = isAppliedDataPending
     || (isFiltroProdutosRequired && (isLoadingVendedoresFiltro1004 || isFetchingVendedoresFiltro1004));
   const branchKey = String(filialAtiva ?? '').trim() || 'sem-filial';
   const dataScopeKey = codEmpresaNorm ? `${codEmpresaNorm}:${branchKey}` : '';
@@ -580,8 +575,7 @@ export default function MetasVendedoresPage() {
   }
 
   const showInitialLoading = isLoadingEmpresa || (!blockingCompanyDataError && !hasResolvedData);
-  const isFetching = commercialFetchCount > 0;
-  const isRefreshing = isFetching && hasResolvedData;
+  const isRefreshing = isAppliedDataPending && hasResolvedData;
 
   if (showInitialLoading) {
     return <LoadingState message="Carregando visão comercial" variant="content" className="min-h-0 flex-1" />;
