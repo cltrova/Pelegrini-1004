@@ -37,8 +37,8 @@ A RAM em repouso após a carga foi de 85 MiB. O disco passou de 1,62 MiB para um
 
 ## Pendências de aceite
 
-- Todas as medições confirmadas de Dashboard e Produtos acima ainda excedem 3 s. O histórico completo com dados reais, as demais abas e os demais perfis continuam com aceite pendente.
-- Integrar ao navegador os cálculos de tela, filtros completos e exportações da base preparada. Conferir cada perfil no portal autenticado. A homologação de Produtos descrita abaixo usa a origem real.
+- As medições de Dashboard acima excederam 3 s. Produtos tem uma rodada posterior com a base preparada, documentada abaixo.
+- Validar as demais telas e o tempo de navegação dos outros perfis. A homologação de Produtos usa dados reais e sessão Master no navegador.
 - Medir novamente as telas oficiais após autorização de publicação.
 
 Os testes do piloto rodam com `python -m unittest discover -s services/relatorios`. A carga de homologação recebe JSONL conferido na origem, com os campos `filial`, `dia`, `pedido`, `vendedor`, `valor` e `original`, pelo comando `carregar.py`, junto com o horário UTC efetivo da leitura. Execute a carga de arquivo em uma base que o servidor ainda vá abrir. `medir.py` gera seu próprio conjunto sintético, publica novas versões no mesmo processo do servidor e mede as consultas.
@@ -67,7 +67,7 @@ A implementação usa o bloco de seleção de `sp_api_produto` de cada empresa, 
 
 `pelegrini-relatorios-carga.service` carrega as bases com até duas leituras simultâneas, retoma os lotes confirmados e dispara a medição após concluir as duas empresas. O estado fica em `/var/lib/pelegrini-relatorios-homologacao`. A consulta interna e o gateway ficam em `127.0.0.1:8328` e `127.0.0.1:8329`. A consulta abre cada base quando a carga e a primeira reconciliação estiverem confirmadas. A Transmissão respondeu durante a carga da Chevrolet. O gateway confere a sessão do portal, o perfil e a filial. Sem sessão, o gateway respondeu `401`. Os testes automatizados de autorização exercitam Master, Gerencial e Vendedor, incluindo filial indevida.
 
-A API de Produtos calcula totais sobre o recorte inteiro, entrega rankings e pagina os detalhes por versão. Os totais e rankings de todo o histórico são preparados em disco na mesma gravação do lote incremental. A API envia a hora UTC da leitura e a versão servida, e devolve `503` quando a base está incompleta ou a leitura atingiu 60 segundos. A sessão do portal oficial ainda usa a API legada. A paridade das métricas finais da interface, a troca da fonte no navegador, as exportações e demais telas e perfis fazem parte do aceite pendente.
+A API de Produtos calcula totais sobre o recorte inteiro, entrega rankings e pagina os detalhes por versão. Os totais e rankings de todo o histórico são preparados em disco na mesma gravação do lote incremental. A API envia a hora UTC da leitura e a versão servida, e devolve `503` quando a base está incompleta ou a leitura atingiu 60 segundos. O portal oficial usa a API legada.
 
 Na amostra real de 24 a 26/11 pelo novo túnel, as contagens e o total líquido coincidiram com a mesma seleção na origem. Foram 493 linhas da Transmissão e 1.159 da Chevrolet. A publicação das amostras ocorreu com 4,70 s e 5,54 s de idade, respectivamente. As consultas em disco levaram 9,3 ms e 11,7 ms. A leitura incremental encontrou 32 e 111 chaves modificadas desde as versões consultadas no primeiro teste do túnel.
 
@@ -98,13 +98,45 @@ A Chevrolet concluiu a carga com 2.175.324 linhas. A primeira passagem increment
 | Chevrolet | 01 a 05/11/2019 | 957 | 39,5 ms | 1,69 s | 8,11 s |
 | Chevrolet | 24 a 26/11/2026 | 1.159 | 25,4 ms | 1,68 s | 9,82 s |
 
-Os quatro recortes coincidiram em contagem de linhas, quantidade, venda, devolução, líquido e custo. Essa conferência usa a seleção canônica do RSYS. Os cálculos de tela por equipe, marca e devolução têm aceite próprio pendente.
+Os quatro recortes coincidiram em contagem de linhas, quantidade, venda, devolução, líquido e custo. Essa conferência usa a seleção canônica do RSYS.
 
 No histórico integral, a conferência automática mediu até 61,2 ms com um acesso, 262,5 ms com cinco e 394,7 ms com dez acessos simultâneos. Nas duas rodadas com acesso concorrente, foram consultadas ambas as empresas. A maior idade foi de 13,97 s e a maior resposta teve 9.241 bytes com gzip e 50 itens. São medições da API interna no VPS.
 
 Uma segunda rodada com as duas bases ativas e a sincronização em execução completou 51 consultas ao histórico, em grupos de até dez. A maior resposta foi de 1,12 s, com dados de até 16,67 s. API interna e gateway usaram até 211 MiB sem consultas e 228 MiB nas amostras durante as consultas. Os picos individuais acumulados foram 223 MiB e 36 MiB. O maior grupo consumiu 0,50 s de CPU. Os arquivos ocuparam 1.095 MiB no disco, incluindo os logs de gravação.
 
-A revisão servida no site oficial ao fim da medição era `f408685` (`2.9.8`). As otimizações de tela foram validadas no candidato local com o navegador autenticado e chamadas à API oficial. Ligar as telas à base preparada e confirmar o histórico integral no navegador por perfil continuam como etapas de aceite.
+A revisão servida no site oficial ao fim da medição era `f408685` (`2.9.8`).
+
+### Produtos conectado à base preparada
+
+A revisão `9bfced8` foi servida na homologação local com dados do VPS. O Chromium autenticado como Master usou a mesma rota de Produtos nas duas filiais. Nas aberturas frias, o cache HTTP e o service worker ficaram desativados. Para medir o histórico, o navegador aplicou o filtro na interface e o medidor exigiu uma resposta `200` para a empresa, a aba e a página esperadas, sem datas no recorte. A medição terminou com os dados visíveis.
+
+| Cenário no navegador Master | Transmissão | Chevrolet |
+|---|---:|---:|
+| Abertura fria, mediana de 3 | 1,12 s | 1,42 s |
+| Abertura fria, maior de 3 | 1,60 s | 1,47 s |
+| Aplicar Todo o histórico | 1,41 s | 1,81 s |
+| Top Produtos e segunda página, maior tempo | 0,90 s | 0,99 s |
+| Categorias | 0,75 s | 0,76 s |
+| Sem Giro | 0,66 s | 0,64 s |
+| Resumo NF, segunda página e devoluções, maior tempo | 0,85 s | 0,86 s |
+| Abrir detalhes de um produto | 0,82 s | 1,65 s |
+| Maior idade da origem ao exibir dados | 17,39 s | 17,96 s |
+
+Na Chevrolet, a assinatura dos indicadores do mês coincidiu com a captura anterior da tela legada. A conferência de 24 a 26/11 comparou os agregados de marcas, as quantidades e receitas do ranking e as contagens de vendas e devoluções com os cálculos da tela anterior sobre as mesmas linhas. Houve correspondência nos cinco cenários, incluindo três filtros de vendedor. Para o histórico integral, o Top Produtos retornou 45.414 códigos na Transmissão e 40.448 na Chevrolet, em páginas de 50. O Resumo NF também entrega páginas de 50 acompanhadas da contagem integral do recorte.
+
+Durante as aberturas frias da revisão final, a solicitação de Produtos começou de 256 a 352 ms após a navegação e durou de 659 a 988 ms. Dentro dessa solicitação, a autenticação do gateway levou de 213 a 552 ms e a consulta local de 51 a 126 ms. Após a resposta, a interface levou de 154 a 427 ms para ficar utilizável, incluindo a espera restante do portal e a renderização. No clique em Todo o histórico, a consulta local de marcas levou de 5,3 a 6,4 ms. O download das respostas medidas levou até 1 ms depois do primeiro byte. O corpo da visão geral da Chevrolet caiu de 131.296 para 36.369 bytes com gzip, uma redução de 72%.
+
+A sincronização continuou em segundo plano. Em 13 ciclos observados de cada filial, o trecho de extração do SQL Server levou até 1,36 s na Transmissão e 1,61 s na Chevrolet. A publicação dos dados ocorreu com idade de até 5,01 s nesses ciclos. A API interna respondeu `409` quando solicitada com versão inválida. No navegador, o avanço simulado de 61 segundos fez a tela ocultar os resultados vencidos e indicar indisponibilidade. A tela voltou a exibir os dados após receber uma leitura atual. O gateway exige a sessão, compara a filial e aplica as permissões do Comercial da empresa e do usuário.
+
+API interna e gateway usavam 316,4 MiB juntos sem consultas. As duas bases e seus arquivos auxiliares ocuparam 1.249,9 MiB em disco. Os resultados abaixo incluem cinco abas, as duas empresas e três rodadas por nível de concorrência.
+
+| Chamadas simultâneas | Leituras concluídas | Maior tempo da API interna | Maior idade | Pico de RAM amostrado | CPU acumulada na rodada |
+|---:|---:|---:|---:|---:|---:|
+| 1 | 3 | 116 ms | 6,32 s | 316,7 MiB | 0,026 s |
+| 5 | 15 | 138 ms | 17,99 s | 342,6 MiB | 0,421 s |
+| 10 | 30 | 1,05 s | 9,80 s | 350,1 MiB | 0,892 s |
+
+Passaram 23 testes focados do frontend, 17 do serviço de relatórios e os dois testes do gateway. As duas falhas da suíte visual abrangente também ocorreram na revisão base. O aceite no navegador cobre o perfil Master. A filial indevida, o módulo bloqueado e a resposta vencida foram exercitados no gateway com sessões de teste. Os demais perfis e as outras telas ainda precisam de medição autenticada. A versão `9bfced8` ficou em homologação. O site oficial continuou na `2.9.8`.
 
 ### Demais telas na revisão 2.9.8
 
